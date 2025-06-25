@@ -12,6 +12,7 @@ return {
 				"tailwindcss-language-server",
 				"typescript-language-server",
 				"css-lsp",
+				"clangd",
 			})
 		end,
 	},
@@ -131,6 +132,28 @@ return {
 							},
 						},
 					},
+				},
+				gopls = {
+					settings = {
+						gopls = {
+							analyses = {
+								unusedparams = true,
+								shadow = true,
+							},
+							staticcheck = true,
+						},
+					},
+				},
+				clangd = {
+					cmd = { "clangd", "--background-index" },
+					filetypes = { "c", "cpp", "objc", "objcpp" },
+					root_dir = function(...)
+						return require("lspconfig.util").root_pattern(
+							"compile_commands.json",
+							"compile_flags.txt",
+							".git"
+						)(...)
+					end,
 				},
 			},
 			setup = {},

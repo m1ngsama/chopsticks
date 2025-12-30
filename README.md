@@ -1,6 +1,16 @@
 # The Ultimate Vim Configuration
 
-A comprehensive, modern Vim configuration inspired by the best practices from the Vim community. This configuration transforms vanilla Vim into a powerful, feature-rich development environment.
+A comprehensive, modern Vim configuration optimized for engineering workflows. This configuration transforms vanilla Vim into a powerful, feature-rich development environment with enterprise-grade tooling.
+
+**✨ New: Quick installation script and enhanced engineering features!**
+
+## Quick Start
+
+```bash
+git clone https://github.com/m1ngsama/chopsticks.git ~/.vim && cd ~/.vim && ./install.sh
+```
+
+See [QUICKSTART.md](QUICKSTART.md) for detailed getting started guide.
 
 ## Features
 
@@ -31,34 +41,43 @@ A comprehensive, modern Vim configuration inspired by the best practices from th
 - **UndoTree**: Visualize and navigate undo history (`F5`)
 - **Tagbar**: Code structure browser (`F8`)
 - **Smart Window Management**: Easy navigation with `Ctrl+hjkl`
+- **Session Management**: Auto-save sessions with vim-obsession
+- **Project-Specific Settings**: Per-project .vimrc support
+- **Large File Optimization**: Automatic performance tuning for files >10MB
 
 ## Installation
 
-### 1. Clone this repository
+### Automatic Installation (Recommended)
 
 ```bash
 git clone https://github.com/m1ngsama/chopsticks.git ~/.vim
 cd ~/.vim
+./install.sh
 ```
 
-### 2. Create symlink to .vimrc
+The installation script will:
+- ✓ Backup your existing configuration
+- ✓ Create necessary symlinks
+- ✓ Install vim-plug automatically
+- ✓ Install all plugins
+- ✓ Offer to install CoC language servers
+
+### Manual Installation
 
 ```bash
+# 1. Clone this repository
+git clone https://github.com/m1ngsama/chopsticks.git ~/.vim
+cd ~/.vim
+
+# 2. Create symlink to .vimrc
 ln -s ~/.vim/.vimrc ~/.vimrc
-```
 
-### 3. Install vim-plug and plugins
+# 3. Install vim-plug
+curl -fLo ~/.vim/autoload/plug.vim --create-dirs \
+    https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
 
-Open Vim and the plugins will be automatically installed:
-
-```bash
-vim
-```
-
-Or manually install plugins:
-
-```vim
-:PlugInstall
+# 4. Open Vim and install plugins
+vim +PlugInstall +qall
 ```
 
 ### 4. (Optional) Install recommended dependencies
@@ -178,6 +197,31 @@ For intelligent code completion, install language servers:
 |-----|--------|
 | `,aj` | Next error/warning |
 | `,ak` | Previous error/warning |
+| `,ad` | Show error details |
+
+### Git Workflow
+
+| Key | Action |
+|-----|--------|
+| `,gs` | Git status |
+| `,gc` | Git commit |
+| `,gp` | Git push |
+| `,gl` | Git pull |
+| `,gd` | Git diff |
+| `,gb` | Git blame |
+
+### Engineering Utilities
+
+| Key | Action |
+|-----|--------|
+| `,ev` | Edit .vimrc |
+| `,sv` | Reload .vimrc |
+| `,F` | Format entire file |
+| `,wa` | Save all buffers |
+| `,cp` | Copy file path |
+| `,cf` | Copy filename |
+| `,*` | Search & replace word under cursor |
+| `,<leader>` | Switch to last file |
 
 ### Other Utilities
 
@@ -221,6 +265,10 @@ For intelligent code completion, install language servers:
 - **Tagbar**: Code structure browser
 - **EasyMotion**: Fast cursor movement
 - **CoC**: Code completion and LSP
+- **vim-obsession**: Session management
+- **vim-prosession**: Project sessions
+- **vim-unimpaired**: Handy bracket mappings
+- **targets.vim**: Additional text objects
 
 ## Color Schemes
 
@@ -237,6 +285,49 @@ To change:
 colorscheme dracula
 ```
 
+## Engineering Features
+
+### Project-Specific Configuration
+
+Create a `.vimrc` file in your project root for project-specific settings:
+
+```vim
+" .vimrc in project root
+set shiftwidth=2
+let g:ale_python_black_options = '--line-length=100'
+```
+
+The configuration automatically loads project-specific settings while maintaining security.
+
+### Session Management
+
+Sessions are automatically saved with vim-obsession:
+
+```vim
+" Start session tracking
+:Obsess
+
+" Stop session tracking
+:Obsess!
+
+" Sessions are saved to ~/.vim/sessions/
+```
+
+### Large File Handling
+
+Files larger than 10MB automatically disable heavy features for better performance:
+- Syntax highlighting optimized
+- Undo levels reduced
+- Swap files disabled
+
+### Terminal Integration
+
+Open integrated terminal:
+- `,tv` - Vertical terminal split
+- `,th` - Horizontal terminal split (10 rows)
+
+Navigate out of terminal with `Esc` then normal window navigation.
+
 ## Customization
 
 The configuration is organized into sections:
@@ -248,25 +339,67 @@ The configuration is organized into sections:
 5. **Plugin Settings**: Individual plugin configurations
 6. **Auto Commands**: File-type specific settings
 7. **Helper Functions**: Utility functions
+8. **Engineering Utilities**: Project workflow tools
+9. **Git Workflow**: Git integration shortcuts
 
 Feel free to modify any section to suit your needs!
+
+### Quick Customization
+
+Edit configuration:
+```vim
+,ev  " Opens .vimrc in Vim
+```
+
+Reload configuration:
+```vim
+,sv  " Sources .vimrc without restart
+```
 
 ## Language-Specific Settings
 
 ### Python
 - 4 spaces indentation
 - 88 character line limit (Black formatter)
-- Auto-formatting with Black on save
+- Auto-formatting with Black + isort on save
+- Linting with flake8 and pylint
 
 ### JavaScript/TypeScript
 - 2 spaces indentation
 - Prettier formatting on save
 - ESLint integration
+- TypeScript server support
 
 ### Go
 - Tab indentation
 - Auto-formatting with gofmt
 - Auto-import with goimports
+- gopls language server
+
+### Rust
+- Auto-formatting with rustfmt
+- Cargo integration
+
+### Shell Scripts
+- 2 spaces indentation
+- shellcheck linting
+
+### Docker
+- Dockerfile syntax highlighting
+- hadolint linting
+
+### YAML
+- 2 spaces indentation
+- yamllint integration
+
+### HTML/CSS
+- 2 spaces indentation
+- Prettier formatting
+
+### Markdown
+- Line wrapping enabled
+- Spell checking enabled
+- Prettier formatting
 
 ## Troubleshooting
 

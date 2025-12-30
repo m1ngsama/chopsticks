@@ -28,8 +28,10 @@ set number
 " Show relative line numbers
 set relativenumber
 
-" Highlight cursor line underneath the cursor horizontally
-set cursorline
+" Highlight cursor line (disabled in TTY for performance)
+if !g:is_tty
+    set cursorline
+endif
 
 " Set shift width to 4 spaces
 set shiftwidth=4
@@ -257,18 +259,33 @@ call plug#end()
 " => Colors and Fonts
 " ============================================================================
 
-" Enable true colors support
-if has('termguicolors')
+" Detect terminal type and capabilities
+let g:is_tty = ($TERM =~ 'linux' || $TERM =~ 'screen' || &term =~ 'builtin')
+let g:has_true_color = ($COLORTERM == 'truecolor' || $COLORTERM == '24bit')
+
+" Enable true colors support only if terminal supports it
+if g:has_true_color && has('termguicolors') && !g:is_tty
     set termguicolors
 endif
 
-" Set colorscheme
-try
-    colorscheme gruvbox
+" Set colorscheme with proper fallbacks
+if &t_Co >= 256 && !g:is_tty
+    " 256-color terminals
+    try
+        colorscheme gruvbox
+        set background=dark
+    catch
+        try
+            colorscheme desert
+        catch
+            colorscheme default
+        endtry
+    endtry
+else
+    " Basic 16-color terminals (TTY, console)
+    colorscheme default
     set background=dark
-catch
-    colorscheme desert
-endtry
+endif
 
 " Set font for GUI
 if has("gui_running")
@@ -410,8 +427,11 @@ let NERDTreeIgnore=['\.pyc$', '\~$', '\.swp$', '\.git$', '\.DS_Store', 'node_mod
 let NERDTreeWinSize=35
 
 " Automatically open NERDTree when vim starts on a directory
-autocmd StdinReadPre * let s:std_in=1
-autocmd VimEnter * if argc() == 1 && isdirectory(argv()[0]) && !exists("s:std_in") | exe 'NERDTree' argv()[0] | wincmd p | ene | exe 'cd '.argv()[0] | endif
+" Disabled in TTY for faster startup
+if !g:is_tty
+    autocmd StdinReadPre * let s:std_in=1
+    autocmd VimEnter * if argc() == 1 && isdirectory(argv()[0]) && !exists("s:std_in") | exe 'NERDTree' argv()[0] | wincmd p | ene | exe 'cd '.argv()[0] | endif
+endif
 
 " --- FZF ---
 map <C-p> :Files<CR>
@@ -421,16 +441,31 @@ map <leader>t :Tags<CR>
 
 " FZF customization for better project search
 let g:fzf_layout = { 'down': '40%' }
-let g:fzf_preview_window = ['right:50%', 'ctrl-/']
+
+" Disable preview in TTY for better performance
+if g:is_tty
+    let g:fzf_preview_window = []
+else
+    let g:fzf_preview_window = ['right:50%', 'ctrl-/']
+endif
 
 " Advanced FZF commands
-command! -bang -nargs=* Rg
-  \ call fzf#vim#grep(
-  \   'rg --column --line-number --no-heading --color=always --smart-case -- '.shellescape(<q-args>), 1,
-  \   fzf#vim#with_preview(), <bang>0)
+" Conditionally enable preview based on terminal type
+if g:is_tty
+    command! -bang -nargs=* Rg
+      \ call fzf#vim#grep(
+      \   'rg --column --line-number --no-heading --color=always --smart-case -- '.shellescape(<q-args>), 1,
+      \   <bang>0)
 
-" Search in git files
-command! -bang GFiles call fzf#vim#gitfiles('', fzf#vim#with_preview(), <bang>0)
+    command! -bang GFiles call fzf#vim#gitfiles('', <bang>0)
+else
+    command! -bang -nargs=* Rg
+      \ call fzf#vim#grep(
+      \   'rg --column --line-number --no-heading --color=always --smart-case -- '.shellescape(<q-args>), 1,
+      \   fzf#vim#with_preview(), <bang>0)
+
+    command! -bang GFiles call fzf#vim#gitfiles('', fzf#vim#with_preview(), <bang>0)
+endif
 
 " --- CtrlP ---
 let g:ctrlp_working_path_mode = 'ra'
@@ -441,12 +476,26 @@ let g:ctrlp_custom_ignore = {
   \ }
 
 " --- Airline ---
+" Disable powerline fonts in TTY for compatibility
+if g:is_tty
+    let g:airline_powerline_fonts = 0
+    let g:airline_left_sep = ''
+    let g:airline_right_sep = ''
+    let g:airline#extensions#tabline#left_sep = ' '
+    let g:airline#extensions#tabline#left_alt_sep = '|'
+else
+    let g:airline_powerline_fonts = 1
+endif
+
 let g:airline#extensions#tabline#enabled = 1
-let g:airline#extensions#tabline#left_sep = ' '
-let g:airline#extensions#tabline#left_alt_sep = '|'
 let g:airline#extensions#tabline#formatter = 'unique_tail'
-let g:airline_powerline_fonts = 1
-let g:airline_theme='gruvbox'
+
+" Set theme based on terminal capabilities
+if &t_Co >= 256 && !g:is_tty
+    let g:airline_theme='gruvbox'
+else
+    let g:airline_theme='dark'
+endif
 
 " --- GitGutter ---
 let g:gitgutter_sign_added = '+'
@@ -702,11 +751,16 @@ set updatetime=300
 " Don't pass messages to |ins-completion-menu|
 set shortmess+=c
 
-" Always show the signcolumn
-if has("patch-8.1.1564")
-  set signcolumn=number
+" Always show the signcolumn (simplified for TTY)
+if g:is_tty
+    " In TTY, only show signcolumn when there are signs
+    set signcolumn=auto
 else
-  set signcolumn=yes
+    if has("patch-8.1.1564")
+        set signcolumn=number
+    else
+        set signcolumn=yes
+    endif
 endif
 
 " ============================================================================
@@ -835,6 +889,39 @@ function! LargeFileSettings()
     setlocal buftype=nowrite
     echo "Large file detected. Some features disabled for performance."
 endfunction
+
+" ============================================================================
+" => TTY and Basic Terminal Optimizations
+" ============================================================================
+
+" Additional optimizations for TTY/basic terminals
+if g:is_tty
+    " Disable syntax highlighting for very large files in TTY
+    autocmd BufReadPre * if getfsize(expand("<afile>")) > 512000 | setlocal syntax=OFF | endif
+
+    " Simpler status line for TTY
+    set statusline=%f\ %h%w%m%r\ %=%(%l,%c%V\ %=\ %P%)
+
+    " Disable some visual effects
+    set novisualbell
+    set noerrorbells
+
+    " Faster redraw
+    set lazyredraw
+    set ttyfast
+
+    " Reduce syntax highlighting complexity
+    set synmaxcol=120
+endif
+
+" Provide helpful message on first run in TTY
+if g:is_tty && !exists("g:tty_message_shown")
+    augroup TTYMessage
+        autocmd!
+        autocmd VimEnter * echom "Running in TTY mode - some features disabled for performance"
+    augroup END
+    let g:tty_message_shown = 1
+endif
 
 " ============================================================================
 " End of Configuration

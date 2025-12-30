@@ -58,16 +58,16 @@ if [ ! -f "$VIM_PLUG_PATH" ]; then
     print_status "Installing vim-plug..."
     curl -fLo "$VIM_PLUG_PATH" --create-dirs \
         https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
-    echo -e "${GREEN}✓${NC} vim-plug installed successfully"
+    echo -e "${GREEN}[OK]${NC} vim-plug installed successfully"
 else
-    echo -e "${GREEN}✓${NC} vim-plug already installed"
+    echo -e "${GREEN}[OK]${NC} vim-plug already installed"
 fi
 
 # Install plugins
 print_status "Installing Vim plugins..."
 vim +PlugInstall +qall
 
-echo -e "\n${GREEN}✓${NC} ${BOLD}Installation complete!${NC}\n"
+echo -e "\n${GREEN}[OK]${NC} ${BOLD}Installation complete!${NC}\n"
 
 # Print optional dependencies
 echo -e "${BOLD}Optional Dependencies (Recommended):${NC}"
@@ -101,7 +101,7 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
         print_error "Node.js is not installed. Please install Node.js first."
     else
         vim -c "CocInstall -sync coc-json coc-tsserver coc-pyright coc-sh coc-html coc-css coc-yaml|q"
-        echo -e "${GREEN}✓${NC} CoC language servers installed"
+        echo -e "${GREEN}[OK]${NC} CoC language servers installed"
     fi
 fi
 

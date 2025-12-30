@@ -2,7 +2,7 @@
 
 A comprehensive, modern Vim configuration optimized for engineering workflows. This configuration transforms vanilla Vim into a powerful, feature-rich development environment with enterprise-grade tooling.
 
-**✨ New: Quick installation script and enhanced engineering features!**
+**NEW: Quick installation script and enhanced engineering features!**
 
 ## Quick Start
 
@@ -56,11 +56,11 @@ cd ~/.vim
 ```
 
 The installation script will:
-- ✓ Backup your existing configuration
-- ✓ Create necessary symlinks
-- ✓ Install vim-plug automatically
-- ✓ Install all plugins
-- ✓ Offer to install CoC language servers
+- Backup your existing configuration
+- Create necessary symlinks
+- Install vim-plug automatically
+- Install all plugins
+- Offer to install CoC language servers
 
 ### Manual Installation
 

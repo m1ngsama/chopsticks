@@ -11,10 +11,10 @@ git clone https://github.com/m1ngsama/chopsticks.git ~/.vim && cd ~/.vim && ./in
 ```
 
 That's it! The script will:
-- ✓ Backup your existing .vimrc
-- ✓ Create symlink to the new configuration
-- ✓ Install vim-plug
-- ✓ Install all plugins automatically
+- Backup your existing .vimrc
+- Create symlink to the new configuration
+- Install vim-plug
+- Install all plugins automatically
 
 ### Manual Install
 
@@ -268,4 +268,4 @@ Print this for your desk:
 └─────────────────────────────────────────────┘
 ```
 
-Happy Vimming! 🚀
+Happy Vimming!

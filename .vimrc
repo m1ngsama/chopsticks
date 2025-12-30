@@ -242,6 +242,15 @@ if has('vim9') || has('nvim')
     Plug 'neoclide/coc.nvim', {'branch': 'release'}  " LSP & Completion
 endif
 
+" ===== Session Management =====
+Plug 'tpope/vim-obsession'                   " Continuous session save
+Plug 'dhruvasagar/vim-prosession'            " Better session management
+
+" ===== Additional Utilities =====
+Plug 'tpope/vim-unimpaired'                  " Handy bracket mappings
+Plug 'wellle/targets.vim'                    " Additional text objects
+Plug 'honza/vim-snippets'                    " Snippet collection
+
 call plug#end()
 
 " ============================================================================
@@ -395,13 +404,33 @@ autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isT
 let NERDTreeShowHidden=1
 
 " Ignore files in NERDTree
-let NERDTreeIgnore=['\.pyc$', '\~$', '\.swp$', '\.git$', '\.DS_Store']
+let NERDTreeIgnore=['\.pyc$', '\~$', '\.swp$', '\.git$', '\.DS_Store', 'node_modules', '__pycache__', '\.egg-info$']
+
+" NERDTree window size
+let NERDTreeWinSize=35
+
+" Automatically open NERDTree when vim starts on a directory
+autocmd StdinReadPre * let s:std_in=1
+autocmd VimEnter * if argc() == 1 && isdirectory(argv()[0]) && !exists("s:std_in") | exe 'NERDTree' argv()[0] | wincmd p | ene | exe 'cd '.argv()[0] | endif
 
 " --- FZF ---
 map <C-p> :Files<CR>
 map <leader>b :Buffers<CR>
 map <leader>rg :Rg<CR>
 map <leader>t :Tags<CR>
+
+" FZF customization for better project search
+let g:fzf_layout = { 'down': '40%' }
+let g:fzf_preview_window = ['right:50%', 'ctrl-/']
+
+" Advanced FZF commands
+command! -bang -nargs=* Rg
+  \ call fzf#vim#grep(
+  \   'rg --column --line-number --no-heading --color=always --smart-case -- '.shellescape(<q-args>), 1,
+  \   fzf#vim#with_preview(), <bang>0)
+
+" Search in git files
+command! -bang GFiles call fzf#vim#gitfiles('', fzf#vim#with_preview(), <bang>0)
 
 " --- CtrlP ---
 let g:ctrlp_working_path_mode = 'ra'
@@ -430,23 +459,39 @@ let g:gitgutter_sign_modified_removed = '~'
 let g:ale_linters = {
 \   'python': ['flake8', 'pylint'],
 \   'javascript': ['eslint'],
+\   'typescript': ['eslint', 'tsserver'],
 \   'go': ['gopls', 'golint'],
+\   'rust': ['cargo'],
+\   'sh': ['shellcheck'],
+\   'yaml': ['yamllint'],
+\   'dockerfile': ['hadolint'],
 \}
 
 let g:ale_fixers = {
 \   '*': ['remove_trailing_lines', 'trim_whitespace'],
 \   'python': ['black', 'isort'],
 \   'javascript': ['prettier', 'eslint'],
+\   'typescript': ['prettier', 'eslint'],
 \   'go': ['gofmt', 'goimports'],
+\   'rust': ['rustfmt'],
+\   'json': ['prettier'],
+\   'yaml': ['prettier'],
+\   'html': ['prettier'],
+\   'css': ['prettier'],
+\   'markdown': ['prettier'],
 \}
 
 let g:ale_fix_on_save = 1
-let g:ale_sign_error = '✗'
-let g:ale_sign_warning = '⚠'
+let g:ale_sign_error = 'X'
+let g:ale_sign_warning = '!'
+let g:ale_lint_on_text_changed = 'never'
+let g:ale_lint_on_insert_leave = 0
+let g:ale_lint_on_enter = 0
 
 " Navigate between errors
 nmap <silent> <leader>aj :ALENext<cr>
 nmap <silent> <leader>ak :ALEPrevious<cr>
+nmap <silent> <leader>ad :ALEDetail<cr>
 
 " --- Tagbar ---
 nmap <F8> :TagbarToggle<CR>
@@ -588,6 +633,28 @@ autocmd FileType javascript,typescript setlocal expandtab shiftwidth=2 tabstop=2
 " Go specific settings
 autocmd FileType go setlocal noexpandtab shiftwidth=4 tabstop=4
 
+" HTML/CSS specific settings
+autocmd FileType html,css setlocal expandtab shiftwidth=2 tabstop=2
+
+" YAML specific settings
+autocmd FileType yaml setlocal expandtab shiftwidth=2 tabstop=2
+
+" Markdown specific settings
+autocmd FileType markdown setlocal wrap linebreak spell
+
+" Shell script settings
+autocmd FileType sh setlocal expandtab shiftwidth=2 tabstop=2
+
+" Makefile settings (must use tabs)
+autocmd FileType make setlocal noexpandtab shiftwidth=8 tabstop=8
+
+" JSON specific settings
+autocmd FileType json setlocal expandtab shiftwidth=2 tabstop=2
+
+" Docker specific settings
+autocmd BufNewFile,BufRead Dockerfile* setlocal filetype=dockerfile
+autocmd FileType dockerfile setlocal expandtab shiftwidth=2 tabstop=2
+
 " ============================================================================
 " => Status Line
 " ============================================================================
@@ -641,6 +708,133 @@ if has("patch-8.1.1564")
 else
   set signcolumn=yes
 endif
+
+" ============================================================================
+" => Project-Specific Settings
+" ============================================================================
+
+" Load project-specific vimrc if it exists
+" This allows per-project customization
+set exrc
+set secure
+
+" ============================================================================
+" => Additional Engineering Utilities
+" ============================================================================
+
+" Quick format entire file
+nnoremap <leader>F gg=G``
+
+" Toggle between source and header files (for C/C++)
+nnoremap <leader>a :A<CR>
+
+" Quick save all buffers
+nnoremap <leader>wa :wa<CR>
+
+" Easier window resizing
+nnoremap <silent> <Leader>= :exe "resize " . (winheight(0) * 3/2)<CR>
+nnoremap <silent> <Leader>- :exe "resize " . (winheight(0) * 2/3)<CR>
+nnoremap <silent> <Leader>+ :exe "vertical resize " . (winwidth(0) * 3/2)<CR>
+nnoremap <silent> <Leader>_ :exe "vertical resize " . (winwidth(0) * 2/3)<CR>
+
+" Quick switch between last two files
+nnoremap <leader><leader> <c-^>
+
+" Clear whitespace on empty lines
+nnoremap <leader>W :%s/\s\+$//<CR>:let @/=''<CR>
+
+" Source current file
+nnoremap <leader>so :source %<CR>
+
+" Edit vimrc quickly
+nnoremap <leader>ev :edit $MYVIMRC<CR>
+
+" Reload vimrc
+nnoremap <leader>sv :source $MYVIMRC<CR>
+
+" Search and replace word under cursor
+nnoremap <leader>* :%s/\<<C-r><C-w>\>//g<Left><Left>
+
+" Copy file path to clipboard
+nnoremap <leader>cp :let @+ = expand("%:p")<CR>:echo "Copied path: " . expand("%:p")<CR>
+nnoremap <leader>cf :let @+ = expand("%:t")<CR>:echo "Copied filename: " . expand("%:t")<CR>
+
+" Create parent directories on save if they don't exist
+function! s:MkNonExDir(file, buf)
+    if empty(getbufvar(a:buf, '&buftype')) && a:file!~#'\v^\w+\:\/'
+        let dir=fnamemodify(a:file, ':h')
+        if !isdirectory(dir)
+            call mkdir(dir, 'p')
+        endif
+    endif
+endfunction
+augroup BWCCreateDir
+    autocmd!
+    autocmd BufWritePre * :call s:MkNonExDir(expand('<afile>'), +expand('<abuf>'))
+augroup END
+
+" ============================================================================
+" => Debugging Helpers
+" ============================================================================
+
+" Show syntax highlighting groups for word under cursor
+nmap <leader>sp :call <SID>SynStack()<CR>
+function! <SID>SynStack()
+  if !exists("*synstack")
+    return
+  endif
+  echo map(synstack(line('.'), col('.')), 'synIDattr(v:val, "name")')
+endfunc
+
+" ============================================================================
+" => Git Workflow Enhancements
+" ============================================================================
+
+" Git shortcuts
+nnoremap <leader>gs :Git status<CR>
+nnoremap <leader>gc :Git commit<CR>
+nnoremap <leader>gp :Git push<CR>
+nnoremap <leader>gl :Git pull<CR>
+nnoremap <leader>gd :Gdiff<CR>
+nnoremap <leader>gb :Git blame<CR>
+
+" ============================================================================
+" => Terminal Integration
+" ============================================================================
+
+" Better terminal navigation
+if has('terminal')
+    " Open terminal in split
+    nnoremap <leader>tv :terminal<CR>
+    nnoremap <leader>th :terminal ++rows=10<CR>
+
+    " Terminal mode mappings
+    tnoremap <Esc> <C-\><C-n>
+    tnoremap <C-h> <C-\><C-n><C-w>h
+    tnoremap <C-j> <C-\><C-n><C-w>j
+    tnoremap <C-k> <C-\><C-n><C-w>k
+    tnoremap <C-l> <C-\><C-n><C-w>l
+endif
+
+" ============================================================================
+" => Large File Handling
+" ============================================================================
+
+" Disable syntax highlighting and other features for large files (>10MB)
+let g:LargeFile = 1024 * 1024 * 10
+augroup LargeFile
+    autocmd!
+    autocmd BufReadPre * let f=getfsize(expand("<afile>")) | if f > g:LargeFile || f == -2 | call LargeFileSettings() | endif
+augroup END
+
+function! LargeFileSettings()
+    setlocal bufhidden=unload
+    setlocal undolevels=-1
+    setlocal eventignore+=FileType
+    setlocal noswapfile
+    setlocal buftype=nowrite
+    echo "Large file detected. Some features disabled for performance."
+endfunction
 
 " ============================================================================
 " End of Configuration

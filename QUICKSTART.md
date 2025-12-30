@@ -10,9 +10,12 @@ Get up and running with this Vim configuration in 5 minutes!
 git clone https://github.com/m1ngsama/chopsticks.git ~/.vim && cd ~/.vim && ./install.sh
 ```
 
+**IMPORTANT:** Always run the install script from the `~/.vim` directory (where you cloned the repository). The script validates this to ensure correct symlink creation.
+
 That's it! The script will:
+- Verify it's being run from the correct directory
 - Backup your existing .vimrc
-- Create symlink to the new configuration
+- Create and validate symlink to the new configuration
 - Install vim-plug
 - Install all plugins automatically
 

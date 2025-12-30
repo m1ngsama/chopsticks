@@ -10,6 +10,10 @@
 " Disable compatibility with vi which can cause unexpected issues
 set nocompatible
 
+" Detect terminal type and capabilities (must be early for conditional configs)
+let g:is_tty = ($TERM =~ 'linux' || $TERM =~ 'screen' || &term =~ 'builtin')
+let g:has_true_color = ($COLORTERM == 'truecolor' || $COLORTERM == '24bit')
+
 " Enable type file detection. Vim will be able to try to detect the type of file in use
 filetype on
 
@@ -91,15 +95,6 @@ set mouse=a
 " Set encoding
 set encoding=utf-8
 
-" Better command-line completion
-set wildmenu
-
-" Show cursor position
-set ruler
-
-" Display line numbers
-set number
-
 " Enable folding
 set foldmethod=indent
 set foldlevel=99
@@ -114,41 +109,14 @@ set backspace=indent,eol,start
 " Auto read when file is changed from outside
 set autoread
 
-" Turn on the Wild menu for command completion
-set wildmenu
-
-" Ignore compiled files
-set wildignore=*.o,*~,*.pyc
-if has("win16") || has("win32")
-    set wildignore+=.git\*,.hg\*,.svn\*
-else
-    set wildignore+=*/.git/*,*/.hg/*,*/.svn/*,*/.DS_Store
-endif
-
-" Always show current position
-set ruler
-
 " Height of the command bar
 set cmdheight=1
 
 " A buffer becomes hidden when it is abandoned
 set hid
 
-" Configure backspace so it acts as it should act
-set backspace=eol,start,indent
+" Configure backspace so it acts as it should act (enhanced from earlier basic setting)
 set whichwrap+=<,>,h,l
-
-" Ignore case when searching
-set ignorecase
-
-" When searching try to be smart about cases
-set smartcase
-
-" Highlight search results
-set hlsearch
-
-" Makes search act like search in modern browsers
-set incsearch
 
 " Don't redraw while executing macros (good performance config)
 set lazyredraw
@@ -258,10 +226,6 @@ call plug#end()
 " ============================================================================
 " => Colors and Fonts
 " ============================================================================
-
-" Detect terminal type and capabilities
-let g:is_tty = ($TERM =~ 'linux' || $TERM =~ 'screen' || &term =~ 'builtin')
-let g:has_true_color = ($COLORTERM == 'truecolor' || $COLORTERM == '24bit')
 
 " Enable true colors support only if terminal supports it
 if g:has_true_color && has('termguicolors') && !g:is_tty

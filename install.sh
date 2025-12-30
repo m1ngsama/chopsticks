@@ -13,10 +13,6 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
-echo -e "${BOLD}========================================${NC}"
-echo -e "${BOLD}Vim Configuration Installer${NC}"
-echo -e "${BOLD}========================================${NC}\n"
-
 # Function to print status messages
 print_status() {
     echo -e "${GREEN}==>${NC} ${BOLD}$1${NC}"
@@ -29,6 +25,18 @@ print_warning() {
 print_error() {
     echo -e "${RED}Error:${NC} $1"
 }
+
+echo -e "${BOLD}========================================${NC}"
+echo -e "${BOLD}Vim Configuration Installer${NC}"
+echo -e "${BOLD}========================================${NC}\n"
+
+# Verify .vimrc exists in script directory
+if [ ! -f "$SCRIPT_DIR/.vimrc" ]; then
+    print_error "Cannot find .vimrc in $SCRIPT_DIR"
+    echo "Please run this script from the chopsticks directory:"
+    echo "  cd ~/.vim && ./install.sh"
+    exit 1
+fi
 
 # Check if vim is installed
 if ! command -v vim &> /dev/null; then
@@ -51,6 +59,19 @@ fi
 # Create symlink to .vimrc
 print_status "Creating symlink: $HOME/.vimrc -> $SCRIPT_DIR/.vimrc"
 ln -sf "$SCRIPT_DIR/.vimrc" "$HOME/.vimrc"
+
+# Verify symlink was created correctly
+if [ -L "$HOME/.vimrc" ]; then
+    LINK_TARGET=$(readlink "$HOME/.vimrc")
+    if [ "$LINK_TARGET" = "$SCRIPT_DIR/.vimrc" ]; then
+        echo -e "${GREEN}[OK]${NC} Symlink created successfully"
+    else
+        print_warning "Symlink points to unexpected target: $LINK_TARGET"
+    fi
+else
+    print_error "Failed to create symlink"
+    exit 1
+fi
 
 # Install vim-plug if not already installed
 VIM_PLUG_PATH="$HOME/.vim/autoload/plug.vim"
@@ -100,7 +121,7 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     if ! command -v node &> /dev/null; then
         print_error "Node.js is not installed. Please install Node.js first."
     else
-        vim -c "CocInstall -sync coc-json coc-tsserver coc-pyright coc-sh coc-html coc-css coc-yaml|q"
+        vim +'CocInstall -sync coc-json coc-tsserver coc-pyright coc-sh coc-html coc-css coc-yaml' +qall
         echo -e "${GREEN}[OK]${NC} CoC language servers installed"
     fi
 fi

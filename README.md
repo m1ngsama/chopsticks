@@ -10,7 +10,7 @@ A comprehensive, modern Vim configuration optimized for engineering workflows. T
 git clone https://github.com/m1ngsama/chopsticks.git ~/.vim && cd ~/.vim && ./install.sh
 ```
 
-See [QUICKSTART.md](QUICKSTART.md) for detailed getting started guide.
+**Note:** The installation script must be run from the cloned `~/.vim` directory. See [QUICKSTART.md](QUICKSTART.md) for detailed getting started guide.
 
 ## Features
 
@@ -56,9 +56,13 @@ cd ~/.vim
 ./install.sh
 ```
 
+**IMPORTANT:** You must run the install script from the `~/.vim` directory (the cloned repository directory). Do not copy the script to another location and run it from there.
+
 The installation script will:
+- Verify it's being run from the correct directory
 - Backup your existing configuration
 - Create necessary symlinks
+- Validate symlink creation
 - Install vim-plug automatically
 - Install all plugins
 - Offer to install CoC language servers

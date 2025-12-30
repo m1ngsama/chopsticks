@@ -44,6 +44,7 @@ See [QUICKSTART.md](QUICKSTART.md) for detailed getting started guide.
 - **Session Management**: Auto-save sessions with vim-obsession
 - **Project-Specific Settings**: Per-project .vimrc support
 - **Large File Optimization**: Automatic performance tuning for files >10MB
+- **TTY/Basic Terminal Support**: Automatic optimization for console environments
 
 ## Installation
 
@@ -327,6 +328,29 @@ Open integrated terminal:
 - `,th` - Horizontal terminal split (10 rows)
 
 Navigate out of terminal with `Esc` then normal window navigation.
+
+### TTY and Basic Terminal Support
+
+The configuration automatically detects and optimizes for basic terminal environments (TTY, Linux console):
+
+**Automatic Optimizations:**
+- Disables true color mode for compatibility
+- Uses simple ASCII separators instead of powerline fonts
+- Falls back to default colorscheme
+- Disables cursorline for better performance
+- Simplifies signcolumn behavior
+- Disables FZF preview windows
+- Skips auto-opening NERDTree
+- Uses simpler status line
+- Reduces syntax highlighting complexity
+- Faster startup and redraw
+
+**Detected Terminals:**
+- Linux console (TERM=linux)
+- Screen sessions (TERM=screen)
+- Basic built-in terminals
+
+The configuration provides a message on first run in TTY mode to inform about the optimizations.
 
 ## Customization
 

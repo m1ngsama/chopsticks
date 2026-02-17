@@ -223,10 +223,12 @@ Plug 'honza/vim-snippets'                    " Snippet collection
 
 " ===== Native LSP (vim-lsp: works without Node.js, Vim 8.0+ only) =====
 " Used as fallback when CoC/Node.js is unavailable
-Plug 'prabirshrestha/vim-lsp'                " Pure VimScript LSP client
-Plug 'mattn/vim-lsp-settings'               " Auto-configure language servers
-Plug 'prabirshrestha/asyncomplete.vim'       " Async completion framework
-Plug 'prabirshrestha/asyncomplete-lsp.vim'   " LSP completion source for asyncomplete
+if !((has('nvim') || has('patch-8.0.1453')) && executable('node'))
+    Plug 'prabirshrestha/vim-lsp'                " Pure VimScript LSP client
+    Plug 'mattn/vim-lsp-settings'               " Auto-configure language servers
+    Plug 'prabirshrestha/asyncomplete.vim'       " Async completion framework
+    Plug 'prabirshrestha/asyncomplete-lsp.vim'   " LSP completion source for asyncomplete
+endif
 
 " ===== Enhanced UI Experience =====
 Plug 'mhinz/vim-startify'                    " Startup screen with recent files
@@ -706,8 +708,10 @@ if g:use_vimlsp
         nmap <buffer> <leader>o    <plug>(lsp-document-symbol-search)
         nmap <buffer> <leader>cd   <plug>(lsp-document-diagnostics)
 
-        " Enable auto-format on save for supported filetypes
-        autocmd BufWritePre <buffer> LspDocumentFormatSync
+        " Enable auto-format on save for filetypes with reliable LSP formatters
+        if index(['python', 'go', 'rust', 'typescript', 'javascript', 'sh'], &filetype) >= 0
+            autocmd BufWritePre <buffer> LspDocumentFormatSync
+        endif
     endfunction
 
     augroup lsp_install

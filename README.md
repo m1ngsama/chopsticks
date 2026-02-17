@@ -1,54 +1,45 @@
-# The Ultimate Vim Configuration
+# chopsticks - Vim Configuration
 
-A comprehensive, modern Vim configuration optimized for engineering workflows. This configuration transforms vanilla Vim into a powerful, feature-rich development environment with enterprise-grade tooling.
+A native Vim configuration optimized for engineering workflows. Designed for
+Vim 8.0+ with automatic fallbacks for minimal environments (TTY, no Node.js).
 
-**NEW: Quick installation script and enhanced engineering features!**
-
-## Quick Start
+## Quick Install
 
 ```bash
-git clone https://github.com/m1ngsama/chopsticks.git ~/.vim && cd ~/.vim && ./install.sh
+git clone https://github.com/m1ngsama/chopsticks.git ~/.vim
+cd ~/.vim && ./install.sh
 ```
 
-**Note:** The installation script must be run from the cloned `~/.vim` directory. See [QUICKSTART.md](QUICKSTART.md) for detailed getting started guide.
+See [QUICKSTART.md](QUICKSTART.md) for the 5-minute guide.
 
-## Features
+---
 
-### Core Enhancements
-- **Smart Line Numbers**: Hybrid line numbers (absolute + relative) for efficient navigation
-- **Modern UI**: Gruvbox color scheme with airline status bar
-- **Plugin Management**: vim-plug for easy plugin installation and updates
-- **Auto-completion**: CoC (Conquer of Completion) for intelligent code completion
-- **Syntax Checking**: ALE (Asynchronous Lint Engine) for real-time linting
+## Design Principles
 
-### File Navigation
-- **NERDTree**: Visual file explorer (`Ctrl+n`)
-- **FZF**: Blazing fast fuzzy finder (`Ctrl+p`)
-- **CtrlP**: Alternative fuzzy file finder
-- **Easy Motion**: Jump to any location with minimal keystrokes
+- **KISS**: No icon fonts, no unicode glyphs, plain ASCII throughout
+- **Tiered LSP**: CoC (full) with vim-lsp fallback - works with or without Node.js
+- **TTY-aware**: Automatic detection and optimization for console environments
+- **Engineering-first**: Git workflow, session management, project-local config
 
-### Git Integration
-- **Fugitive**: Complete Git wrapper for Vim
-- **GitGutter**: Show git diff in the sign column
+---
 
-### Code Editing
-- **Auto-pairs**: Automatic bracket/quote pairing
-- **Surround**: Easily change surrounding quotes, brackets, tags
-- **Commentary**: Quick code commenting (`gc`)
-- **Multi-language Support**: vim-polyglot for 100+ languages
+## Requirements
 
-### Productivity Tools
-- **UndoTree**: Visualize and navigate undo history (`F5`)
-- **Tagbar**: Code structure browser (`F8`)
-- **Smart Window Management**: Easy navigation with `Ctrl+hjkl`
-- **Session Management**: Auto-save sessions with vim-obsession
-- **Project-Specific Settings**: Per-project .vimrc support
-- **Large File Optimization**: Automatic performance tuning for files >10MB
-- **TTY/Basic Terminal Support**: Automatic optimization for console environments
+| Requirement    | Minimum     | Notes                          |
+|----------------|-------------|--------------------------------|
+| Vim            | 8.0+        | vim9script not required        |
+| git            | any         | For cloning and fugitive       |
+| curl           | any         | For vim-plug auto-install      |
+| Node.js        | 14.14+      | Optional, enables CoC LSP      |
+| ripgrep (rg)   | any         | Optional, enables :Rg search   |
+| fzf            | any         | Optional, enables :Files/:GFiles |
+| ctags          | any         | Optional, enables :TagbarToggle |
+
+---
 
 ## Installation
 
-### Automatic Installation (Recommended)
+### Automatic
 
 ```bash
 git clone https://github.com/m1ngsama/chopsticks.git ~/.vim
@@ -56,417 +47,364 @@ cd ~/.vim
 ./install.sh
 ```
 
-**IMPORTANT:** You must run the install script from the `~/.vim` directory (the cloned repository directory). Do not copy the script to another location and run it from there.
+The script:
+1. Checks for a working Vim installation
+2. Backs up your existing `~/.vimrc` if present
+3. Creates a symlink: `~/.vimrc -> ~/.vim/.vimrc`
+4. Installs vim-plug
+5. Runs `:PlugInstall` to download all plugins
+6. Optionally installs CoC language servers (if Node.js is available)
 
-The installation script will:
-- Verify it's being run from the correct directory
-- Backup your existing configuration
-- Create necessary symlinks
-- Validate symlink creation
-- Install vim-plug automatically
-- Install all plugins
-- Offer to install CoC language servers
-
-### Manual Installation
+### Manual
 
 ```bash
-# 1. Clone this repository
 git clone https://github.com/m1ngsama/chopsticks.git ~/.vim
-cd ~/.vim
-
-# 2. Create symlink to .vimrc
-ln -s ~/.vim/.vimrc ~/.vimrc
-
-# 3. Install vim-plug
+ln -sf ~/.vim/.vimrc ~/.vimrc
 curl -fLo ~/.vim/autoload/plug.vim --create-dirs \
     https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
-
-# 4. Open Vim and install plugins
 vim +PlugInstall +qall
 ```
 
-### 4. (Optional) Install recommended dependencies
+---
 
-For the best experience, install these optional dependencies:
+## LSP: Tiered Backend System
 
-```bash
-# FZF (fuzzy finder)
-git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf
-~/.fzf/install
+Code intelligence is provided by one of two backends, selected automatically:
 
-# ripgrep (better grep)
-# On Ubuntu/Debian
-sudo apt install ripgrep
+| Condition                        | Backend        | Features                                      |
+|----------------------------------|----------------|-----------------------------------------------|
+| Vim 8.0.1453+ AND Node.js 14.14+ | **CoC**        | Full LSP, snippets, extensions ecosystem      |
+| Vim 8.0+ (no Node.js)            | **vim-lsp**    | LSP via language server binaries, asyncomplete|
+| Any Vim                          | **ALE**        | Linting and auto-fix (always active)          |
 
-# On macOS
-brew install ripgrep
+Both backends expose identical key mappings (`gd`, `K`, `[g`, `]g`, `<leader>rn`, `<leader>ca`).
 
-# Node.js (for CoC)
-# Required for code completion
-curl -sL install-node.now.sh/lts | bash
+### CoC setup (with Node.js)
 
-# Universal Ctags (for Tagbar)
-# On Ubuntu/Debian
-sudo apt install universal-ctags
-
-# On macOS
-brew install universal-ctags
-```
-
-### 5. Install CoC language servers
-
-For intelligent code completion, install language servers:
+Install language server extensions from inside Vim:
 
 ```vim
-" Python
-:CocInstall coc-pyright
-
-" JavaScript/TypeScript
-:CocInstall coc-tsserver
-
-" Go
-:CocInstall coc-go
-
-" JSON
-:CocInstall coc-json
-
-" HTML/CSS
-:CocInstall coc-html coc-css
-
-" See more: https://github.com/neoclide/coc.nvim/wiki/Using-coc-extensions
+:CocInstall coc-pyright       " Python
+:CocInstall coc-tsserver      " JavaScript / TypeScript
+:CocInstall coc-go            " Go
+:CocInstall coc-rust-analyzer " Rust
+:CocInstall coc-json coc-yaml " JSON, YAML
+:CocInstall coc-html coc-css  " HTML, CSS
 ```
+
+### vim-lsp setup (without Node.js)
+
+Install language server binaries for your languages, then run:
+
+```vim
+:LspInstallServer   " auto-installs servers for the current filetype
+```
+
+Supported: `pylsp`, `gopls`, `rust-analyzer`, `typescript-language-server`,
+`bash-language-server`, and all others covered by `vim-lsp-settings`.
+
+---
 
 ## Key Mappings
 
-### General
+Leader key: `,` (comma)
 
-| Key | Action |
-|-----|--------|
-| `,w` | Quick save |
-| `,q` | Quick quit |
-| `,x` | Save and quit |
-| `,,` + Enter | Clear search highlight |
+Press `,` and wait 500ms for an interactive guide to all bindings (vim-which-key).
 
-### Window Navigation
+### Files and Buffers
 
-| Key | Action |
-|-----|--------|
-| `Ctrl+h` | Move to left window |
-| `Ctrl+j` | Move to bottom window |
-| `Ctrl+k` | Move to top window |
-| `Ctrl+l` | Move to right window |
+| Key        | Action                              |
+|------------|-------------------------------------|
+| `Ctrl+n`   | Toggle file tree (NERDTree)         |
+| `,n`       | Reveal current file in NERDTree     |
+| `Ctrl+p`   | Fuzzy file search (FZF)             |
+| `,b`       | Search open buffers (FZF)           |
+| `,rg`      | Project-wide search (ripgrep+FZF)   |
+| `,l`       | Next buffer                         |
+| `,h`       | Previous buffer                     |
+| `,bd`      | Close current buffer                |
+| `,,`       | Switch to last file                 |
 
-### Buffer Management
+### Windows and Tabs
 
-| Key | Action |
-|-----|--------|
-| `,l` | Next buffer |
-| `,h` | Previous buffer |
-| `,bd` | Close current buffer |
-| `,ba` | Close all buffers |
+| Key          | Action                          |
+|--------------|---------------------------------|
+| `Ctrl+h/j/k/l` | Navigate between windows      |
+| `<Leader>=`  | Increase window height          |
+| `<Leader>-`  | Decrease window height          |
+| `<Leader>+`  | Increase window width           |
+| `<Leader>_`  | Decrease window width           |
+| `,tn`        | New tab                         |
+| `,tc`        | Close tab                       |
+| `,tl`        | Toggle to last tab              |
 
-### Tab Management
+### Code Intelligence (CoC / vim-lsp)
 
-| Key | Action |
-|-----|--------|
-| `,tn` | New tab |
-| `,tc` | Close tab |
-| `,tl` | Toggle to last tab |
+| Key         | Action                          |
+|-------------|---------------------------------|
+| `gd`        | Go to definition                |
+| `gy`        | Go to type definition           |
+| `gi`        | Go to implementation            |
+| `gr`        | Show references                 |
+| `K`         | Hover documentation             |
+| `[g`        | Previous diagnostic             |
+| `]g`        | Next diagnostic                 |
+| `,rn`       | Rename symbol                   |
+| `,f`        | Format selection                |
+| `,ca`       | Code action (cursor)            |
+| `,qf`       | Quick-fix current line (CoC)    |
+| `,cl`       | Run code lens (CoC)             |
+| `,o`        | File outline                    |
+| `,ws`       | Workspace symbols               |
+| `,cd`       | Diagnostics list                |
+| `Tab`       | Next completion item            |
+| `Shift+Tab` | Previous completion item        |
+| `Enter`     | Confirm completion              |
 
-### File Navigation
-
-| Key | Action |
-|-----|--------|
-| `Ctrl+n` | Toggle NERDTree |
-| `,n` | Find current file in NERDTree |
-| `Ctrl+p` | FZF file search |
-| `,b` | FZF buffer search |
-| `,rg` | Ripgrep search |
-
-### Code Navigation (CoC)
-
-| Key | Action |
-|-----|--------|
-| `gd` | Go to definition |
-| `gy` | Go to type definition |
-| `gi` | Go to implementation |
-| `gr` | Go to references |
-| `K` | Show documentation |
-| `[g` | Previous diagnostic |
-| `]g` | Next diagnostic |
-| `,rn` | Rename symbol |
+Text objects (CoC only): `if`/`af` (function), `ic`/`ac` (class)
 
 ### Linting (ALE)
 
-| Key | Action |
-|-----|--------|
-| `,aj` | Next error/warning |
-| `,ak` | Previous error/warning |
-| `,ad` | Show error details |
+| Key    | Action                |
+|--------|-----------------------|
+| `,aj`  | Next error/warning    |
+| `,ak`  | Previous error/warning|
+| `,ad`  | Show error details    |
 
-### Git Workflow
+Signs: `X` = error, `!` = warning
 
-| Key | Action |
-|-----|--------|
-| `,gs` | Git status |
-| `,gc` | Git commit |
-| `,gp` | Git push |
-| `,gl` | Git pull |
-| `,gd` | Git diff |
-| `,gb` | Git blame |
+### Git Workflow (fugitive)
+
+| Key    | Action         |
+|--------|----------------|
+| `,gs`  | Git status     |
+| `,gc`  | Git commit     |
+| `,gp`  | Git push       |
+| `,gl`  | Git pull       |
+| `,gd`  | Git diff       |
+| `,gb`  | Git blame      |
 
 ### Engineering Utilities
 
-| Key | Action |
-|-----|--------|
-| `,ev` | Edit .vimrc |
-| `,sv` | Reload .vimrc |
-| `,F` | Format entire file |
-| `,wa` | Save all buffers |
-| `,cp` | Copy file path |
-| `,cf` | Copy filename |
-| `,*` | Search & replace word under cursor |
-| `,<leader>` | Switch to last file |
+| Key      | Action                          |
+|----------|---------------------------------|
+| `,ev`    | Edit `~/.vimrc`                 |
+| `,sv`    | Reload `~/.vimrc`               |
+| `,F`     | Format entire file (= indent)   |
+| `,W`     | Strip trailing whitespace       |
+| `,wa`    | Save all open buffers           |
+| `,cp`    | Copy file path to clipboard     |
+| `,cf`    | Copy filename to clipboard      |
+| `,*`     | Search+replace word under cursor|
+| `,tv`    | Open terminal (vertical split)  |
+| `,th`    | Open terminal (horizontal, 10r) |
+| `Esc`    | Exit terminal mode              |
 
-### Other Utilities
+### Navigation and Editing
 
-| Key | Action |
-|-----|--------|
-| `F2` | Toggle paste mode |
-| `F3` | Toggle line numbers |
-| `F4` | Toggle relative numbers |
-| `F5` | Toggle UndoTree |
-| `F8` | Toggle Tagbar |
-| `Space` | Toggle fold |
-| `s` + 2 chars | EasyMotion jump |
+| Key      | Action                               |
+|----------|--------------------------------------|
+| `s`+2ch  | EasyMotion jump to any location      |
+| `Space`  | Toggle code fold                     |
+| `F2`     | Toggle paste mode                    |
+| `F3`     | Toggle line numbers                  |
+| `F4`     | Toggle relative line numbers         |
+| `F5`     | Toggle undo history (UndoTree)       |
+| `F8`     | Toggle code tag browser (Tagbar)     |
+| `0`      | Jump to first non-blank character    |
+| `Alt+j`  | Move line down                       |
+| `Alt+k`  | Move line up                         |
 
-## Plugin List
+---
 
-### File Navigation & Search
-- **NERDTree**: File system explorer
-- **FZF**: Fuzzy file finder
-- **CtrlP**: Alternative fuzzy finder
+## Features
 
-### Git
-- **vim-fugitive**: Git integration
-- **vim-gitgutter**: Git diff in sign column
+### vim-startify: Startup Screen
 
-### UI
-- **vim-airline**: Enhanced status line
-- **gruvbox**: Color scheme
+Opens when Vim is launched without a file argument. Shows:
+- Recently opened files
+- Sessions for the current directory
+- Bookmarks
 
-### Code Editing
-- **vim-surround**: Manage surroundings
-- **vim-commentary**: Code commenting
-- **auto-pairs**: Auto close brackets
-- **ALE**: Asynchronous linting
+Session auto-saves on quit. Auto-loads `Session.vim` if found in the current
+directory. Auto-changes to git root on file open.
 
-### Language Support
-- **vim-polyglot**: Language pack for 100+ languages
-- **vim-go**: Go development
+### vim-which-key: Keybinding Guide
 
-### Productivity
-- **UndoTree**: Undo history visualizer
-- **Tagbar**: Code structure browser
-- **EasyMotion**: Fast cursor movement
-- **CoC**: Code completion and LSP
-- **vim-obsession**: Session management
-- **vim-prosession**: Project sessions
-- **vim-unimpaired**: Handy bracket mappings
-- **targets.vim**: Additional text objects
+Press `,` and pause for 500ms. A popup lists all available leader bindings
+organized by group. Useful for onboarding and discovering shortcuts.
 
-## Color Schemes
+### indentLine: Indent Guides
 
-Available color schemes (change in .vimrc):
+Draws `|` characters at each indent level. Disabled automatically in TTY
+environments and for filetypes where it causes display problems (JSON,
+Markdown, help).
 
-- **gruvbox** (default) - Warm, retro groove colors
-- **dracula** - Dark theme with vivid colors
-- **solarized** - Precision colors for machines and people
-- **onedark** - Atom's iconic One Dark theme
-
-To change:
+### Session Management
 
 ```vim
-colorscheme dracula
+:Obsess              " Start tracking session
+:Obsess!             " Stop tracking
 ```
 
-## Engineering Features
+Sessions are stored in `~/.vim/sessions/` and automatically resumed by
+vim-prosession on the next Vim launch in the same directory.
 
-### Project-Specific Configuration
+### Project-Local Config
 
-Create a `.vimrc` file in your project root for project-specific settings:
+Place a `.vimrc` in any project root:
 
 ```vim
-" .vimrc in project root
+" project/.vimrc
 set shiftwidth=2
 let g:ale_python_black_options = '--line-length=100'
 ```
 
-The configuration automatically loads project-specific settings while maintaining security.
-
-### Session Management
-
-Sessions are automatically saved with vim-obsession:
-
-```vim
-" Start session tracking
-:Obsess
-
-" Stop session tracking
-:Obsess!
-
-" Sessions are saved to ~/.vim/sessions/
-```
+Loaded automatically. Security-restricted via `set secure`.
 
 ### Large File Handling
 
-Files larger than 10MB automatically disable heavy features for better performance:
-- Syntax highlighting optimized
-- Undo levels reduced
-- Swap files disabled
+Files over 10MB automatically disable syntax highlighting and undo history
+to prevent Vim from freezing.
 
-### Terminal Integration
+### TTY / Console Support
 
-Open integrated terminal:
-- `,tv` - Vertical terminal split
-- `,th` - Horizontal terminal split (10 rows)
+Detected automatically when `$TERM` is `linux` or `screen`, or when running
+on a basic built-in terminal. In TTY mode:
 
-Navigate out of terminal with `Esc` then normal window navigation.
+- True color and cursorline disabled
+- Powerline separators replaced with plain ASCII
+- FZF preview windows disabled
+- NERDTree auto-open skipped
+- Syntax column limit reduced to 120
+- Simpler status line used
 
-### TTY and Basic Terminal Support
+---
 
-The configuration automatically detects and optimizes for basic terminal environments (TTY, Linux console):
+## Language Support
 
-**Automatic Optimizations:**
-- Disables true color mode for compatibility
-- Uses simple ASCII separators instead of powerline fonts
-- Falls back to default colorscheme
-- Disables cursorline for better performance
-- Simplifies signcolumn behavior
-- Disables FZF preview windows
-- Skips auto-opening NERDTree
-- Uses simpler status line
-- Reduces syntax highlighting complexity
-- Faster startup and redraw
+| Language       | Indent | Formatter     | Linter              |
+|----------------|--------|---------------|---------------------|
+| Python         | 4sp    | black + isort | flake8, pylint      |
+| JavaScript     | 2sp    | prettier      | eslint              |
+| TypeScript     | 2sp    | prettier      | eslint, tsserver    |
+| Go             | tab    | gofmt, goimports | gopls, golint    |
+| Rust           | 4sp    | rustfmt       | cargo               |
+| Shell          | 2sp    | -             | shellcheck          |
+| YAML           | 2sp    | prettier      | yamllint            |
+| HTML/CSS       | 2sp    | prettier      | -                   |
+| Markdown       | 2sp    | prettier      | -                   |
+| JSON           | 2sp    | prettier      | -                   |
+| Dockerfile     | 2sp    | -             | hadolint            |
 
-**Detected Terminals:**
-- Linux console (TERM=linux)
-- Screen sessions (TERM=screen)
-- Basic built-in terminals
+Install linters separately (e.g. `pip install black flake8`, `npm i -g prettier`).
+ALE runs them asynchronously and auto-fixes on save.
 
-The configuration provides a message on first run in TTY mode to inform about the optimizations.
+---
 
-## Customization
+## Plugin List
 
-The configuration is organized into sections:
+### Navigation
+- **NERDTree** - File tree explorer
+- **fzf + fzf.vim** - Fuzzy finder
+- **CtrlP** - Fallback fuzzy finder (no fzf dependency)
 
-1. **General Settings**: Basic Vim behavior
-2. **Plugin Management**: vim-plug configuration
-3. **Colors & Fonts**: Visual appearance
-4. **Key Mappings**: Custom keybindings
-5. **Plugin Settings**: Individual plugin configurations
-6. **Auto Commands**: File-type specific settings
-7. **Helper Functions**: Utility functions
-8. **Engineering Utilities**: Project workflow tools
-9. **Git Workflow**: Git integration shortcuts
+### Git
+- **vim-fugitive** - Git commands inside Vim
+- **vim-gitgutter** - Diff signs in the sign column
 
-Feel free to modify any section to suit your needs!
+### LSP and Completion
+- **coc.nvim** - Full LSP + completion (requires Node.js 14.14+)
+- **vim-lsp** - Pure VimScript LSP client (fallback, no Node.js)
+- **vim-lsp-settings** - Auto-configure language servers for vim-lsp
+- **asyncomplete.vim** - Async completion (used with vim-lsp)
 
-### Quick Customization
+### Linting
+- **ALE** - Asynchronous Lint Engine (always active)
 
-Edit configuration:
+### UI
+- **vim-airline** - Status and tabline
+- **vim-startify** - Startup screen
+- **vim-which-key** - Keybinding hint popup
+- **indentLine** - Indent guide lines (non-TTY)
+- **undotree** - Undo history visualizer
+- **tagbar** - Code structure sidebar
+
+### Editing
+- **vim-surround** - Change surrounding quotes, brackets, tags
+- **vim-commentary** - `gc` to toggle comments
+- **auto-pairs** - Auto-close brackets and quotes
+- **vim-easymotion** - Jump anywhere with 2 keystrokes
+- **vim-unimpaired** - Bracket shortcut pairs
+- **targets.vim** - Extra text objects
+- **vim-snippets** - Snippet library (used with CoC/UltiSnips)
+
+### Language Packs
+- **vim-polyglot** - Syntax for 100+ languages
+- **vim-go** - Go development tools
+
+### Session
+- **vim-obsession** - Continuous session saving
+- **vim-prosession** - Project-level session management
+
+### Color Schemes
+- **gruvbox** (default), **dracula**, **solarized**, **onedark**
+
+---
+
+## Color Scheme
+
+Change in `.vimrc` (find the `colorscheme` line):
+
 ```vim
-,ev  " Opens .vimrc in Vim
+colorscheme dracula    " or: gruvbox, solarized, onedark
 ```
 
-Reload configuration:
-```vim
-,sv  " Sources .vimrc without restart
-```
+True color is enabled automatically when the terminal supports it
+(`$COLORTERM=truecolor`). Falls back to 256-color, then 16-color (TTY).
 
-## Language-Specific Settings
-
-### Python
-- 4 spaces indentation
-- 88 character line limit (Black formatter)
-- Auto-formatting with Black + isort on save
-- Linting with flake8 and pylint
-
-### JavaScript/TypeScript
-- 2 spaces indentation
-- Prettier formatting on save
-- ESLint integration
-- TypeScript server support
-
-### Go
-- Tab indentation
-- Auto-formatting with gofmt
-- Auto-import with goimports
-- gopls language server
-
-### Rust
-- Auto-formatting with rustfmt
-- Cargo integration
-
-### Shell Scripts
-- 2 spaces indentation
-- shellcheck linting
-
-### Docker
-- Dockerfile syntax highlighting
-- hadolint linting
-
-### YAML
-- 2 spaces indentation
-- yamllint integration
-
-### HTML/CSS
-- 2 spaces indentation
-- Prettier formatting
-
-### Markdown
-- Line wrapping enabled
-- Spell checking enabled
-- Prettier formatting
+---
 
 ## Troubleshooting
 
-### Plugins not working
-
+**Plugins not installed:**
 ```vim
 :PlugInstall
 :PlugUpdate
 ```
 
-### CoC not working
-
-Make sure Node.js is installed:
-
+**CoC not working:**
 ```bash
-node --version  # Should be >= 14.14
+node --version   # must be >= 14.14
 ```
 
-### Colors look wrong
+**vim-lsp server not starting:**
+```vim
+:LspInstallServer          " install server for current filetype
+:LspStatus                 " check server status
+```
 
-Enable true colors in your terminal emulator and add to your shell rc:
-
+**Colors look wrong:**
 ```bash
+# Add to ~/.bashrc or ~/.zshrc
 export TERM=xterm-256color
 ```
 
+**ALE not finding linters:**
+```bash
+which flake8 black prettier eslint   # confirm tools are on PATH
+```
+
+---
+
 ## References
 
-This configuration is inspired by:
-
-- [amix/vimrc](https://github.com/amix/vimrc) - The ultimate vimrc
-- [vim-plug](https://github.com/junegunn/vim-plug) - Minimalist plugin manager
-- [Top 50 Vim Configuration Options](https://www.shortcutfoo.com/blog/top-50-vim-configuration-options)
-- [Modern Vim Development Setup 2025](https://swedishembedded.com/developers/vim-in-minutes)
+- [amix/vimrc](https://github.com/amix/vimrc)
+- [vim-plug](https://github.com/junegunn/vim-plug)
+- [coc.nvim](https://github.com/neoclide/coc.nvim)
+- [vim-lsp](https://github.com/prabirshrestha/vim-lsp)
+- [vim-lsp-settings](https://github.com/mattn/vim-lsp-settings)
 
 ## License
 
-MIT License - Feel free to use and modify!
-
-## Contributing
-
-Suggestions and improvements are welcome! Feel free to open an issue or submit a pull request.
+MIT

@@ -246,9 +246,8 @@ call plug#end()
 let g:use_coc = (has('nvim') || has('patch-8.0.1453')) && executable('node') && exists('g:plugs["coc.nvim"]')
 let g:use_vimlsp = !g:use_coc && has('patch-8.0.0') && exists('g:plugs["vim-lsp"]')
 
-" Better completion popup behavior
+" Limit popup menu height (applies to all completion)
 set pumheight=15
-set completeopt=menuone,noinsert,noselect
 
 " ============================================================================
 " => Colors and Fonts
@@ -305,9 +304,8 @@ set tabstop=4
 set lbr
 set tw=500
 
-set ai "Auto indent
-set si "Smart indent
-set wrap "Wrap lines
+set autoindent
+set smartindent
 
 " ============================================================================
 " => Key Mappings
@@ -381,9 +379,6 @@ map <leader>sn ]s
 map <leader>sp [s
 map <leader>sa zg
 map <leader>s? z=
-
-" Remove trailing whitespace
-nnoremap <leader>w :let _s=@/<Bar>:%s/\s\+$//e<Bar>:let @/=_s<Bar><CR>
 
 " Toggle paste mode
 set pastetoggle=<F2>
@@ -674,7 +669,8 @@ if g:use_vimlsp
     let g:lsp_signs_information   = {'text': 'i'}
     let g:lsp_signs_hint          = {'text': '>'}
 
-    " Asyncomplete: suppress noisy messages
+    " asyncomplete manages completeopt for vim-lsp mode
+    set completeopt=menuone,noinsert,noselect
     let g:asyncomplete_auto_popup = 1
     let g:asyncomplete_auto_completeopt = 1
     let g:asyncomplete_popup_delay = 200
@@ -823,9 +819,6 @@ set laststatus=2
 " ============================================================================
 " => Misc
 " ============================================================================
-
-" Quickly open a buffer for scribble
-map <leader>q :e ~/buffer<cr>
 
 " Quickly open a markdown buffer for scribble
 map <leader>m :e ~/buffer.md<cr>
@@ -992,8 +985,8 @@ function! LargeFileSettings()
     setlocal undolevels=-1
     setlocal eventignore+=FileType
     setlocal noswapfile
-    setlocal buftype=nowrite
-    echo "Large file detected. Some features disabled for performance."
+    setlocal syntax=OFF
+    echo "Large file (>10MB): syntax and undo disabled for performance."
 endfunction
 
 " ============================================================================

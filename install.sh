@@ -1,140 +1,138 @@
 #!/usr/bin/env bash
-
-# ============================================================================
-# Vim Configuration - Quick Installation Script
-# ============================================================================
+# install.sh - chopsticks vim configuration installer
+# Usage: cd ~/.vim && ./install.sh
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-BOLD='\033[1m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 RED='\033[0;31m'
-NC='\033[0m' # No Color
+BOLD='\033[1m'
+NC='\033[0m'
 
-# Function to print status messages
-print_status() {
-    echo -e "${GREEN}==>${NC} ${BOLD}$1${NC}"
-}
+ok()   { echo -e "${GREEN}[OK]${NC} $1"; }
+warn() { echo -e "${YELLOW}[!]${NC}  $1"; }
+die()  { echo -e "${RED}[ERR]${NC} $1" >&2; exit 1; }
+step() { echo -e "\n${BOLD}==> $1${NC}"; }
 
-print_warning() {
-    echo -e "${YELLOW}Warning:${NC} $1"
-}
+echo -e "${BOLD}chopsticks - Vim Configuration Installer${NC}"
+echo "----------------------------------------"
 
-print_error() {
-    echo -e "${RED}Error:${NC} $1"
-}
+# --- Preflight checks ---
 
-echo -e "${BOLD}========================================${NC}"
-echo -e "${BOLD}Vim Configuration Installer${NC}"
-echo -e "${BOLD}========================================${NC}\n"
+step "Checking environment"
 
-# Verify .vimrc exists in script directory
-if [ ! -f "$SCRIPT_DIR/.vimrc" ]; then
-    print_error "Cannot find .vimrc in $SCRIPT_DIR"
-    echo "Please run this script from the chopsticks directory:"
-    echo "  cd ~/.vim && ./install.sh"
-    exit 1
+[ -f "$SCRIPT_DIR/.vimrc" ] || die ".vimrc not found in $SCRIPT_DIR. Run from the cloned repo: cd ~/.vim && ./install.sh"
+
+command -v vim >/dev/null 2>&1 || die "vim not found. Install it first:
+  Ubuntu/Debian: sudo apt install vim
+  Fedora:        sudo dnf install vim
+  macOS:         brew install vim"
+
+VIM_VERSION=$(vim --version | head -n1)
+ok "Found $VIM_VERSION"
+
+# Check Vim version >= 8.0
+vim --version | grep -q 'Vi IMproved 8\|Vi IMproved 9' || \
+    warn "Vim 8.0+ recommended for full LSP support. Some features may be missing."
+
+# Detect Node.js for CoC
+HAS_NODE=0
+if command -v node >/dev/null 2>&1; then
+    NODE_VER=$(node --version)
+    ok "Node.js $NODE_VER detected - CoC LSP will be available"
+    HAS_NODE=1
+else
+    warn "Node.js not found - will use vim-lsp (no Node.js required)"
+    echo "     Install Node.js later to enable CoC: https://nodejs.org/en/download"
 fi
 
-# Check if vim is installed
-if ! command -v vim &> /dev/null; then
-    print_error "Vim is not installed. Please install Vim first."
-    echo "  Ubuntu/Debian: sudo apt install vim"
-    echo "  macOS: brew install vim"
-    echo "  Fedora: sudo dnf install vim"
-    exit 1
-fi
+# --- Symlink ---
 
-print_status "Vim version: $(vim --version | head -n1)"
+step "Setting up ~/.vimrc symlink"
 
-# Backup existing .vimrc if it exists
 if [ -f "$HOME/.vimrc" ] && [ ! -L "$HOME/.vimrc" ]; then
-    BACKUP_FILE="$HOME/.vimrc.backup.$(date +%Y%m%d_%H%M%S)"
-    print_warning "Backing up existing .vimrc to $BACKUP_FILE"
-    mv "$HOME/.vimrc" "$BACKUP_FILE"
+    TS=$(date +%Y%m%d_%H%M%S)
+    warn "Backing up existing ~/.vimrc to ~/.vimrc.backup.$TS"
+    mv "$HOME/.vimrc" "$HOME/.vimrc.backup.$TS"
 fi
 
-# Create symlink to .vimrc
-print_status "Creating symlink: $HOME/.vimrc -> $SCRIPT_DIR/.vimrc"
 ln -sf "$SCRIPT_DIR/.vimrc" "$HOME/.vimrc"
 
-# Verify symlink was created correctly
-if [ -L "$HOME/.vimrc" ]; then
-    LINK_TARGET=$(readlink "$HOME/.vimrc")
-    if [ "$LINK_TARGET" = "$SCRIPT_DIR/.vimrc" ]; then
-        echo -e "${GREEN}[OK]${NC} Symlink created successfully"
-    else
-        print_warning "Symlink points to unexpected target: $LINK_TARGET"
-    fi
+if [ "$(readlink "$HOME/.vimrc")" = "$SCRIPT_DIR/.vimrc" ]; then
+    ok "~/.vimrc -> $SCRIPT_DIR/.vimrc"
 else
-    print_error "Failed to create symlink"
-    exit 1
+    die "Symlink verification failed"
 fi
 
-# Install vim-plug if not already installed
-VIM_PLUG_PATH="$HOME/.vim/autoload/plug.vim"
-if [ ! -f "$VIM_PLUG_PATH" ]; then
-    print_status "Installing vim-plug..."
-    curl -fLo "$VIM_PLUG_PATH" --create-dirs \
+# --- vim-plug ---
+
+step "Installing vim-plug"
+
+VIM_PLUG="$HOME/.vim/autoload/plug.vim"
+if [ ! -f "$VIM_PLUG" ]; then
+    curl -fLo "$VIM_PLUG" --create-dirs \
         https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
-    echo -e "${GREEN}[OK]${NC} vim-plug installed successfully"
+    ok "vim-plug installed"
 else
-    echo -e "${GREEN}[OK]${NC} vim-plug already installed"
+    ok "vim-plug already present"
 fi
 
-# Install plugins
-print_status "Installing Vim plugins..."
+# --- Plugins ---
+
+step "Installing Vim plugins"
+
 vim +PlugInstall +qall
+ok "Plugins installed"
 
-echo -e "\n${GREEN}[OK]${NC} ${BOLD}Installation complete!${NC}\n"
+# --- Optional: CoC language servers ---
 
-# Print optional dependencies
-echo -e "${BOLD}Optional Dependencies (Recommended):${NC}"
 echo ""
-echo -e "${BOLD}1. FZF (Fuzzy Finder):${NC}"
-echo "   Ubuntu/Debian: sudo apt install fzf ripgrep"
-echo "   macOS: brew install fzf ripgrep"
-echo ""
-echo -e "${BOLD}2. Node.js (for CoC completion):${NC}"
-echo "   Ubuntu/Debian: curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash - && sudo apt install -y nodejs"
-echo "   macOS: brew install node"
-echo ""
-echo -e "${BOLD}3. Universal Ctags (for code navigation):${NC}"
-echo "   Ubuntu/Debian: sudo apt install universal-ctags"
-echo "   macOS: brew install universal-ctags"
-echo ""
-echo -e "${BOLD}4. Language-specific tools:${NC}"
-echo "   Python: pip install black flake8 pylint"
-echo "   JavaScript: npm install -g prettier eslint"
-echo "   Go: go install golang.org/x/tools/gopls@latest"
-echo ""
-
-# Ask to install CoC language servers
-read -p "Do you want to install CoC language servers now? (y/N) " -n 1 -r
-echo
-if [[ $REPLY =~ ^[Yy]$ ]]; then
-    print_status "Installing CoC language servers..."
-
-    # Check if node is installed
-    if ! command -v node &> /dev/null; then
-        print_error "Node.js is not installed. Please install Node.js first."
-    else
+if [ "$HAS_NODE" -eq 1 ]; then
+    read -p "Install CoC language servers for common languages? [y/N] " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        step "Installing CoC language servers"
         vim +'CocInstall -sync coc-json coc-tsserver coc-pyright coc-sh coc-html coc-css coc-yaml' +qall
-        echo -e "${GREEN}[OK]${NC} CoC language servers installed"
+        ok "CoC language servers installed"
+        echo "  Add more with :CocInstall coc-go coc-rust-analyzer etc."
     fi
+else
+    echo "  To enable LSP without Node.js:"
+    echo "  1. Open a source file in Vim"
+    echo "  2. Run :LspInstallServer"
+    echo "  3. vim-lsp-settings will auto-install the right language server"
 fi
 
+# --- Done ---
+
 echo ""
 echo -e "${BOLD}========================================${NC}"
-echo -e "${GREEN}All done!${NC} Open Vim and start coding!"
+echo -e "${GREEN}Installation complete.${NC}"
 echo -e "${BOLD}========================================${NC}"
 echo ""
-echo -e "Quick tips:"
-echo "  - Press ${BOLD}Ctrl+n${NC} to toggle file explorer (NERDTree)"
-echo "  - Press ${BOLD}Ctrl+p${NC} to fuzzy search files (FZF)"
-echo "  - Press ${BOLD},w${NC} to quick save"
-echo "  - Press ${BOLD}K${NC} on a function to see documentation"
-echo "  - See README.md for complete key mappings"
+echo "Optional tools (install for best experience):"
+echo ""
+echo "  ripgrep  (,rg project search)"
+echo "    Ubuntu:  sudo apt install ripgrep"
+echo "    macOS:   brew install ripgrep"
+echo ""
+echo "  fzf  (Ctrl+p file search)"
+echo "    Ubuntu:  sudo apt install fzf"
+echo "    macOS:   brew install fzf"
+echo ""
+echo "  ctags  (F8 tag browser)"
+echo "    Ubuntu:  sudo apt install universal-ctags"
+echo "    macOS:   brew install universal-ctags"
+echo ""
+echo "  Language linters:"
+echo "    Python:      pip install black flake8 pylint isort"
+echo "    JS/TS:       npm install -g prettier eslint typescript"
+echo "    Go:          go install golang.org/x/tools/gopls@latest"
+echo "    Shell:       sudo apt install shellcheck"
+echo ""
+echo "Getting started:"
+echo "  See QUICKSTART.md for the 5-minute guide"
+echo "  Run 'vim' and press ',' then wait 500ms for keybinding hints"
 echo ""

@@ -37,15 +37,6 @@ if !g:is_tty
     set cursorline
 endif
 
-" Set shift width to 4 spaces
-set shiftwidth=4
-
-" Set tab width to 4 columns
-set tabstop=4
-
-" Use space characters instead of tabs
-set expandtab
-
 " Do not save backup files
 set nobackup
 
@@ -69,9 +60,6 @@ set showcmd
 
 " Show the mode you are on the last line
 set showmode
-
-" Show matching words during a search
-set showmatch
 
 " Use highlighting when doing a search
 set hlsearch
@@ -124,10 +112,8 @@ set lazyredraw
 " For regular expressions turn magic on
 set magic
 
-" Show matching brackets when text indicator is over them
+" Show matching brackets and how many tenths of a second to blink
 set showmatch
-
-" How many tenths of a second to blink when matching brackets
 set mat=2
 
 " No annoying sound on errors
@@ -152,10 +138,15 @@ endif
 " Use Unix as the standard file type
 set ffs=unix,dos,mac
 
-" Turn backup off, since most stuff is in SVN, git etc. anyway
-set nobackup
 set nowb
 set noswapfile
+
+" Persistent undo across sessions
+if has('persistent_undo')
+    set undofile
+    let &undodir = expand('~/.vim/.undo')
+    silent! call mkdir(&undodir, 'p', 0700)
+endif
 
 " ============================================================================
 " => Vim-Plug Plugin Manager
@@ -175,7 +166,6 @@ call plug#begin('~/.vim/plugged')
 Plug 'preservim/nerdtree'                    " File explorer
 Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
 Plug 'junegunn/fzf.vim'                      " Fuzzy finder
-Plug 'ctrlpvim/ctrlp.vim'                    " Fuzzy file finder
 
 " ===== Git Integration =====
 Plug 'tpope/vim-fugitive'                    " Git wrapper
@@ -362,7 +352,7 @@ au TabLeave * let g:lasttab = tabpagenr()
 map <leader>te :tabedit <C-r>=expand("%:p:h")<cr>/
 
 " Switch CWD to the directory of the open buffer
-map <leader>cd :cd %:p:h<cr>:pwd<cr>
+map <leader>wd :cd %:p:h<cr>:pwd<cr>
 
 " Remap VIM 0 to first non-blank character
 map 0 ^
@@ -394,6 +384,38 @@ nnoremap <F4> :set invrelativenumber<CR>
 " Enable folding with the spacebar
 nnoremap <space> za
 
+" Y yanks to end of line (consistent with D, C)
+nnoremap Y y$
+
+" Disable accidental Ex mode
+nnoremap Q <nop>
+
+" Keep visual selection after indent
+vnoremap < <gv
+vnoremap > >gv
+
+" Center cursor when jumping through search results
+nnoremap n nzzzv
+nnoremap N Nzzzv
+
+" Center cursor after half-page scroll
+nnoremap <C-d> <C-d>zz
+nnoremap <C-u> <C-u>zz
+
+" System clipboard yank (conditional: requires clipboard provider)
+if has('clipboard')
+    nnoremap <leader>y "+y
+    vnoremap <leader>y "+y
+    nnoremap <leader>Y "+Y
+endif
+
+" Quickfix list shortcuts ([q/]q from vim-unimpaired handles navigation)
+nnoremap <leader>qo :copen<CR>
+nnoremap <leader>qc :cclose<CR>
+
+" Auto-equalize splits when terminal window is resized
+autocmd VimResized * wincmd =
+
 " ============================================================================
 " => Plugin Settings
 " ============================================================================
@@ -403,7 +425,10 @@ map <C-n> :NERDTreeToggle<CR>
 map <leader>n :NERDTreeFind<CR>
 
 " Close vim if the only window left open is a NERDTree
-autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isTabTree()) | q | endif
+augroup NERDTreeAutoClose
+    autocmd!
+    autocmd BufEnter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isTabTree()) | q | endif
+augroup END
 
 " Show hidden files
 let NERDTreeShowHidden=1
@@ -425,7 +450,8 @@ endif
 map <C-p> :Files<CR>
 map <leader>b :Buffers<CR>
 map <leader>rg :Rg<CR>
-map <leader>t :Tags<CR>
+map <leader>rt :Tags<CR>
+map <leader>gF :GFiles<CR>
 
 " FZF customization for better project search
 let g:fzf_layout = { 'down': '40%' }
@@ -455,13 +481,6 @@ else
     command! -bang GFiles call fzf#vim#gitfiles('', fzf#vim#with_preview(), <bang>0)
 endif
 
-" --- CtrlP ---
-let g:ctrlp_working_path_mode = 'ra'
-let g:ctrlp_show_hidden = 1
-let g:ctrlp_custom_ignore = {
-  \ 'dir':  '\v[\/]\.(git|hg|svn)$',
-  \ 'file': '\v\.(exe|so|dll|pyc)$',
-  \ }
 
 " --- Airline ---
 " Disable powerline fonts in TTY for compatibility
@@ -518,17 +537,18 @@ let g:ale_fixers = {
 \   'markdown': ['prettier'],
 \}
 
-let g:ale_fix_on_save = 1
+" Don't fix on save if LSP is handling formatting (avoids double-format)
+let g:ale_fix_on_save = !g:use_vimlsp
 let g:ale_sign_error = 'X'
 let g:ale_sign_warning = '!'
 let g:ale_lint_on_text_changed = 'never'
 let g:ale_lint_on_insert_leave = 0
 let g:ale_lint_on_enter = 0
 
-" Navigate between errors
-nmap <silent> <leader>aj :ALENext<cr>
-nmap <silent> <leader>ak :ALEPrevious<cr>
-nmap <silent> <leader>ad :ALEDetail<cr>
+" Navigate between errors: [e/]e (unimpaired style), <leader>aD for detail
+nmap <silent> [e :ALENext<cr>
+nmap <silent> ]e :ALEPrevious<cr>
+nmap <silent> <leader>aD :ALEDetail<cr>
 
 " --- Tagbar ---
 nmap <F8> :TagbarToggle<CR>
@@ -620,10 +640,10 @@ if g:use_coc
     nnoremap <silent> <leader>cc :CocList commands<CR>
 
     " Resume latest CoC list
-    nnoremap <silent> <leader>cp :CocListResume<CR>
+    nnoremap <silent> <leader>cr :CocListResume<CR>
 
     " Show all diagnostics
-    nnoremap <silent> <leader>cd :CocList diagnostics<CR>
+    nnoremap <silent> <leader>cD :CocList diagnostics<CR>
 
     " Text object for function/class (requires language server support)
     xmap if <Plug>(coc-funcobj-i)
@@ -706,7 +726,7 @@ if g:use_vimlsp
         " Workspace
         nmap <buffer> <leader>ws   <plug>(lsp-workspace-symbol-search)
         nmap <buffer> <leader>o    <plug>(lsp-document-symbol-search)
-        nmap <buffer> <leader>cd   <plug>(lsp-document-diagnostics)
+        nmap <buffer> <leader>cD   <plug>(lsp-document-diagnostics)
 
         " Enable auto-format on save for filetypes with reliable LSP formatters
         if index(['python', 'go', 'rust', 'typescript', 'javascript', 'sh'], &filetype) >= 0
@@ -882,9 +902,6 @@ set secure
 " Quick format entire file
 nnoremap <leader>F gg=G``
 
-" Toggle between source and header files (for C/C++)
-nnoremap <leader>a :A<CR>
-
 " Quick save all buffers
 nnoremap <leader>wa :wa<CR>
 
@@ -935,7 +952,7 @@ augroup END
 " ============================================================================
 
 " Show syntax highlighting groups for word under cursor
-nmap <leader>sp :call <SID>SynStack()<CR>
+nmap <leader>sh :call <SID>SynStack()<CR>
 function! <SID>SynStack()
   if !exists("*synstack")
     return
@@ -1005,15 +1022,7 @@ if g:is_tty
     " Simpler status line for TTY
     set statusline=%f\ %h%w%m%r\ %=%(%l,%c%V\ %=\ %P%)
 
-    " Disable some visual effects
-    set novisualbell
-    set noerrorbells
-
-    " Faster redraw
-    set lazyredraw
-    set ttyfast
-
-    " Reduce syntax highlighting complexity
+    " Reduce syntax highlighting complexity in TTY (global is 200, lower here)
     set synmaxcol=120
 endif
 
@@ -1040,7 +1049,7 @@ if exists('g:plugs["vim-which-key"]')
     nnoremap <silent> <leader> :<C-u>WhichKey ','<CR>
     vnoremap <silent> <leader> :<C-u>WhichKeyVisual ','<CR>
 
-    " Top-level single-key bindings
+    " Top-level single-key bindings (w and q also have sub-groups below)
     let g:which_key_map = {}
     let g:which_key_map['x']  = 'save-and-quit'
     let g:which_key_map['F']  = 'format-file'
@@ -1049,26 +1058,28 @@ if exists('g:plugs["vim-which-key"]')
     let g:which_key_map['n']  = 'nerdtree-find'
     let g:which_key_map['o']  = 'outline'
     let g:which_key_map['b']  = 'buffers'
+    let g:which_key_map['h']  = 'prev-buffer'
+    let g:which_key_map['l']  = 'next-buffer'
     let g:which_key_map['*']  = 'search-replace-word'
     let g:which_key_map[',']  = 'last-file'
+    let g:which_key_map['y']  = 'clipboard-yank'
+    let g:which_key_map['Y']  = 'clipboard-yank-line'
 
-    " [a]LE / lint group
+    " [a]LE lint group  ([e/]e navigate; <leader>aD for detail)
     let g:which_key_map['a'] = {
         \ 'name': '+ale-lint',
-        \ 'j': 'next-error',
-        \ 'k': 'prev-error',
-        \ 'd': 'detail',
+        \ 'D': 'ale-detail',
         \ }
 
-    " [c]opy / [c]ode group
+    " [c]ode / [c]opy group
     let g:which_key_map['c'] = {
         \ 'name': '+code/copy',
         \ 'a': 'code-action-cursor',
         \ 'A': 'code-action-source',
         \ 'c': 'coc-commands',
-        \ 'd': 'diagnostics',
+        \ 'D': 'diagnostics-list',
         \ 'l': 'code-lens',
-        \ 'r': 'resume-list',
+        \ 'r': 'coc-list-resume',
         \ 'p': 'copy-filepath',
         \ 'f': 'copy-filename',
         \ }
@@ -1088,22 +1099,26 @@ if exists('g:plugs["vim-which-key"]')
         \ 'l': 'pull',
         \ 'd': 'diff',
         \ 'b': 'blame',
+        \ 'F': 'git-files-fzf',
         \ }
 
-    " [q]uickfix group
+    " [q]uickfix group  (also: <leader>q = fast quit)
     let g:which_key_map['q'] = {
         \ 'name': '+quickfix',
-        \ 'f': 'auto-fix',
+        \ 'f': 'lsp-fix-current',
+        \ 'o': 'open-quickfix',
+        \ 'c': 'close-quickfix',
         \ }
 
-    " [r]efactor group
+    " [r]efactor / [r]ipgrep / [r]eplace group
     let g:which_key_map['r'] = {
-        \ 'name': '+refactor',
+        \ 'name': '+search/refactor',
         \ 'n': 'rename',
         \ 'g': 'ripgrep',
+        \ 't': 'tags-search',
         \ }
 
-    " [s]pell / source group
+    " [s]pell / [s]ource group
     let g:which_key_map['s'] = {
         \ 'name': '+spell/source',
         \ 's': 'toggle-spell',
@@ -1113,10 +1128,10 @@ if exists('g:plugs["vim-which-key"]')
         \ '?': 'suggest',
         \ 'v': 'source-vimrc',
         \ 'o': 'source-file',
-        \ 'y': 'syntax-stack',
+        \ 'h': 'syntax-highlight-stack',
         \ }
 
-    " [t]ab / terminal group
+    " [t]ab / [t]erminal group
     let g:which_key_map['t'] = {
         \ 'name': '+tab/terminal',
         \ 'n': 'new-tab',
@@ -1129,11 +1144,12 @@ if exists('g:plugs["vim-which-key"]')
         \ 'h': 'terminal-horizontal',
         \ }
 
-    " [w]orkspace / window / save group
+    " [w]orkspace / [w]indow / save group  (also: <leader>w = fast save)
     let g:which_key_map['w'] = {
         \ 'name': '+save/window',
         \ 'a': 'save-all',
         \ 's': 'workspace-symbols',
+        \ 'd': 'change-dir',
         \ }
 endif
 

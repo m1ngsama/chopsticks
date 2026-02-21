@@ -120,6 +120,8 @@ Press `,` and wait 500ms for an interactive guide to all bindings (vim-which-key
 | `Ctrl+p`   | Fuzzy file search (FZF)             |
 | `,b`       | Search open buffers (FZF)           |
 | `,rg`      | Project-wide search (ripgrep+FZF)   |
+| `,rt`      | Search tags (FZF)                   |
+| `,gF`      | Search git-tracked files (FZF)      |
 | `,l`       | Next buffer                         |
 | `,h`       | Previous buffer                     |
 | `,bd`      | Close current buffer                |
@@ -156,7 +158,8 @@ Press `,` and wait 500ms for an interactive guide to all bindings (vim-which-key
 | `,cl`       | Run code lens (CoC)             |
 | `,o`        | File outline                    |
 | `,ws`       | Workspace symbols               |
-| `,cd`       | Diagnostics list                |
+| `,cD`       | Diagnostics list                |
+| `,cr`       | Resume last CoC list            |
 | `Tab`       | Next completion item            |
 | `Shift+Tab` | Previous completion item        |
 | `Enter`     | Confirm completion              |
@@ -165,55 +168,67 @@ Text objects (CoC only): `if`/`af` (function), `ic`/`ac` (class)
 
 ### Linting (ALE)
 
-| Key    | Action                |
-|--------|-----------------------|
-| `,aj`  | Next error/warning    |
-| `,ak`  | Previous error/warning|
-| `,ad`  | Show error details    |
+| Key      | Action                |
+|----------|-----------------------|
+| `[e`     | Next error/warning    |
+| `]e`     | Previous error/warning|
+| `,aD`    | Show error details    |
 
 Signs: `X` = error, `!` = warning
 
 ### Git Workflow (fugitive)
 
-| Key    | Action         |
-|--------|----------------|
-| `,gs`  | Git status     |
-| `,gc`  | Git commit     |
-| `,gp`  | Git push       |
-| `,gl`  | Git pull       |
-| `,gd`  | Git diff       |
-| `,gb`  | Git blame      |
+| Key    | Action                          |
+|--------|---------------------------------|
+| `,gs`  | Git status                      |
+| `,gc`  | Git commit                      |
+| `,gp`  | Git push                        |
+| `,gl`  | Git pull                        |
+| `,gd`  | Git diff                        |
+| `,gb`  | Git blame                       |
+| `,gF`  | Search git-tracked files (FZF)  |
 
 ### Engineering Utilities
 
-| Key      | Action                          |
-|----------|---------------------------------|
-| `,ev`    | Edit `~/.vimrc`                 |
-| `,sv`    | Reload `~/.vimrc`               |
-| `,F`     | Format entire file (= indent)   |
-| `,W`     | Strip trailing whitespace       |
-| `,wa`    | Save all open buffers           |
-| `,cp`    | Copy file path to clipboard     |
-| `,cf`    | Copy filename to clipboard      |
-| `,*`     | Search+replace word under cursor|
-| `,tv`    | Open terminal (vertical split)  |
-| `,th`    | Open terminal (horizontal, 10r) |
-| `Esc`    | Exit terminal mode              |
+| Key      | Action                              |
+|----------|-------------------------------------|
+| `,ev`    | Edit `~/.vimrc`                     |
+| `,sv`    | Reload `~/.vimrc`                   |
+| `,F`     | Format entire file (= indent)       |
+| `,W`     | Strip trailing whitespace           |
+| `,wa`    | Save all open buffers               |
+| `,wd`    | Change CWD to current buffer's dir  |
+| `,cp`    | Copy file path to clipboard         |
+| `,cf`    | Copy filename to clipboard          |
+| `,y`     | Yank to system clipboard            |
+| `,Y`     | Yank line to system clipboard       |
+| `,*`     | Search+replace word under cursor    |
+| `,qo`    | Open quickfix list                  |
+| `,qc`    | Close quickfix list                 |
+| `,tv`    | Open terminal (vertical split)      |
+| `,th`    | Open terminal (horizontal, 10r)     |
+| `Esc`    | Exit terminal mode                  |
 
 ### Navigation and Editing
 
-| Key      | Action                               |
-|----------|--------------------------------------|
-| `s`+2ch  | EasyMotion jump to any location      |
-| `Space`  | Toggle code fold                     |
-| `F2`     | Toggle paste mode                    |
-| `F3`     | Toggle line numbers                  |
-| `F4`     | Toggle relative line numbers         |
-| `F5`     | Toggle undo history (UndoTree)       |
-| `F8`     | Toggle code tag browser (Tagbar)     |
-| `0`      | Jump to first non-blank character    |
-| `Alt+j`  | Move line down                       |
-| `Alt+k`  | Move line up                         |
+| Key        | Action                                      |
+|------------|---------------------------------------------|
+| `s`+2ch    | EasyMotion jump to any location             |
+| `Space`    | Toggle code fold                            |
+| `Y`        | Yank to end of line (like `D`, `C`)         |
+| `n` / `N`  | Search next/prev (cursor centered)          |
+| `Ctrl+d/u` | Half-page scroll (cursor centered)          |
+| `>`        | Indent (keeps visual selection)             |
+| `<`        | Dedent (keeps visual selection)             |
+| `[q` / `]q`| Previous/next quickfix (vim-unimpaired)     |
+| `[e` / `]e`| Previous/next ALE error/warning             |
+| `F2`       | Toggle paste mode                           |
+| `F3`       | Toggle line numbers                         |
+| `F4`       | Toggle relative line numbers                |
+| `F5`       | Toggle undo history (UndoTree)              |
+| `F8`       | Toggle code tag browser (Tagbar)            |
+| `0`        | Jump to first non-blank character           |
+| `Alt+j/k`  | Move line up/down                           |
 
 ---
 

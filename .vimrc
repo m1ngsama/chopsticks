@@ -37,15 +37,6 @@ if !g:is_tty
     set cursorline
 endif
 
-" Set shift width to 4 spaces
-set shiftwidth=4
-
-" Set tab width to 4 columns
-set tabstop=4
-
-" Use space characters instead of tabs
-set expandtab
-
 " Do not save backup files
 set nobackup
 
@@ -69,9 +60,6 @@ set showcmd
 
 " Show the mode you are on the last line
 set showmode
-
-" Show matching words during a search
-set showmatch
 
 " Use highlighting when doing a search
 set hlsearch
@@ -124,10 +112,8 @@ set lazyredraw
 " For regular expressions turn magic on
 set magic
 
-" Show matching brackets when text indicator is over them
+" Show matching brackets and how many tenths of a second to blink
 set showmatch
-
-" How many tenths of a second to blink when matching brackets
 set mat=2
 
 " No annoying sound on errors
@@ -152,10 +138,15 @@ endif
 " Use Unix as the standard file type
 set ffs=unix,dos,mac
 
-" Turn backup off, since most stuff is in SVN, git etc. anyway
-set nobackup
 set nowb
 set noswapfile
+
+" Persistent undo across sessions
+if has('persistent_undo')
+    set undofile
+    let &undodir = expand('~/.vim/.undo')
+    silent! call mkdir(&undodir, 'p', 0700)
+endif
 
 " ============================================================================
 " => Vim-Plug Plugin Manager
@@ -175,7 +166,6 @@ call plug#begin('~/.vim/plugged')
 Plug 'preservim/nerdtree'                    " File explorer
 Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
 Plug 'junegunn/fzf.vim'                      " Fuzzy finder
-Plug 'ctrlpvim/ctrlp.vim'                    " Fuzzy file finder
 
 " ===== Git Integration =====
 Plug 'tpope/vim-fugitive'                    " Git wrapper
@@ -207,9 +197,9 @@ Plug 'mbbill/undotree'                       " Undo history visualizer
 Plug 'preservim/tagbar'                      " Tag browser
 Plug 'easymotion/vim-easymotion'             " Easy motion
 
-" ===== Code Intelligence =====
-if has('vim9') || has('nvim')
-    Plug 'neoclide/coc.nvim', {'branch': 'release'}  " LSP & Completion
+" ===== Code Intelligence (CoC: requires Vim 8.0.1453+ and Node.js) =====
+if (has('nvim') || has('patch-8.0.1453')) && executable('node')
+    Plug 'neoclide/coc.nvim', {'branch': 'release'}  " Full LSP + completion via Node.js
 endif
 
 " ===== Session Management =====
@@ -221,7 +211,35 @@ Plug 'tpope/vim-unimpaired'                  " Handy bracket mappings
 Plug 'wellle/targets.vim'                    " Additional text objects
 Plug 'honza/vim-snippets'                    " Snippet collection
 
+" ===== Native LSP (vim-lsp: works without Node.js, Vim 8.0+ only) =====
+" Used as fallback when CoC/Node.js is unavailable
+if !((has('nvim') || has('patch-8.0.1453')) && executable('node'))
+    Plug 'prabirshrestha/vim-lsp'                " Pure VimScript LSP client
+    Plug 'mattn/vim-lsp-settings'               " Auto-configure language servers
+    Plug 'prabirshrestha/asyncomplete.vim'       " Async completion framework
+    Plug 'prabirshrestha/asyncomplete-lsp.vim'   " LSP completion source for asyncomplete
+endif
+
+" ===== Enhanced UI Experience =====
+Plug 'mhinz/vim-startify'                    " Startup screen with recent files
+Plug 'liuchengxu/vim-which-key'              " Show keybindings on leader pause
+if !g:is_tty
+    Plug 'Yggdroot/indentLine'               " Indent guide lines
+endif
+
 call plug#end()
+
+" ============================================================================
+" => LSP Backend Detection & Completion Settings
+" ============================================================================
+
+" Detect which LSP backend is active
+" Priority: CoC (full-featured, needs Node.js) > vim-lsp (lightweight fallback)
+let g:use_coc = (has('nvim') || has('patch-8.0.1453')) && executable('node') && exists('g:plugs["coc.nvim"]')
+let g:use_vimlsp = !g:use_coc && has('patch-8.0.0') && exists('g:plugs["vim-lsp"]')
+
+" Limit popup menu height (applies to all completion)
+set pumheight=15
 
 " ============================================================================
 " => Colors and Fonts
@@ -278,9 +296,8 @@ set tabstop=4
 set lbr
 set tw=500
 
-set ai "Auto indent
-set si "Smart indent
-set wrap "Wrap lines
+set autoindent
+set smartindent
 
 " ============================================================================
 " => Key Mappings
@@ -335,7 +352,7 @@ au TabLeave * let g:lasttab = tabpagenr()
 map <leader>te :tabedit <C-r>=expand("%:p:h")<cr>/
 
 " Switch CWD to the directory of the open buffer
-map <leader>cd :cd %:p:h<cr>:pwd<cr>
+map <leader>wd :cd %:p:h<cr>:pwd<cr>
 
 " Remap VIM 0 to first non-blank character
 map 0 ^
@@ -355,9 +372,6 @@ map <leader>sp [s
 map <leader>sa zg
 map <leader>s? z=
 
-" Remove trailing whitespace
-nnoremap <leader>w :let _s=@/<Bar>:%s/\s\+$//e<Bar>:let @/=_s<Bar><CR>
-
 " Toggle paste mode
 set pastetoggle=<F2>
 
@@ -370,6 +384,38 @@ nnoremap <F4> :set invrelativenumber<CR>
 " Enable folding with the spacebar
 nnoremap <space> za
 
+" Y yanks to end of line (consistent with D, C)
+nnoremap Y y$
+
+" Disable accidental Ex mode
+nnoremap Q <nop>
+
+" Keep visual selection after indent
+vnoremap < <gv
+vnoremap > >gv
+
+" Center cursor when jumping through search results
+nnoremap n nzzzv
+nnoremap N Nzzzv
+
+" Center cursor after half-page scroll
+nnoremap <C-d> <C-d>zz
+nnoremap <C-u> <C-u>zz
+
+" System clipboard yank (conditional: requires clipboard provider)
+if has('clipboard')
+    nnoremap <leader>y "+y
+    vnoremap <leader>y "+y
+    nnoremap <leader>Y "+Y
+endif
+
+" Quickfix list shortcuts ([q/]q from vim-unimpaired handles navigation)
+nnoremap <leader>qo :copen<CR>
+nnoremap <leader>qc :cclose<CR>
+
+" Auto-equalize splits when terminal window is resized
+autocmd VimResized * wincmd =
+
 " ============================================================================
 " => Plugin Settings
 " ============================================================================
@@ -379,7 +425,10 @@ map <C-n> :NERDTreeToggle<CR>
 map <leader>n :NERDTreeFind<CR>
 
 " Close vim if the only window left open is a NERDTree
-autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isTabTree()) | q | endif
+augroup NERDTreeAutoClose
+    autocmd!
+    autocmd BufEnter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isTabTree()) | q | endif
+augroup END
 
 " Show hidden files
 let NERDTreeShowHidden=1
@@ -401,7 +450,8 @@ endif
 map <C-p> :Files<CR>
 map <leader>b :Buffers<CR>
 map <leader>rg :Rg<CR>
-map <leader>t :Tags<CR>
+map <leader>rt :Tags<CR>
+map <leader>gF :GFiles<CR>
 
 " FZF customization for better project search
 let g:fzf_layout = { 'down': '40%' }
@@ -431,13 +481,6 @@ else
     command! -bang GFiles call fzf#vim#gitfiles('', fzf#vim#with_preview(), <bang>0)
 endif
 
-" --- CtrlP ---
-let g:ctrlp_working_path_mode = 'ra'
-let g:ctrlp_show_hidden = 1
-let g:ctrlp_custom_ignore = {
-  \ 'dir':  '\v[\/]\.(git|hg|svn)$',
-  \ 'file': '\v\.(exe|so|dll|pyc)$',
-  \ }
 
 " --- Airline ---
 " Disable powerline fonts in TTY for compatibility
@@ -494,17 +537,18 @@ let g:ale_fixers = {
 \   'markdown': ['prettier'],
 \}
 
-let g:ale_fix_on_save = 1
+" Don't fix on save if LSP is handling formatting (avoids double-format)
+let g:ale_fix_on_save = !g:use_vimlsp
 let g:ale_sign_error = 'X'
 let g:ale_sign_warning = '!'
 let g:ale_lint_on_text_changed = 'never'
 let g:ale_lint_on_insert_leave = 0
 let g:ale_lint_on_enter = 0
 
-" Navigate between errors
-nmap <silent> <leader>aj :ALENext<cr>
-nmap <silent> <leader>ak :ALEPrevious<cr>
-nmap <silent> <leader>ad :ALEDetail<cr>
+" Navigate between errors: [e/]e (unimpaired style), <leader>aD for detail
+nmap <silent> [e :ALENext<cr>
+nmap <silent> ]e :ALEPrevious<cr>
+nmap <silent> <leader>aD :ALEDetail<cr>
 
 " --- Tagbar ---
 nmap <F8> :TagbarToggle<CR>
@@ -525,16 +569,16 @@ let g:EasyMotion_smartcase = 1
 map <Leader>j <Plug>(easymotion-j)
 map <Leader>k <Plug>(easymotion-k)
 
-" --- CoC (Conquer of Completion) ---
-if exists('g:plugs["coc.nvim"]')
-    " Use tab for trigger completion with characters ahead and navigate
+" --- CoC (Conquer of Completion) - Full LSP via Node.js ---
+if g:use_coc
+    " Tab for trigger completion / navigate popup
     inoremap <silent><expr> <TAB>
           \ coc#pum#visible() ? coc#pum#next(1) :
           \ CheckBackspace() ? "\<Tab>" :
           \ coc#refresh()
     inoremap <expr><S-TAB> coc#pum#visible() ? coc#pum#prev(1) : "\<C-h>"
 
-    " Make <CR> to accept selected completion item
+    " CR to confirm selected completion item
     inoremap <silent><expr> <CR> coc#pum#visible() ? coc#pum#confirm()
                                   \: "\<C-g>u\<CR>\<c-r>=coc#on_enter()\<CR>"
 
@@ -543,12 +587,13 @@ if exists('g:plugs["coc.nvim"]')
       return !col || getline('.')[col - 1]  =~# '\s'
     endfunction
 
-    " Use <c-space> to trigger completion
+    " <C-Space> to trigger completion manually
     inoremap <silent><expr> <c-space> coc#refresh()
 
-    " Use `[g` and `]g` to navigate diagnostics
+    " Diagnostic navigation
     nmap <silent> [g <Plug>(coc-diagnostic-prev)
     nmap <silent> ]g <Plug>(coc-diagnostic-next)
+    nmap <silent> <leader>ad :CocDiagnostics<CR>
 
     " GoTo code navigation
     nmap <silent> gd <Plug>(coc-definition)
@@ -556,9 +601,8 @@ if exists('g:plugs["coc.nvim"]')
     nmap <silent> gi <Plug>(coc-implementation)
     nmap <silent> gr <Plug>(coc-references)
 
-    " Use K to show documentation in preview window
+    " Hover documentation
     nnoremap <silent> K :call ShowDocumentation()<CR>
-
     function! ShowDocumentation()
       if CocAction('hasProvider', 'hover')
         call CocActionAsync('doHover')
@@ -567,15 +611,133 @@ if exists('g:plugs["coc.nvim"]')
       endif
     endfunction
 
-    " Highlight the symbol and its references when holding the cursor
+    " Highlight symbol and its references on cursor hold
     autocmd CursorHold * silent call CocActionAsync('highlight')
 
     " Symbol renaming
     nmap <leader>rn <Plug>(coc-rename)
 
-    " Formatting selected code
+    " Format selected code
     xmap <leader>f  <Plug>(coc-format-selected)
     nmap <leader>f  <Plug>(coc-format-selected)
+
+    " Code actions (cursor, file, selected range)
+    nmap <leader>ca  <Plug>(coc-codeaction-cursor)
+    nmap <leader>cA  <Plug>(coc-codeaction-source)
+    xmap <leader>ca  <Plug>(coc-codeaction-selected)
+
+    " Apply auto-fix for current line
+    nmap <leader>qf  <Plug>(coc-fix-current)
+
+    " Run code lens action on current line
+    nmap <leader>cl  <Plug>(coc-codelens-action)
+
+    " Workspace symbols and outline
+    nnoremap <silent> <leader>ws :CocList -I symbols<CR>
+    nnoremap <silent> <leader>o  :CocList outline<CR>
+
+    " Search recently used commands
+    nnoremap <silent> <leader>cc :CocList commands<CR>
+
+    " Resume latest CoC list
+    nnoremap <silent> <leader>cr :CocListResume<CR>
+
+    " Show all diagnostics
+    nnoremap <silent> <leader>cD :CocList diagnostics<CR>
+
+    " Text object for function/class (requires language server support)
+    xmap if <Plug>(coc-funcobj-i)
+    omap if <Plug>(coc-funcobj-i)
+    xmap af <Plug>(coc-funcobj-a)
+    omap af <Plug>(coc-funcobj-a)
+    xmap ic <Plug>(coc-classobj-i)
+    omap ic <Plug>(coc-classobj-i)
+    xmap ac <Plug>(coc-classobj-a)
+    omap ac <Plug>(coc-classobj-a)
+
+    " Scroll float windows
+    if has('nvim-0.4.0') || has('patch-8.2.0750')
+        nnoremap <silent><nowait><expr> <C-f> coc#float#has_scroll() ? coc#float#scroll(1) : "\<C-f>"
+        nnoremap <silent><nowait><expr> <C-b> coc#float#has_scroll() ? coc#float#scroll(0) : "\<C-b>"
+        inoremap <silent><nowait><expr> <C-f> coc#float#has_scroll() ? "\<c-r>=coc#float#scroll(1)\<cr>" : "\<Right>"
+        inoremap <silent><nowait><expr> <C-b> coc#float#has_scroll() ? "\<c-r>=coc#float#scroll(0)\<cr>" : "\<Left>"
+    endif
+
+    " Status line integration
+    set statusline^=%{coc#status()}%{get(b:,'coc_current_function','')}
+endif
+
+" --- vim-lsp (Native VimScript LSP - fallback when Node.js unavailable) ---
+if g:use_vimlsp
+    " Auto-configure language servers via vim-lsp-settings
+    let g:lsp_settings_filetype_python   = ['pylsp', 'pyright-langserver']
+    let g:lsp_settings_filetype_go       = ['gopls']
+    let g:lsp_settings_filetype_rust     = ['rust-analyzer']
+    let g:lsp_settings_filetype_typescript = ['typescript-language-server']
+    let g:lsp_settings_filetype_javascript = ['typescript-language-server']
+    let g:lsp_settings_filetype_sh       = ['bash-language-server']
+
+    " Performance: disable virtual text diagnostics in TTY
+    let g:lsp_diagnostics_virtual_text_enabled = !g:is_tty
+    let g:lsp_diagnostics_highlights_enabled   = !g:is_tty
+    let g:lsp_document_highlight_enabled       = !g:is_tty
+    let g:lsp_signs_enabled                    = 1
+    let g:lsp_diagnostics_echo_cursor          = 1
+    let g:lsp_completion_documentation_enabled = 1
+
+    " Diagnostic signs (ASCII, KISS)
+    let g:lsp_signs_error         = {'text': 'X'}
+    let g:lsp_signs_warning       = {'text': '!'}
+    let g:lsp_signs_information   = {'text': 'i'}
+    let g:lsp_signs_hint          = {'text': '>'}
+
+    " asyncomplete manages completeopt for vim-lsp mode
+    set completeopt=menuone,noinsert,noselect
+    let g:asyncomplete_auto_popup = 1
+    let g:asyncomplete_auto_completeopt = 1
+    let g:asyncomplete_popup_delay = 200
+
+    " Tab to navigate completion popup (mirrors CoC behavior)
+    inoremap <expr> <Tab>   pumvisible() ? "\<C-n>" : "\<Tab>"
+    inoremap <expr> <S-Tab> pumvisible() ? "\<C-p>" : "\<S-Tab>"
+    inoremap <expr> <CR>    pumvisible() ? asyncomplete#close_popup() : "\<CR>"
+
+    " Key mappings (mirror CoC's gd/gy/gi/gr/K/<leader>rn layout)
+    function! s:on_lsp_buffer_enabled() abort
+        setlocal omnifunc=lsp#complete
+        setlocal signcolumn=yes
+
+        " Navigation
+        nmap <buffer> gd           <plug>(lsp-definition)
+        nmap <buffer> gy           <plug>(lsp-type-definition)
+        nmap <buffer> gi           <plug>(lsp-implementation)
+        nmap <buffer> gr           <plug>(lsp-references)
+        nmap <buffer> [g           <plug>(lsp-previous-diagnostic)
+        nmap <buffer> ]g           <plug>(lsp-next-diagnostic)
+
+        " Hover documentation
+        nmap <buffer> K            <plug>(lsp-hover)
+
+        " Refactoring
+        nmap <buffer> <leader>rn   <plug>(lsp-rename)
+        nmap <buffer> <leader>ca   <plug>(lsp-code-action)
+        nmap <buffer> <leader>f    <plug>(lsp-document-format)
+
+        " Workspace
+        nmap <buffer> <leader>ws   <plug>(lsp-workspace-symbol-search)
+        nmap <buffer> <leader>o    <plug>(lsp-document-symbol-search)
+        nmap <buffer> <leader>cD   <plug>(lsp-document-diagnostics)
+
+        " Enable auto-format on save for filetypes with reliable LSP formatters
+        if index(['python', 'go', 'rust', 'typescript', 'javascript', 'sh'], &filetype) >= 0
+            autocmd BufWritePre <buffer> LspDocumentFormatSync
+        endif
+    endfunction
+
+    augroup lsp_install
+        autocmd!
+        autocmd User lsp_buffer_enabled call s:on_lsp_buffer_enabled()
+    augroup END
 endif
 
 " ============================================================================
@@ -682,9 +844,6 @@ set laststatus=2
 " => Misc
 " ============================================================================
 
-" Quickly open a buffer for scribble
-map <leader>q :e ~/buffer<cr>
-
 " Quickly open a markdown buffer for scribble
 map <leader>m :e ~/buffer.md<cr>
 
@@ -743,9 +902,6 @@ set secure
 " Quick format entire file
 nnoremap <leader>F gg=G``
 
-" Toggle between source and header files (for C/C++)
-nnoremap <leader>a :A<CR>
-
 " Quick save all buffers
 nnoremap <leader>wa :wa<CR>
 
@@ -796,7 +952,7 @@ augroup END
 " ============================================================================
 
 " Show syntax highlighting groups for word under cursor
-nmap <leader>sp :call <SID>SynStack()<CR>
+nmap <leader>sh :call <SID>SynStack()<CR>
 function! <SID>SynStack()
   if !exists("*synstack")
     return
@@ -850,8 +1006,8 @@ function! LargeFileSettings()
     setlocal undolevels=-1
     setlocal eventignore+=FileType
     setlocal noswapfile
-    setlocal buftype=nowrite
-    echo "Large file detected. Some features disabled for performance."
+    setlocal syntax=OFF
+    echo "Large file (>10MB): syntax and undo disabled for performance."
 endfunction
 
 " ============================================================================
@@ -866,15 +1022,7 @@ if g:is_tty
     " Simpler status line for TTY
     set statusline=%f\ %h%w%m%r\ %=%(%l,%c%V\ %=\ %P%)
 
-    " Disable some visual effects
-    set novisualbell
-    set noerrorbells
-
-    " Faster redraw
-    set lazyredraw
-    set ttyfast
-
-    " Reduce syntax highlighting complexity
+    " Reduce syntax highlighting complexity in TTY (global is 200, lower here)
     set synmaxcol=120
 endif
 
@@ -885,6 +1033,177 @@ if g:is_tty && !exists("g:tty_message_shown")
         autocmd VimEnter * echom "Running in TTY mode - some features disabled for performance"
     augroup END
     let g:tty_message_shown = 1
+endif
+
+" ============================================================================
+" => Which-Key: Keybinding Hints
+" ============================================================================
+
+" Show available bindings after <leader> with a 500ms pause
+set timeoutlen=500
+
+if exists('g:plugs["vim-which-key"]')
+    " Register after plugins are loaded (autoload functions available at VimEnter)
+    autocmd VimEnter * call which_key#register(',', 'g:which_key_map')
+
+    nnoremap <silent> <leader> :<C-u>WhichKey ','<CR>
+    vnoremap <silent> <leader> :<C-u>WhichKeyVisual ','<CR>
+
+    " Top-level single-key bindings (w and q also have sub-groups below)
+    let g:which_key_map = {}
+    let g:which_key_map['x']  = 'save-and-quit'
+    let g:which_key_map['F']  = 'format-file'
+    let g:which_key_map['W']  = 'strip-trailing-whitespace'
+    let g:which_key_map['m']  = 'scratch-markdown'
+    let g:which_key_map['n']  = 'nerdtree-find'
+    let g:which_key_map['o']  = 'outline'
+    let g:which_key_map['b']  = 'buffers'
+    let g:which_key_map['h']  = 'prev-buffer'
+    let g:which_key_map['l']  = 'next-buffer'
+    let g:which_key_map['*']  = 'search-replace-word'
+    let g:which_key_map[',']  = 'last-file'
+    let g:which_key_map['y']  = 'clipboard-yank'
+    let g:which_key_map['Y']  = 'clipboard-yank-line'
+
+    " [a]LE lint group  ([e/]e navigate; <leader>aD for detail)
+    let g:which_key_map['a'] = {
+        \ 'name': '+ale-lint',
+        \ 'D': 'ale-detail',
+        \ }
+
+    " [c]ode / [c]opy group
+    let g:which_key_map['c'] = {
+        \ 'name': '+code/copy',
+        \ 'a': 'code-action-cursor',
+        \ 'A': 'code-action-source',
+        \ 'c': 'coc-commands',
+        \ 'D': 'diagnostics-list',
+        \ 'l': 'code-lens',
+        \ 'r': 'coc-list-resume',
+        \ 'p': 'copy-filepath',
+        \ 'f': 'copy-filename',
+        \ }
+
+    " [e]dit group
+    let g:which_key_map['e'] = {
+        \ 'name': '+edit',
+        \ 'v': 'edit-vimrc',
+        \ }
+
+    " [g]it group
+    let g:which_key_map['g'] = {
+        \ 'name': '+git',
+        \ 's': 'status',
+        \ 'c': 'commit',
+        \ 'p': 'push',
+        \ 'l': 'pull',
+        \ 'd': 'diff',
+        \ 'b': 'blame',
+        \ 'F': 'git-files-fzf',
+        \ }
+
+    " [q]uickfix group  (also: <leader>q = fast quit)
+    let g:which_key_map['q'] = {
+        \ 'name': '+quickfix',
+        \ 'f': 'lsp-fix-current',
+        \ 'o': 'open-quickfix',
+        \ 'c': 'close-quickfix',
+        \ }
+
+    " [r]efactor / [r]ipgrep / [r]eplace group
+    let g:which_key_map['r'] = {
+        \ 'name': '+search/refactor',
+        \ 'n': 'rename',
+        \ 'g': 'ripgrep',
+        \ 't': 'tags-search',
+        \ }
+
+    " [s]pell / [s]ource group
+    let g:which_key_map['s'] = {
+        \ 'name': '+spell/source',
+        \ 's': 'toggle-spell',
+        \ 'n': 'next-spell',
+        \ 'p': 'prev-spell',
+        \ 'a': 'add-word',
+        \ '?': 'suggest',
+        \ 'v': 'source-vimrc',
+        \ 'o': 'source-file',
+        \ 'h': 'syntax-highlight-stack',
+        \ }
+
+    " [t]ab / [t]erminal group
+    let g:which_key_map['t'] = {
+        \ 'name': '+tab/terminal',
+        \ 'n': 'new-tab',
+        \ 'o': 'tab-only',
+        \ 'c': 'close-tab',
+        \ 'm': 'move-tab',
+        \ 'l': 'last-tab',
+        \ 'e': 'edit-in-tab',
+        \ 'v': 'terminal-vertical',
+        \ 'h': 'terminal-horizontal',
+        \ }
+
+    " [w]orkspace / [w]indow / save group  (also: <leader>w = fast save)
+    let g:which_key_map['w'] = {
+        \ 'name': '+save/window',
+        \ 'a': 'save-all',
+        \ 's': 'workspace-symbols',
+        \ 'd': 'change-dir',
+        \ }
+endif
+
+" ============================================================================
+" => Startify: Startup Screen
+" ============================================================================
+
+if exists('g:plugs["vim-startify"]')
+    " Simple ASCII header, no icons (KISS)
+    let g:startify_custom_header = [
+        \ '  VIM - Vi IMproved',
+        \ '  Type :help if you are in trouble',
+        \ '',
+        \ ]
+
+    " Sections shown on start screen
+    let g:startify_lists = [
+        \ { 'type': 'files',     'header': ['   Recent Files']            },
+        \ { 'type': 'dir',       'header': ['   Directory: '. getcwd()]   },
+        \ { 'type': 'sessions',  'header': ['   Sessions']                },
+        \ { 'type': 'bookmarks', 'header': ['   Bookmarks']               },
+        \ ]
+
+    " Session integration
+    let g:startify_session_persistence    = 1   " Auto-save session on quit
+    let g:startify_session_autoload       = 1   " Auto-load Session.vim if present
+    let g:startify_change_to_vcs_root     = 1   " cd to git root on open
+    let g:startify_fortune_use_unicode    = 0   " No unicode in fortune (KISS)
+    let g:startify_enable_special         = 0   " No <empty> / <quit> entries
+
+    " Limit recent files shown
+    let g:startify_files_number = 10
+
+    " Don't open NERDTree when startify is active
+    autocmd User Startified setlocal buftype=
+endif
+
+" ============================================================================
+" => IndentLine: Indent Guide Lines (non-TTY only)
+" ============================================================================
+
+if !g:is_tty && exists('g:plugs["indentLine"]')
+    " Use simple ASCII bar as indent guide
+    let g:indentLine_char            = '|'
+    let g:indentLine_first_char      = '|'
+    let g:indentLine_showFirstIndentLevel = 1
+
+    " Disable in certain filetypes where it causes issues
+    let g:indentLine_fileTypeExclude = ['text', 'help', 'startify', 'nerdtree', 'markdown']
+    let g:indentLine_bufTypeExclude  = ['help', 'terminal', 'nofile']
+
+    " Conceal level settings (prevent hiding quotes in JSON/markdown)
+    let g:indentLine_setConceal      = 2
+    let g:indentLine_concealcursor   = ''
 endif
 
 " ============================================================================

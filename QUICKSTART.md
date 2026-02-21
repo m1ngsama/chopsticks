@@ -1,274 +1,207 @@
-# Quick Start Guide
+# Quick Start
 
-Get up and running with this Vim configuration in 5 minutes!
+Five minutes from zero to a working Vim engineering environment.
 
-## Installation
-
-### One-Line Install
+## Step 1: Install
 
 ```bash
-git clone https://github.com/m1ngsama/chopsticks.git ~/.vim && cd ~/.vim && ./install.sh
-```
-
-**IMPORTANT:** Always run the install script from the `~/.vim` directory (where you cloned the repository). The script validates this to ensure correct symlink creation.
-
-That's it! The script will:
-- Verify it's being run from the correct directory
-- Backup your existing .vimrc
-- Create and validate symlink to the new configuration
-- Install vim-plug
-- Install all plugins automatically
-
-### Manual Install
-
-```bash
-# 1. Clone the repository
 git clone https://github.com/m1ngsama/chopsticks.git ~/.vim
-
-# 2. Create symlink
-ln -sf ~/.vim/.vimrc ~/.vimrc
-
-# 3. Install vim-plug
-curl -fLo ~/.vim/autoload/plug.vim --create-dirs \
-    https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
-
-# 4. Open Vim and install plugins
-vim +PlugInstall +qall
+cd ~/.vim && ./install.sh
 ```
 
-## Essential Key Mappings
+The script handles everything: symlinks, vim-plug, plugin download.
+No root access required.
 
-### File Operations
-| Key | Action |
-|-----|--------|
-| `,w` | Quick save |
-| `,q` | Quick quit |
-| `,x` | Save and quit |
+## Step 2: Open Vim
 
-### Navigation
-| Key | Action |
-|-----|--------|
-| `Ctrl+n` | Toggle file explorer (NERDTree) |
-| `Ctrl+p` | Fuzzy file search (FZF) |
-| `Ctrl+h/j/k/l` | Navigate between windows |
-| `,b` | Search open buffers |
+```bash
+vim
+```
 
-### Code Intelligence
-| Key | Action |
-|-----|--------|
-| `gd` | Go to definition |
-| `gr` | Find references |
-| `K` | Show documentation |
-| `Tab` | Autocomplete (when popup is visible) |
+The startup screen shows recent files and sessions. Press `q` to dismiss
+or just start typing a filename to open.
 
-### Editing
-| Key | Action |
-|-----|--------|
-| `gc` | Comment/uncomment (in visual mode) |
-| `Space` | Toggle fold |
-| `,,+Enter` | Clear search highlight |
+## Step 3: Install LSP (pick one path)
+
+### Path A: With Node.js (full CoC)
+
+```bash
+node --version   # confirm >= 14.14
+```
+
+Inside Vim, install language servers for your stack:
+
+```vim
+:CocInstall coc-pyright coc-tsserver coc-go coc-rust-analyzer
+```
+
+### Path B: Without Node.js (vim-lsp)
+
+Open a file of your language, then run:
+
+```vim
+:LspInstallServer
+```
+
+This auto-detects and installs the correct language server binary.
+
+---
+
+## Daily Use
+
+### The 10 keys that matter most
+
+```
+,w          Save
+,q          Quit
+Ctrl+n      File tree
+Ctrl+p      Fuzzy find file
+gd          Go to definition
+K           Show docs
+[g  ]g      Prev/next diagnostic
+,rn         Rename symbol
+,gs         Git status
+,           (pause 500ms) Show all shortcuts
+```
+
+### Open a project
+
+```bash
+cd ~/my-project && vim
+```
+
+NERDTree auto-opens when you launch Vim on a directory. Use `Ctrl+p` to
+fuzzy-search files by name. Use `,rg` to search file contents.
+
+### Navigate code
+
+| Key   | Action                          |
+|-------|---------------------------------|
+| `gd`  | Go to definition                |
+| `gy`  | Go to type definition           |
+| `gi`  | Go to implementation            |
+| `gr`  | List all references             |
+| `K`   | Show docs for symbol under cursor |
+| `Ctrl+o` | Jump back                  |
+| `Ctrl+i` | Jump forward               |
+
+### Edit code
+
+| Key     | Action                              |
+|---------|-------------------------------------|
+| `Tab`   | Select next completion item         |
+| `Enter` | Confirm completion                  |
+| `gc`    | Toggle comment (works in visual mode too) |
+| `cs"'`  | Change surrounding `"` to `'`      |
+| `ds(`   | Delete surrounding `(`              |
+| `s`+2ch | EasyMotion: jump anywhere           |
+
+### Manage errors
+
+| Key    | Action                        |
+|--------|-------------------------------|
+| `]g`   | Jump to next diagnostic       |
+| `[g`   | Jump to previous diagnostic   |
+| `K`    | Read the error message        |
+| `,ca`  | Apply code action / auto-fix  |
+
+### Git workflow
+
+```
+,gs   git status (stage files with 's', commit with 'cc')
+,gd   diff current file
+,gb   blame current file
+,gc   commit
+,gp   push
+,gl   pull
+```
+
+---
 
 ## Common Workflows
 
-### Opening a Project
+### Python project
 
 ```bash
-# Navigate to your project directory
-cd ~/my-project
-
-# Open Vim
-vim
-
-# Press Ctrl+n to open file explorer
-# Press Ctrl+p to fuzzy search files
+pip install black flake8 pylint isort
+vim my_script.py
 ```
 
-### Editing Code
+Auto-formats with black on save. Lint errors show in the sign column as
+`X` (error) and `!` (warning). Jump between them with `[g` / `]g`.
 
-1. Open a file with `Ctrl+p` or through NERDTree
-2. Use `gd` to jump to definitions
-3. Use `K` to view documentation
-4. Use `Tab` for autocomplete while typing
-5. Save with `,w`
+### JavaScript / TypeScript project
 
-### Working with Git
-
-| Command | Action |
-|---------|--------|
-| `:Git status` | View git status |
-| `:Git diff` | View changes |
-| `:Git commit` | Commit changes |
-| `:Git push` | Push to remote |
-| `,gb` | Open git blame window |
-
-### Search and Replace
-
-```vim
-" Search in current file
-/searchterm
-
-" Search across project (with FZF)
-,rg
-
-" Replace in file
-:%s/old/new/g
-
-" Replace with confirmation
-:%s/old/new/gc
-```
-
-## Language-Specific Features
-
-### Python
-
-- Auto-formatting with Black (on save)
-- Linting with flake8/pylint
-- 4-space indentation
-- 88-character line limit
-
-**Setup:**
 ```bash
-pip install black flake8 pylint
-vim -c "CocInstall coc-pyright" -c "q"
+npm install -g prettier eslint typescript
+vim src/index.ts
 ```
 
-### JavaScript/TypeScript
+Auto-formats with prettier on save. Use `:CocInstall coc-tsserver` for
+full IntelliSense (requires Node.js).
 
-- Prettier formatting (on save)
-- ESLint integration
-- 2-space indentation
+### Go project
 
-**Setup:**
-```bash
-npm install -g prettier eslint
-vim -c "CocInstall coc-tsserver coc-prettier coc-eslint" -c "q"
-```
-
-### Go
-
-- Auto-formatting with gofmt
-- Auto-imports with goimports
-- Tab indentation
-
-**Setup:**
 ```bash
 go install golang.org/x/tools/gopls@latest
-vim -c "CocInstall coc-go" -c "q"
+vim main.go
 ```
 
-## Troubleshooting
+gofmt runs on save automatically. `gd` jumps to definitions even across
+package boundaries when gopls is running.
 
-### Plugins not working?
+---
 
+## Customize
+
+Edit config live:
 ```vim
-:PlugInstall
-:PlugUpdate
+,ev     " opens ~/.vimrc in Vim
+,sv     " reloads config without restarting
 ```
 
-### Autocomplete not working?
+Per-project overrides: create `.vimrc` in your project root.
 
-Make sure Node.js is installed:
-```bash
-node --version  # Should be >= 14.14
-```
+---
 
-Then install CoC language servers:
-```vim
-:CocInstall coc-json coc-tsserver coc-pyright
-```
-
-### FZF not finding files?
-
-Install FZF and ripgrep:
-```bash
-# Ubuntu/Debian
-sudo apt install fzf ripgrep
-
-# macOS
-brew install fzf ripgrep
-```
-
-### Colors look weird?
-
-Add to your `~/.bashrc` or `~/.zshrc`:
-```bash
-export TERM=xterm-256color
-```
-
-## Customization
-
-The `.vimrc` file is well-organized into sections:
-
-1. **General Settings** (lines 1-150) - Basic Vim behavior
-2. **Plugin Management** (lines 151-230) - Plugin list
-3. **Key Mappings** (lines 300-400) - Custom shortcuts
-4. **Plugin Settings** (lines 400-600) - Plugin configurations
-
-To customize:
-1. Open `~/.vim/.vimrc`
-2. Find the section you want to modify
-3. Make your changes
-4. Reload with `:source ~/.vimrc` or restart Vim
-
-### Common Customizations
-
-**Change colorscheme:**
-```vim
-" In .vimrc, find the colorscheme line and change to:
-colorscheme dracula
-" or: solarized, onedark, gruvbox
-```
-
-**Change leader key:**
-```vim
-" Default is comma (,), change to space:
-let mapleader = " "
-```
-
-**Disable relative line numbers:**
-```vim
-set norelativenumber
-```
-
-## Next Steps
-
-1. Read the full [README.md](README.md) for complete documentation
-2. Check out `:help` in Vim for built-in documentation
-3. Customize the configuration to your needs
-4. Share your improvements!
-
-## Quick Reference Card
-
-Print this for your desk:
+## Quick Reference
 
 ```
-┌─────────────────────────────────────────────┐
-│           Vim Quick Reference               │
-├─────────────────────────────────────────────┤
-│ FILES                                       │
-│  Ctrl+n    File explorer                    │
-│  Ctrl+p    Fuzzy find files                 │
-│  ,w        Save                             │
-│  ,q        Quit                             │
-├─────────────────────────────────────────────┤
-│ NAVIGATION                                  │
-│  gd        Go to definition                 │
-│  gr        Find references                  │
-│  K         Show docs                        │
-│  Ctrl+o    Jump back                        │
-│  Ctrl+i    Jump forward                     │
-├─────────────────────────────────────────────┤
-│ EDITING                                     │
-│  gc        Comment (visual mode)            │
-│  Tab       Autocomplete                     │
-│  Space     Toggle fold                      │
-├─────────────────────────────────────────────┤
-│ SEARCH                                      │
-│  /text     Search forward                   │
-│  ?text     Search backward                  │
-│  ,rg       Project-wide search              │
-│  ,,Enter   Clear highlight                  │
-└─────────────────────────────────────────────┘
+FILES
+  Ctrl+n      File tree toggle
+  Ctrl+p      Fuzzy find file
+  ,b          Search open buffers
+  ,rg         Search file contents (ripgrep)
+  ,w          Save  |  ,q  Quit  |  ,x  Save+quit
+  ,wa         Save all buffers
+
+CODE
+  gd          Go to definition
+  K           Show documentation
+  [g / ]g     Prev/next diagnostic
+  ,rn         Rename symbol
+  ,ca         Code action
+  ,f          Format selection
+  ,F          Format whole file
+
+GIT
+  ,gs         Status  |  ,gd  Diff  |  ,gb  Blame
+  ,gc         Commit  |  ,gp  Push  |  ,gl  Pull
+
+WINDOWS
+  Ctrl+h/j/k/l    Move between panes
+  ,tv         Open terminal (vertical)
+  ,th         Open terminal (horizontal)
+  Esc         Exit terminal mode
+  F5          Undo tree  |  F8  Tag browser
+
+SEARCH
+  /text       Search forward
+  ?text       Search backward
+  ,<CR>       Clear search highlight
+  ,*          Replace word under cursor (project)
 ```
 
-Happy Vimming!
+---
+
+See [README.md](README.md) for the complete reference.

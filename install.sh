@@ -94,9 +94,8 @@ if [ "$HAS_NODE" -eq 1 ]; then
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         step "Installing CoC language servers"
-        vim +'CocInstall -sync coc-json coc-tsserver coc-pyright coc-sh coc-html coc-css coc-yaml' +qall
+        vim +'CocInstall -sync coc-json coc-tsserver coc-pyright coc-sh coc-html coc-css coc-yaml coc-go coc-rust-analyzer coc-marksman coc-sql' +qall
         ok "CoC language servers installed"
-        echo "  Add more with :CocInstall coc-go coc-rust-analyzer etc."
     fi
 else
     echo "  To enable LSP without Node.js:"
@@ -126,11 +125,15 @@ echo "  ctags  (F8 tag browser)"
 echo "    Ubuntu:  sudo apt install universal-ctags"
 echo "    macOS:   brew install universal-ctags"
 echo ""
-echo "  Language linters:"
+echo "  Language linters and formatters:"
 echo "    Python:      pip install black flake8 pylint isort"
 echo "    JS/TS:       npm install -g prettier eslint typescript"
 echo "    Go:          go install golang.org/x/tools/gopls@latest"
-echo "    Shell:       sudo apt install shellcheck"
+echo "    Shell:       sudo apt install shellcheck  # or: brew install shellcheck"
+echo "    CSS/SCSS:    npm install -g stylelint stylelint-config-standard"
+echo "    Markdown:    npm install -g markdownlint-cli"
+echo "    SQL:         pip install sqlfluff  |  npm install -g sqlfmt"
+echo "    Markdown LS: brew install marksman  # or: https://github.com/artempyanykh/marksman"
 echo ""
 echo "Getting started:"
 echo "  See QUICKSTART.md for the 5-minute guide"

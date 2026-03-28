@@ -106,9 +106,6 @@ set hid
 " Configure backspace so it acts as it should act (enhanced from earlier basic setting)
 set whichwrap+=<,>,h,l
 
-" Don't redraw while executing macros (good performance config)
-set lazyredraw
-
 " For regular expressions turn magic on
 set magic
 
@@ -324,8 +321,8 @@ map <C-k> <C-W>k
 map <C-h> <C-W>h
 map <C-l> <C-W>l
 
-" Close the current buffer
-map <leader>bd :Bclose<cr>:tabclose<cr>gT
+" Close the current buffer (Bclose preserves window layout)
+map <leader>bd :Bclose<cr>
 
 " Close all the buffers
 map <leader>ba :bufdo bd<cr>
@@ -439,15 +436,40 @@ let NERDTreeIgnore=['\.pyc$', '\~$', '\.swp$', '\.git$', '\.DS_Store', 'node_mod
 " NERDTree window size
 let NERDTreeWinSize=35
 
-" Automatically open NERDTree when vim starts on a directory
-" Disabled in TTY for faster startup
+" Track stdin reads so startup autocmds can skip pipe/heredoc input
+autocmd StdinReadPre * let s:std_in=1
+
+" Startup layout (non-TTY only — keeps TTY startup instant)
 if !g:is_tty
-    autocmd StdinReadPre * let s:std_in=1
-    autocmd VimEnter * if argc() == 1 && isdirectory(argv()[0]) && !exists("s:std_in") | exe 'NERDTree' argv()[0] | wincmd p | ene | exe 'cd '.argv()[0] | endif
+    augroup ChopstickStartup
+        autocmd!
+        " vim <dir>  →  NERDTree on left + Startify (or blank buffer) on right
+        autocmd VimEnter *
+            \ if argc() == 1 && isdirectory(argv()[0]) && !exists('s:std_in') |
+            \     exe 'NERDTree ' . fnameescape(argv()[0]) |
+            \     exe 'cd ' . fnameescape(argv()[0]) |
+            \     wincmd p |
+            \     if exists(':Startify') == 2 | Startify | else | enew | endif |
+            \ endif
+        " vim (no args)  →  Startify renders first; open NERDTree alongside it
+        autocmd User Startified
+            \ if argc() == 0 && !exists('s:std_in') |
+            \     NERDTree |
+            \     wincmd p |
+            \ endif
+    augroup END
 endif
 
 " --- FZF ---
-map <C-p> :Files<CR>
+" Smart file search: use GFiles (respects .gitignore) inside git repos, Files elsewhere
+function! s:SmartFiles() abort
+    if !empty(system('git rev-parse --show-toplevel 2>/dev/null'))
+        GFiles
+    else
+        Files
+    endif
+endfunction
+map <C-p> :call <SID>SmartFiles()<CR>
 map <leader>b :Buffers<CR>
 map <leader>rg :Rg<CR>
 map <leader>rt :Tags<CR>
@@ -797,7 +819,8 @@ fun! CleanExtraSpaces()
 endfun
 
 if has("autocmd")
-    autocmd BufWritePre *.txt,*.js,*.py,*.wiki,*.sh,*.coffee :call CleanExtraSpaces()
+    " Run for all files; ALE trim_whitespace is idempotent so no conflict
+    autocmd BufWritePre * call CleanExtraSpaces()
 endif
 
 " ============================================================================
@@ -829,7 +852,7 @@ autocmd FileType html,css setlocal expandtab shiftwidth=2 tabstop=2
 autocmd FileType yaml setlocal expandtab shiftwidth=2 tabstop=2
 
 " Markdown specific settings
-autocmd FileType markdown setlocal wrap linebreak spell
+autocmd FileType markdown setlocal wrap linebreak spell tw=0
 
 " Shell script settings
 autocmd FileType sh setlocal expandtab shiftwidth=2 tabstop=2
@@ -997,7 +1020,8 @@ if has('terminal')
     nnoremap <leader>th :terminal ++rows=10<CR>
 
     " Terminal mode mappings
-    tnoremap <Esc> <C-\><C-n>
+    " Double-Esc to exit terminal mode (single Esc passes through to the running program)
+    tnoremap <Esc><Esc> <C-\><C-n>
     tnoremap <C-h> <C-\><C-n><C-w>h
     tnoremap <C-j> <C-\><C-n><C-w>j
     tnoremap <C-k> <C-\><C-n><C-w>k
@@ -1038,6 +1062,9 @@ if g:is_tty
 
     " Reduce syntax highlighting complexity in TTY (global is 200, lower here)
     set synmaxcol=120
+
+    " lazyredraw is safe in TTY; avoid globally as it causes CoC float flicker
+    set lazyredraw
 endif
 
 " Provide helpful message on first run in TTY
@@ -1079,10 +1106,11 @@ if exists('g:plugs["vim-which-key"]')
     let g:which_key_map['y']  = 'clipboard-yank'
     let g:which_key_map['Y']  = 'clipboard-yank-line'
 
-    " [a]LE lint group  ([e/]e navigate; <leader>aD for detail)
+    " [a]LE lint group  ([e/]e navigate; <leader>aD for detail; <leader>ad for diagnostics)
     let g:which_key_map['a'] = {
         \ 'name': '+ale-lint',
         \ 'D': 'ale-detail',
+        \ 'd': 'diagnostics',
         \ }
 
     " [c]ode / [c]opy group
@@ -1172,32 +1200,52 @@ endif
 " ============================================================================
 
 if exists('g:plugs["vim-startify"]')
-    " Simple ASCII header, no icons (KISS)
-    let g:startify_custom_header = [
-        \ '  VIM - Vi IMproved',
-        \ '  Type :help if you are in trouble',
-        \ '',
+    " Dynamic header: config name, vim version, current dir, git branch, key tips
+    function! StartifyHeader() abort
+        let l:ver = 'Vim ' . (v:version / 100) . '.' . printf('%02d', v:version % 100)
+        let l:cwd = fnamemodify(getcwd(), ':t')
+        let l:git = ''
+        if executable('git')
+            let l:branch = system('git -C ' . shellescape(getcwd()) .
+                \ ' rev-parse --abbrev-ref HEAD 2>/dev/null')
+            if v:shell_error == 0
+                let l:git = '  [' . substitute(l:branch, '\n\+$', '', '') . ']'
+            endif
+        endif
+        return [
+            \ '  chopsticks  |  ' . l:ver . '  |  ' . l:cwd . l:git,
+            \ '  , = leader  |  , + pause = key hints  |  Ctrl-p = files  |  ,rg = search',
+            \ '',
+            \ ]
+    endfunction
+    let g:startify_custom_header = 'StartifyHeader()'
+
+    " Sessions first: restores full project state; dir + recent files below
+    let g:startify_lists = [
+        \ { 'type': 'sessions',  'header': ['   Sessions']                    },
+        \ { 'type': 'dir',       'header': ['   Directory: ' . getcwd()]      },
+        \ { 'type': 'files',     'header': ['   Recent Files']                },
+        \ { 'type': 'bookmarks', 'header': ['   Bookmarks']                   },
         \ ]
 
-    " Sections shown on start screen
-    let g:startify_lists = [
-        \ { 'type': 'files',     'header': ['   Recent Files']            },
-        \ { 'type': 'dir',       'header': ['   Directory: '. getcwd()]   },
-        \ { 'type': 'sessions',  'header': ['   Sessions']                },
-        \ { 'type': 'bookmarks', 'header': ['   Bookmarks']               },
+    " Quick-access bookmarks for common config files
+    let g:startify_bookmarks = [
+        \ {'v': '~/.vimrc'},
+        \ {'z': '~/.zshrc'},
+        \ {'b': '~/.bashrc'},
         \ ]
 
     " Session integration
     let g:startify_session_persistence    = 1   " Auto-save session on quit
     let g:startify_session_autoload       = 1   " Auto-load Session.vim if present
     let g:startify_change_to_vcs_root     = 1   " cd to git root on open
-    let g:startify_fortune_use_unicode    = 0   " No unicode in fortune (KISS)
-    let g:startify_enable_special         = 0   " No <empty> / <quit> entries
+    let g:startify_fortune_use_unicode    = 0   " ASCII only (KISS)
+    let g:startify_enable_special         = 0   " Hide <empty> / <quit> clutter
 
     " Limit recent files shown
     let g:startify_files_number = 10
 
-    " Don't open NERDTree when startify is active
+    " Required for NERDTree compatibility (prevents buftype conflicts)
     autocmd User Startified setlocal buftype=
 endif
 

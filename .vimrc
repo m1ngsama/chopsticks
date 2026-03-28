@@ -513,28 +513,35 @@ let g:gitgutter_sign_modified_removed = '~'
 
 " --- ALE (Asynchronous Lint Engine) ---
 let g:ale_linters = {
-\   'python': ['flake8', 'pylint'],
+\   'python':     ['flake8', 'pylint'],
 \   'javascript': ['eslint'],
 \   'typescript': ['eslint', 'tsserver'],
-\   'go': ['gopls', 'golint'],
-\   'rust': ['cargo'],
-\   'sh': ['shellcheck'],
-\   'yaml': ['yamllint'],
+\   'go':         ['gopls', 'golint'],
+\   'rust':       ['cargo'],
+\   'sh':         ['shellcheck'],
+\   'yaml':       ['yamllint'],
 \   'dockerfile': ['hadolint'],
+\   'css':        ['stylelint'],
+\   'scss':       ['stylelint'],
+\   'markdown':   ['markdownlint'],
+\   'sql':        ['sqlfluff'],
 \}
 
 let g:ale_fixers = {
-\   '*': ['remove_trailing_lines', 'trim_whitespace'],
-\   'python': ['black', 'isort'],
+\   '*':          ['remove_trailing_lines', 'trim_whitespace'],
+\   'python':     ['black', 'isort'],
 \   'javascript': ['prettier', 'eslint'],
 \   'typescript': ['prettier', 'eslint'],
-\   'go': ['gofmt', 'goimports'],
-\   'rust': ['rustfmt'],
-\   'json': ['prettier'],
-\   'yaml': ['prettier'],
-\   'html': ['prettier'],
-\   'css': ['prettier'],
-\   'markdown': ['prettier'],
+\   'go':         ['gofmt', 'goimports'],
+\   'rust':       ['rustfmt'],
+\   'json':       ['prettier'],
+\   'yaml':       ['prettier'],
+\   'html':       ['prettier'],
+\   'css':        ['prettier'],
+\   'scss':       ['prettier'],
+\   'less':       ['prettier'],
+\   'markdown':   ['prettier'],
+\   'sql':        ['sqlfmt'],
 \}
 
 " Don't fix on save if LSP is handling formatting (avoids double-format)
@@ -670,12 +677,19 @@ endif
 " --- vim-lsp (Native VimScript LSP - fallback when Node.js unavailable) ---
 if g:use_vimlsp
     " Auto-configure language servers via vim-lsp-settings
-    let g:lsp_settings_filetype_python   = ['pylsp', 'pyright-langserver']
-    let g:lsp_settings_filetype_go       = ['gopls']
-    let g:lsp_settings_filetype_rust     = ['rust-analyzer']
+    let g:lsp_settings_filetype_python     = ['pylsp', 'pyright-langserver']
+    let g:lsp_settings_filetype_go         = ['gopls']
+    let g:lsp_settings_filetype_rust       = ['rust-analyzer']
     let g:lsp_settings_filetype_typescript = ['typescript-language-server']
     let g:lsp_settings_filetype_javascript = ['typescript-language-server']
-    let g:lsp_settings_filetype_sh       = ['bash-language-server']
+    let g:lsp_settings_filetype_sh         = ['bash-language-server']
+    let g:lsp_settings_filetype_html       = ['vscode-html-language-server']
+    let g:lsp_settings_filetype_css        = ['vscode-css-language-server']
+    let g:lsp_settings_filetype_scss       = ['vscode-css-language-server']
+    let g:lsp_settings_filetype_json       = ['vscode-json-language-server']
+    let g:lsp_settings_filetype_yaml       = ['yaml-language-server']
+    let g:lsp_settings_filetype_markdown   = ['marksman']
+    let g:lsp_settings_filetype_sql        = ['sqls']
 
     " Performance: disable virtual text diagnostics in TTY
     let g:lsp_diagnostics_virtual_text_enabled = !g:is_tty

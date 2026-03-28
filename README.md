@@ -90,18 +90,22 @@ Install language server extensions from inside Vim:
 :CocInstall coc-rust-analyzer " Rust
 :CocInstall coc-json coc-yaml " JSON, YAML
 :CocInstall coc-html coc-css  " HTML, CSS
+:CocInstall coc-marksman      " Markdown
+:CocInstall coc-sql           " SQL
 ```
+
+`install.sh` installs all of the above automatically when prompted.
 
 ### vim-lsp setup (without Node.js)
 
 Install language server binaries for your languages, then run:
 
 ```vim
-:LspInstallServer   " auto-installs servers for the current filetype
+:LspInstallServer   " auto-installs the right server for the current filetype
 ```
 
-Supported: `pylsp`, `gopls`, `rust-analyzer`, `typescript-language-server`,
-`bash-language-server`, and all others covered by `vim-lsp-settings`.
+Supported languages: Python, Go, Rust, TypeScript, JavaScript, Shell,
+HTML, CSS/SCSS, JSON, YAML, Markdown, SQL — via `vim-lsp-settings`.
 
 ---
 
@@ -298,22 +302,25 @@ on a basic built-in terminal. In TTY mode:
 
 ## Language Support
 
-| Language       | Indent | Formatter     | Linter              |
-|----------------|--------|---------------|---------------------|
-| Python         | 4sp    | black + isort | flake8, pylint      |
-| JavaScript     | 2sp    | prettier      | eslint              |
-| TypeScript     | 2sp    | prettier      | eslint, tsserver    |
-| Go             | tab    | gofmt, goimports | gopls, golint    |
-| Rust           | 4sp    | rustfmt       | cargo               |
-| Shell          | 2sp    | -             | shellcheck          |
-| YAML           | 2sp    | prettier      | yamllint            |
-| HTML/CSS       | 2sp    | prettier      | -                   |
-| Markdown       | 2sp    | prettier      | -                   |
-| JSON           | 2sp    | prettier      | -                   |
-| Dockerfile     | 2sp    | -             | hadolint            |
+| Language       | Indent | Formatter        | Linter                   |
+|----------------|--------|------------------|--------------------------|
+| Python         | 4sp    | black + isort    | flake8, pylint           |
+| JavaScript     | 2sp    | prettier         | eslint                   |
+| TypeScript     | 2sp    | prettier         | eslint, tsserver         |
+| Go             | tab    | gofmt, goimports | gopls, golint            |
+| Rust           | 4sp    | rustfmt          | cargo                    |
+| Shell          | 2sp    | -                | shellcheck               |
+| YAML           | 2sp    | prettier         | yamllint                 |
+| HTML           | 2sp    | prettier         | -                        |
+| CSS / SCSS     | 2sp    | prettier         | stylelint                |
+| Less           | 2sp    | prettier         | -                        |
+| JSON           | 2sp    | prettier         | -                        |
+| Markdown       | 2sp    | prettier         | markdownlint             |
+| SQL            | 4sp    | sqlfmt           | sqlfluff                 |
+| Dockerfile     | 2sp    | -                | hadolint                 |
 
-Install linters separately (e.g. `pip install black flake8`, `npm i -g prettier`).
-ALE runs them asynchronously and auto-fixes on save.
+Install linters separately — `install.sh` lists the exact commands.
+ALE runs them asynchronously on save (`ale_fix_on_save = 1` when using CoC).
 
 ---
 

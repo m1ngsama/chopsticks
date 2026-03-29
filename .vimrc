@@ -468,12 +468,8 @@ if !g:is_tty
             \     wincmd p |
             \     if exists(':Startify') == 2 | Startify | else | enew | endif |
             \ endif
-        " vim (no args)  →  Startify renders first; open NERDTree alongside it
-        autocmd User Startified
-            \ if argc() == 0 && !exists('s:std_in') |
-            \     NERDTree |
-            \     wincmd p |
-            \ endif
+        " vim (no args)  →  Startify fullscreen dashboard, no auto NERDTree
+        " Use Ctrl+n to open NERDTree when needed
     augroup END
 endif
 
@@ -1247,8 +1243,24 @@ endif
 " ============================================================================
 
 if exists('g:plugs["vim-startify"]')
-    " Dynamic header: config name, vim version, current dir, git branch, key tips
+    " Centered dashboard header — matches neovim startup aesthetic
     function! StartifyHeader() abort
+        let l:art = [
+            \ '███╗   ███╗ ██╗███╗   ██╗ ██████╗ ███████╗ █████╗ ███╗   ███╗ █████╗ ',
+            \ '████╗ ████║███║████╗  ██║██╔════╝ ██╔════╝██╔══██╗████╗ ████║██╔══██╗',
+            \ '██╔████╔██║╚██║██╔██╗ ██║██║  ███╗███████╗███████║██╔████╔██║███████║ ',
+            \ '██║╚██╔╝██║ ██║██║╚██╗██║██║   ██║╚════██║██╔══██║██║╚██╔╝██║██╔══██║',
+            \ '██║ ╚═╝ ██║ ██║██║ ╚████║╚██████╔╝███████║██║  ██║██║ ╚═╝ ██║██║  ██║',
+            \ '╚═╝     ╚═╝ ╚═╝╚═╝  ╚═══╝ ╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝╚═╝  ╚═╝',
+            \ ]
+        let l:art_w  = 71
+        let l:pad    = max([0, (winwidth(0) - l:art_w) / 2])
+        let l:indent = repeat(' ', l:pad)
+        let l:lines  = []
+        for l:line in l:art
+            call add(l:lines, l:indent . l:line)
+        endfor
+        " Info subheader: vim version + cwd + git branch
         let l:ver = 'Vim ' . (v:version / 100) . '.' . printf('%02d', v:version % 100)
         let l:cwd = fnamemodify(getcwd(), ':t')
         let l:git = ''
@@ -1259,20 +1271,21 @@ if exists('g:plugs["vim-startify"]')
                 let l:git = '  [' . substitute(l:branch, '\n\+$', '', '') . ']'
             endif
         endif
-        return [
-            \ '  chopsticks  |  ' . l:ver . '  |  ' . l:cwd . l:git,
-            \ '  , = leader  |  , + pause = key hints  |  Ctrl-p = files  |  ,rg = search',
-            \ '',
-            \ ]
+        let l:info     = l:ver . '  ' . l:cwd . l:git
+        let l:info_pad = max([0, (winwidth(0) - len(l:info)) / 2])
+        call add(l:lines, '')
+        call add(l:lines, repeat(' ', l:info_pad) . l:info)
+        call add(l:lines, '')
+        return l:lines
     endfunction
     let g:startify_custom_header = 'StartifyHeader()'
 
-    " Sessions first: restores full project state; dir + recent files below
+    " Sessions first, then recent files — mirrors dashboard plugin ordering
     let g:startify_lists = [
-        \ { 'type': 'sessions',  'header': ['   Sessions']                    },
-        \ { 'type': 'dir',       'header': ['   Directory: ' . getcwd()]      },
-        \ { 'type': 'files',     'header': ['   Recent Files']                },
-        \ { 'type': 'bookmarks', 'header': ['   Bookmarks']                   },
+        \ { 'type': 'sessions',  'header': ['   Sessions']       },
+        \ { 'type': 'files',     'header': ['   Recent Files']   },
+        \ { 'type': 'dir',       'header': ['   Current Dir']    },
+        \ { 'type': 'bookmarks', 'header': ['   Bookmarks']      },
         \ ]
 
     " Quick-access bookmarks for common config files
@@ -1289,8 +1302,11 @@ if exists('g:plugs["vim-startify"]')
     let g:startify_fortune_use_unicode    = 0   " ASCII only (KISS)
     let g:startify_enable_special         = 0   " Hide <empty> / <quit> clutter
 
-    " Limit recent files shown
-    let g:startify_files_number = 10
+    " Show more recent files
+    let g:startify_files_number = 8
+
+    " Left padding for list items (gives visual breathing room)
+    let g:startify_padding_left = 4
 
     " Required for NERDTree compatibility (prevents buftype conflicts)
     augroup ChopstickStartify

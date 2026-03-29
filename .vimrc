@@ -181,7 +181,7 @@ Plug 'dense-analysis/ale'                    " Async linting engine
 
 " ===== Language Support =====
 Plug 'sheerun/vim-polyglot'                  " Language pack
-Plug 'fatih/vim-go', { 'do': ':GoUpdateBinaries' }  " Go support
+Plug 'fatih/vim-go'                                  " Go support (run :GoUpdateBinaries manually if needed)
 
 " ===== Color Schemes =====
 Plug 'morhetz/gruvbox'                       " Gruvbox theme
@@ -574,6 +574,20 @@ let g:ale_lint_on_text_changed = 'never'
 let g:ale_lint_on_insert_leave = 0
 let g:ale_lint_on_enter = 0
 
+" --- vim-go: disable built-in LSP/gopls — CoC (coc-go) handles all Go intelligence ---
+" vim-go's gopls conflicts with coc-go and causes E495 errors on startup
+" (BufWinEnter afile expand fails for non-file buffers like NERDTree/Startify)
+let g:go_gopls_enabled          = 0  " disable vim-go's own gopls client
+let g:go_code_completion_enabled = 0  " let CoC handle completion
+let g:go_def_mode               = 'gopls'  " fallback if CoC unavailable (won't start without g:go_gopls_enabled)
+let g:go_info_mode              = 'gopls'
+let g:go_fmt_autosave           = 0  " CoC/ALE handle format-on-save
+let g:go_imports_autosave       = 0
+let g:go_highlight_types        = 1  " keep syntax features
+let g:go_highlight_fields       = 1
+let g:go_highlight_functions    = 1
+let g:go_highlight_function_calls = 1
+
 " Navigate between errors: [e/]e (unimpaired style), <leader>aD for detail
 nmap <silent> [e :ALENext<cr>
 nmap <silent> ]e :ALEPrevious<cr>
@@ -819,8 +833,8 @@ fun! CleanExtraSpaces()
 endfun
 
 if has("autocmd")
-    " Run for all files; ALE trim_whitespace is idempotent so no conflict
-    autocmd BufWritePre * call CleanExtraSpaces()
+    " Run for real files only; skip special buffers (NERDTree, Startify, terminal, etc.)
+    autocmd BufWritePre * if empty(&buftype) && !empty(expand('<afile>')) | call CleanExtraSpaces() | endif
 endif
 
 " ============================================================================
@@ -981,7 +995,8 @@ function! s:MkNonExDir(file, buf)
 endfunction
 augroup BWCCreateDir
     autocmd!
-    autocmd BufWritePre * :call s:MkNonExDir(expand('<afile>'), +expand('<abuf>'))
+    " Guard: <afile> is empty for special buffers (NERDTree, Startify, etc.)
+    autocmd BufWritePre * if !empty(expand('<afile>')) | call s:MkNonExDir(expand('<afile>'), +expand('<abuf>')) | endif
 augroup END
 
 " ============================================================================
@@ -1036,7 +1051,8 @@ endif
 let g:LargeFile = 1024 * 1024 * 10
 augroup LargeFile
     autocmd!
-    autocmd BufReadPre * let f=getfsize(expand("<afile>")) | if f > g:LargeFile || f == -2 | call LargeFileSettings() | endif
+    " Guard: <afile> is empty for special buffers
+    autocmd BufReadPre * if !empty(expand('<afile>')) | let f=getfsize(expand('<afile>')) | if f > g:LargeFile || f == -2 | call LargeFileSettings() | endif | endif
 augroup END
 
 function! LargeFileSettings()
@@ -1055,7 +1071,7 @@ endfunction
 " Additional optimizations for TTY/basic terminals
 if g:is_tty
     " Disable syntax highlighting for very large files in TTY
-    autocmd BufReadPre * if getfsize(expand("<afile>")) > 512000 | setlocal syntax=OFF | endif
+    autocmd BufReadPre * if !empty(expand('<afile>')) && getfsize(expand('<afile>')) > 512000 | setlocal syntax=OFF | endif
 
     " Simpler status line for TTY
     set statusline=%f\ %h%w%m%r\ %=%(%l,%c%V\ %=\ %P%)

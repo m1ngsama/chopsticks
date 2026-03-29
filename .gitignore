@@ -1,1 +1,2 @@
 *.json
+!coc-settings.json

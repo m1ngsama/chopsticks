@@ -1,0 +1,13 @@
+{
+  "languageserver": {
+    "marksman": {
+      "command": "marksman",
+      "args": ["server"],
+      "filetypes": ["markdown"],
+      "rootPatterns": [".git", ".marksman.toml"]
+    }
+  },
+  "coc.preferences.formatOnSaveFiletypes": [
+    "markdown"
+  ]
+}

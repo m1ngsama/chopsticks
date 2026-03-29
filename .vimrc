@@ -235,6 +235,14 @@ call plug#end()
 let g:use_coc = (has('nvim') || has('patch-8.0.1453')) && executable('node') && exists('g:plugs["coc.nvim"]')
 let g:use_vimlsp = !g:use_coc && has('patch-8.0.0') && exists('g:plugs["vim-lsp"]')
 
+" Suppress coc.nvim's blocking startup warning on Vim < 9.0.0438
+" (the guard above already prevents coc from loading, but the warning
+"  fires from the plugin file itself if coc.nvim is in runtimepath)
+if !g:use_coc
+    let g:coc_start_at_startup     = 0
+    let g:coc_disable_startup_warning = 1
+endif
+
 " Limit popup menu height (applies to all completion)
 set pumheight=15
 
@@ -343,7 +351,10 @@ map <leader>t<leader> :tabnext<cr>
 " Let 'tl' toggle between this and the last accessed tab
 let g:lasttab = 1
 nmap <Leader>tl :exe "tabn ".g:lasttab<CR>
-au TabLeave * let g:lasttab = tabpagenr()
+augroup ChopstickTabHistory
+    autocmd!
+    autocmd TabLeave * let g:lasttab = tabpagenr()
+augroup END
 
 " Opens a new tab with the current buffer's path
 map <leader>te :tabedit <C-r>=expand("%:p:h")<cr>/
@@ -411,7 +422,10 @@ nnoremap <leader>qo :copen<CR>
 nnoremap <leader>qc :cclose<CR>
 
 " Auto-equalize splits when terminal window is resized
-autocmd VimResized * wincmd =
+augroup ChopstickResize
+    autocmd!
+    autocmd VimResized * wincmd =
+augroup END
 
 " ============================================================================
 " => Plugin Settings
@@ -437,7 +451,10 @@ let NERDTreeIgnore=['\.pyc$', '\~$', '\.swp$', '\.git$', '\.DS_Store', 'node_mod
 let NERDTreeWinSize=35
 
 " Track stdin reads so startup autocmds can skip pipe/heredoc input
-autocmd StdinReadPre * let s:std_in=1
+augroup ChopstickStdin
+    autocmd!
+    autocmd StdinReadPre * let s:std_in=1
+augroup END
 
 " Startup layout (non-TTY only — keeps TTY startup instant)
 if !g:is_tty
@@ -538,7 +555,7 @@ let g:ale_linters = {
 \   'python':     ['flake8', 'pylint'],
 \   'javascript': ['eslint'],
 \   'typescript': ['eslint', 'tsserver'],
-\   'go':         ['gopls', 'golint'],
+\   'go':         ['gopls', 'staticcheck'],
 \   'rust':       ['cargo'],
 \   'sh':         ['shellcheck'],
 \   'yaml':       ['yamllint'],
@@ -563,7 +580,7 @@ let g:ale_fixers = {
 \   'scss':       ['prettier'],
 \   'less':       ['prettier'],
 \   'markdown':   ['prettier'],
-\   'sql':        ['sqlfmt'],
+\   'sql':        ['sqlfluff'],
 \}
 
 " Don't fix on save if LSP is handling formatting (avoids double-format)
@@ -577,10 +594,11 @@ let g:ale_lint_on_enter = 0
 " --- vim-go: disable built-in LSP/gopls — CoC (coc-go) handles all Go intelligence ---
 " vim-go's gopls conflicts with coc-go and causes E495 errors on startup
 " (BufWinEnter afile expand fails for non-file buffers like NERDTree/Startify)
-let g:go_gopls_enabled          = 0  " disable vim-go's own gopls client
+let g:go_gopls_enabled           = 0  " disable vim-go's own gopls — coc-go handles LSP
 let g:go_code_completion_enabled = 0  " let CoC handle completion
-let g:go_def_mode               = 'gopls'  " fallback if CoC unavailable (won't start without g:go_gopls_enabled)
-let g:go_info_mode              = 'gopls'
+" Use godef as fallback for jump-to-def when CoC unavailable; gopls+disabled = error
+let g:go_def_mode               = g:use_coc ? 'gopls' : 'godef'
+let g:go_info_mode              = g:use_coc ? 'gopls' : 'godef'
 let g:go_fmt_autosave           = 0  " CoC/ALE handle format-on-save
 let g:go_imports_autosave       = 0
 let g:go_highlight_types        = 1  " keep syntax features
@@ -655,7 +673,10 @@ if g:use_coc
     endfunction
 
     " Highlight symbol and its references on cursor hold
-    autocmd CursorHold * silent call CocActionAsync('highlight')
+    augroup CocHighlight
+        autocmd!
+        autocmd CursorHold * silent call CocActionAsync('highlight')
+    augroup END
 
     " Symbol renaming
     nmap <leader>rn <Plug>(coc-rename)
@@ -832,54 +853,58 @@ fun! CleanExtraSpaces()
     call setreg('/', old_query)
 endfun
 
-if has("autocmd")
+augroup ChopstickCleanup
+    autocmd!
     " Run for real files only; skip special buffers (NERDTree, Startify, terminal, etc.)
     autocmd BufWritePre * if empty(&buftype) && !empty(expand('<afile>')) | call CleanExtraSpaces() | endif
-endif
+augroup END
 
 " ============================================================================
 " => Auto Commands
 " ============================================================================
 
-" Return to last edit position when opening files
-autocmd BufReadPost * if line("'\"") > 1 && line("'\"") <= line("$") | exe "normal! g'\"" | endif
+augroup ChopstickFiletype
+    autocmd!
+    " Return to last edit position when opening files
+    autocmd BufReadPost * if line("'\"") > 1 && line("'\"") <= line("$") | exe "normal! g'\"" | endif
 
-" Set specific file types
-autocmd BufNewFile,BufRead *.json setlocal filetype=json
-autocmd BufNewFile,BufRead *.md setlocal filetype=markdown
-autocmd BufNewFile,BufRead *.jsx setlocal filetype=javascript.jsx
-autocmd BufNewFile,BufRead *.tsx setlocal filetype=typescript.tsx
+    " Set specific file types
+    autocmd BufNewFile,BufRead *.json setlocal filetype=json
+    autocmd BufNewFile,BufRead *.md setlocal filetype=markdown
+    autocmd BufNewFile,BufRead *.jsx setlocal filetype=javascript.jsx
+    autocmd BufNewFile,BufRead *.tsx setlocal filetype=typescript.tsx
 
-" Python specific settings
-autocmd FileType python setlocal expandtab shiftwidth=4 tabstop=4 colorcolumn=88
+    " Python specific settings
+    autocmd FileType python setlocal expandtab shiftwidth=4 tabstop=4 colorcolumn=88
 
-" JavaScript specific settings
-autocmd FileType javascript,typescript setlocal expandtab shiftwidth=2 tabstop=2
+    " JavaScript specific settings
+    autocmd FileType javascript,typescript setlocal expandtab shiftwidth=2 tabstop=2
 
-" Go specific settings
-autocmd FileType go setlocal noexpandtab shiftwidth=4 tabstop=4
+    " Go specific settings
+    autocmd FileType go setlocal noexpandtab shiftwidth=4 tabstop=4
 
-" HTML/CSS specific settings
-autocmd FileType html,css setlocal expandtab shiftwidth=2 tabstop=2
+    " HTML/CSS specific settings
+    autocmd FileType html,css setlocal expandtab shiftwidth=2 tabstop=2
 
-" YAML specific settings
-autocmd FileType yaml setlocal expandtab shiftwidth=2 tabstop=2
+    " YAML specific settings
+    autocmd FileType yaml setlocal expandtab shiftwidth=2 tabstop=2
 
-" Markdown specific settings
-autocmd FileType markdown setlocal wrap linebreak spell tw=0
+    " Markdown specific settings
+    autocmd FileType markdown setlocal wrap linebreak spell tw=0
 
-" Shell script settings
-autocmd FileType sh setlocal expandtab shiftwidth=2 tabstop=2
+    " Shell script settings
+    autocmd FileType sh setlocal expandtab shiftwidth=2 tabstop=2
 
-" Makefile settings (must use tabs)
-autocmd FileType make setlocal noexpandtab shiftwidth=8 tabstop=8
+    " Makefile settings (must use tabs)
+    autocmd FileType make setlocal noexpandtab shiftwidth=8 tabstop=8
 
-" JSON specific settings
-autocmd FileType json setlocal expandtab shiftwidth=2 tabstop=2
+    " JSON specific settings
+    autocmd FileType json setlocal expandtab shiftwidth=2 tabstop=2
 
-" Docker specific settings
-autocmd BufNewFile,BufRead Dockerfile* setlocal filetype=dockerfile
-autocmd FileType dockerfile setlocal expandtab shiftwidth=2 tabstop=2
+    " Docker specific settings
+    autocmd BufNewFile,BufRead Dockerfile* setlocal filetype=dockerfile
+    autocmd FileType dockerfile setlocal expandtab shiftwidth=2 tabstop=2
+augroup END
 
 " ============================================================================
 " => Status Line
@@ -1071,7 +1096,10 @@ endfunction
 " Additional optimizations for TTY/basic terminals
 if g:is_tty
     " Disable syntax highlighting for very large files in TTY
-    autocmd BufReadPre * if !empty(expand('<afile>')) && getfsize(expand('<afile>')) > 512000 | setlocal syntax=OFF | endif
+    augroup ChopstickTTYLargeFile
+        autocmd!
+        autocmd BufReadPre * if !empty(expand('<afile>')) && getfsize(expand('<afile>')) > 512000 | setlocal syntax=OFF | endif
+    augroup END
 
     " Simpler status line for TTY
     set statusline=%f\ %h%w%m%r\ %=%(%l,%c%V\ %=\ %P%)
@@ -1101,7 +1129,10 @@ set timeoutlen=500
 
 if exists('g:plugs["vim-which-key"]')
     " Register after plugins are loaded (autoload functions available at VimEnter)
-    autocmd VimEnter * call which_key#register(',', 'g:which_key_map')
+    augroup ChopstickWhichKey
+        autocmd!
+        autocmd VimEnter * call which_key#register(',', 'g:which_key_map')
+    augroup END
 
     nnoremap <silent> <leader> :<C-u>WhichKey ','<CR>
     vnoremap <silent> <leader> :<C-u>WhichKeyVisual ','<CR>
@@ -1262,7 +1293,10 @@ if exists('g:plugs["vim-startify"]')
     let g:startify_files_number = 10
 
     " Required for NERDTree compatibility (prevents buftype conflicts)
-    autocmd User Startified setlocal buftype=
+    augroup ChopstickStartify
+        autocmd!
+        autocmd User Startified setlocal buftype=
+    augroup END
 endif
 
 " ============================================================================

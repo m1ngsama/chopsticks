@@ -93,13 +93,28 @@ HAS_BREW=0;  command -v brew >/dev/null 2>&1  && HAS_BREW=1
 HAS_APT=0;   command -v apt  >/dev/null 2>&1  && HAS_APT=1
 HAS_DNF=0;   command -v dnf  >/dev/null 2>&1  && HAS_DNF=1
 HAS_PACMAN=0; command -v pacman >/dev/null 2>&1 && HAS_PACMAN=1
-HAS_NODE=0;  command -v node >/dev/null 2>&1  && HAS_NODE=1  && ok "Node.js $(node --version) detected"
-HAS_PIP=0;   command -v pip3 >/dev/null 2>&1  && HAS_PIP=1   && ok "Python/pip3 detected"
-HAS_GO=0;    command -v go   >/dev/null 2>&1  && HAS_GO=1    && ok "Go $(go version | awk '{print $3}') detected"
+HAS_NODE=0;   command -v node >/dev/null 2>&1  && HAS_NODE=1  && ok "Node.js $(node --version) detected"
+HAS_PYTHON=0; command -v python3 >/dev/null 2>&1 && HAS_PYTHON=1
+HAS_PIP=0;    command -v pip3 >/dev/null 2>&1  && HAS_PIP=1
+HAS_GO=0;     command -v go   >/dev/null 2>&1  && HAS_GO=1    && ok "Go $(go version | awk '{print $3}') detected"
 
-[[ $HAS_NODE -eq 0 ]] && warn "Node.js not found — JS/TS/Markdown npm tools will be skipped"
-[[ $HAS_PIP  -eq 0 ]] && warn "pip3 not found — Python tools will be skipped"
-[[ $HAS_GO   -eq 0 ]] && warn "Go not found — Go tools will be skipped"
+# Bootstrap pip3 when python3 exists but pip3 is absent (common on Ubuntu minimal images)
+if [[ $HAS_PYTHON -eq 1 && $HAS_PIP -eq 0 ]]; then
+    warn "python3 found but pip3 missing — attempting bootstrap"
+    if python3 -m ensurepip --upgrade >/dev/null 2>&1 || \
+       (command -v apt-get >/dev/null 2>&1 && sudo apt-get install -y python3-pip >/dev/null 2>&1) || \
+       (command -v pacman >/dev/null 2>&1 && sudo pacman -S --noconfirm python-pip >/dev/null 2>&1) || \
+       (command -v dnf >/dev/null 2>&1 && sudo dnf install -y python3-pip >/dev/null 2>&1); then
+        command -v pip3 >/dev/null 2>&1 && HAS_PIP=1 && ok "pip3 bootstrapped"
+    else
+        warn "pip3 bootstrap failed — Python tools will be skipped"
+    fi
+fi
+
+[[ $HAS_PIP   -eq 1 ]] && ok "Python/pip3 detected"
+[[ $HAS_NODE  -eq 0 ]] && warn "Node.js not found — JS/TS/Markdown npm tools will be skipped"
+[[ $HAS_PIP   -eq 0 ]] && warn "pip3 not found — Python tools will be skipped"
+[[ $HAS_GO    -eq 0 ]] && warn "Go not found — Go tools will be skipped"
 
 # ============================================================================
 # Symlink
@@ -115,6 +130,17 @@ fi
 
 ln -sf "$SCRIPT_DIR/.vimrc" "$HOME/.vimrc"
 ok "~/.vimrc -> $SCRIPT_DIR/.vimrc"
+
+# CoC settings (marksman markdown LSP + format-on-save config)
+mkdir -p "$HOME/.vim"
+COC_CFG="$HOME/.vim/coc-settings.json"
+if [ -f "$COC_CFG" ] && [ ! -L "$COC_CFG" ]; then
+    TS=$(date +%Y%m%d_%H%M%S)
+    warn "Backing up existing coc-settings.json to ~/.vim/coc-settings.json.backup.$TS"
+    mv "$COC_CFG" "$COC_CFG.backup.$TS"
+fi
+ln -sf "$SCRIPT_DIR/coc-settings.json" "$COC_CFG"
+ok "~/.vim/coc-settings.json -> $SCRIPT_DIR/coc-settings.json"
 
 # ============================================================================
 # vim-plug + plugins
@@ -132,7 +158,8 @@ else
 fi
 
 step "Installing Vim plugins"
-vim +PlugInstall +qall
+# </dev/null prevents Vim from reading stdin in non-interactive/piped environments
+vim +PlugInstall +qall </dev/null
 ok "Plugins installed"
 
 # ============================================================================
@@ -141,7 +168,7 @@ ok "Plugins installed"
 
 step "System tools"
 
-if ask "Install system tools (ripgrep, fzf, ctags, shellcheck, marksman)?"; then
+if ask "Install system tools (ripgrep, fzf, ctags, shellcheck, hadolint, marksman)?"; then
     install_sys() {
         local name="$1"; local check="$2"; shift 2
         if command -v "$check" >/dev/null 2>&1; then
@@ -163,17 +190,36 @@ if ask "Install system tools (ripgrep, fzf, ctags, shellcheck, marksman)?"; then
 
     if [[ $OS == macos ]]; then
         command -v brew >/dev/null 2>&1 || { warn "brew not found — skipping system tools"; }
-        install_sys "ripgrep"          rg        "brew install ripgrep"
-        install_sys "fzf"              fzf       "brew install fzf"
-        install_sys "universal-ctags"  ctags     "brew install universal-ctags"
+        install_sys "ripgrep"          rg         "brew install ripgrep"
+        install_sys "fzf"              fzf        "brew install fzf"
+        install_sys "universal-ctags"  ctags      "brew install universal-ctags"
         install_sys "shellcheck"       shellcheck "brew install shellcheck"
-        install_sys "marksman"         marksman  "brew install marksman"
+        install_sys "hadolint"         hadolint   "brew install hadolint"
+        install_sys "marksman"         marksman   "brew install marksman"
     elif [[ $HAS_APT -eq 1 ]]; then
         sudo apt-get update -qq
         install_sys "ripgrep"         rg         "sudo apt-get install -y ripgrep"
         install_sys "fzf"             fzf        "sudo apt-get install -y fzf"
         install_sys "universal-ctags" ctags      "sudo apt-get install -y universal-ctags"
-        install_sys "shellcheck"      shellcheck  "sudo apt-get install -y shellcheck"
+        install_sys "shellcheck"      shellcheck "sudo apt-get install -y shellcheck"
+        # hadolint: no apt package, download binary
+        if ! command -v hadolint >/dev/null 2>&1; then
+            ARCH=$(uname -m)
+            [[ "$ARCH" == "x86_64" ]] && HARCH="x86_64" || HARCH="arm64"
+            HVER=$(curl -s https://api.github.com/repos/hadolint/hadolint/releases/latest \
+                   | grep '"tag_name"' | cut -d'"' -f4)
+            if [[ -n "$HVER" ]]; then
+                curl -fsSL "https://github.com/hadolint/hadolint/releases/download/${HVER}/hadolint-Linux-${HARCH}" \
+                    -o /tmp/hadolint && chmod +x /tmp/hadolint && sudo mv /tmp/hadolint /usr/local/bin/hadolint
+                ok "hadolint"
+                INSTALLED+=("hadolint")
+            else
+                warn "hadolint: could not detect latest release, install manually"
+                SKIPPED+=("hadolint")
+            fi
+        else
+            ok "hadolint (already installed)"
+        fi
         # marksman: no apt package, download binary
         if ! command -v marksman >/dev/null 2>&1; then
             ARCH=$(uname -m)
@@ -192,21 +238,30 @@ if ask "Install system tools (ripgrep, fzf, ctags, shellcheck, marksman)?"; then
         else
             ok "marksman (already installed)"
         fi
+    elif [[ $HAS_PACMAN -eq 1 ]]; then
+        install_sys "ripgrep"         rg         "sudo pacman -S --noconfirm ripgrep"
+        install_sys "fzf"             fzf        "sudo pacman -S --noconfirm fzf"
+        install_sys "universal-ctags" ctags      "sudo pacman -S --noconfirm ctags"
+        install_sys "shellcheck"      shellcheck "sudo pacman -S --noconfirm shellcheck"
+        install_sys "hadolint"        hadolint   "sudo pacman -S --noconfirm hadolint"
+        install_sys "marksman"        marksman   "sudo pacman -S --noconfirm marksman"
     elif [[ $HAS_DNF -eq 1 ]]; then
         install_sys "ripgrep"         rg         "sudo dnf install -y ripgrep"
         install_sys "fzf"             fzf        "sudo dnf install -y fzf"
-        install_sys "shellcheck"      shellcheck  "sudo dnf install -y ShellCheck"
+        install_sys "shellcheck"      shellcheck "sudo dnf install -y ShellCheck"
         skip "universal-ctags — install manually: sudo dnf install ctags"
         SKIPPED+=("ctags")
+        skip "hadolint — install manually from https://github.com/hadolint/hadolint/releases"
+        SKIPPED+=("hadolint")
         skip "marksman — install manually from https://github.com/artempyanykh/marksman/releases"
         SKIPPED+=("marksman")
     else
         warn "Unknown Linux distro — skipping system tools (install manually)"
-        SKIPPED+=("ripgrep" "fzf" "ctags" "shellcheck" "marksman")
+        SKIPPED+=("ripgrep" "fzf" "ctags" "shellcheck" "hadolint" "marksman")
     fi
 else
     skip "system tools"
-    SKIPPED+=("ripgrep" "fzf" "ctags" "shellcheck" "marksman")
+    SKIPPED+=("ripgrep" "fzf" "ctags" "shellcheck" "hadolint" "marksman")
 fi
 
 # ============================================================================
@@ -237,7 +292,6 @@ if [[ $HAS_NODE -eq 1 ]]; then
         npm_install stylelint-config-standard
         npm_install eslint
         npm_install typescript tsc
-        npm_install sqlfmt
     else
         skip "npm tools"
         SKIPPED+=("prettier" "markdownlint-cli" "stylelint" "eslint" "typescript")
@@ -254,7 +308,7 @@ fi
 step "Python tools (formatters + linters)"
 
 if [[ $HAS_PIP -eq 1 ]]; then
-    if ask "Install Python tools (black, isort, flake8, pylint, sqlfluff)?"; then
+    if ask "Install Python tools (black, isort, flake8, pylint, yamllint, sqlfluff)?"; then
         pip_install() {
             local pkg="$1"; local check="${2:-$1}"
             if command -v "$check" >/dev/null 2>&1; then
@@ -274,24 +328,25 @@ if [[ $HAS_PIP -eq 1 ]]; then
         pip_install isort
         pip_install flake8
         pip_install pylint
+        pip_install yamllint
         pip_install sqlfluff
     else
         skip "Python tools"
-        SKIPPED+=("black" "isort" "flake8" "pylint" "sqlfluff")
+        SKIPPED+=("black" "isort" "flake8" "pylint" "yamllint" "sqlfluff")
     fi
 else
     skip "Python tools (pip3 not installed)"
-    SKIPPED+=("black" "isort" "flake8" "pylint" "sqlfluff")
+    SKIPPED+=("black" "isort" "flake8" "pylint" "yamllint" "sqlfluff")
 fi
 
 # ============================================================================
-# Go tools (gopls, goimports)
+# Go tools (gopls, goimports, staticcheck)
 # ============================================================================
 
 step "Go tools"
 
 if [[ $HAS_GO -eq 1 ]]; then
-    if ask "Install Go tools (gopls, goimports)?"; then
+    if ask "Install Go tools (gopls, goimports, staticcheck)?"; then
         # Go installs binaries to $(go env GOPATH)/bin — add to PATH for this session
         GOBIN="$(go env GOPATH)/bin"
         export PATH="$PATH:$GOBIN"
@@ -310,8 +365,9 @@ if [[ $HAS_GO -eq 1 ]]; then
                 FAILED+=("$name")
             fi
         }
-        go_install gopls     "golang.org/x/tools/gopls@latest"          gopls
-        go_install goimports "golang.org/x/tools/cmd/goimports@latest"  goimports
+        go_install gopls       "golang.org/x/tools/gopls@latest"                   gopls
+        go_install goimports   "golang.org/x/tools/cmd/goimports@latest"             goimports
+        go_install staticcheck "honnef.co/go/tools/cmd/staticcheck@latest"            staticcheck
 
         # Remind user to add GOPATH/bin to their shell profile
         if ! echo "$PATH" | grep -q "$GOBIN"; then
@@ -319,11 +375,11 @@ if [[ $HAS_GO -eq 1 ]]; then
         fi
     else
         skip "Go tools"
-        SKIPPED+=("gopls" "goimports")
+        SKIPPED+=("gopls" "goimports" "staticcheck")
     fi
 else
     skip "Go tools (go not installed)"
-    SKIPPED+=("gopls" "goimports")
+    SKIPPED+=("gopls" "goimports" "staticcheck")
 fi
 
 # ============================================================================
@@ -334,7 +390,8 @@ step "CoC language server extensions"
 
 if [[ $HAS_NODE -eq 1 ]]; then
     if ask "Install CoC language servers (LSP for all configured languages)?"; then
-        vim +'CocInstall -sync coc-json coc-tsserver coc-pyright coc-sh coc-html coc-css coc-yaml coc-go coc-rust-analyzer coc-marksman coc-sql' +qall
+        # Note: coc-marksman doesn't exist on npm — markdown LSP is handled via coc-settings.json
+        vim +'CocInstall -sync coc-json coc-tsserver coc-pyright coc-sh coc-html coc-css coc-yaml coc-go coc-rust-analyzer coc-sql' +qall </dev/null
         ok "CoC language servers installed"
     else
         skip "CoC language servers"

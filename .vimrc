@@ -73,9 +73,15 @@ set wildmenu
 " Make wildmenu behave like similar to Bash completion
 set wildmode=list:longest
 
-" There are certain files that we would never want to edit with Vim
-" Wildmenu will ignore files with these extensions
+" Case-insensitive filename completion in wildmenu (spf13, YADR)
+set wildignorecase
+
+" Files and directories to exclude from wildmenu and :find
 set wildignore=*.docx,*.jpg,*.png,*.gif,*.pdf,*.pyc,*.exe,*.flv,*.img,*.xlsx
+set wildignore+=*/node_modules/*,*/.git/*,*/__pycache__/*,*/dist/*,*/build/*
+
+" Recursive :find across the project tree (works with wildignore above)
+set path+=**
 
 " Enable mouse support
 set mouse=a
@@ -119,6 +125,11 @@ set novisualbell
 set t_vb=
 set tm=500
 
+" Separate timeout for keycodes (arrow keys, Esc) vs leader sequences
+" ttimeoutlen=10 eliminates the ~500ms ESC lag in terminal Vim (vim-sensible)
+set ttimeout
+set ttimeoutlen=10
+
 " Enable 256 colors palette in Gnome Terminal
 if $COLORTERM == 'gnome-terminal'
     set t_Co=256
@@ -131,6 +142,9 @@ if has("gui_running")
     set t_Co=256
     set guitablabel=%M\ %t
 endif
+
+" Show last line partially instead of replacing it with @@@ (vim-sensible)
+set display+=lastline
 
 " Use Unix as the standard file type
 set ffs=unix,dos,mac
@@ -288,6 +302,14 @@ endif
 " => Text, Tab and Indent Related
 " ============================================================================
 
+" Visible whitespace characters (toggled with <F6>)
+" TTY: ASCII equivalents; GUI/modern terminal: Unicode symbols
+if g:is_tty
+    set listchars=tab:>-,trail:.,extends:>,precedes:<,nbsp:_
+else
+    set listchars=tab:→\ ,trail:·,extends:▸,precedes:◂,nbsp:·
+endif
+
 " Use spaces instead of tabs
 set expandtab
 
@@ -357,17 +379,30 @@ augroup END
 " Opens a new tab with the current buffer's path
 map <leader>te :tabedit <C-r>=expand("%:p:h")<cr>/
 
-" Switch CWD to the directory of the open buffer
-map <leader>wd :cd %:p:h<cr>:pwd<cr>
+" Change window-local CWD to current file's directory (lcd = local, safer than cd)
+map <leader>cd :lcd %:p:h<cr>:pwd<cr>
+
+" Open built-in file browser (works on any Vim, no plugins needed — tpope)
+nnoremap <leader>e :Explore<CR>
 
 " Remap VIM 0 to first non-blank character
 map 0 ^
 
-" Move a line of text using ALT+[jk] or Command+[jk] on mac
+" Reselect last pasted text (gV = visual select last paste) — spf13, YADR
+nnoremap gV `[v`]
+
+" Command-line history navigation with Ctrl+p/n (amix, spf13)
+cnoremap <C-p> <Up>
+cnoremap <C-n> <Down>
+
+" Move a line of text using ALT+[jk] (normal mode)
 nmap <M-j> mz:m+<cr>`z
 nmap <M-k> mz:m-2<cr>`z
-vmap <M-j> :m'>+<cr>`<my`>mzgv`yo`z
-vmap <M-k> :m'<-2<cr>`>my`<mzgv`yo`z
+
+" Move selected lines up/down and re-indent (visual mode) — ThePrimeagen
+" Overrides visual-J (join) and visual-K (keywordprg) — use normal mode for those
+vnoremap J :m '>+1<CR>gv=gv
+vnoremap K :m '<-2<CR>gv=gv
 
 " Pressing ,ss will toggle and untoggle spell checking
 map <leader>ss :setlocal spell!<cr>
@@ -386,6 +421,9 @@ nnoremap <F3> :set invnumber<CR>
 
 " Toggle relative line numbers
 nnoremap <F4> :set invrelativenumber<CR>
+
+" Toggle visible whitespace (tabs, trailing spaces, non-breaking spaces)
+nnoremap <F6> :set list!<CR>
 
 " Enable folding with the spacebar
 nnoremap <space> za
@@ -863,6 +901,19 @@ fun! CleanExtraSpaces()
     call setreg('/', old_query)
 endfun
 
+" Disable auto-insertion of comment leaders when pressing Enter or o/O
+" Must run at BufEnter because filetype plugins reset formatoptions per buffer
+augroup ChopstickFormatOptions
+    autocmd!
+    autocmd BufEnter * setlocal formatoptions-=c formatoptions-=r formatoptions-=o
+augroup END
+
+" Auto-disable paste mode when leaving insert mode (prevents broken indentation)
+augroup ChopstickPaste
+    autocmd!
+    autocmd InsertLeave * set nopaste
+augroup END
+
 augroup ChopstickCleanup
     autocmd!
     " Run for real files only; skip special buffers (NERDTree, Startify, terminal, etc.)
@@ -885,13 +936,16 @@ augroup ChopstickFiletype
     autocmd BufNewFile,BufRead *.tsx setlocal filetype=typescript.tsx
 
     " Python specific settings
-    autocmd FileType python setlocal expandtab shiftwidth=4 tabstop=4 colorcolumn=88
+    autocmd FileType python setlocal expandtab shiftwidth=4 tabstop=4 textwidth=88 colorcolumn=+1
 
-    " JavaScript specific settings
-    autocmd FileType javascript,typescript setlocal expandtab shiftwidth=2 tabstop=2
+    " JavaScript / TypeScript specific settings
+    autocmd FileType javascript,typescript setlocal expandtab shiftwidth=2 tabstop=2 textwidth=100 colorcolumn=+1
 
-    " Go specific settings
-    autocmd FileType go setlocal noexpandtab shiftwidth=4 tabstop=4
+    " Go specific settings (standard: no textwidth limit, but 120 is common)
+    autocmd FileType go setlocal noexpandtab shiftwidth=4 tabstop=4 textwidth=120 colorcolumn=+1
+
+    " Rust specific settings
+    autocmd FileType rust setlocal expandtab shiftwidth=4 tabstop=4 textwidth=100 colorcolumn=+1
 
     " HTML/CSS specific settings
     autocmd FileType html,css setlocal expandtab shiftwidth=2 tabstop=2
@@ -899,11 +953,11 @@ augroup ChopstickFiletype
     " YAML specific settings
     autocmd FileType yaml setlocal expandtab shiftwidth=2 tabstop=2
 
-    " Markdown specific settings
-    autocmd FileType markdown setlocal wrap linebreak spell tw=0
+    " Markdown specific settings (no line-length limit; wrap at window edge)
+    autocmd FileType markdown setlocal wrap linebreak spell textwidth=0 colorcolumn=0
 
     " Shell script settings
-    autocmd FileType sh setlocal expandtab shiftwidth=2 tabstop=2
+    autocmd FileType sh setlocal expandtab shiftwidth=2 tabstop=2 textwidth=80 colorcolumn=+1
 
     " Makefile settings (must use tabs)
     autocmd FileType make setlocal noexpandtab shiftwidth=8 tabstop=8
@@ -951,6 +1005,9 @@ endfunc
 set synmaxcol=200
 set ttyfast
 
+" Don't scan included files for completion — makes Ctrl+n/p much faster (vim-sensible)
+set complete-=i
+
 " Reduce updatetime for better user experience
 set updatetime=300
 
@@ -977,6 +1034,10 @@ endif
 " This allows per-project customization
 set exrc
 set secure
+
+" Session options: exclude 'options' (stale plugin settings) and 'globals';
+" include terminal buffers — compatible with vim-obsession/vim-prosession
+set sessionoptions=blank,buffers,curdir,folds,help,tabpages,winsize,winpos,terminal
 
 " ============================================================================
 " => Additional Engineering Utilities
@@ -1006,8 +1067,8 @@ nnoremap <leader>so :source %<CR>
 " Edit vimrc quickly
 nnoremap <leader>ev :edit $MYVIMRC<CR>
 
-" Reload vimrc
-nnoremap <leader>sv :source $MYVIMRC<CR>
+" Reload vimrc with confirmation echo
+nnoremap <leader>sv :source $MYVIMRC<CR>:echo "vimrc reloaded"<CR>
 
 " Search and replace word under cursor
 nnoremap <leader>* :%s/\<<C-r><C-w>\>//g<Left><Left>
@@ -1264,9 +1325,9 @@ if exists('g:plugs["vim-which-key"]')
         \ 'f': 'copy-filename',
         \ }
 
-    " [e]dit group
+    " [e]dit / [e]xplore group
     let g:which_key_map['e'] = {
-        \ 'name': '+edit',
+        \ 'name': '+edit/explore',
         \ 'v': 'edit-vimrc',
         \ }
 
@@ -1331,8 +1392,10 @@ if exists('g:plugs["vim-which-key"]')
         \ 'name': '+save/window',
         \ 'a': 'save-all',
         \ 's': 'workspace-symbols',
-        \ 'd': 'change-dir',
         \ }
+
+    " [c]hange-dir (standalone — <leader>cd changes window-local CWD)
+    let g:which_key_map['cd'] = 'change-local-dir'
 endif
 
 " ============================================================================

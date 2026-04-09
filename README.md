@@ -15,8 +15,7 @@
 [![Languages](https://img.shields.io/badge/languages-14-informational?style=flat-square)](#language-support)
 
 ```bash
-git clone https://github.com/m1ngsama/chopsticks.git ~/.vim
-cd ~/.vim && ./install.sh
+curl -fsSL https://raw.githubusercontent.com/m1ngsama/chopsticks/main/get.sh | bash
 ```
 
 > **New to Vim?** Read [Step 0 in QUICKSTART.md](QUICKSTART.md#step-0-vim-basics) first —
@@ -56,54 +55,66 @@ cd ~/.vim && ./install.sh
 
 | Tool | Minimum | Role |
 |------|---------|------|
-| Vim | **8.0+** | Required |
-| git | any | Cloning and vim-fugitive |
-| curl | any | vim-plug bootstrap |
-| Node.js | 14.14+ | Optional — enables CoC LSP (recommended) |
+| Vim | **8.0+** | Required — `install.sh` installs it if missing |
+| git | any | Required — `install.sh` installs it if missing |
+| curl | any | Required — `install.sh` installs it if missing |
+| Node.js | 14.14+ | Optional — enables CoC LSP; `install.sh` offers nvm install |
 | ripgrep | any | Optional — enables `,rg` / `,rG` project search |
 | fzf | any | Optional — enables `Ctrl+p` fuzzy finder |
 | ctags | any | Optional — enables `,tt` tag browser |
 | tmux | 1.8+ | Optional — enables seamless pane navigation |
 
-All optional tools are installed automatically by `install.sh` when prompted.
+`install.sh` detects your environment and installs missing dependencies automatically.
+On macOS it will offer to install Homebrew if not present. On any platform it will
+offer to install Node.js via nvm if missing.
 
 ---
 
 ## Installation
 
-### Automatic (recommended)
+### One command (recommended)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/m1ngsama/chopsticks/main/get.sh | bash
+```
+
+This bootstrap script clones the repo to `~/.vim`, then runs the full installer.
+It works correctly even when piped from curl — interactive prompts use `/dev/tty`.
+
+For non-interactive or CI environments:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/m1ngsama/chopsticks/main/get.sh | bash -s -- --yes
+```
+
+### Traditional (git clone)
 
 ```bash
 git clone https://github.com/m1ngsama/chopsticks.git ~/.vim
-cd ~/.vim
-./install.sh
+cd ~/.vim && ./install.sh
 ```
 
-The installer handles everything in sequence:
+### What the installer does
 
-1. Verifies Vim 8.0+ and detects OS / package manager
-2. Backs up any existing `~/.vimrc` with a timestamp
-3. Symlinks `~/.vimrc → ~/.vim/.vimrc` and `~/.vim/coc-settings.json`
-4. Installs vim-plug and runs `:PlugInstall`
-5. Optionally installs system tools (ripgrep, fzf, ctags, shellcheck, hadolint, marksman)
-6. Optionally installs language tools (npm, pip, Go)
-7. Optionally installs CoC language server extensions
-8. Optionally configures tmux for seamless pane navigation
+1. **Preflight** — checks network, detects OS and package manager, verifies or installs `curl`, `git`, and `vim`
+2. **sudo** — authenticates once upfront; gracefully skips system packages when unavailable
+3. **macOS** — offers to install Homebrew if `brew` is not found
+4. **Node.js** — offers to install via nvm if not found (falls back to vim-lsp if declined)
+5. **Python** — offers to install Python 3 if missing; bootstraps pip3 if only python3 is present
+6. **Symlinks** — backs up any existing `~/.vimrc` with a timestamp, then symlinks `~/.vimrc → ~/.vim/.vimrc`
+7. **Plugins** — installs vim-plug and runs `:PlugInstall` (with a progress notice during the black-screen period)
+8. **System tools** — ripgrep, fzf, ctags, shellcheck, hadolint, marksman (verified downloads)
+9. **Language tools** — npm formatters, pip formatters/linters, Go tools
+10. **CoC extensions** — all language servers in one step
+11. **tmux** — optionally appends vim-tmux-navigator bindings to `~/.tmux.conf`
 
 **Supported platforms:** macOS (Homebrew), Debian/Ubuntu (apt), Arch Linux (pacman), Fedora (dnf).
-
-Use `--yes` for non-interactive or CI environments:
-
-```bash
-./install.sh --yes
-```
 
 ### Manual
 
 ```bash
 git clone https://github.com/m1ngsama/chopsticks.git ~/.vim
 ln -sf ~/.vim/.vimrc ~/.vimrc
-ln -sf ~/.vim/coc-settings.json ~/.vim/coc-settings.json
 curl -fLo ~/.vim/autoload/plug.vim --create-dirs \
     https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
 vim +PlugInstall +qall </dev/null

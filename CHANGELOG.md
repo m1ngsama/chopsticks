@@ -4,6 +4,44 @@ All notable changes to chopsticks are documented here.
 
 ---
 
+## [1.2.0] - 2026-04-09
+
+Installer robustness overhaul and one-command bootstrap.
+
+### Added
+
+- **`get.sh`** — one-command bootstrap: `curl -fsSL .../get.sh | bash`
+  - Installs `git` if missing (apt / pacman / dnf / brew)
+  - Clones repo to `~/.vim`; `git pull` if already present
+  - `exec bash install.sh </dev/tty` — interactive prompts work correctly even when piped from curl
+- **Network connectivity check** — warns early if `github.com` is unreachable
+- **`curl` preflight** — detects missing curl, auto-installs or dies with clear instructions
+- **`git` preflight** — same as curl
+- **`vim` auto-install** — attempts `pkg_install` before dying if vim is not found
+- **`sudo` availability check** — authenticates once upfront; `--yes` mode skips sudo gracefully with a warning
+- **macOS Homebrew installer** — offers to install Homebrew when `brew` is missing on macOS
+- **Node.js via nvm** — when Node.js is missing, offers to install nvm + Node.js LTS automatically
+- **Python 3 installer** — offers to install python3 via package manager when missing
+- **`safe_download()`** helper — verifies downloads are non-empty and not HTML error pages (guards against GitHub 404 / rate-limit pages being silently treated as binaries)
+- **`pkg_install()`** helper — unified cross-platform install (brew / apt / pacman / dnf)
+- **`arch_github()` / `arch_linux_x64()`** helpers — normalize `uname -m` including `aarch64` → `arm64`
+- **`trap on_error ERR`** — catches unexpected failures, shows line number and debug command
+- **`trap EXIT`** — cleans up temp files (`/tmp/chopsticks-hadolint`, `/tmp/chopsticks-marksman`)
+- **Symlink verification** — confirms `[[ -L ]]` after `ln -sf`
+- **vim-plug fallback** — if curl download fails, falls back to `git clone`; verifies file is non-empty
+- **`vim +PlugInstall` error handling** — warns on non-zero exit instead of silent continue
+- **Screen-dark notice** — informs user before each Vim fullscreen step (PlugInstall, CocInstall)
+
+### Changed
+
+- `set -e` → `set -eo pipefail` — pipeline failures now propagate correctly
+- `ask()` now reads from `/dev/tty` with a test-open check (`{ true </dev/tty; }`) — interactive prompts work under `curl | bash` and non-interactive SSH sessions fall back to "no" safely
+- Binary downloads (hadolint, marksman) use named temp files and `safe_download()` instead of bare curl
+- Arch architecture detection handles `aarch64` in addition to `arm64`
+- System tools section checks `HAS_SUDO` before running apt / pacman / dnf commands
+
+---
+
 ## [1.1.1] - 2026-04-09
 
 Systematic absorption of best practices from amix/vimrc, tpope/vim-sensible,

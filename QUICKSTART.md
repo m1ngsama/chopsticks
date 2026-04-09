@@ -39,17 +39,27 @@ Once in Normal mode, press `,?` to open a cheat sheet covering everything else.
 
 ## Step 1: Install
 
+**One command — works on macOS and Linux:**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/m1ngsama/chopsticks/main/get.sh | bash
+```
+
+This clones the repo to `~/.vim` and runs the full installer. Interactive prompts
+let you choose which optional tools to install (ripgrep, Node.js, Python tools, etc.).
+
+The installer automatically handles missing dependencies — it will offer to install
+`git`, Homebrew (macOS), or Node.js via nvm if they are not found.
+
+**Traditional install:**
 ```bash
 git clone https://github.com/m1ngsama/chopsticks.git ~/.vim
 cd ~/.vim && ./install.sh
 ```
 
-The script handles everything: symlinks, vim-plug, plugins, and all tools.
-It detects your OS (macOS/Debian/Arch/Fedora) and installs what it can automatically.
-
-**Non-interactive (CI / server):**
+**Non-interactive (CI / server / scripting):**
 ```bash
-./install.sh --yes
+curl -fsSL https://raw.githubusercontent.com/m1ngsama/chopsticks/main/get.sh | bash -s -- --yes
 ```
 
 ---

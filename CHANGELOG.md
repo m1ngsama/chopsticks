@@ -4,6 +4,46 @@ All notable changes to chopsticks are documented here.
 
 ---
 
+## [1.1.1] - 2026-04-09
+
+Systematic absorption of best practices from amix/vimrc, tpope/vim-sensible,
+ThePrimeagen, skwp/YADR, and spf13-vim — settings and mappings that appear
+consistently across all top global configs but were missing here.
+
+### Added
+
+- **`set ttimeoutlen=10`** — eliminates the ~500ms ESC lag in terminal Vim; separates
+  keycode timeout from leader-key timeout (`timeoutlen` unchanged at 500ms)
+- **`set display+=lastline`** — shows truncated long lines instead of replacing them with `@@@`
+- **`set complete-=i`** — `Ctrl+n/p` no longer scans all included files; completion is instant
+- **`set wildignorecase`** — case-insensitive filename completion in wildmenu and `:find`
+- **`set path+=**`** — recursive `:find` across the project; wildignore excludes
+  `node_modules`, `__pycache__`, `dist`, `build`, `.git`
+- **`set sessionoptions`** — removes `options` from saved sessions (prevents stale plugin
+  settings from contaminating restored sessions)
+- **`set listchars`** — defines visible whitespace characters; TTY uses ASCII symbols,
+  modern terminals use Unicode (tab `→`, trail `·`, extends `▸`)
+- **`F6`** — toggle visible whitespace on/off
+- **`formatoptions-=cro`** on `BufEnter` — disables automatic comment-leader insertion
+  when pressing Enter or `o/O`; runs on BufEnter to override filetype plugins
+- **`InsertLeave * set nopaste`** — auto-disables paste mode on leaving insert, preventing
+  permanently broken auto-indent
+- **`colorcolumn=+1`** for all languages via `textwidth`:
+  Python 88, Go 120, JS/TS 100, Rust 100, Shell 80 (Markdown disabled)
+- **`vnoremap J/K`** with `gv=gv` — move selected lines down/up and re-indent (ThePrimeagen)
+- **`gV`** — re-select last pasted text (`\`[v\`]` — spf13, YADR)
+- **`cnoremap <C-p>/<C-n>`** — navigate command-line history matching typed prefix (amix, spf13)
+- **`<leader>e :Explore`** — open built-in Netrw file browser; works on any Vim without plugins
+- **`<leader>cd`** — change window-local CWD to current file's directory (was `<leader>wd`)
+- **`<leader>sv`** — reloads vimrc and echoes confirmation
+
+### Changed
+
+- `<leader>wd` renamed to `<leader>cd`; now uses `lcd` (window-local) instead of `cd` (global)
+- `wildignore` expanded with `*/node_modules/*`, `*/__pycache__/*`, `*/dist/*`, `*/build/*`
+
+---
+
 ## [1.1.0] - 2026-04-09
 
 Ergonomics and automation overhaul: community-standard keybindings, seamless

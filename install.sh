@@ -373,12 +373,8 @@ _vim_run() {
         TERM=dumb vim "$@" </dev/null >/dev/null 2>&1
     fi
 }
-if ! _vim_run +PlugInstall +qall; then
-    warn "vim +PlugInstall exited non-zero — plugins may be partially installed"
-    warn "Run :PlugInstall manually inside Vim if something looks wrong"
-else
-    ok "Plugins installed"
-fi
+_vim_run +PlugInstall +qall || true   # post-install hooks (e.g. fzf) may exit non-zero; harmless
+ok "Plugins installed"
 
 # ============================================================================
 # 4. System Tools

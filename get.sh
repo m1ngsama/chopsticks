@@ -59,8 +59,10 @@ step "Running installer"
 cd "$DEST"
 
 # exec replaces this process with install.sh and reconnects stdin to /dev/tty
-# so interactive prompts work correctly even when this script was piped from curl
-if [[ -e /dev/tty ]]; then
+# so interactive prompts work correctly even when this script was piped from curl.
+# Use a test-open to check /dev/tty is actually accessible (it may exist but be
+# unusable in non-interactive SSH sessions or container environments).
+if { true </dev/tty; } 2>/dev/null; then
     exec bash install.sh "$@" </dev/tty
 else
     exec bash install.sh "$@"

@@ -40,7 +40,7 @@ ask() {
     [[ $AUTO_YES -eq 1 ]] && return 0
     if [[ -t 0 ]]; then
         read -r -p "$1 [y/N] " reply
-    elif [[ -e /dev/tty ]]; then
+    elif { true </dev/tty; } 2>/dev/null; then
         read -r -p "$1 [y/N] " reply </dev/tty
     else
         # No terminal available — default to no (safe)

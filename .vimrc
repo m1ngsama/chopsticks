@@ -11,7 +11,7 @@
 set nocompatible
 
 " Detect terminal type and capabilities (must be early for conditional configs)
-let g:is_tty = ($TERM =~ 'linux' || $TERM =~ 'screen' || &term =~ 'builtin')
+let g:is_tty = empty($TERM) || $TERM ==# 'dumb' || $TERM =~# 'linux' || $TERM =~# 'screen' || &term =~# 'builtin'
 let g:has_true_color = ($COLORTERM == 'truecolor' || $COLORTERM == '24bit')
 
 " Enable type file detection. Vim will be able to try to detect the type of file in use
@@ -1403,42 +1403,14 @@ endif
 " ============================================================================
 
 if exists('g:plugs["vim-startify"]')
-    " Centered dashboard header — matches neovim startup aesthetic
-    function! StartifyHeader() abort
-        let l:art = [
-            \ '███╗   ███╗ ██╗███╗   ██╗ ██████╗ ███████╗ █████╗ ███╗   ███╗ █████╗ ',
-            \ '████╗ ████║███║████╗  ██║██╔════╝ ██╔════╝██╔══██╗████╗ ████║██╔══██╗',
-            \ '██╔████╔██║╚██║██╔██╗ ██║██║  ███╗███████╗███████║██╔████╔██║███████║ ',
-            \ '██║╚██╔╝██║ ██║██║╚██╗██║██║   ██║╚════██║██╔══██║██║╚██╔╝██║██╔══██║',
-            \ '██║ ╚═╝ ██║ ██║██║ ╚████║╚██████╔╝███████║██║  ██║██║ ╚═╝ ██║██║  ██║',
-            \ '╚═╝     ╚═╝ ╚═╝╚═╝  ╚═══╝ ╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝╚═╝  ╚═╝',
-            \ ]
-        let l:art_w  = 71
-        let l:pad    = max([0, (winwidth(0) - l:art_w) / 2])
-        let l:indent = repeat(' ', l:pad)
-        let l:lines  = []
-        for l:line in l:art
-            call add(l:lines, l:indent . l:line)
-        endfor
-        " Info subheader: vim version + cwd + git branch
-        let l:ver = 'Vim ' . (v:version / 100) . '.' . printf('%02d', v:version % 100)
-        let l:cwd = fnamemodify(getcwd(), ':t')
-        let l:git = ''
-        if executable('git')
-            let l:branch = system('git -C ' . shellescape(getcwd()) .
-                \ ' rev-parse --abbrev-ref HEAD 2>/dev/null')
-            if v:shell_error == 0
-                let l:git = '  [' . substitute(l:branch, '\n\+$', '', '') . ']'
-            endif
-        endif
-        let l:info     = l:ver . '  ' . l:cwd . l:git
-        let l:info_pad = max([0, (winwidth(0) - len(l:info)) / 2])
-        call add(l:lines, '')
-        call add(l:lines, repeat(' ', l:info_pad) . l:info)
-        call add(l:lines, '')
-        return l:lines
-    endfunction
-    let g:startify_custom_header = 'StartifyHeader()'
+    " Plain ASCII header — no Unicode, no system() calls, instant render
+    let g:startify_custom_header = [
+        \ '   __  __  ___  ___   __  __  ____  ____  __   _  __  __  __    ',
+        \ '  /  \/  \/ _ \/ _ \ /  \/  \/ ___)/ ___)/__\ / |/  \/  \/  \   ',
+        \ '  ) )(  ( ) (_) )(_) ) )(  ( \___ \\__  (  _/ ) |(  _)(  __/ /\ \ ',
+        \ ' /_/ \__/ \___/\___//_/ \__/ (____/(____/\___)_/ \_/\_/ \_/ \/  \/',
+        \ '',
+        \ ]
 
     " Sessions first, then recent files — mirrors dashboard plugin ordering
     let g:startify_lists = [

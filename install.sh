@@ -360,9 +360,17 @@ else
 fi
 
 step "Installing Vim plugins"
-info "(Vim will open fullscreen to install plugins — screen may go dark for 10-30s, this is normal)"
-# </dev/null prevents Vim from reading stdin in non-interactive/piped environments
-if ! vim +PlugInstall +qall </dev/null; then
+# Use /dev/tty when available so vim properly manages the terminal (alternate
+# screen buffer, cursor, colours) and restores it cleanly on exit.
+# Fall back to --not-a-term for non-interactive/CI environments.
+_vim_run() {
+    if { true </dev/tty; } 2>/dev/null; then
+        vim "$@" </dev/tty
+    else
+        vim --not-a-term "$@" </dev/null 2>/dev/null
+    fi
+}
+if ! _vim_run +PlugInstall +qall; then
     warn "vim +PlugInstall exited non-zero — plugins may be partially installed"
     warn "Run :PlugInstall manually inside Vim if something looks wrong"
 else
@@ -641,9 +649,9 @@ step "CoC language server extensions"
 
 if [[ $HAS_NODE -eq 1 ]]; then
     if ask "Install CoC language servers (LSP for all configured languages)?"; then
-        info "(Downloading CoC extensions via npm — screen may go dark for 1-3 minutes, this is normal)"
+        info "(Downloading CoC extensions via npm — this may take 1-3 minutes)"
         # Note: coc-marksman doesn't exist on npm — markdown LSP is handled via coc-settings.json
-        vim +'CocInstall -sync coc-json coc-tsserver coc-pyright coc-sh coc-html coc-css coc-yaml coc-go coc-rust-analyzer coc-sql' +qall </dev/null
+        _vim_run +'CocInstall -sync coc-json coc-tsserver coc-pyright coc-sh coc-html coc-css coc-yaml coc-go coc-rust-analyzer coc-sql' +qall
         ok "CoC language servers installed"
     else
         skip "CoC language servers"

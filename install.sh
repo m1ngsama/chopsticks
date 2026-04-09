@@ -365,9 +365,12 @@ step "Installing Vim plugins"
 # Fall back to --not-a-term for non-interactive/CI environments.
 _vim_run() {
     if { true </dev/tty; } 2>/dev/null; then
+        # Interactive terminal: let vim manage the alternate screen properly
         vim "$@" </dev/tty
     else
-        vim --not-a-term "$@" </dev/null 2>/dev/null
+        # Non-interactive / CI: TERM=dumb suppresses all escape sequences;
+        # stdout+stderr redirected so nothing leaks into installer output
+        TERM=dumb vim "$@" </dev/null >/dev/null 2>&1
     fi
 }
 if ! _vim_run +PlugInstall +qall; then

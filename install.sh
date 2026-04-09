@@ -383,6 +383,43 @@ else
 fi
 
 # ============================================================================
+# tmux: vim-tmux-navigator integration
+# ============================================================================
+
+step "tmux: vim-tmux-navigator integration"
+
+if command -v tmux >/dev/null 2>&1; then
+    TMUX_CONF="$HOME/.tmux.conf"
+    # Check if already configured
+    if grep -q 'vim-tmux-navigator' "$TMUX_CONF" 2>/dev/null; then
+        ok "vim-tmux-navigator bindings already present in ~/.tmux.conf"
+    else
+        if ask "Append vim-tmux-navigator bindings to ~/.tmux.conf (enables seamless Ctrl+h/j/k/l across vim and tmux)?"; then
+            cat >> "$TMUX_CONF" << 'TMUXEOF'
+
+# vim-tmux-navigator: seamless Ctrl+h/j/k/l navigation between vim and tmux
+is_vim="ps -o state= -o comm= -t '#{pane_tty}' | grep -iqE '^[^TXZ ]+ +(\S+\/)?g?(view|n?vim?x?)(diff)?$'"
+bind-key -n 'C-h' if-shell "$is_vim" 'send-keys C-h' 'select-pane -L'
+bind-key -n 'C-j' if-shell "$is_vim" 'send-keys C-j' 'select-pane -D'
+bind-key -n 'C-k' if-shell "$is_vim" 'send-keys C-k' 'select-pane -U'
+bind-key -n 'C-l' if-shell "$is_vim" 'send-keys C-l' 'select-pane -R'
+TMUXEOF
+            ok "vim-tmux-navigator bindings appended to ~/.tmux.conf"
+            warn "Reload tmux config now: tmux source-file ~/.tmux.conf"
+            warn "Note: C-l now navigates panes instead of clearing the screen."
+            warn "      To restore clear: add 'bind C-l send-keys C-l' to ~/.tmux.conf"
+            INSTALLED+=("tmux-navigator-config")
+        else
+            skip "tmux navigator config"
+            SKIPPED+=("tmux-navigator-config")
+        fi
+    fi
+else
+    skip "tmux not found — skipping navigator config"
+    SKIPPED+=("tmux-navigator-config")
+fi
+
+# ============================================================================
 # CoC language server extensions
 # ============================================================================
 
@@ -424,5 +461,21 @@ if [[ ${#FAILED[@]} -gt 0 ]]; then
 fi
 
 echo ""
-echo "Run 'vim' and press ',' then wait 500ms for keybinding hints."
+echo -e "${BOLD}---------------------------------------${NC}"
+echo -e "${BOLD}  You're ready. Open Vim with:${NC}"
+echo -e "${BOLD}---------------------------------------${NC}"
+echo -e "  ${CYAN}vim${NC}            Launch startup dashboard"
+echo -e "  ${CYAN}vim .${NC}          Open file tree + dashboard"
+echo -e "  ${CYAN}vim myfile${NC}     Edit a specific file"
+echo ""
+echo -e "${BOLD}  Survival Guide (first-time Vim users)${NC}"
+echo -e "  ${CYAN}Esc${NC} or ${CYAN}jk${NC}     Exit insert mode → back to Normal"
+echo -e "  ${CYAN}:q!${NC} + Enter   Emergency quit without saving"
+echo -e "  ${CYAN},x${NC}            Save and quit"
+echo -e "  ${CYAN},?${NC}            Open cheat sheet inside Vim"
+echo -e "  ${CYAN},${NC} + pause     Interactive keybinding guide"
+echo ""
+echo -e "${YELLOW}[!]${NC}  Ctrl+s is mapped to save in Vim."
+echo    "     If it freezes your terminal, add this to ~/.bashrc or ~/.zshrc:"
+echo -e "     ${CYAN}stty -ixon${NC}"
 echo ""

@@ -2,6 +2,39 @@
 
 Five minutes from zero to a working Vim engineering environment.
 
+> **New to Vim?** Read Step 0 first — it takes 2 minutes and prevents the most
+> common beginner frustration. Already know how Vim modes work? [Skip to Step 1](#step-1-install).
+
+---
+
+## Step 0: Vim Basics
+
+> **When confused, press `Esc` until things feel normal again — then keep reading.**
+
+Vim is **modal**: the keyboard behaves differently depending on which mode you are in.
+Most people get stuck because they try to type text while in Normal mode.
+
+### The Three Modes
+
+| Mode | Purpose | How to enter | How to leave |
+|------|---------|--------------|--------------|
+| **Normal** | Navigate and run commands | Startup default | — (you're already here) |
+| **Insert** | Type text | `i` before cursor, `a` after, `o` new line below | `Esc` or `jk` |
+| **Visual** | Select text | `v` char-by-char, `V` whole lines | `Esc` |
+
+### 4 Survival Commands
+
+Learn these before anything else. They will get you out of every stuck situation.
+
+| Command | Action |
+|---------|--------|
+| `Esc` or `jk` | Exit insert/visual mode — return to Normal |
+| `:q!` then `Enter` | Force quit without saving (emergency exit) |
+| `,x` | Save and quit |
+| `,w` or `Ctrl+s` | Save the file |
+
+Once in Normal mode, press `,?` to open a cheat sheet covering everything else.
+
 ---
 
 ## Step 1: Install
@@ -66,19 +99,22 @@ This auto-detects and installs the correct language server for the current filet
 
 ---
 
-## The 10 Keys That Matter
+## The 12 Keys That Matter
 
 ```
-,           (pause 500ms)   Show all shortcuts
+,           (pause 500ms)   Show all keybindings (which-key)
+,?                          Open cheat sheet inside Vim
+Esc / jk                    Exit insert mode → Normal (memorize this)
+Ctrl+s                      Save (works in normal and insert mode)
 Ctrl+p                      Fuzzy find file
 Ctrl+n                      Toggle file tree
 gd                          Go to definition
 K                           Show documentation
-[g  /  ]g                   Prev / next diagnostic
+[g  /  ]g                   Prev / next LSP diagnostic
 ,rn                         Rename symbol
-,rg                         Search project contents
+,rG                         Search word under cursor (ripgrep)
 ,gs                         Git status
-,w  /  ,q                   Save / Quit
+,w  /  ,x                   Save / Save+quit
 ```
 
 ---
@@ -197,38 +233,51 @@ colorscheme dracula    " or: gruvbox, solarized, onedark
 ## Quick Reference Card
 
 ```
+BASICS (learn these first)
+  Esc / jk        Exit insert mode → Normal
+  Ctrl+s          Save (normal + insert mode)
+  :q! + Enter     Emergency quit without saving
+  ,?              Open cheat sheet
+
 FILES
-  Ctrl+n      File tree toggle
-  Ctrl+p      Fuzzy find file (git-aware)
-  ,b          Search open buffers
-  ,rg         Search file contents (ripgrep)
-  ,w          Save  |  ,q  Quit  |  ,x  Save+quit
-  ,wa         Save all buffers
+  Ctrl+n          File tree toggle
+  Ctrl+p          Fuzzy find file (git-aware)
+  ,b              Search open buffers
+  ,rg             Search file contents (ripgrep)
+  ,rG             Ripgrep word under cursor
+  ,w    Save  |  ,q  Quit  |  ,x  Save+quit
+  ,wa             Save all buffers
+  ,,              Switch to last file
 
 CODE
   gd          Go to definition
   K           Show documentation
-  [g / ]g     Prev/next diagnostic
+  [g / ]g     Prev/next LSP diagnostic
+  [e / ]e     Prev/next ALE error
   ,rn         Rename symbol
-  ,ca         Code action
-  ,f          Format selection
-  ,F          Format whole file
+  ,ca         Code action / auto-fix
+  ,f          Format selection  |  ,F  Format whole file
 
 GIT
   ,gs  Status  |  ,gd  Diff  |  ,gb  Blame
   ,gc  Commit  |  ,gp  Push  |  ,gl  Pull
 
-WINDOWS
-  Ctrl+h/j/k/l    Move between panes
+WINDOWS / PANES
+  Ctrl+h/j/k/l    Move between Vim windows or tmux panes
+  ,h / ,l         Prev / next buffer
   ,tv         Open terminal (vertical)
   ,th         Open terminal (horizontal)
   Esc         Exit terminal mode
-  F5          Undo tree  |  F8  Tag browser
+  ,u          Undo tree  |  ,tt  Tag browser
 
-SEARCH
-  /text       Search forward
-  ?text       Search backward
-  ,*          Replace word under cursor (project-wide)
+SEARCH & REPLACE
+  /text       Search forward  |  ?text  backward
+  //          Search for visually selected text
+  ,*          Replace word under cursor (file-wide)
+
+CLIPBOARD
+  ,y / ,Y     Yank / yank line to system clipboard
+  ,p / ,P     Paste from system clipboard (after / before)
 ```
 
 ---

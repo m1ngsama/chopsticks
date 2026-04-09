@@ -4,6 +4,54 @@ All notable changes to chopsticks are documented here.
 
 ---
 
+## [1.1.0] - 2026-04-09
+
+Ergonomics and automation overhaul: community-standard keybindings, seamless
+tmux integration, an in-Vim cheat sheet, a beginner onboarding section, and
+several correctness fixes from a systematic review.
+
+### Added
+
+- **`jk` → `Esc`** in insert mode — ergonomic escape without reaching for the key
+- **`Ctrl+s` save** in normal and insert mode (add `stty -ixon` to shell rc to enable
+  in terminals that use XON/XOFF flow control)
+- **`//` visual search** — search for visually selected text using `\V` very-nomagic escaping
+- **`<leader>p` / `<leader>P`** — paste from system clipboard after/before cursor
+- **`<leader>rG`** — ripgrep word under cursor with `-F` (literal, not regex)
+- **`<leader>u`** — leader-key alias for UndoTree (complements `F5`)
+- **`<leader>tt`** — leader-key alias for Tagbar (complements `F8`)
+- **`,?` in-Vim cheat sheet** — opens a read-only buffer covering modes, survival
+  commands, search, code intelligence, git, and clipboard; press `q` to close
+- **vim-tmux-navigator** plugin — `Ctrl+h/j/k/l` navigates seamlessly across Vim
+  splits and tmux panes without a prefix key
+- **`install.sh` tmux step** — detects tmux and optionally appends the four
+  navigator `bind-key` lines to `~/.tmux.conf`; warns about `C-l`/screen-clear tradeoff
+- **`install.sh` survival guide** — post-install output now shows the 4 essential
+  commands for first-time Vim users, plus the `stty -ixon` advisory
+- **QUICKSTART.md Step 0** — new first section explaining Vim modes (Normal/Insert/Visual)
+  and 4 survival commands; makes the guide usable by users who have never opened Vim
+- **`let b:ale_enabled = 0`** in `LargeFileSettings()` — ALE no longer spawns
+  linter subprocesses for files over 10 MB
+
+### Changed
+
+- **ALE lint triggers** — `ale_lint_on_text_changed` changed from `'never'` to `'normal'`;
+  `ale_lint_on_insert_leave` and `ale_lint_on_enter` changed from `0` to `1` — diagnostics
+  now refresh on buffer enter and after edits settle in normal mode
+- **`<C-h/j/k/l>` manual maps removed** — vim-tmux-navigator owns these keys at
+  plugin load time; the previous hand-rolled `<C-W>` maps were unreachable dead code
+- **`<leader>pp` paste-mode toggle removed** — functionally identical to the existing
+  `F2` pastetoggle; its presence caused a 500 ms delay on every `<leader>p` paste
+
+### Fixed
+
+- **ALE navigation direction reversed** — `[e` now correctly calls `ALEPrevious`
+  and `]e` calls `ALENext`, matching the vim-unimpaired `[`/`]` convention
+- **`<leader>rG` regex metacharacter bug** — without `-F`, characters like `.` `*`
+  `(` in the cursor word were treated as regex, producing incorrect matches
+
+---
+
 ## [1.0.0] - 2026-03-29
 
 First stable release. Full-stack engineering environment out of the box — automatic

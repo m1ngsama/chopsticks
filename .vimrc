@@ -207,6 +207,7 @@ Plug 'dhruvasagar/vim-prosession'            " Better session management
 Plug 'tpope/vim-unimpaired'                  " Handy bracket mappings
 Plug 'wellle/targets.vim'                    " Additional text objects
 Plug 'honza/vim-snippets'                    " Snippet collection
+Plug 'christoomey/vim-tmux-navigator'        " Seamless vim/tmux pane navigation
 
 " ===== Native LSP (vim-lsp: works without Node.js, Vim 8.0+ only) =====
 " Used as fallback when CoC/Node.js is unavailable
@@ -323,11 +324,8 @@ nmap <leader>x :x<cr>
 " Disable highlight when <leader><cr> is pressed
 map <silent> <leader><cr> :noh<cr>
 
-" Smart way to move between windows
-map <C-j> <C-W>j
-map <C-k> <C-W>k
-map <C-h> <C-W>h
-map <C-l> <C-W>l
+" Window navigation — owned by vim-tmux-navigator plugin (Ctrl+h/j/k/l works
+" seamlessly across Vim splits and tmux panes; no manual maps needed here)
 
 " Close the current buffer (Bclose preserves window layout)
 map <leader>bd :Bclose<cr>
@@ -398,6 +396,9 @@ nnoremap Y y$
 " Disable accidental Ex mode
 nnoremap Q <nop>
 
+" Exit insert mode without reaching for Escape (community standard)
+inoremap jk <Esc>
+
 " Keep visual selection after indent
 vnoremap < <gv
 vnoremap > >gv
@@ -406,15 +407,25 @@ vnoremap > >gv
 nnoremap n nzzzv
 nnoremap N Nzzzv
 
+" Search for visually selected text with // (hit // in visual mode)
+vnoremap // y/\V<C-r>=escape(@",'/\')<CR><CR>
+
+" <C-s> to save in normal and insert mode
+" (for terminals: add 'stty -ixon' to your shell rc to disable XON/XOFF)
+nnoremap <silent> <C-s> :w<CR>
+inoremap <silent> <C-s> <Esc>:w<CR>a
+
 " Center cursor after half-page scroll
 nnoremap <C-d> <C-d>zz
 nnoremap <C-u> <C-u>zz
 
-" System clipboard yank (conditional: requires clipboard provider)
+" System clipboard yank/paste (conditional: requires clipboard provider)
 if has('clipboard')
     nnoremap <leader>y "+y
     vnoremap <leader>y "+y
     nnoremap <leader>Y "+Y
+    nnoremap <leader>p "+p
+    nnoremap <leader>P "+P
 endif
 
 " Quickfix list shortcuts ([q/]q from vim-unimpaired handles navigation)
@@ -485,6 +496,7 @@ endfunction
 map <C-p> :call <SID>SmartFiles()<CR>
 map <leader>b :Buffers<CR>
 map <leader>rg :Rg<CR>
+map <leader>rG :Rg -F <C-r><C-w><CR>
 map <leader>rt :Tags<CR>
 map <leader>gF :GFiles<CR>
 
@@ -583,9 +595,9 @@ let g:ale_fixers = {
 let g:ale_fix_on_save = !g:use_vimlsp
 let g:ale_sign_error = 'X'
 let g:ale_sign_warning = '!'
-let g:ale_lint_on_text_changed = 'never'
-let g:ale_lint_on_insert_leave = 0
-let g:ale_lint_on_enter = 0
+let g:ale_lint_on_text_changed = 'normal'
+let g:ale_lint_on_insert_leave = 1
+let g:ale_lint_on_enter = 1
 
 " --- vim-go: disable built-in LSP/gopls — CoC (coc-go) handles all Go intelligence ---
 " vim-go's gopls conflicts with coc-go and causes E495 errors on startup
@@ -602,16 +614,18 @@ let g:go_highlight_fields       = 1
 let g:go_highlight_functions    = 1
 let g:go_highlight_function_calls = 1
 
-" Navigate between errors: [e/]e (unimpaired style), <leader>aD for detail
-nmap <silent> [e :ALENext<cr>
-nmap <silent> ]e :ALEPrevious<cr>
+" Navigate between errors: [e/]e (unimpaired convention: [ = prev, ] = next)
+nmap <silent> [e :ALEPrevious<cr>
+nmap <silent> ]e :ALENext<cr>
 nmap <silent> <leader>aD :ALEDetail<cr>
 
 " --- Tagbar ---
 nmap <F8> :TagbarToggle<CR>
+nmap <leader>tt :TagbarToggle<CR>
 
 " --- UndoTree ---
 nnoremap <F5> :UndotreeToggle<CR>
+nnoremap <leader>u :UndotreeToggle<CR>
 
 " --- EasyMotion ---
 let g:EasyMotion_do_mapping = 0 " Disable default mappings
@@ -929,9 +943,6 @@ function! ToggleNumber()
     endif
 endfunc
 
-" Toggle paste mode
-map <leader>pp :setlocal paste!<cr>
-
 " ============================================================================
 " => Performance Optimization
 " ============================================================================
@@ -1020,6 +1031,85 @@ augroup BWCCreateDir
     autocmd BufWritePre * if !empty(expand('<afile>')) | call s:MkNonExDir(expand('<afile>'), +expand('<abuf>')) | endif
 augroup END
 
+" In-Vim quick reference cheat sheet — ,? opens it, q closes it
+function! s:CheatSheet() abort
+    let l:name = '__ChopsticksCheatSheet__'
+    let l:winnr = bufwinnr(l:name)
+    if l:winnr > 0
+        execute l:winnr . 'wincmd w'
+        return
+    endif
+    execute 'botright new ' . l:name
+    setlocal buftype=nofile bufhidden=wipe nobuflisted noswapfile
+    call setline(1, [
+        \ '=== chopsticks — Quick Reference ===',
+        \ '',
+        \ 'MODES (Vim is modal — the most important concept)',
+        \ '  Normal    Default state. Navigate and run commands.',
+        \ '  Insert    Type text. Enter: i/a/o   Leave: Esc or jk',
+        \ '  Visual    Select text. Enter: v/V   Leave: Esc',
+        \ '',
+        \ 'SURVIVAL (learn these 4 first)',
+        \ '  Esc / jk      Exit insert or visual mode — back to Normal',
+        \ '  :q! + Enter   Quit without saving (emergency exit)',
+        \ '  ,x            Save and quit',
+        \ '  ,w            Save file  |  Ctrl+s  Save (normal + insert)',
+        \ '',
+        \ 'NAVIGATION',
+        \ '  h j k l       Left / Down / Up / Right',
+        \ '  Ctrl+p        Fuzzy find file  |  Ctrl+n  File tree',
+        \ '  Ctrl+o/i      Jump back / forward in history',
+        \ '  ,,            Switch to last file',
+        \ '',
+        \ 'SEARCH',
+        \ '  /text         Search forward  |  n  next  |  N  prev',
+        \ '  //            Search for visually selected text',
+        \ '  ,rg           Search project contents (ripgrep)',
+        \ '  ,rG           Ripgrep word under cursor',
+        \ '  ,*            Replace word under cursor (file-wide)',
+        \ '',
+        \ 'CODE INTELLIGENCE',
+        \ '  gd            Go to definition',
+        \ '  K             Hover documentation',
+        \ '  [g / ]g       Prev / next diagnostic (LSP)',
+        \ '  [e / ]e       Prev / next ALE error',
+        \ '  ,ca           Code action / auto-fix',
+        \ '  ,rn           Rename symbol',
+        \ '  ,f            Format selection  |  ,F  Format whole file',
+        \ '',
+        \ 'EDITING',
+        \ '  i / a / o     Insert before / after / on new line',
+        \ '  gc            Toggle comment (works in visual too)',
+        \ '  u / Ctrl+r    Undo / Redo',
+        \ '  ,p / ,P       Paste from system clipboard',
+        \ '  ,y / ,Y       Yank / line-yank to system clipboard',
+        \ '  s + 2 chars   EasyMotion jump anywhere on screen',
+        \ '',
+        \ 'GIT',
+        \ '  ,gs           Git status  |  ,gd  Diff  |  ,gb  Blame',
+        \ '  ,gc           Commit  |  ,gp  Push  |  ,gl  Pull',
+        \ '',
+        \ 'WINDOWS / PANES',
+        \ '  Ctrl+h/j/k/l  Move between Vim windows or tmux panes',
+        \ '  ,h / ,l       Prev / next buffer',
+        \ '  ,tv / ,th     Open terminal (vertical / horizontal)',
+        \ '',
+        \ 'TOOLS',
+        \ '  ,u            Undo tree (visual history)',
+        \ '  ,tt           Tagbar (code structure)',
+        \ '  ,o            File outline (LSP symbols)',
+        \ '',
+        \ 'TIP: When confused, press Esc. Then press , and wait 500ms',
+        \ '     for an interactive guide to ALL keybindings.',
+        \ '     Re-open this sheet with  ,?',
+        \ '',
+        \ '(press q to close)',
+        \ ])
+    setlocal nomodifiable readonly
+    nnoremap <buffer> <silent> q :bd<CR>
+endfunction
+nnoremap <silent> <leader>? :call <SID>CheatSheet()<CR>
+
 " ============================================================================
 " => Debugging Helpers
 " ============================================================================
@@ -1082,7 +1172,8 @@ function! LargeFileSettings()
     setlocal eventignore+=FileType
     setlocal noswapfile
     setlocal syntax=OFF
-    echo "Large file (>10MB): syntax and undo disabled for performance."
+    let b:ale_enabled = 0
+    echo "Large file (>10MB): syntax, undo, and linting disabled for performance."
 endfunction
 
 " ============================================================================
@@ -1148,6 +1239,10 @@ if exists('g:plugs["vim-which-key"]')
     let g:which_key_map[',']  = 'last-file'
     let g:which_key_map['y']  = 'clipboard-yank'
     let g:which_key_map['Y']  = 'clipboard-yank-line'
+    let g:which_key_map['p']  = 'clipboard-paste-after'
+    let g:which_key_map['P']  = 'clipboard-paste-before'
+    let g:which_key_map['u']  = 'undotree-toggle'
+    let g:which_key_map['?']  = 'cheat-sheet'
 
     " [a]LE lint group  ([e/]e navigate; <leader>aD for detail; <leader>ad for diagnostics)
     let g:which_key_map['a'] = {
@@ -1200,6 +1295,7 @@ if exists('g:plugs["vim-which-key"]')
         \ 'name': '+search/refactor',
         \ 'n': 'rename',
         \ 'g': 'ripgrep',
+        \ 'G': 'ripgrep-word-under-cursor',
         \ 't': 'tags-search',
         \ }
 
@@ -1218,7 +1314,7 @@ if exists('g:plugs["vim-which-key"]')
 
     " [t]ab / [t]erminal group
     let g:which_key_map['t'] = {
-        \ 'name': '+tab/terminal',
+        \ 'name': '+tab/terminal/tagbar',
         \ 'n': 'new-tab',
         \ 'o': 'tab-only',
         \ 'c': 'close-tab',
@@ -1227,6 +1323,7 @@ if exists('g:plugs["vim-which-key"]')
         \ 'e': 'edit-in-tab',
         \ 'v': 'terminal-vertical',
         \ 'h': 'terminal-horizontal',
+        \ 't': 'tagbar-toggle',
         \ }
 
     " [w]orkspace / [w]indow / save group  (also: <leader>w = fast save)

@@ -16,26 +16,25 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 BOLD='\033[1m'
 CYAN='\033[0;36m'
+DIM='\033[2m'
 NC='\033[0m'
 
-ok()    { echo -e "${GREEN}[OK]${NC}  $1"; }
-warn()  { echo -e "${YELLOW}[!]${NC}  $1"; }
-skip()  { echo -e "${CYAN}[--]${NC}  $1"; }
-fail()  { echo -e "${RED}[ERR]${NC} $1"; }
-die()   { echo -e "${RED}[FATAL]${NC} $1" >&2
-          echo "  Retry with: ./install.sh 2>&1 | tee /tmp/chopsticks-install.log" >&2
-          echo "  Report issues: https://github.com/m1ngsama/chopsticks/issues" >&2
-          exit 1; }
-step()  { echo -e "\n${BOLD}==> $1${NC}"; }
-info()  { echo "     $1"; }
+ok()   { echo -e "${GREEN}[OK]${NC}  $1"; }
+warn() { echo -e "${YELLOW}[!]${NC}  $1"; }
+skip() { echo -e "${CYAN}[--]${NC}  $1"; }
+fail() { echo -e "${RED}[ERR]${NC} $1"; }
+die()  { echo -e "${RED}[FATAL]${NC} $1" >&2
+         echo "  Retry with: ./install.sh 2>&1 | tee /tmp/chopsticks-install.log" >&2
+         echo "  Report issues: https://github.com/m1ngsama/chopsticks/issues" >&2
+         exit 1; }
+step() { echo -e "\n${BOLD}==> $1${NC}"; }
+info() { echo "     $1"; }
 
-# Track results for summary
 INSTALLED=()
 SKIPPED=()
 FAILED=()
 
-# Ask yes/no; returns 0 for yes
-# Reads from /dev/tty so interactive prompts work even under: curl | bash
+# Ask yes/no; reads from /dev/tty so it works under: curl | bash
 ask() {
     [[ $AUTO_YES -eq 1 ]] && return 0
     if [[ -t 0 ]]; then
@@ -43,7 +42,6 @@ ask() {
     elif { true </dev/tty; } 2>/dev/null; then
         read -r -p "$1 [y/N] " reply </dev/tty
     else
-        # No terminal available — default to no (safe)
         echo "$1 [y/N] N"
         return 1
     fi
@@ -52,26 +50,19 @@ ask() {
 
 # ── Error trap ────────────────────────────────────────────────────────────────
 on_error() {
-    local line="${BASH_LINENO[0]}"
-    echo -e "\n${RED}[FATAL]${NC} Unexpected error at line $line." >&2
+    echo -e "\n${RED}[FATAL]${NC} Unexpected error at line ${BASH_LINENO[0]}." >&2
     echo "  To get a full debug log:" >&2
     echo "    ./install.sh 2>&1 | tee /tmp/chopsticks-install.log" >&2
     echo "  Report issues: https://github.com/m1ngsama/chopsticks/issues" >&2
 }
 trap on_error ERR
-
-# Cleanup temp files on exit
 trap 'rm -f /tmp/chopsticks-hadolint /tmp/chopsticks-marksman 2>/dev/null' EXIT
 
 # ── Safe download helper ──────────────────────────────────────────────────────
-# safe_download <url> <dest>
-# Returns 1 if download fails or file is empty / HTML error page
 safe_download() {
     local url="$1" dest="$2"
     curl -fsSL --connect-timeout 15 --retry 3 "$url" -o "$dest" 2>/dev/null || return 1
-    # Reject empty files
     [[ -s "$dest" ]] || { rm -f "$dest"; return 1; }
-    # Reject HTML error pages (GitHub 404, rate limits, etc.)
     if head -c 200 "$dest" 2>/dev/null | grep -qi "<!DOCTYPE\|<html"; then
         rm -f "$dest"; return 1
     fi
@@ -79,7 +70,6 @@ safe_download() {
 }
 
 # ── Cross-platform package install helper ─────────────────────────────────────
-# pkg_install <brew> <apt> <pacman> <dnf>  (pass "" to skip that pkg manager)
 pkg_install() {
     local brew_pkg="${1:-}" apt_pkg="${2:-}" pac_pkg="${3:-}" dnf_pkg="${4:-}"
     if   [[ $HAS_BREW   -eq 1 && -n "$brew_pkg" ]]; then brew install "$brew_pkg" >/dev/null 2>&1
@@ -90,24 +80,121 @@ pkg_install() {
     fi
 }
 
-# ── CPU architecture normalizer ───────────────────────────────────────────────
-# Normalize uname -m to the naming convention used by GitHub releases
+# ── CPU architecture helpers ──────────────────────────────────────────────────
 arch_github() {
     case "$(uname -m)" in
-        x86_64)          echo "x86_64" ;;
-        aarch64|arm64)   echo "arm64"  ;;
-        armv7l)          echo "armv7"  ;;
-        *)               echo "$(uname -m)" ;;
+        x86_64)        echo "x86_64" ;;
+        aarch64|arm64) echo "arm64"  ;;
+        armv7l)        echo "armv7"  ;;
+        *)             uname -m     ;;
     esac
 }
 arch_linux_x64() {
-    # Returns x64 or arm64 style (used by marksman)
     case "$(uname -m)" in
-        x86_64)          echo "x64"   ;;
-        aarch64|arm64)   echo "arm64" ;;
-        *)               echo "$(uname -m)" ;;
+        x86_64)        echo "x64"   ;;
+        aarch64|arm64) echo "arm64" ;;
+        *)             uname -m    ;;
     esac
 }
+
+# ============================================================================
+# Checkbox selection menu
+# ============================================================================
+#
+# Usage:
+#   _menu_checkbox "Title" "label|description|default(0/1)" ...
+#
+# Result: global MENU_SEL array — MENU_SEL[i]=1 means item i was selected.
+# Globals _MENU_LABELS / _MENU_DESCS remain populated after return.
+#
+# In --yes mode or non-TTY: uses defaults silently.
+# Controls: ↑↓ navigate · Space toggle · a all · n none · Enter confirm
+# ─────────────────────────────────────────────────────────────────────────────
+
+_MENU_LABELS=()
+_MENU_DESCS=()
+_MENU_SELS=()
+_MENU_N=0
+_MENU_TITLE=""
+_MENU_CUR=0
+MENU_SEL=()
+
+_menu_draw() {
+    local i mark
+    printf "\033[2K${BOLD}%s${NC}\n" "$_MENU_TITLE"
+    printf "\033[2K  %b%b\n" "$DIM" "↑/↓ move   Space toggle   a all   n none   Enter confirm${NC}"
+    printf "\033[2K\n"
+    for ((i = 0; i < _MENU_N; i++)); do
+        if [[ ${_MENU_SELS[$i]} -eq 1 ]]; then
+            mark="${GREEN}✓${NC}"
+        else
+            mark=" "
+        fi
+        if [[ $i -eq $_MENU_CUR ]]; then
+            printf "\033[2K  ${BOLD}▶ [%b] %s${NC}\n" "$mark" "${_MENU_LABELS[$i]}"
+        else
+            printf "\033[2K    [%b] %s\n" "$mark" "${_MENU_LABELS[$i]}"
+        fi
+        printf "\033[2K      ${CYAN}%s${NC}\n" "${_MENU_DESCS[$i]}"
+    done
+}
+
+_menu_checkbox() {
+    _MENU_TITLE="$1"; shift
+    _MENU_LABELS=(); _MENU_DESCS=(); _MENU_SELS=()
+    _MENU_N=0; _MENU_CUR=0
+
+    while [[ $# -gt 0 ]]; do
+        IFS='|' read -r \
+            "_MENU_LABELS[$_MENU_N]" \
+            "_MENU_DESCS[$_MENU_N]"  \
+            "_MENU_SELS[$_MENU_N]"  <<< "$1"
+        shift; : $(( _MENU_N++ ))
+    done
+
+    # Non-interactive or --yes: use defaults, no UI
+    if [[ $AUTO_YES -eq 1 ]] || ! { true </dev/tty; } 2>/dev/null; then
+        MENU_SEL=("${_MENU_SELS[@]}")
+        [[ $AUTO_YES -eq 1 ]] && info "(--yes mode: using all defaults)"
+        return
+    fi
+
+    # Lines printed per _menu_draw call: 3 header + 2 per item
+    local _lines=$(( 3 + 2 * _MENU_N ))
+    local _key _esc _i
+
+    tput civis 2>/dev/null   # hide cursor
+    _menu_draw
+
+    while true; do
+        tput cuu "$_lines" 2>/dev/null   # move back to top of menu
+        _menu_draw
+
+        IFS= read -r -s -n1 _key </dev/tty
+        if [[ $_key == $'\x1b' ]]; then
+            IFS= read -r -s -n2 _esc </dev/tty
+            case "$_esc" in
+                '[A') ((_MENU_CUR > 0))            && ((_MENU_CUR--)) ;;
+                '[B') ((_MENU_CUR < _MENU_N - 1)) && ((_MENU_CUR++)) ;;
+            esac
+        elif [[ $_key == ' ' ]]; then
+            _MENU_SELS[_MENU_CUR]=$(( 1 - _MENU_SELS[_MENU_CUR] ))
+        elif [[ $_key == 'a' || $_key == 'A' ]]; then
+            for ((_i = 0; _i < _MENU_N; _i++)); do _MENU_SELS[_i]=1; done
+        elif [[ $_key == 'n' || $_key == 'N' ]]; then
+            for ((_i = 0; _i < _MENU_N; _i++)); do _MENU_SELS[_i]=0; done
+        elif [[ -z $_key ]]; then   # Enter
+            break
+        fi
+    done
+
+    tput cnorm 2>/dev/null   # restore cursor
+    echo ""
+    MENU_SEL=("${_MENU_SELS[@]}")
+}
+
+# Helper: was menu item at index $1 selected?
+_selected() { [[ ${MENU_SEL[${1:-999}]:-0} -eq 1 ]]; }
 
 echo -e "${BOLD}chopsticks — Vim Configuration Installer${NC}"
 echo "----------------------------------------"
@@ -119,14 +206,10 @@ echo "----------------------------------------"
 step "Detecting environment"
 
 OS="unknown"
-if [[ "$OSTYPE" == darwin* ]]; then
-    OS="macos"
-elif [[ -f /etc/debian_version ]]; then
-    OS="debian"
-elif [[ -f /etc/fedora-release ]]; then
-    OS="fedora"
-elif [[ -f /etc/arch-release ]]; then
-    OS="arch"
+if   [[ "$OSTYPE" == darwin* ]];         then OS="macos"
+elif [[ -f /etc/debian_version ]];       then OS="debian"
+elif [[ -f /etc/fedora-release ]];       then OS="fedora"
+elif [[ -f /etc/arch-release ]];         then OS="arch"
 fi
 ok "OS: $OS"
 
@@ -135,44 +218,38 @@ HAS_APT=0;    command -v apt    >/dev/null 2>&1 && HAS_APT=1
 HAS_DNF=0;    command -v dnf    >/dev/null 2>&1 && HAS_DNF=1
 HAS_PACMAN=0; command -v pacman >/dev/null 2>&1 && HAS_PACMAN=1
 
-# ── sudo ─────────────────────────────────────────────────────────────────────
+# sudo
 HAS_SUDO=0
 if [[ $OS == "macos" ]]; then
-    # brew handles its own privilege escalation; no sudo needed for system tools
-    HAS_SUDO=1
+    HAS_SUDO=1   # brew handles its own privilege escalation
 elif sudo -n true 2>/dev/null; then
-    HAS_SUDO=1
-    ok "sudo: available (passwordless)"
+    HAS_SUDO=1; ok "sudo: available (passwordless)"
 elif [[ $AUTO_YES -eq 1 ]]; then
     warn "sudo requires a password but running non-interactively (--yes)"
     warn "System package installations will be skipped"
 else
-    # Prompt once for password now so later sudo calls don't interrupt flow
     warn "Some steps require sudo. Authenticating now..."
     if sudo true; then
-        HAS_SUDO=1
-        ok "sudo: authenticated"
+        HAS_SUDO=1; ok "sudo: authenticated"
     else
         warn "sudo not available — system package installations will be skipped"
     fi
 fi
 
-# ── Network ──────────────────────────────────────────────────────────────────
+# Network
 if curl -fsSL --connect-timeout 5 https://github.com -o /dev/null 2>/dev/null; then
     ok "Network: github.com reachable"
 else
     warn "Network: cannot reach github.com — plugin and binary downloads may fail"
-    warn "Check your internet connection or proxy settings before continuing"
 fi
 
-# ── Homebrew (macOS) ─────────────────────────────────────────────────────────
+# Homebrew (macOS)
 if [[ $OS == "macos" && $HAS_BREW -eq 0 ]]; then
     warn "Homebrew not found — it is the recommended package manager for macOS"
     if ask "Install Homebrew now? (strongly recommended — required for system tools)"; then
         info "This may take a few minutes and will prompt for your password..."
         /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || \
             die "Homebrew installation failed. Install manually: https://brew.sh"
-        # Source brew for Apple Silicon and Intel paths
         for brew_path in /opt/homebrew/bin/brew /usr/local/bin/brew; do
             [[ -x "$brew_path" ]] && eval "$("$brew_path" shellenv)" && break
         done
@@ -182,7 +259,7 @@ if [[ $OS == "macos" && $HAS_BREW -eq 0 ]]; then
     fi
 fi
 
-# ── curl ─────────────────────────────────────────────────────────────────────
+# curl
 if ! command -v curl >/dev/null 2>&1; then
     warn "curl not found — required to download plugins and tools"
     if pkg_install curl curl curl curl 2>/dev/null; then
@@ -196,7 +273,7 @@ if ! command -v curl >/dev/null 2>&1; then
     fi
 fi
 
-# ── git ──────────────────────────────────────────────────────────────────────
+# git
 if ! command -v git >/dev/null 2>&1; then
     warn "git not found — required for vim-plug to install plugins"
     if pkg_install git git git git 2>/dev/null; then
@@ -210,9 +287,8 @@ if ! command -v git >/dev/null 2>&1; then
     fi
 fi
 
-# ── vim ──────────────────────────────────────────────────────────────────────
+# vim
 [ -f "$SCRIPT_DIR/.vimrc" ] || die ".vimrc not found in $SCRIPT_DIR — is this the chopsticks repo?"
-
 if ! command -v vim >/dev/null 2>&1; then
     warn "vim not found — attempting to install"
     if pkg_install vim vim vim vim 2>/dev/null; then
@@ -225,70 +301,25 @@ if ! command -v vim >/dev/null 2>&1; then
   macOS:          brew install vim"
     fi
 fi
-
-VIM_VERSION=$(vim --version | head -n1)
-ok "Found: $VIM_VERSION"
-
+ok "Found: $(vim --version | head -n1)"
 vim --version | grep -q 'Vi IMproved 8\|Vi IMproved 9' || \
     warn "Vim 8.0+ recommended for full async/LSP support — some features may not work"
 
-# ── Node.js ──────────────────────────────────────────────────────────────────
+# Node.js (optional — vim-lsp needs no Node.js; only npm formatters do)
 HAS_NODE=0; command -v node >/dev/null 2>&1 && HAS_NODE=1
-
-if [[ $HAS_NODE -eq 0 ]]; then
-    warn "Node.js not found — CoC LSP and npm-based formatters will be unavailable"
-    info "Without Node.js, the config falls back to vim-lsp (pure VimScript)."
-    info ""
-    info "Install options:"
-    info "  nvm (recommended): curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/HEAD/install.sh | bash"
-    info "  macOS:             brew install node"
-    info "  Ubuntu/Debian:     curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -"
-    info "                     sudo apt-get install -y nodejs"
-    info "  Arch:              sudo pacman -S nodejs npm"
-    info ""
-    if ask "Install Node.js via nvm now? (recommended — manages multiple Node versions)"; then
-        info "Fetching latest nvm release..."
-        NVM_VER=$(curl -fsSL https://api.github.com/repos/nvm-sh/nvm/releases/latest \
-                  | grep '"tag_name"' | cut -d'"' -f4 2>/dev/null) || NVM_VER="v0.40.1"
-        [[ -z "$NVM_VER" ]] && NVM_VER="v0.40.1"
-        info "Installing nvm $NVM_VER + Node.js LTS..."
-        if curl -fsSL "https://raw.githubusercontent.com/nvm-sh/nvm/${NVM_VER}/install.sh" | bash >/dev/null 2>&1; then
-            export NVM_DIR="$HOME/.nvm"
-            # shellcheck disable=SC1091
-            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-            if command -v nvm >/dev/null 2>&1; then
-                nvm install --lts >/dev/null 2>&1 && nvm use --lts >/dev/null 2>&1 || true
-                command -v node >/dev/null 2>&1 && HAS_NODE=1 && ok "Node.js $(node --version) installed via nvm"
-            fi
-        fi
-        if [[ $HAS_NODE -eq 0 ]]; then
-            warn "nvm install failed — CoC and npm tools will be skipped"
-            warn "After manually installing Node.js, re-run: ./install.sh"
-        fi
-    else
-        skip "Node.js — config will use vim-lsp fallback (no Node.js required)"
-    fi
-else
+if [[ $HAS_NODE -eq 1 ]]; then
     ok "Node.js $(node --version) found"
+else
+    warn "Node.js not found — npm formatters (prettier, eslint) will be unavailable"
+    warn "LSP still works without Node.js. To add formatters later: brew install node"
 fi
 
-# ── Python3 ──────────────────────────────────────────────────────────────────
+# Python3 / pip3
 HAS_PYTHON=0; command -v python3 >/dev/null 2>&1 && HAS_PYTHON=1
 HAS_PIP=0;    command -v pip3   >/dev/null 2>&1 && HAS_PIP=1
-
 if [[ $HAS_PYTHON -eq 0 ]]; then
     warn "python3 not found — Python formatters/linters will be unavailable"
-    if ask "Install Python 3?"; then
-        if pkg_install python3 python3 python3 python3 2>/dev/null; then
-            command -v python3 >/dev/null 2>&1 && HAS_PYTHON=1 && ok "Python3 installed"
-        else
-            warn "Python3 install failed — Python tools will be skipped"
-        fi
-    else
-        skip "Python3"
-    fi
 fi
-
 # Bootstrap pip3 when python3 exists but pip3 is absent (common on Ubuntu minimal)
 if [[ $HAS_PYTHON -eq 1 && $HAS_PIP -eq 0 ]]; then
     warn "python3 found but pip3 missing — attempting bootstrap"
@@ -299,11 +330,10 @@ if [[ $HAS_PYTHON -eq 1 && $HAS_PIP -eq 0 ]]; then
         warn "pip3 bootstrap failed — Python tools will be skipped"
     fi
 fi
-
 [[ $HAS_PIP    -eq 1 ]] && ok "Python/pip3 found"
 [[ $HAS_PYTHON -eq 1 && $HAS_PIP -eq 0 ]] && warn "pip3 not available — Python tools will be skipped"
 
-# ── Go ───────────────────────────────────────────────────────────────────────
+# Go
 HAS_GO=0; command -v go >/dev/null 2>&1 && HAS_GO=1
 [[ $HAS_GO -eq 1 ]] && ok "Go $(go version | awk '{print $3}') found"
 [[ $HAS_GO -eq 0 ]] && warn "Go not found — Go tools will be skipped (see https://go.dev/dl/)"
@@ -316,22 +346,29 @@ step "Setting up symlinks"
 
 if [ -f "$HOME/.vimrc" ] && [ ! -L "$HOME/.vimrc" ]; then
     TS=$(date +%Y%m%d_%H%M%S)
-    warn "Backing up existing ~/.vimrc → ~/.vimrc.backup.$TS"
+    warn "Backing up existing ~/.vimrc → $HOME/.vimrc.backup.$TS"
     mv "$HOME/.vimrc" "$HOME/.vimrc.backup.$TS"
 fi
 ln -sf "$SCRIPT_DIR/.vimrc" "$HOME/.vimrc"
-# Verify symlink
-[[ -L "$HOME/.vimrc" ]] && ok "~/.vimrc → $SCRIPT_DIR/.vimrc" || die "Failed to create ~/.vimrc symlink"
+if [[ -L "$HOME/.vimrc" ]]; then
+    ok "$HOME/.vimrc → $SCRIPT_DIR/.vimrc"
+else
+    die "Failed to create ~/.vimrc symlink"
+fi
 
 mkdir -p "$HOME/.vim"
 COC_CFG="$HOME/.vim/coc-settings.json"
 if [ -f "$COC_CFG" ] && [ ! -L "$COC_CFG" ]; then
     TS=$(date +%Y%m%d_%H%M%S)
-    warn "Backing up existing coc-settings.json → ~/.vim/coc-settings.json.backup.$TS"
+    warn "Backing up existing coc-settings.json → $COC_CFG.backup.$TS"
     mv "$COC_CFG" "$COC_CFG.backup.$TS"
 fi
 ln -sf "$SCRIPT_DIR/coc-settings.json" "$COC_CFG"
-[[ -L "$COC_CFG" ]] && ok "~/.vim/coc-settings.json → $SCRIPT_DIR/coc-settings.json" || warn "coc-settings.json symlink failed (non-fatal)"
+if [[ -L "$COC_CFG" ]]; then
+    ok "$HOME/.vim/coc-settings.json → $SCRIPT_DIR/coc-settings.json"
+else
+    warn "coc-settings.json symlink failed (non-fatal)"
+fi
 
 # ============================================================================
 # 3. vim-plug + Plugins
@@ -342,13 +379,16 @@ step "Installing vim-plug"
 VIM_PLUG="$HOME/.vim/autoload/plug.vim"
 if [ ! -f "$VIM_PLUG" ]; then
     mkdir -p "$HOME/.vim/autoload"
-    if safe_download "https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim" "$VIM_PLUG"; then
+    if safe_download \
+        "https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim" \
+        "$VIM_PLUG"; then
         ok "vim-plug downloaded"
     else
-        # Fallback: git clone
         warn "curl download failed — trying git clone fallback"
-        if git clone --depth=1 https://github.com/junegunn/vim-plug.git /tmp/vim-plug-src 2>/dev/null; then
-            cp /tmp/vim-plug-src/plug.vim "$VIM_PLUG" && rm -rf /tmp/vim-plug-src
+        if git clone --depth=1 https://github.com/junegunn/vim-plug.git \
+               /tmp/vim-plug-src 2>/dev/null; then
+            cp /tmp/vim-plug-src/plug.vim "$VIM_PLUG"
+            rm -rf /tmp/vim-plug-src
             ok "vim-plug installed (via git)"
         else
             die "vim-plug installation failed. Check your network connection and try again."
@@ -360,264 +400,352 @@ else
 fi
 
 step "Installing Vim plugins"
-# Use /dev/tty when available so vim properly manages the terminal (alternate
-# screen buffer, cursor, colours) and restores it cleanly on exit.
-# Fall back to --not-a-term for non-interactive/CI environments.
+
 _vim_run() {
     if { true </dev/tty; } 2>/dev/null; then
-        # Interactive terminal: let vim manage the alternate screen properly
+        # Interactive terminal: vim uses alternate screen; user sees progress
         vim "$@" </dev/tty
     else
-        # Non-interactive / CI: TERM=dumb suppresses all escape sequences;
-        # stdout+stderr redirected so nothing leaks into installer output
-        TERM=dumb vim "$@" </dev/null >/dev/null 2>&1
+        # No TTY (SSH batch, CI): do NOT redirect stdin (causes "Error reading input" exit)
+        # or stdout (breaks async job callbacks — partial install).
+        # Redirect only stderr; escape sequences appear on stdout but installation succeeds.
+        vim --not-a-term "$@" 2>/dev/null
     fi
 }
-_vim_run +PlugInstall +qall || true   # post-install hooks (e.g. fzf) may exit non-zero; harmless
-ok "Plugins installed"
+_vim_run +'PlugClean!' +qall || true  # remove plugins no longer in vimrc; ignore exit code (none expected)
+_vim_run +'PlugInstall --sync' +qall || true  # fzf post-install hook may exit non-zero; harmless
+
+_plug_count=$(ls -1 "$HOME/.vim/plugged" 2>/dev/null | wc -l | tr -d ' ')
+if [[ $_plug_count -eq 0 ]]; then
+    die "Plugin installation failed — ~/.vim/plugged is empty. Check network and retry."
+fi
+ok "Plugins installed ($_plug_count)"
 
 # ============================================================================
-# 4. System Tools
+# 4. Module Selection
+# ============================================================================
+
+step "Select optional components"
+
+_ITEMS=()
+_idx=0
+
+# Index map (-1 = not in menu / unavailable)
+_I_RIPGREP=-1; _I_FZF=-1; _I_CTAGS=-1; _I_SHELLCHECK=-1
+_I_HADOLINT=-1; _I_MARKSMAN=-1
+_I_NPM=-1; _I_PYTHON=-1; _I_GO=-1; _I_TMUX=-1
+
+# Is any package manager available?
+HAS_PKG_MGR=0
+if [[ $HAS_BREW -eq 1 ]] || \
+   { [[ $HAS_APT -eq 1 || $HAS_PACMAN -eq 1 || $HAS_DNF -eq 1 ]] && [[ $HAS_SUDO -eq 1 ]]; }; then
+    HAS_PKG_MGR=1
+fi
+
+# ── System tools ─────────────────────────────────────────────────────────────
+if [[ $HAS_PKG_MGR -eq 1 ]]; then
+    _I_RIPGREP=$_idx
+    _ITEMS+=("ripgrep|,rg / ,rG project-wide search · powers Ctrl+p preview|1")
+    : $(( _idx++ ))
+
+    _I_FZF=$_idx
+    _ITEMS+=("fzf|Ctrl+p fuzzy file search · ,b buffers · ,rt tag search|1")
+    : $(( _idx++ ))
+
+    _I_CTAGS=$_idx
+    _ITEMS+=("universal-ctags|code symbol index (backing engine for ,rt tag jumps)|1")
+    : $(( _idx++ ))
+
+    _I_SHELLCHECK=$_idx
+    _ITEMS+=("shellcheck|shell script static analysis (ALE integration, on-save)|1")
+    : $(( _idx++ ))
+
+    _I_HADOLINT=$_idx
+    _ITEMS+=("hadolint|Dockerfile linting (ALE integration, on-save)|1")
+    : $(( _idx++ ))
+
+    _I_MARKSMAN=$_idx
+    _ITEMS+=("marksman|Markdown LSP — completion · go-to-definition · live diagnostics|1")
+    : $(( _idx++ ))
+else
+    warn "No package manager available — system tools skipped"
+fi
+
+# ── npm tools ────────────────────────────────────────────────────────────────
+if [[ $HAS_NODE -eq 1 ]]; then
+    _I_NPM=$_idx
+    _ITEMS+=("npm formatter suite|prettier / eslint / markdownlint / stylelint / tsc — ALE fix-on-save|1")
+    : $(( _idx++ ))
+fi
+
+# ── Python tools ─────────────────────────────────────────────────────────────
+if [[ $HAS_PIP -eq 1 ]]; then
+    _I_PYTHON=$_idx
+    _ITEMS+=("Python tool suite|black / isort / flake8 / pylint / yamllint / sqlfluff — ALE fix-on-save|1")
+    : $(( _idx++ ))
+fi
+
+# ── Go tools ─────────────────────────────────────────────────────────────────
+if [[ $HAS_GO -eq 1 ]]; then
+    _I_GO=$_idx
+    _ITEMS+=("Go tool suite|gopls (LSP) / goimports / staticcheck — completion · format · analysis|1")
+    : $(( _idx++ ))
+fi
+
+# ── tmux ─────────────────────────────────────────────────────────────────────
+if command -v tmux >/dev/null 2>&1; then
+    if ! grep -q 'vim-tmux-navigator' "$HOME/.tmux.conf" 2>/dev/null; then
+        _I_TMUX=$_idx
+        _ITEMS+=("tmux integration|seamless Ctrl+h/j/k/l navigation between vim and tmux panes|1")
+        : $(( _idx++ ))
+    else
+        ok "tmux integration (vim-tmux-navigator already configured)"
+    fi
+fi
+
+if [[ ${#_ITEMS[@]} -gt 0 ]]; then
+    _menu_checkbox "Select components to install:" "${_ITEMS[@]}"
+    echo -e "${BOLD}Install plan:${NC}"
+    for ((_i = 0; _i < _MENU_N; _i++)); do
+        if [[ ${MENU_SEL[$_i]:-0} -eq 1 ]]; then
+            echo -e "  ${GREEN}✓${NC} ${_MENU_LABELS[$_i]}"
+        else
+            echo -e "  ${DIM}—${NC} ${_MENU_LABELS[$_i]}"
+        fi
+    done
+    echo ""
+else
+    warn "No optional components available for this environment"
+    MENU_SEL=()
+fi
+
+# ============================================================================
+# 5. System Tools
 # ============================================================================
 
 step "System tools"
 
-if [[ $OS == "macos" && $HAS_BREW -eq 0 ]]; then
-    skip "system tools (Homebrew not available — install brew first, then re-run)"
-    SKIPPED+=("ripgrep" "fzf" "ctags" "shellcheck" "hadolint" "marksman")
-elif ask "Install system tools (ripgrep, fzf, ctags, shellcheck, hadolint, marksman)?"; then
-
-    install_sys() {
-        local name="$1" check="$2"; shift 2
-        if command -v "$check" >/dev/null 2>&1; then
-            ok "$name (already installed)"
-            return
-        fi
-        local installed=0
-        for cmd in "$@"; do
-            if eval "$cmd" >/dev/null 2>&1; then installed=1; break; fi
-        done
-        if [[ $installed -eq 1 ]]; then
-            ok "$name"; INSTALLED+=("$name")
-        else
-            fail "$name — could not install automatically (install manually)"
-            FAILED+=("$name")
-        fi
-    }
-
-    if [[ $OS == "macos" ]]; then
-        install_sys "ripgrep"         rg         "brew install ripgrep"
-        install_sys "fzf"             fzf        "brew install fzf"
-        install_sys "universal-ctags" ctags      "brew install universal-ctags"
-        install_sys "shellcheck"      shellcheck "brew install shellcheck"
-        install_sys "hadolint"        hadolint   "brew install hadolint"
-        install_sys "marksman"        marksman   "brew install marksman"
-
-    elif [[ $HAS_APT -eq 1 ]]; then
-        if [[ $HAS_SUDO -eq 0 ]]; then
-            warn "No sudo — skipping apt system tools"
-            SKIPPED+=("ripgrep" "fzf" "ctags" "shellcheck" "hadolint" "marksman")
-        else
-            sudo apt-get update -qq
-            install_sys "ripgrep"         rg         "sudo apt-get install -y ripgrep"
-            install_sys "fzf"             fzf        "sudo apt-get install -y fzf"
-            install_sys "universal-ctags" ctags      "sudo apt-get install -y universal-ctags"
-            install_sys "shellcheck"      shellcheck "sudo apt-get install -y shellcheck"
-
-            # hadolint: no apt package — download binary from GitHub releases
-            if command -v hadolint >/dev/null 2>&1; then
-                ok "hadolint (already installed)"
-            else
-                HARCH=$(arch_github)
-                HVER=$(curl -fsSL https://api.github.com/repos/hadolint/hadolint/releases/latest \
-                       | grep '"tag_name"' | cut -d'"' -f4 2>/dev/null) || HVER=""
-                if [[ -n "$HVER" ]] && safe_download \
-                    "https://github.com/hadolint/hadolint/releases/download/${HVER}/hadolint-Linux-${HARCH}" \
-                    /tmp/chopsticks-hadolint; then
-                    chmod +x /tmp/chopsticks-hadolint && sudo mv /tmp/chopsticks-hadolint /usr/local/bin/hadolint
-                    ok "hadolint"; INSTALLED+=("hadolint")
-                else
-                    fail "hadolint — download failed (install manually: https://github.com/hadolint/hadolint/releases)"
-                    FAILED+=("hadolint")
-                fi
-            fi
-
-            # marksman: no apt package — download binary from GitHub releases
-            if command -v marksman >/dev/null 2>&1; then
-                ok "marksman (already installed)"
-            else
-                MARCH=$(arch_linux_x64)
-                MVER=$(curl -fsSL https://api.github.com/repos/artempyanykh/marksman/releases/latest \
-                       | grep '"tag_name"' | cut -d'"' -f4 2>/dev/null) || MVER=""
-                if [[ -n "$MVER" ]] && safe_download \
-                    "https://github.com/artempyanykh/marksman/releases/download/${MVER}/marksman-linux-${MARCH}" \
-                    /tmp/chopsticks-marksman; then
-                    chmod +x /tmp/chopsticks-marksman && sudo mv /tmp/chopsticks-marksman /usr/local/bin/marksman
-                    ok "marksman"; INSTALLED+=("marksman")
-                else
-                    fail "marksman — download failed (install manually: https://github.com/artempyanykh/marksman/releases)"
-                    FAILED+=("marksman")
-                fi
-            fi
-        fi
-
-    elif [[ $HAS_PACMAN -eq 1 ]]; then
-        if [[ $HAS_SUDO -eq 0 ]]; then
-            warn "No sudo — skipping pacman system tools"
-            SKIPPED+=("ripgrep" "fzf" "ctags" "shellcheck" "hadolint" "marksman")
-        else
-            install_sys "ripgrep"         rg         "sudo pacman -S --noconfirm ripgrep"
-            install_sys "fzf"             fzf        "sudo pacman -S --noconfirm fzf"
-            install_sys "universal-ctags" ctags      "sudo pacman -S --noconfirm ctags"
-            install_sys "shellcheck"      shellcheck "sudo pacman -S --noconfirm shellcheck"
-            install_sys "hadolint"        hadolint   "sudo pacman -S --noconfirm hadolint"
-            install_sys "marksman"        marksman   "sudo pacman -S --noconfirm marksman"
-        fi
-
-    elif [[ $HAS_DNF -eq 1 ]]; then
-        if [[ $HAS_SUDO -eq 0 ]]; then
-            warn "No sudo — skipping dnf system tools"
-            SKIPPED+=("ripgrep" "fzf" "shellcheck" "ctags" "hadolint" "marksman")
-        else
-            install_sys "ripgrep"         rg         "sudo dnf install -y ripgrep"
-            install_sys "fzf"             fzf        "sudo dnf install -y fzf"
-            install_sys "shellcheck"      shellcheck "sudo dnf install -y ShellCheck"
-            skip "universal-ctags — install manually: sudo dnf install ctags"
-            SKIPPED+=("ctags")
-            skip "hadolint — install manually: https://github.com/hadolint/hadolint/releases"
-            SKIPPED+=("hadolint")
-            skip "marksman — install manually: https://github.com/artempyanykh/marksman/releases"
-            SKIPPED+=("marksman")
-        fi
-
-    else
-        warn "Unknown distro — skipping system tools (install manually)"
-        SKIPPED+=("ripgrep" "fzf" "ctags" "shellcheck" "hadolint" "marksman")
-    fi
-
+if [[ $HAS_PKG_MGR -eq 0 ]]; then
+    skip "system tools (no package manager available)"
+    SKIPPED+=("ripgrep" "fzf" "universal-ctags" "shellcheck" "hadolint" "marksman")
 else
-    skip "system tools"
-    SKIPPED+=("ripgrep" "fzf" "ctags" "shellcheck" "hadolint" "marksman")
+
+# _do_sys <name> <cmd_check> <idx> <brew_pkg> <apt_pkg> <pac_pkg> [dnf_pkg]
+_do_sys() {
+    local name="$1" check="$2" idx="$3"
+    local brew_p="${4:-}" apt_p="${5:-}" pac_p="${6:-}" dnf_p="${7:-}"
+
+    if [[ $idx -lt 0 ]] || ! _selected "$idx"; then
+        skip "$name"; SKIPPED+=("$name"); return
+    fi
+    if command -v "$check" >/dev/null 2>&1; then
+        ok "$name (already installed)"; return
+    fi
+    if pkg_install "$brew_p" "$apt_p" "$pac_p" "$dnf_p"; then
+        ok "$name"; INSTALLED+=("$name")
+    else
+        fail "$name — could not install automatically (install manually)"
+        FAILED+=("$name")
+    fi
+}
+
+# _do_binary_apt: for tools with no apt/dnf package — download binary from GitHub
+_do_binary_apt() {
+    local name="$1" check="$2" idx="$3" url="$4" tmp="$5"
+    if [[ $idx -lt 0 ]] || ! _selected "$idx"; then
+        skip "$name"; SKIPPED+=("$name"); return
+    fi
+    if command -v "$check" >/dev/null 2>&1; then
+        ok "$name (already installed)"; return
+    fi
+    if safe_download "$url" "$tmp"; then
+        chmod +x "$tmp" && sudo mv "$tmp" /usr/local/bin/"$check"
+        ok "$name"; INSTALLED+=("$name")
+    else
+        fail "$name — binary download failed (install manually)"
+        FAILED+=("$name")
+    fi
+}
+
+if [[ $OS == "macos" ]]; then
+    _do_sys "ripgrep"         rg         "$_I_RIPGREP"    ripgrep          "" "" ""
+    _do_sys "fzf"             fzf        "$_I_FZF"        fzf              "" "" ""
+    _do_sys "universal-ctags" ctags      "$_I_CTAGS"      universal-ctags  "" "" ""
+    _do_sys "shellcheck"      shellcheck "$_I_SHELLCHECK" shellcheck       "" "" ""
+    _do_sys "hadolint"        hadolint   "$_I_HADOLINT"   hadolint         "" "" ""
+    _do_sys "marksman"        marksman   "$_I_MARKSMAN"   marksman         "" "" ""
+
+elif [[ $HAS_APT -eq 1 ]]; then
+    [[ $HAS_SUDO -eq 1 ]] && sudo apt-get update -qq
+    _do_sys "ripgrep"         rg         "$_I_RIPGREP"    "" ripgrep         "" ""
+    _do_sys "fzf"             fzf        "$_I_FZF"        "" fzf             "" ""
+    _do_sys "universal-ctags" ctags      "$_I_CTAGS"      "" universal-ctags "" ""
+    _do_sys "shellcheck"      shellcheck "$_I_SHELLCHECK" "" shellcheck      "" ""
+
+    # hadolint: no apt package — binary from GitHub releases
+    HARCH=$(arch_github)
+    HVER=$(curl -fsSL https://api.github.com/repos/hadolint/hadolint/releases/latest \
+           | grep '"tag_name"' | cut -d'"' -f4 2>/dev/null) || HVER=""
+    _do_binary_apt "hadolint" hadolint "$_I_HADOLINT" \
+        "https://github.com/hadolint/hadolint/releases/download/${HVER}/hadolint-Linux-${HARCH}" \
+        /tmp/chopsticks-hadolint
+
+    # marksman: no apt package — binary from GitHub releases
+    MARCH=$(arch_linux_x64)
+    MVER=$(curl -fsSL https://api.github.com/repos/artempyanykh/marksman/releases/latest \
+           | grep '"tag_name"' | cut -d'"' -f4 2>/dev/null) || MVER=""
+    _do_binary_apt "marksman" marksman "$_I_MARKSMAN" \
+        "https://github.com/artempyanykh/marksman/releases/download/${MVER}/marksman-linux-${MARCH}" \
+        /tmp/chopsticks-marksman
+
+elif [[ $HAS_PACMAN -eq 1 ]]; then
+    _do_sys "ripgrep"         rg         "$_I_RIPGREP"    "" "" ripgrep    ""
+    _do_sys "fzf"             fzf        "$_I_FZF"        "" "" fzf        ""
+    _do_sys "universal-ctags" ctags      "$_I_CTAGS"      "" "" ctags      ""
+    _do_sys "shellcheck"      shellcheck "$_I_SHELLCHECK" "" "" shellcheck ""
+    _do_sys "hadolint"        hadolint   "$_I_HADOLINT"   "" "" hadolint   ""
+    _do_sys "marksman"        marksman   "$_I_MARKSMAN"   "" "" marksman   ""
+
+elif [[ $HAS_DNF -eq 1 ]]; then
+    _do_sys "ripgrep"         rg         "$_I_RIPGREP"    "" "" "" ripgrep
+    _do_sys "fzf"             fzf        "$_I_FZF"        "" "" "" fzf
+    _do_sys "shellcheck"      shellcheck "$_I_SHELLCHECK" "" "" "" ShellCheck
+    if [[ $_I_CTAGS -ge 0 ]] && _selected "$_I_CTAGS"; then
+        skip "universal-ctags — Fedora: install manually: sudo dnf install ctags"
+        SKIPPED+=("universal-ctags")
+    fi
+    if [[ $_I_HADOLINT -ge 0 ]] && _selected "$_I_HADOLINT"; then
+        skip "hadolint — Fedora: install manually: https://github.com/hadolint/hadolint/releases"
+        SKIPPED+=("hadolint")
+    fi
+    if [[ $_I_MARKSMAN -ge 0 ]] && _selected "$_I_MARKSMAN"; then
+        skip "marksman — Fedora: install manually: https://github.com/artempyanykh/marksman/releases"
+        SKIPPED+=("marksman")
+    fi
+else
+    warn "Unknown distro — skipping system tools (install manually)"
+    SKIPPED+=("ripgrep" "fzf" "universal-ctags" "shellcheck" "hadolint" "marksman")
 fi
 
+fi  # end HAS_PKG_MGR
+
 # ============================================================================
-# 5. npm tools
+# 6. npm Tools
 # ============================================================================
 
 step "npm tools (formatters + linters)"
 
-if [[ $HAS_NODE -eq 1 ]]; then
-    if ask "Install npm tools (prettier, markdownlint-cli, stylelint, eslint, typescript)?"; then
-        npm_install() {
-            local pkg="$1"; local check="${2:-$1}"
-            if command -v "$check" >/dev/null 2>&1; then
-                ok "$pkg (already installed)"; return
-            fi
-            if npm install -g "$pkg" >/dev/null 2>&1; then
-                ok "$pkg"; INSTALLED+=("$pkg")
-            else
-                fail "$pkg"; FAILED+=("$pkg")
-            fi
-        }
-        npm_install prettier
-        npm_install markdownlint-cli markdownlint
-        npm_install stylelint
-        npm_install stylelint-config-standard
-        npm_install eslint
-        npm_install typescript tsc
-    else
-        skip "npm tools"
-        SKIPPED+=("prettier" "markdownlint-cli" "stylelint" "eslint" "typescript")
-    fi
-else
+if [[ $HAS_NODE -eq 0 ]]; then
     skip "npm tools (Node.js not installed)"
     SKIPPED+=("prettier" "markdownlint-cli" "stylelint" "eslint" "typescript")
+elif [[ $_I_NPM -lt 0 ]] || ! _selected "$_I_NPM"; then
+    skip "npm formatter suite (skipped by user)"
+    SKIPPED+=("prettier" "markdownlint-cli" "stylelint" "eslint" "typescript")
+else
+    npm_install() {
+        local pkg="$1" check="${2:-$1}"
+        if command -v "$check" >/dev/null 2>&1; then
+            ok "$pkg (already installed)"; return
+        fi
+        if npm install -g "$pkg" >/dev/null 2>&1; then
+            ok "$pkg"; INSTALLED+=("$pkg")
+        else
+            fail "$pkg"; FAILED+=("$pkg")
+        fi
+    }
+    npm_install prettier
+    npm_install markdownlint-cli markdownlint
+    npm_install stylelint
+    npm_install stylelint-config-standard
+    npm_install eslint
+    npm_install typescript tsc
 fi
 
 # ============================================================================
-# 6. Python tools
+# 7. Python Tools
 # ============================================================================
 
 step "Python tools (formatters + linters)"
 
-if [[ $HAS_PIP -eq 1 ]]; then
-    if ask "Install Python tools (black, isort, flake8, pylint, yamllint, sqlfluff)?"; then
-        pip_install() {
-            local pkg="$1"; local check="${2:-$1}"
-            if command -v "$check" >/dev/null 2>&1; then
-                ok "$pkg (already installed)"; return
-            fi
-            if pip3 install --quiet "$pkg" 2>/dev/null || \
-               pip3 install --quiet --break-system-packages "$pkg" 2>/dev/null; then
-                ok "$pkg"; INSTALLED+=("$pkg")
-            else
-                fail "$pkg"; FAILED+=("$pkg")
-            fi
-        }
-        pip_install black
-        pip_install isort
-        pip_install flake8
-        pip_install pylint
-        pip_install yamllint
-        pip_install sqlfluff
-    else
-        skip "Python tools"
-        SKIPPED+=("black" "isort" "flake8" "pylint" "yamllint" "sqlfluff")
-    fi
-else
+if [[ $HAS_PIP -eq 0 ]]; then
     skip "Python tools (pip3 not installed)"
     SKIPPED+=("black" "isort" "flake8" "pylint" "yamllint" "sqlfluff")
+elif [[ $_I_PYTHON -lt 0 ]] || ! _selected "$_I_PYTHON"; then
+    skip "Python tool suite (skipped by user)"
+    SKIPPED+=("black" "isort" "flake8" "pylint" "yamllint" "sqlfluff")
+else
+    pip_install() {
+        local pkg="$1" check="${2:-$1}"
+        if command -v "$check" >/dev/null 2>&1; then
+            ok "$pkg (already installed)"; return
+        fi
+        if pip3 install --quiet "$pkg" 2>/dev/null || \
+           pip3 install --quiet --break-system-packages "$pkg" 2>/dev/null; then
+            ok "$pkg"; INSTALLED+=("$pkg")
+        else
+            fail "$pkg"; FAILED+=("$pkg")
+        fi
+    }
+    pip_install black
+    pip_install isort
+    pip_install flake8
+    pip_install pylint
+    pip_install yamllint
+    pip_install sqlfluff
 fi
 
 # ============================================================================
-# 7. Go tools
+# 8. Go Tools
 # ============================================================================
 
 step "Go tools"
 
-if [[ $HAS_GO -eq 1 ]]; then
-    if ask "Install Go tools (gopls, goimports, staticcheck)?"; then
-        GOBIN="$(go env GOPATH)/bin"
-        export PATH="$PATH:$GOBIN"
-
-        go_install() {
-            local name="$1" pkg="$2" check="$3"
-            if command -v "$check" >/dev/null 2>&1 || [[ -x "$GOBIN/$check" ]]; then
-                ok "$name (already installed)"; return
-            fi
-            if go install "$pkg" >/dev/null 2>&1; then
-                ok "$name"; INSTALLED+=("$name")
-            else
-                fail "$name"; FAILED+=("$name")
-            fi
-        }
-        go_install gopls       "golang.org/x/tools/gopls@latest"                gopls
-        go_install goimports   "golang.org/x/tools/cmd/goimports@latest"        goimports
-        go_install staticcheck "honnef.co/go/tools/cmd/staticcheck@latest"      staticcheck
-
-        echo "$PATH" | grep -q "$GOBIN" || \
-            warn "Add Go binaries to PATH: export PATH=\"\$PATH:$GOBIN\""
-    else
-        skip "Go tools"
-        SKIPPED+=("gopls" "goimports" "staticcheck")
-    fi
-else
+if [[ $HAS_GO -eq 0 ]]; then
     skip "Go tools (go not installed — see https://go.dev/dl/)"
     SKIPPED+=("gopls" "goimports" "staticcheck")
+elif [[ $_I_GO -lt 0 ]] || ! _selected "$_I_GO"; then
+    skip "Go tool suite (skipped by user)"
+    SKIPPED+=("gopls" "goimports" "staticcheck")
+else
+    GOBIN="$(go env GOPATH)/bin"
+    export PATH="$PATH:$GOBIN"
+
+    go_install() {
+        local name="$1" pkg="$2" check="$3"
+        if command -v "$check" >/dev/null 2>&1 || [[ -x "$GOBIN/$check" ]]; then
+            ok "$name (already installed)"; return
+        fi
+        if go install "$pkg" >/dev/null 2>&1; then
+            ok "$name"; INSTALLED+=("$name")
+        else
+            fail "$name"; FAILED+=("$name")
+        fi
+    }
+    go_install gopls       "golang.org/x/tools/gopls@latest"           gopls
+    go_install goimports   "golang.org/x/tools/cmd/goimports@latest"   goimports
+    go_install staticcheck "honnef.co/go/tools/cmd/staticcheck@latest" staticcheck
+
+    echo "$PATH" | grep -q "$GOBIN" || \
+        warn "Add Go binaries to PATH: export PATH=\"\$PATH:$GOBIN\""
 fi
 
 # ============================================================================
-# 8. tmux: vim-tmux-navigator integration
+# 9. tmux: vim-tmux-navigator integration
 # ============================================================================
 
 step "tmux: vim-tmux-navigator integration"
 
-if command -v tmux >/dev/null 2>&1; then
+if ! command -v tmux >/dev/null 2>&1; then
+    skip "tmux not found — skipping navigator config"
+    SKIPPED+=("tmux-navigator-config")
+elif [[ $_I_TMUX -lt 0 ]]; then
+    :   # already configured — noted earlier
+elif ! _selected "$_I_TMUX"; then
+    skip "tmux navigator config (skipped by user)"
+    SKIPPED+=("tmux-navigator-config")
+else
     TMUX_CONF="$HOME/.tmux.conf"
-    if grep -q 'vim-tmux-navigator' "$TMUX_CONF" 2>/dev/null; then
-        ok "vim-tmux-navigator bindings already present in ~/.tmux.conf"
-    elif ask "Append vim-tmux-navigator bindings to ~/.tmux.conf (enables seamless Ctrl+h/j/k/l across vim and tmux)?"; then
-        cat >> "$TMUX_CONF" << 'TMUXEOF'
+    cat >> "$TMUX_CONF" << 'TMUXEOF'
 
 # vim-tmux-navigator: seamless Ctrl+h/j/k/l navigation between vim and tmux
 is_vim="ps -o state= -o comm= -t '#{pane_tty}' | grep -iqE '^[^TXZ ]+ +(\S+\/)?g?(view|n?vim?x?)(diff)?$'"
@@ -626,39 +754,26 @@ bind-key -n 'C-j' if-shell "$is_vim" 'send-keys C-j' 'select-pane -D'
 bind-key -n 'C-k' if-shell "$is_vim" 'send-keys C-k' 'select-pane -U'
 bind-key -n 'C-l' if-shell "$is_vim" 'send-keys C-l' 'select-pane -R'
 TMUXEOF
-        ok "vim-tmux-navigator bindings appended to ~/.tmux.conf"
-        warn "Reload tmux config now: tmux source-file ~/.tmux.conf"
-        warn "Note: C-l now navigates panes instead of clearing the screen."
-        warn "      To restore clear: add 'bind C-l send-keys C-l' to ~/.tmux.conf"
-        INSTALLED+=("tmux-navigator-config")
-    else
-        skip "tmux navigator config"
-        SKIPPED+=("tmux-navigator-config")
-    fi
-else
-    skip "tmux not found — skipping navigator config"
-    SKIPPED+=("tmux-navigator-config")
+    ok "vim-tmux-navigator bindings appended to ~/.tmux.conf"
+    warn "Reload tmux config now: tmux source-file ~/.tmux.conf"
+    warn "Note: C-l now navigates panes instead of clearing the screen."
+    warn "      To restore clear: add 'bind C-l send-keys C-l' to ~/.tmux.conf"
+    INSTALLED+=("tmux-navigator-config")
 fi
 
 # ============================================================================
-# 9. CoC language server extensions
+# 10. LSP language servers
 # ============================================================================
 
-step "CoC language server extensions"
-
-if [[ $HAS_NODE -eq 1 ]]; then
-    if ask "Install CoC language servers (LSP for all configured languages)?"; then
-        info "(Downloading CoC extensions via npm — this may take 1-3 minutes)"
-        # Note: coc-marksman doesn't exist on npm — markdown LSP is handled via coc-settings.json
-        _vim_run +'CocInstall -sync coc-json coc-tsserver coc-pyright coc-sh coc-html coc-css coc-yaml coc-go coc-rust-analyzer coc-sql' +qall
-        ok "CoC language servers installed"
-    else
-        skip "CoC language servers"
-        info "Install later with :CocInstall <name> inside Vim"
-    fi
-else
-    warn "Node.js not found — using vim-lsp fallback (run :LspInstallServer inside Vim for each language)"
-fi
+step "LSP language servers"
+info "vim-lsp installs language servers on demand — no action needed here."
+info ""
+info "To install a server: open a source file in Vim and run:"
+info "  :LspInstallServer"
+info ""
+info "Supported: Python, JS/TS, Go, Rust, C/C++, Shell, HTML, CSS, JSON, YAML, Markdown, SQL"
+info ""
+info "For Markdown LSP (marksman), the installer already handled it above."
 
 # ============================================================================
 # Summary
@@ -689,15 +804,15 @@ echo -e "${BOLD}---------------------------------------${NC}"
 echo -e "${BOLD}  You're ready. Open Vim with:${NC}"
 echo -e "${BOLD}---------------------------------------${NC}"
 echo -e "  ${CYAN}vim${NC}            Launch startup dashboard"
-echo -e "  ${CYAN}vim .${NC}          Open file tree + dashboard"
+echo -e "  ${CYAN}vim .${NC}          Open dashboard in current directory"
 echo -e "  ${CYAN}vim myfile${NC}     Edit a specific file"
 echo ""
-echo -e "${BOLD}  Survival Guide (first-time Vim users)${NC}"
+echo -e "${BOLD}  First steps inside Vim${NC}"
 echo -e "  ${CYAN}Esc${NC} or ${CYAN}jk${NC}     Exit insert mode → back to Normal"
 echo -e "  ${CYAN}:q!${NC} + Enter   Emergency quit without saving"
 echo -e "  ${CYAN},x${NC}            Save and quit"
-echo -e "  ${CYAN},?${NC}            Open cheat sheet inside Vim"
-echo -e "  ${CYAN},${NC} + pause     Interactive keybinding guide"
+echo -e "  ${CYAN},?${NC}            Open cheat sheet"
+echo -e "  ${CYAN}:LspInstallServer${NC}  Install LSP for current filetype"
 echo ""
 echo -e "${YELLOW}[!]${NC}  Ctrl+s is mapped to save in Vim."
 echo    "     If it freezes your terminal, add this to ~/.bashrc or ~/.zshrc:"

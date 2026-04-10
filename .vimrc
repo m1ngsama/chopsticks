@@ -1,141 +1,75 @@
 " ============================================================================
-" Vim Configuration - The Ultimate vimrc
-" Inspired by the best practices from the Vim community
+" chopsticks — vim configuration
+" Philosophy: flowing writing on any machine. No Node.js. Solarized palette.
 " ============================================================================
+
+" ============================================================================
+" => Environment Detection  (must run first)
+" ============================================================================
+
+set nocompatible
+
+let g:is_tty       = empty($TERM) || $TERM ==# 'dumb' || $TERM =~# 'linux'
+                 \ || $TERM =~# 'screen' || &term =~# 'builtin'
+let g:has_true_color = ($COLORTERM ==# 'truecolor' || $COLORTERM ==# '24bit')
 
 " ============================================================================
 " => General Settings
 " ============================================================================
 
-" Disable compatibility with vi which can cause unexpected issues
-set nocompatible
-
-" Detect terminal type and capabilities (must be early for conditional configs)
-let g:is_tty = empty($TERM) || $TERM ==# 'dumb' || $TERM =~# 'linux' || $TERM =~# 'screen' || &term =~# 'builtin'
-let g:has_true_color = ($COLORTERM == 'truecolor' || $COLORTERM == '24bit')
-
-" Enable type file detection. Vim will be able to try to detect the type of file in use
 filetype on
-
-" Enable plugins and load plugin for the detected file type
 filetype plugin on
-
-" Load an indent file for the detected file type
 filetype indent on
-
-" Turn syntax highlighting on
 syntax on
 
-" Add numbers to each line on the left-hand side
 set number
-
-" Show relative line numbers
 set relativenumber
 
-" Highlight cursor line (disabled in TTY for performance)
 if !g:is_tty
     set cursorline
 endif
 
-" Do not save backup files
 set nobackup
-
-" Do not let cursor scroll below or above N number of lines when scrolling
 set scrolloff=10
-
-" Do not wrap lines. Allow long lines to extend as far as the line goes
 set nowrap
-
-" While searching though a file incrementally highlight matching characters as you type
 set incsearch
-
-" Ignore capital letters during search
 set ignorecase
-
-" Override the ignorecase option if searching for capital letters
 set smartcase
-
-" Show partial command you type in the last line of the screen
 set showcmd
-
-" Show the mode you are on the last line
 set showmode
-
-" Use highlighting when doing a search
 set hlsearch
-
-" Set the commands to save in history default number is 20
 set history=1000
-
-" Enable auto completion menu after pressing TAB
 set wildmenu
-
-" Make wildmenu behave like similar to Bash completion
 set wildmode=list:longest
-
-" Case-insensitive filename completion in wildmenu (spf13, YADR)
 set wildignorecase
-
-" Files and directories to exclude from wildmenu and :find
 set wildignore=*.docx,*.jpg,*.png,*.gif,*.pdf,*.pyc,*.exe,*.flv,*.img,*.xlsx
 set wildignore+=*/node_modules/*,*/.git/*,*/__pycache__/*,*/dist/*,*/build/*
-
-" Recursive :find across the project tree (works with wildignore above)
 set path+=**
-
-" Enable mouse support
 set mouse=a
-
-" Set encoding
 set encoding=utf-8
-
-" Enable folding
 set foldmethod=indent
 set foldlevel=99
-
-" Split window settings
 set splitbelow
 set splitright
-
-" Better backspace behavior
 set backspace=indent,eol,start
-
-" Auto read when file is changed from outside
 set autoread
-
-" Height of the command bar
 set cmdheight=1
-
-" A buffer becomes hidden when it is abandoned
 set hid
-
-" Configure backspace so it acts as it should act (enhanced from earlier basic setting)
 set whichwrap+=<,>,h,l
-
-" For regular expressions turn magic on
 set magic
-
-" Show matching brackets and how many tenths of a second to blink
 set showmatch
 set mat=2
-
-" No annoying sound on errors
 set noerrorbells
 set novisualbell
 set t_vb=
 set tm=500
-
-" Separate timeout for keycodes (arrow keys, Esc) vs leader sequences
-" ttimeoutlen=10 eliminates the ~500ms ESC lag in terminal Vim (vim-sensible)
 set ttimeout
 set ttimeoutlen=10
 
-" Enable 256 colors palette in Gnome Terminal
-if $COLORTERM == 'gnome-terminal'
+if $COLORTERM ==# 'gnome-terminal'
     set t_Co=256
 endif
 
-" Set extra options when running in GUI mode
 if has("gui_running")
     set guioptions-=T
     set guioptions-=e
@@ -143,16 +77,11 @@ if has("gui_running")
     set guitablabel=%M\ %t
 endif
 
-" Show last line partially instead of replacing it with @@@ (vim-sensible)
 set display+=lastline
-
-" Use Unix as the standard file type
 set ffs=unix,dos,mac
-
 set nowb
 set noswapfile
 
-" Persistent undo across sessions
 if has('persistent_undo')
     set undofile
     let &undodir = expand('~/.vim/.undo')
@@ -160,136 +89,91 @@ if has('persistent_undo')
 endif
 
 " ============================================================================
-" => Vim-Plug Plugin Manager
+" => vim-plug
 " ============================================================================
 
-" Auto-install vim-plug
 let data_dir = has('nvim') ? stdpath('data') . '/site' : '~/.vim'
 if empty(glob(data_dir . '/autoload/plug.vim'))
-  silent execute '!curl -fLo '.data_dir.'/autoload/plug.vim --create-dirs  https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim'
-  autocmd VimEnter * PlugInstall --sync | source $MYVIMRC
+    silent execute '!curl -fLo '.data_dir.'/autoload/plug.vim --create-dirs '
+        \ . 'https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim'
+    autocmd VimEnter * PlugInstall --sync | source $MYVIMRC
 endif
 
-" Plugin list
 call plug#begin('~/.vim/plugged')
 
-" ===== File Navigation & Search =====
-Plug 'preservim/nerdtree'                    " File explorer
+" ── Navigation & Search ───────────────────────────────────────────────────────
 Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
-Plug 'junegunn/fzf.vim'                      " Fuzzy finder
+Plug 'junegunn/fzf.vim'
 
-" ===== Git Integration =====
-Plug 'tpope/vim-fugitive'                    " Git wrapper
-Plug 'airblade/vim-gitgutter'                " Show git diff in gutter
+" ── Git ───────────────────────────────────────────────────────────────────────
+Plug 'tpope/vim-fugitive'
+Plug 'airblade/vim-gitgutter'
 
-" ===== Status Line & UI =====
-Plug 'vim-airline/vim-airline'               " Status bar
-Plug 'vim-airline/vim-airline-themes'        " Airline themes
+" ── Editing ───────────────────────────────────────────────────────────────────
+Plug 'tpope/vim-surround'
+Plug 'tpope/vim-commentary'
+Plug 'tpope/vim-repeat'
+Plug 'tpope/vim-unimpaired'
+Plug 'wellle/targets.vim'
+Plug 'jiangmiao/auto-pairs'
+Plug 'easymotion/vim-easymotion'
 
-" ===== Code Editing & Completion =====
-Plug 'tpope/vim-surround'                    " Surround text objects
-Plug 'tpope/vim-commentary'                  " Comment stuff out
-Plug 'tpope/vim-repeat'                      " Repeat plugin maps
-Plug 'jiangmiao/auto-pairs'                  " Auto close brackets
-Plug 'dense-analysis/ale'                    " Async linting engine
+" ── Linting & Formatting ──────────────────────────────────────────────────────
+Plug 'dense-analysis/ale'
 
-" ===== Language Support =====
-Plug 'sheerun/vim-polyglot'                  " Language pack
-Plug 'fatih/vim-go'                                  " Go support (run :GoUpdateBinaries manually if needed)
+" ── LSP + Completion (no Node.js required) ────────────────────────────────────
+Plug 'prabirshrestha/vim-lsp'
+Plug 'mattn/vim-lsp-settings'
+Plug 'prabirshrestha/asyncomplete.vim'
+Plug 'prabirshrestha/asyncomplete-lsp.vim'
 
-" ===== Color Schemes =====
-Plug 'morhetz/gruvbox'                       " Gruvbox theme
-Plug 'dracula/vim', { 'as': 'dracula' }      " Dracula theme
-Plug 'altercation/vim-colors-solarized'      " Solarized theme
-Plug 'joshdick/onedark.vim'                  " One Dark theme
+" ── Language Syntax ───────────────────────────────────────────────────────────
+Plug 'pangloss/vim-javascript'
+Plug 'HerringtonDarkholme/yats.vim'
+Plug 'preservim/vim-markdown'
+Plug 'fatih/vim-go'
 
-" ===== Productivity =====
-Plug 'mbbill/undotree'                       " Undo history visualizer
-Plug 'preservim/tagbar'                      " Tag browser
-Plug 'easymotion/vim-easymotion'             " Easy motion
+" ── Markdown Preview ──────────────────────────────────────────────────────────
+Plug 'previm/previm'
 
-" ===== Code Intelligence (CoC: requires Vim 8.0.1453+ and Node.js) =====
-if (has('nvim') || has('patch-8.0.1453')) && executable('node')
-    Plug 'neoclide/coc.nvim', {'branch': 'release'}  " Full LSP + completion via Node.js
-endif
-
-" ===== Session Management =====
-Plug 'tpope/vim-obsession'                   " Continuous session save
-Plug 'dhruvasagar/vim-prosession'            " Better session management
-
-" ===== Additional Utilities =====
-Plug 'tpope/vim-unimpaired'                  " Handy bracket mappings
-Plug 'wellle/targets.vim'                    " Additional text objects
-Plug 'honza/vim-snippets'                    " Snippet collection
-Plug 'christoomey/vim-tmux-navigator'        " Seamless vim/tmux pane navigation
-
-" ===== Native LSP (vim-lsp: works without Node.js, Vim 8.0+ only) =====
-" Used as fallback when CoC/Node.js is unavailable
-if !((has('nvim') || has('patch-8.0.1453')) && executable('node'))
-    Plug 'prabirshrestha/vim-lsp'                " Pure VimScript LSP client
-    Plug 'mattn/vim-lsp-settings'               " Auto-configure language servers
-    Plug 'prabirshrestha/asyncomplete.vim'       " Async completion framework
-    Plug 'prabirshrestha/asyncomplete-lsp.vim'   " LSP completion source for asyncomplete
-endif
-
-" ===== Enhanced UI Experience =====
-Plug 'mhinz/vim-startify'                    " Startup screen with recent files
-Plug 'liuchengxu/vim-which-key'              " Show keybindings on leader pause
+" ── UI ────────────────────────────────────────────────────────────────────────
+Plug 'mbbill/undotree'
+Plug 'mhinz/vim-startify'
+Plug 'altercation/vim-colors-solarized'
 if !g:is_tty
-    Plug 'Yggdroot/indentLine'               " Indent guide lines
+    Plug 'Yggdroot/indentLine'
 endif
+
+" ── Session ───────────────────────────────────────────────────────────────────
+Plug 'tpope/vim-obsession'
+
+" ── tmux ──────────────────────────────────────────────────────────────────────
+Plug 'christoomey/vim-tmux-navigator'
 
 call plug#end()
 
 " ============================================================================
-" => LSP Backend Detection & Completion Settings
+" => Colors  (Solarized Dark — matches tmux palette)
 " ============================================================================
 
-" Detect which LSP backend is active
-" Priority: CoC (full-featured, needs Node.js) > vim-lsp (lightweight fallback)
-let g:use_coc = (has('nvim') || has('patch-8.0.1453')) && executable('node') && exists('g:plugs["coc.nvim"]')
-let g:use_vimlsp = !g:use_coc && has('patch-8.0.0') && exists('g:plugs["vim-lsp"]')
-
-" Suppress coc.nvim's blocking startup warning on Vim < 9.0.0438
-" (the guard above already prevents coc from loading, but the warning
-"  fires from the plugin file itself if coc.nvim is in runtimepath)
-if !g:use_coc
-    let g:coc_start_at_startup     = 0
-    let g:coc_disable_startup_warning = 1
-endif
-
-" Limit popup menu height (applies to all completion)
-set pumheight=15
-
-" ============================================================================
-" => Colors and Fonts
-" ============================================================================
-
-" Enable true colors support only if terminal supports it
 if g:has_true_color && has('termguicolors') && !g:is_tty
     set termguicolors
 endif
 
-" Set colorscheme with proper fallbacks
+set background=dark
+
 if &t_Co >= 256 && !g:is_tty
-    " 256-color terminals
     try
-        colorscheme gruvbox
-        set background=dark
+        " 256-color approximation — works on any terminal, no palette setup needed
+        let g:solarized_termcolors = 256
+        colorscheme solarized
     catch
-        try
-            colorscheme desert
-        catch
-            colorscheme default
-        endtry
+        colorscheme default
     endtry
 else
-    " Basic 16-color terminals (TTY, console)
     colorscheme default
-    set background=dark
 endif
 
-" Set font for GUI
 if has("gui_running")
     if has("gui_gtk2") || has("gui_gtk3")
         set guifont=Hack\ 12,Source\ Code\ Pro\ 12,Monospace\ 12
@@ -299,31 +183,21 @@ if has("gui_running")
 endif
 
 " ============================================================================
-" => Text, Tab and Indent Related
+" => Text, Tab and Indent
 " ============================================================================
 
-" Visible whitespace characters (toggled with <F6>)
-" TTY: ASCII equivalents; GUI/modern terminal: Unicode symbols
 if g:is_tty
     set listchars=tab:>-,trail:.,extends:>,precedes:<,nbsp:_
 else
     set listchars=tab:→\ ,trail:·,extends:▸,precedes:◂,nbsp:·
 endif
 
-" Use spaces instead of tabs
 set expandtab
-
-" Be smart when using tabs
 set smarttab
-
-" 1 tab == 4 spaces
 set shiftwidth=4
 set tabstop=4
-
-" Linebreak on 500 characters
 set lbr
 set tw=500
-
 set autoindent
 set smartindent
 
@@ -331,44 +205,29 @@ set smartindent
 " => Key Mappings
 " ============================================================================
 
-" Set leader key to comma
 let mapleader = ","
 
-" Fast saving
+" Saving / quitting
 nmap <leader>w :w!<cr>
-
-" Fast quitting
 nmap <leader>q :q<cr>
-
-" Fast save and quit
 nmap <leader>x :x<cr>
 
-" Disable highlight when <leader><cr> is pressed
+" Clear search highlight
 map <silent> <leader><cr> :noh<cr>
 
-" Window navigation — owned by vim-tmux-navigator plugin (Ctrl+h/j/k/l works
-" seamlessly across Vim splits and tmux panes; no manual maps needed here)
-
-" Close the current buffer (Bclose preserves window layout)
+" Buffer navigation
 map <leader>bd :Bclose<cr>
-
-" Close all the buffers
 map <leader>ba :bufdo bd<cr>
+map <leader>l  :bnext<cr>
+map <leader>h  :bprevious<cr>
 
-" Next buffer
-map <leader>l :bnext<cr>
-
-" Previous buffer
-map <leader>h :bprevious<cr>
-
-" Useful mappings for managing tabs
+" Tab management
 map <leader>tn :tabnew<cr>
 map <leader>to :tabonly<cr>
 map <leader>tc :tabclose<cr>
 map <leader>tm :tabmove
 map <leader>t<leader> :tabnext<cr>
 
-" Let 'tl' toggle between this and the last accessed tab
 let g:lasttab = 1
 nmap <Leader>tl :exe "tabn ".g:lasttab<CR>
 augroup ChopstickTabHistory
@@ -376,88 +235,72 @@ augroup ChopstickTabHistory
     autocmd TabLeave * let g:lasttab = tabpagenr()
 augroup END
 
-" Opens a new tab with the current buffer's path
 map <leader>te :tabedit <C-r>=expand("%:p:h")<cr>/
-
-" Change window-local CWD to current file's directory (lcd = local, safer than cd)
 map <leader>cd :lcd %:p:h<cr>:pwd<cr>
 
-" Open built-in file browser (works on any Vim, no plugins needed — tpope)
+" File browser (netrw — built-in, no plugins)
 nnoremap <leader>e :Explore<CR>
+nnoremap <leader>E :Vexplore<CR>
 
-" Remap VIM 0 to first non-blank character
+" Remap 0 to first non-blank
 map 0 ^
 
-" Reselect last pasted text (gV = visual select last paste) — spf13, YADR
+" Reselect last paste
 nnoremap gV `[v`]
 
-" Command-line history navigation with Ctrl+p/n (amix, spf13)
+" Command-line history
 cnoremap <C-p> <Up>
 cnoremap <C-n> <Down>
 
-" Move a line of text using ALT+[jk] (normal mode)
+" Move lines
 nmap <M-j> mz:m+<cr>`z
 nmap <M-k> mz:m-2<cr>`z
-
-" Move selected lines up/down and re-indent (visual mode) — ThePrimeagen
-" Overrides visual-J (join) and visual-K (keywordprg) — use normal mode for those
 vnoremap J :m '>+1<CR>gv=gv
 vnoremap K :m '<-2<CR>gv=gv
 
-" Pressing ,ss will toggle and untoggle spell checking
+" Spell checking
 map <leader>ss :setlocal spell!<cr>
-
-" Shortcuts using <leader>
 map <leader>sn ]s
 map <leader>sp [s
 map <leader>sa zg
 map <leader>s? z=
 
-" Toggle paste mode
+" Toggle modes
 set pastetoggle=<F2>
-
-" Toggle line numbers
 nnoremap <F3> :set invnumber<CR>
-
-" Toggle relative line numbers
 nnoremap <F4> :set invrelativenumber<CR>
-
-" Toggle visible whitespace (tabs, trailing spaces, non-breaking spaces)
 nnoremap <F6> :set list!<CR>
 
-" Enable folding with the spacebar
+" Folding
 nnoremap <space> za
 
-" Y yanks to end of line (consistent with D, C)
+" Consistency with D and C
 nnoremap Y y$
-
-" Disable accidental Ex mode
 nnoremap Q <nop>
 
-" Exit insert mode without reaching for Escape (community standard)
+" Ergonomic escape
 inoremap jk <Esc>
 
-" Keep visual selection after indent
+" Indent keeps visual selection
 vnoremap < <gv
 vnoremap > >gv
 
-" Center cursor when jumping through search results
+" Search: centre result on screen
 nnoremap n nzzzv
 nnoremap N Nzzzv
 
-" Search for visually selected text with // (hit // in visual mode)
+" Search for visual selection
 vnoremap // y/\V<C-r>=escape(@",'/\')<CR><CR>
 
-" <C-s> to save in normal and insert mode
-" (for terminals: add 'stty -ixon' to your shell rc to disable XON/XOFF)
+" Save from any mode
 nnoremap <silent> <C-s> :w<CR>
 inoremap <silent> <C-s> <Esc>:w<CR>a
 
-" Center cursor after half-page scroll
+" Scroll keeping cursor centred
 nnoremap <C-d> <C-d>zz
 nnoremap <C-u> <C-u>zz
 
-" System clipboard yank/paste (conditional: requires clipboard provider)
+" System clipboard
 if has('clipboard')
     nnoremap <leader>y "+y
     vnoremap <leader>y "+y
@@ -466,64 +309,44 @@ if has('clipboard')
     nnoremap <leader>P "+P
 endif
 
-" Quickfix list shortcuts ([q/]q from vim-unimpaired handles navigation)
+" Quickfix
 nnoremap <leader>qo :copen<CR>
 nnoremap <leader>qc :cclose<CR>
 
-" Auto-equalize splits when terminal window is resized
+" Auto-equalise splits on window resize
 augroup ChopstickResize
     autocmd!
     autocmd VimResized * wincmd =
 augroup END
 
 " ============================================================================
-" => Plugin Settings
+" => netrw  (built-in file browser — replaces NERDTree)
+" ============================================================================
+"
+"  <leader>e   open netrw in current window   (:Explore)
+"  <leader>E   open netrw in a vertical split  (:Vexplore)
+"  Inside netrw:
+"    Enter / o   open file
+"    -           go up one directory
+"    %           create new file
+"    d           create new directory
+"    D           delete file/directory
+"    R           rename
+"    gh          toggle hidden files
+"    i           cycle list style  (1=thin, 2=long, 3=tree, 4=wide)
+
+let g:netrw_liststyle    = 3        " tree view by default
+let g:netrw_banner       = 0        " no banner
+let g:netrw_browse_split = 0        " open in same window
+let g:netrw_winsize      = 25       " 25% width when split
+let g:netrw_list_hide    = '\(^\|\s\s\)\zs\.\S\+'
+let g:netrw_list_hide   .= ',\.pyc$,node_modules,\.git,__pycache__,\.DS_Store'
+
+" ============================================================================
+" => FZF
 " ============================================================================
 
-" --- NERDTree ---
-map <C-n> :NERDTreeToggle<CR>
-map <leader>n :NERDTreeFind<CR>
-
-" Close vim if the only window left open is a NERDTree
-augroup NERDTreeAutoClose
-    autocmd!
-    autocmd BufEnter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isTabTree()) | q | endif
-augroup END
-
-" Show hidden files
-let NERDTreeShowHidden=1
-
-" Ignore files in NERDTree
-let NERDTreeIgnore=['\.pyc$', '\~$', '\.swp$', '\.git$', '\.DS_Store', 'node_modules', '__pycache__', '\.egg-info$']
-
-" NERDTree window size
-let NERDTreeWinSize=35
-
-" Track stdin reads so startup autocmds can skip pipe/heredoc input
-augroup ChopstickStdin
-    autocmd!
-    autocmd StdinReadPre * let s:std_in=1
-augroup END
-
-" Startup layout (non-TTY only — keeps TTY startup instant)
-if !g:is_tty
-    augroup ChopstickStartup
-        autocmd!
-        " vim <dir>  →  NERDTree on left + Startify (or blank buffer) on right
-        autocmd VimEnter *
-            \ if argc() == 1 && isdirectory(argv()[0]) && !exists('s:std_in') |
-            \     exe 'NERDTree ' . fnameescape(argv()[0]) |
-            \     exe 'cd ' . fnameescape(argv()[0]) |
-            \     wincmd p |
-            \     if exists(':Startify') == 2 | Startify | else | enew | endif |
-            \ endif
-        " vim (no args)  →  Startify fullscreen dashboard, no auto NERDTree
-        " Use Ctrl+n to open NERDTree when needed
-    augroup END
-endif
-
-" --- FZF ---
-" Smart file search: use GFiles (respects .gitignore) inside git repos, Files elsewhere
+" Ctrl+p: git-aware file search (GFiles inside repo, Files outside)
 function! s:SmartFiles() abort
     if !empty(system('git rev-parse --show-toplevel 2>/dev/null'))
         GFiles
@@ -531,78 +354,57 @@ function! s:SmartFiles() abort
         Files
     endif
 endfunction
-map <C-p> :call <SID>SmartFiles()<CR>
+
+map <C-p>     :call <SID>SmartFiles()<CR>
 map <leader>b :Buffers<CR>
 map <leader>rg :Rg<CR>
 map <leader>rG :Rg -F <C-r><C-w><CR>
 map <leader>rt :Tags<CR>
 map <leader>gF :GFiles<CR>
 
-" FZF customization for better project search
 let g:fzf_layout = { 'down': '40%' }
 
-" Disable preview in TTY for better performance
 if g:is_tty
     let g:fzf_preview_window = []
 else
     let g:fzf_preview_window = ['right:50%', 'ctrl-/']
 endif
 
-" Advanced FZF commands
-" Conditionally enable preview based on terminal type
 if g:is_tty
     command! -bang -nargs=* Rg
-      \ call fzf#vim#grep(
-      \   'rg --column --line-number --no-heading --color=always --smart-case -- '.shellescape(<q-args>), 1,
-      \   <bang>0)
-
+        \ call fzf#vim#grep(
+        \   'rg --column --line-number --no-heading --color=always --smart-case -- '
+        \   .shellescape(<q-args>), 1, <bang>0)
     command! -bang GFiles call fzf#vim#gitfiles('', <bang>0)
 else
     command! -bang -nargs=* Rg
-      \ call fzf#vim#grep(
-      \   'rg --column --line-number --no-heading --color=always --smart-case -- '.shellescape(<q-args>), 1,
-      \   fzf#vim#with_preview(), <bang>0)
-
+        \ call fzf#vim#grep(
+        \   'rg --column --line-number --no-heading --color=always --smart-case -- '
+        \   .shellescape(<q-args>), 1, fzf#vim#with_preview(), <bang>0)
     command! -bang GFiles call fzf#vim#gitfiles('', fzf#vim#with_preview(), <bang>0)
 endif
 
+" ============================================================================
+" => GitGutter
+" ============================================================================
 
-" --- Airline ---
-" Disable powerline fonts in TTY for compatibility
-if g:is_tty
-    let g:airline_powerline_fonts = 0
-    let g:airline_left_sep = ''
-    let g:airline_right_sep = ''
-    let g:airline#extensions#tabline#left_sep = ' '
-    let g:airline#extensions#tabline#left_alt_sep = '|'
-else
-    let g:airline_powerline_fonts = 1
-endif
-
-let g:airline#extensions#tabline#enabled = 1
-let g:airline#extensions#tabline#formatter = 'unique_tail'
-
-" Set theme based on terminal capabilities
-if &t_Co >= 256 && !g:is_tty
-    let g:airline_theme='gruvbox'
-else
-    let g:airline_theme='dark'
-endif
-
-" --- GitGutter ---
-let g:gitgutter_sign_added = '+'
-let g:gitgutter_sign_modified = '~'
-let g:gitgutter_sign_removed = '-'
+let g:gitgutter_sign_added            = '+'
+let g:gitgutter_sign_modified         = '~'
+let g:gitgutter_sign_removed          = '-'
 let g:gitgutter_sign_removed_first_line = '^'
 let g:gitgutter_sign_modified_removed = '~'
 
-" --- ALE (Asynchronous Lint Engine) ---
+" ============================================================================
+" => ALE  (async linting + format-on-save)
+" ============================================================================
+
 let g:ale_linters = {
 \   'python':     ['flake8', 'pylint'],
 \   'javascript': ['eslint'],
 \   'typescript': ['eslint', 'tsserver'],
 \   'go':         ['gopls', 'staticcheck'],
 \   'rust':       ['cargo'],
+\   'c':          ['cc'],
 \   'sh':         ['shellcheck'],
 \   'yaml':       ['yamllint'],
 \   'dockerfile': ['hadolint'],
@@ -619,6 +421,7 @@ let g:ale_fixers = {
 \   'typescript': ['prettier', 'eslint'],
 \   'go':         ['gofmt', 'goimports'],
 \   'rust':       ['rustfmt'],
+\   'c':          ['clang-format'],
 \   'json':       ['prettier'],
 \   'yaml':       ['prettier'],
 \   'html':       ['prettier'],
@@ -629,365 +432,339 @@ let g:ale_fixers = {
 \   'sql':        ['sqlfluff'],
 \}
 
-" Don't fix on save if LSP is handling formatting (avoids double-format)
-let g:ale_fix_on_save = !g:use_vimlsp
-let g:ale_sign_error = 'X'
-let g:ale_sign_warning = '!'
+let g:ale_fix_on_save          = 1
+let g:ale_sign_error           = 'X'
+let g:ale_sign_warning         = '!'
 let g:ale_lint_on_text_changed = 'normal'
 let g:ale_lint_on_insert_leave = 1
-let g:ale_lint_on_enter = 1
+let g:ale_lint_on_enter        = 1
 
-" --- vim-go: disable built-in LSP/gopls — CoC (coc-go) handles all Go intelligence ---
-" vim-go's gopls conflicts with coc-go and causes E495 errors on startup
-" (BufWinEnter afile expand fails for non-file buffers like NERDTree/Startify)
-let g:go_gopls_enabled           = 0  " disable vim-go's own gopls — coc-go handles LSP
-let g:go_code_completion_enabled = 0  " let CoC handle completion
-" Use godef as fallback for jump-to-def when CoC unavailable; gopls+disabled = error
-let g:go_def_mode               = g:use_coc ? 'gopls' : 'godef'
-let g:go_info_mode              = g:use_coc ? 'gopls' : 'godef'
-let g:go_fmt_autosave           = 0  " CoC/ALE handle format-on-save
-let g:go_imports_autosave       = 0
-let g:go_highlight_types        = 1  " keep syntax features
-let g:go_highlight_fields       = 1
-let g:go_highlight_functions    = 1
-let g:go_highlight_function_calls = 1
-
-" Navigate between errors: [e/]e (unimpaired convention: [ = prev, ] = next)
 nmap <silent> [e :ALEPrevious<cr>
 nmap <silent> ]e :ALENext<cr>
 nmap <silent> <leader>aD :ALEDetail<cr>
 
-" --- Tagbar ---
-nmap <F8> :TagbarToggle<CR>
-nmap <leader>tt :TagbarToggle<CR>
+" ============================================================================
+" => vim-go
+" ============================================================================
 
-" --- UndoTree ---
-nnoremap <F5> :UndotreeToggle<CR>
-nnoremap <leader>u :UndotreeToggle<CR>
+" vim-lsp (gopls) handles all Go intelligence; disable vim-go's own LSP layer
+let g:go_gopls_enabled            = 0
+let g:go_code_completion_enabled  = 0
+let g:go_def_mode                 = 'gopls'
+let g:go_info_mode                = 'gopls'
+let g:go_fmt_autosave             = 0  " ALE handles format-on-save
+let g:go_imports_autosave         = 0
+let g:go_highlight_types          = 1
+let g:go_highlight_fields         = 1
+let g:go_highlight_functions      = 1
+let g:go_highlight_function_calls = 1
 
-" --- EasyMotion ---
-let g:EasyMotion_do_mapping = 0 " Disable default mappings
+" ============================================================================
+" => vim-lsp  (primary LSP backend — pure VimScript, no Node.js)
+" ============================================================================
 
-" Jump to anywhere you want with minimal keystrokes
+let g:lsp_settings_filetype_python     = ['pylsp', 'pyright-langserver']
+let g:lsp_settings_filetype_go         = ['gopls']
+let g:lsp_settings_filetype_rust       = ['rust-analyzer']
+let g:lsp_settings_filetype_typescript = ['typescript-language-server']
+let g:lsp_settings_filetype_javascript = ['typescript-language-server']
+let g:lsp_settings_filetype_c          = ['clangd']
+let g:lsp_settings_filetype_sh         = ['bash-language-server']
+let g:lsp_settings_filetype_html       = ['vscode-html-language-server']
+let g:lsp_settings_filetype_css        = ['vscode-css-language-server']
+let g:lsp_settings_filetype_scss       = ['vscode-css-language-server']
+let g:lsp_settings_filetype_json       = ['vscode-json-language-server']
+let g:lsp_settings_filetype_yaml       = ['yaml-language-server']
+let g:lsp_settings_filetype_markdown   = ['marksman']
+let g:lsp_settings_filetype_sql        = ['sqls']
+
+let g:lsp_diagnostics_virtual_text_enabled = !g:is_tty
+let g:lsp_diagnostics_highlights_enabled   = !g:is_tty
+let g:lsp_document_highlight_enabled       = !g:is_tty
+let g:lsp_signs_enabled                    = 1
+let g:lsp_diagnostics_echo_cursor          = 1
+let g:lsp_completion_documentation_enabled = 1
+
+let g:lsp_signs_error       = {'text': 'X'}
+let g:lsp_signs_warning     = {'text': '!'}
+let g:lsp_signs_information = {'text': 'i'}
+let g:lsp_signs_hint        = {'text': '>'}
+
+set completeopt=menuone,noinsert,noselect
+set pumheight=15
+let g:asyncomplete_auto_popup       = 1
+let g:asyncomplete_auto_completeopt = 1
+let g:asyncomplete_popup_delay      = 200
+
+" Completion popup navigation
+inoremap <expr> <Tab>   pumvisible() ? "\<C-n>" : "\<Tab>"
+inoremap <expr> <S-Tab> pumvisible() ? "\<C-p>" : "\<S-Tab>"
+inoremap <expr> <CR>    pumvisible() ? asyncomplete#close_popup() : "\<CR>"
+
+function! s:on_lsp_buffer_enabled() abort
+    setlocal omnifunc=lsp#complete
+    setlocal signcolumn=yes
+
+    " Navigation
+    nmap <buffer> gd          <plug>(lsp-definition)
+    nmap <buffer> gy          <plug>(lsp-type-definition)
+    nmap <buffer> gi          <plug>(lsp-implementation)
+    nmap <buffer> gr          <plug>(lsp-references)
+    nmap <buffer> [g          <plug>(lsp-previous-diagnostic)
+    nmap <buffer> ]g          <plug>(lsp-next-diagnostic)
+
+    " Documentation
+    nmap <buffer> K           <plug>(lsp-hover)
+
+    " Refactoring
+    nmap <buffer> <leader>rn  <plug>(lsp-rename)
+    nmap <buffer> <leader>ca  <plug>(lsp-code-action)
+    nmap <buffer> <leader>f   <plug>(lsp-document-format)
+    xmap <buffer> <leader>f   <plug>(lsp-document-range-format)
+
+    " Workspace
+    nmap <buffer> <leader>o   <plug>(lsp-document-symbol-search)
+    nmap <buffer> <leader>ws  <plug>(lsp-workspace-symbol-search)
+    nmap <buffer> <leader>cD  <plug>(lsp-document-diagnostics)
+endfunction
+
+augroup lsp_install
+    autocmd!
+    autocmd User lsp_buffer_enabled call s:on_lsp_buffer_enabled()
+augroup END
+
+" ============================================================================
+" => vim-markdown
+" ============================================================================
+
+" Concealment: hides syntax markers, renders formatting inline
+" (cursor moving to a line temporarily reveals the raw syntax)
+let g:vim_markdown_conceal             = 1
+let g:vim_markdown_conceal_code_blocks = 0   " keep fenced code readable
+let g:vim_markdown_folding_disabled    = 0
+let g:vim_markdown_folding_level       = 2
+let g:vim_markdown_frontmatter        = 1    " YAML front matter
+let g:vim_markdown_toml_frontmatter   = 1
+let g:vim_markdown_json_frontmatter   = 1
+let g:vim_markdown_follow_anchor      = 1
+let g:vim_markdown_new_list_item_indent = 2
+let g:vim_markdown_strikethrough      = 1
+
+" Table of contents in quickfix
+nnoremap <leader>mt :Toc<CR>
+
+" ============================================================================
+" => previm  (Markdown browser preview)
+" ============================================================================
+
+" <leader>mp   open live-reloading preview in browser
+nnoremap <leader>mp :PrevimOpen<CR>
+let g:previm_enable_realtime = 1
+
+" ============================================================================
+" => EasyMotion
+" ============================================================================
+
+let g:EasyMotion_do_mapping = 0
+let g:EasyMotion_smartcase  = 1
+
+" s + two chars: jump anywhere on screen
 nmap s <Plug>(easymotion-overwin-f2)
 
-" Turn on case-insensitive feature
-let g:EasyMotion_smartcase = 1
-
-" JK motions: Line motions
+" J/K: line motions
 map <Leader>j <Plug>(easymotion-j)
 map <Leader>k <Plug>(easymotion-k)
 
-" --- CoC (Conquer of Completion) - Full LSP via Node.js ---
-if g:use_coc
-    " Tab for trigger completion / navigate popup
-    inoremap <silent><expr> <TAB>
-          \ coc#pum#visible() ? coc#pum#next(1) :
-          \ CheckBackspace() ? "\<Tab>" :
-          \ coc#refresh()
-    inoremap <expr><S-TAB> coc#pum#visible() ? coc#pum#prev(1) : "\<C-h>"
+" ============================================================================
+" => UndoTree
+" ============================================================================
 
-    " CR to confirm selected completion item
-    inoremap <silent><expr> <CR> coc#pum#visible() ? coc#pum#confirm()
-                                  \: "\<C-g>u\<CR>\<c-r>=coc#on_enter()\<CR>"
+nnoremap <F5>       :UndotreeToggle<CR>
+nnoremap <leader>u  :UndotreeToggle<CR>
 
-    function! CheckBackspace() abort
-      let col = col('.') - 1
-      return !col || getline('.')[col - 1]  =~# '\s'
-    endfunction
+" ============================================================================
+" => IndentLine  (non-TTY only)
+" ============================================================================
 
-    " <C-Space> to trigger completion manually
-    inoremap <silent><expr> <c-space> coc#refresh()
-
-    " Diagnostic navigation
-    nmap <silent> [g <Plug>(coc-diagnostic-prev)
-    nmap <silent> ]g <Plug>(coc-diagnostic-next)
-    nmap <silent> <leader>ad :CocDiagnostics<CR>
-
-    " GoTo code navigation
-    nmap <silent> gd <Plug>(coc-definition)
-    nmap <silent> gy <Plug>(coc-type-definition)
-    nmap <silent> gi <Plug>(coc-implementation)
-    nmap <silent> gr <Plug>(coc-references)
-
-    " Hover documentation
-    nnoremap <silent> K :call ShowDocumentation()<CR>
-    function! ShowDocumentation()
-      if CocAction('hasProvider', 'hover')
-        call CocActionAsync('doHover')
-      else
-        call feedkeys('K', 'in')
-      endif
-    endfunction
-
-    " Highlight symbol and its references on cursor hold
-    augroup CocHighlight
-        autocmd!
-        autocmd CursorHold * silent call CocActionAsync('highlight')
-    augroup END
-
-    " Symbol renaming
-    nmap <leader>rn <Plug>(coc-rename)
-
-    " Format selected code
-    xmap <leader>f  <Plug>(coc-format-selected)
-    nmap <leader>f  <Plug>(coc-format-selected)
-
-    " Code actions (cursor, file, selected range)
-    nmap <leader>ca  <Plug>(coc-codeaction-cursor)
-    nmap <leader>cA  <Plug>(coc-codeaction-source)
-    xmap <leader>ca  <Plug>(coc-codeaction-selected)
-
-    " Apply auto-fix for current line
-    nmap <leader>qf  <Plug>(coc-fix-current)
-
-    " Run code lens action on current line
-    nmap <leader>cl  <Plug>(coc-codelens-action)
-
-    " Workspace symbols and outline
-    nnoremap <silent> <leader>ws :CocList -I symbols<CR>
-    nnoremap <silent> <leader>o  :CocList outline<CR>
-
-    " Search recently used commands
-    nnoremap <silent> <leader>cc :CocList commands<CR>
-
-    " Resume latest CoC list
-    nnoremap <silent> <leader>cr :CocListResume<CR>
-
-    " Show all diagnostics
-    nnoremap <silent> <leader>cD :CocList diagnostics<CR>
-
-    " Text object for function/class (requires language server support)
-    xmap if <Plug>(coc-funcobj-i)
-    omap if <Plug>(coc-funcobj-i)
-    xmap af <Plug>(coc-funcobj-a)
-    omap af <Plug>(coc-funcobj-a)
-    xmap ic <Plug>(coc-classobj-i)
-    omap ic <Plug>(coc-classobj-i)
-    xmap ac <Plug>(coc-classobj-a)
-    omap ac <Plug>(coc-classobj-a)
-
-    " Scroll float windows
-    if has('nvim-0.4.0') || has('patch-8.2.0750')
-        nnoremap <silent><nowait><expr> <C-f> coc#float#has_scroll() ? coc#float#scroll(1) : "\<C-f>"
-        nnoremap <silent><nowait><expr> <C-b> coc#float#has_scroll() ? coc#float#scroll(0) : "\<C-b>"
-        inoremap <silent><nowait><expr> <C-f> coc#float#has_scroll() ? "\<c-r>=coc#float#scroll(1)\<cr>" : "\<Right>"
-        inoremap <silent><nowait><expr> <C-b> coc#float#has_scroll() ? "\<c-r>=coc#float#scroll(0)\<cr>" : "\<Left>"
-    endif
-
-    " Status line integration
-    set statusline^=%{coc#status()}%{get(b:,'coc_current_function','')}
+if !g:is_tty && exists('g:plugs["indentLine"]')
+    let g:indentLine_char                 = '|'
+    let g:indentLine_first_char           = '|'
+    let g:indentLine_showFirstIndentLevel = 1
+    " Exclude filetypes where concealment causes display issues
+    let g:indentLine_fileTypeExclude      = ['text', 'help', 'startify', 'markdown']
+    let g:indentLine_bufTypeExclude       = ['help', 'terminal', 'nofile']
+    " Let indentLine manage conceallevel (reverts on excluded types)
+    let g:indentLine_setConceal           = 2
+    let g:indentLine_concealcursor        = ''
 endif
 
-" --- vim-lsp (Native VimScript LSP - fallback when Node.js unavailable) ---
-if g:use_vimlsp
-    " Auto-configure language servers via vim-lsp-settings
-    let g:lsp_settings_filetype_python     = ['pylsp', 'pyright-langserver']
-    let g:lsp_settings_filetype_go         = ['gopls']
-    let g:lsp_settings_filetype_rust       = ['rust-analyzer']
-    let g:lsp_settings_filetype_typescript = ['typescript-language-server']
-    let g:lsp_settings_filetype_javascript = ['typescript-language-server']
-    let g:lsp_settings_filetype_sh         = ['bash-language-server']
-    let g:lsp_settings_filetype_html       = ['vscode-html-language-server']
-    let g:lsp_settings_filetype_css        = ['vscode-css-language-server']
-    let g:lsp_settings_filetype_scss       = ['vscode-css-language-server']
-    let g:lsp_settings_filetype_json       = ['vscode-json-language-server']
-    let g:lsp_settings_filetype_yaml       = ['yaml-language-server']
-    let g:lsp_settings_filetype_markdown   = ['marksman']
-    let g:lsp_settings_filetype_sql        = ['sqls']
+" ============================================================================
+" => Startify  (startup screen + session management)
+" ============================================================================
 
-    " Performance: disable virtual text diagnostics in TTY
-    let g:lsp_diagnostics_virtual_text_enabled = !g:is_tty
-    let g:lsp_diagnostics_highlights_enabled   = !g:is_tty
-    let g:lsp_document_highlight_enabled       = !g:is_tty
-    let g:lsp_signs_enabled                    = 1
-    let g:lsp_diagnostics_echo_cursor          = 1
-    let g:lsp_completion_documentation_enabled = 1
+if exists('g:plugs["vim-startify"]')
+    let g:startify_custom_header = [
+        \ '  ███╗   ███╗ ██╗███╗   ██╗ ██████╗ ███████╗ █████╗ ███╗   ███╗ █████╗  ',
+        \ '  ████╗ ████║███║████╗  ██║██╔════╝ ██╔════╝██╔══██╗████╗ ████║██╔══██╗ ',
+        \ '  ██╔████╔██║╚██║██╔██╗ ██║██║  ███╗███████╗███████║██╔████╔██║███████║  ',
+        \ '  ██║╚██╔╝██║ ██║██║╚██╗██║██║   ██║╚════██║██╔══██║██║╚██╔╝██║██╔══██║ ',
+        \ '  ██║ ╚═╝ ██║ ██║██║ ╚████║╚██████╔╝███████║██║  ██║██║ ╚═╝ ██║██║  ██║ ',
+        \ '  ╚═╝     ╚═╝ ╚═╝╚═╝  ╚═══╝ ╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝╚═╝  ╚═╝',
+        \ '',
+        \ ]
 
-    " Diagnostic signs (ASCII, KISS)
-    let g:lsp_signs_error         = {'text': 'X'}
-    let g:lsp_signs_warning       = {'text': '!'}
-    let g:lsp_signs_information   = {'text': 'i'}
-    let g:lsp_signs_hint          = {'text': '>'}
+    let g:startify_lists = [
+        \ { 'type': 'sessions',  'header': ['   Sessions']     },
+        \ { 'type': 'files',     'header': ['   Recent Files'] },
+        \ { 'type': 'dir',       'header': ['   Current Dir']  },
+        \ { 'type': 'bookmarks', 'header': ['   Bookmarks']    },
+        \ ]
 
-    " asyncomplete manages completeopt for vim-lsp mode
-    set completeopt=menuone,noinsert,noselect
-    let g:asyncomplete_auto_popup = 1
-    let g:asyncomplete_auto_completeopt = 1
-    let g:asyncomplete_popup_delay = 200
+    let g:startify_bookmarks = [
+        \ {'v': '~/.vimrc'},
+        \ {'z': '~/.zshrc'},
+        \ {'b': '~/.bashrc'},
+        \ ]
 
-    " Tab to navigate completion popup (mirrors CoC behavior)
-    inoremap <expr> <Tab>   pumvisible() ? "\<C-n>" : "\<Tab>"
-    inoremap <expr> <S-Tab> pumvisible() ? "\<C-p>" : "\<S-Tab>"
-    inoremap <expr> <CR>    pumvisible() ? asyncomplete#close_popup() : "\<CR>"
+    let g:startify_session_persistence = 1
+    let g:startify_session_autoload    = 1
+    let g:startify_change_to_vcs_root  = 1
+    let g:startify_fortune_use_unicode = 0
+    let g:startify_enable_special      = 0
+    let g:startify_files_number        = 8
+    let g:startify_padding_left        = 4
 
-    " Key mappings (mirror CoC's gd/gy/gi/gr/K/<leader>rn layout)
-    function! s:on_lsp_buffer_enabled() abort
-        setlocal omnifunc=lsp#complete
-        setlocal signcolumn=yes
+    " vim <dir>: cd to it and show Startify (no auto file-tree)
+    if !g:is_tty
+        augroup ChopstickStartup
+            autocmd!
+            autocmd StdinReadPre * let s:std_in = 1
+            autocmd VimEnter *
+                \ if argc() == 1 && isdirectory(argv()[0]) && !exists('s:std_in') |
+                \     exe 'cd ' . fnameescape(argv()[0]) |
+                \     if exists(':Startify') == 2 | Startify | else | enew | endif |
+                \ endif
+        augroup END
+    endif
 
-        " Navigation
-        nmap <buffer> gd           <plug>(lsp-definition)
-        nmap <buffer> gy           <plug>(lsp-type-definition)
-        nmap <buffer> gi           <plug>(lsp-implementation)
-        nmap <buffer> gr           <plug>(lsp-references)
-        nmap <buffer> [g           <plug>(lsp-previous-diagnostic)
-        nmap <buffer> ]g           <plug>(lsp-next-diagnostic)
-
-        " Hover documentation
-        nmap <buffer> K            <plug>(lsp-hover)
-
-        " Refactoring
-        nmap <buffer> <leader>rn   <plug>(lsp-rename)
-        nmap <buffer> <leader>ca   <plug>(lsp-code-action)
-        nmap <buffer> <leader>f    <plug>(lsp-document-format)
-
-        " Workspace
-        nmap <buffer> <leader>ws   <plug>(lsp-workspace-symbol-search)
-        nmap <buffer> <leader>o    <plug>(lsp-document-symbol-search)
-        nmap <buffer> <leader>cD   <plug>(lsp-document-diagnostics)
-
-        " Enable auto-format on save for filetypes with reliable LSP formatters
-        if index(['python', 'go', 'rust', 'typescript', 'javascript', 'sh'], &filetype) >= 0
-            autocmd BufWritePre <buffer> LspDocumentFormatSync
-        endif
-    endfunction
-
-    augroup lsp_install
+    augroup ChopstickStartify
         autocmd!
-        autocmd User lsp_buffer_enabled call s:on_lsp_buffer_enabled()
+        autocmd User Startified setlocal buftype=
     augroup END
+endif
+
+" ============================================================================
+" => Status Line  (native — Solarized palette, seamless with tmux bar)
+" ============================================================================
+"
+"  Palette reference (Solarized 256 approximations):
+"    base03=234  base02=235  base01=240  base0=244  base1=245
+"    yellow=136  blue=33     cyan=37     green=64    red=160
+"    orange=166  magenta=125
+"
+"  The statusline bg (base02=235 / #073642) intentionally matches the tmux
+"  status bar bg (#002b36 ≈ base03), so the two bars read as one continuous
+"  band at the bottom of the screen.
+
+set laststatus=2
+set noshowmode   " mode is shown in the statusline block, not the echo line
+
+function! s:SLDefineColors() abort
+    hi SLNormal  ctermbg=136 ctermfg=234 cterm=bold guibg=#b58900 guifg=#002b36 gui=bold
+    hi SLInsert  ctermbg=33  ctermfg=234 cterm=bold guibg=#268bd2 guifg=#002b36 gui=bold
+    hi SLVisual  ctermbg=125 ctermfg=234 cterm=bold guibg=#d33682 guifg=#002b36 gui=bold
+    hi SLReplace ctermbg=160 ctermfg=234 cterm=bold guibg=#dc322f guifg=#002b36 gui=bold
+    hi SLCommand ctermbg=37  ctermfg=234 cterm=bold guibg=#2aa198 guifg=#002b36 gui=bold
+    hi SLBody    ctermbg=235 ctermfg=245 cterm=none guibg=#073642 guifg=#93a1a1
+    hi SLFlag    ctermbg=235 ctermfg=136 cterm=none guibg=#073642 guifg=#b58900
+    hi SLRight   ctermbg=235 ctermfg=240 cterm=none guibg=#073642 guifg=#586e75
+    hi SLGit     ctermbg=235 ctermfg=37  cterm=none guibg=#073642 guifg=#2aa198
+    hi SLFtype   ctermbg=235 ctermfg=244 cterm=none guibg=#073642 guifg=#839496
+endfunction
+
+augroup SLColors
+    autocmd!
+    autocmd ColorScheme * call s:SLDefineColors()
+    autocmd VimEnter    * call s:SLDefineColors()
+augroup END
+
+" Current mode → [label, highlight-group]
+function! SLMode() abort
+    let l:m = mode()
+    if     l:m ==# 'n'                          | return [' N ', 'SLNormal' ]
+    elseif l:m ==# 'i'                          | return [' I ', 'SLInsert' ]
+    elseif l:m =~# '[vV]' || l:m ==# "\<C-v>"  | return [' V ', 'SLVisual' ]
+    elseif l:m ==# 'R'                          | return [' R ', 'SLReplace']
+    elseif l:m ==# 'c'                          | return [' C ', 'SLCommand']
+    elseif l:m ==# 't'                          | return [' T ', 'SLInsert' ]
+    else                                        | return [' ' . l:m . ' ', 'SLNormal']
+    endif
+endfunction
+
+" Git branch via vim-fugitive (already installed — zero extra cost)
+function! SLGit() abort
+    if !exists('*FugitiveHead') | return '' | endif
+    let l:b = FugitiveHead()
+    return empty(l:b) ? '' : '  ' . l:b . ' '
+endfunction
+
+" Assemble the statusline on every redraw
+function! SLBuild() abort
+    let [l:label, l:hl] = SLMode()
+    let l:s  = '%#' . l:hl . '#' . l:label
+    let l:s .= '%#SLBody# %f '
+    let l:s .= '%#SLFlag#%m%r'
+    let l:s .= '%#SLBody#%='
+    let l:s .= '%#SLGit#'  . SLGit()
+    let l:s .= '%#SLFtype# %y '
+    let l:s .= '%#SLRight# %l:%c  %P '
+    return l:s
+endfunction
+
+set statusline=%!SLBuild()
+
+" TTY: simpler fallback (no colour, no function call overhead)
+if g:is_tty
+    set statusline=%f\ %h%w%m%r\ %=%(%l,%c%V\ %=\ %P%)
 endif
 
 " ============================================================================
 " => Helper Functions
 " ============================================================================
 
-" Returns true if paste mode is enabled
 function! HasPaste()
-    if &paste
-        return 'PASTE MODE  '
-    endif
+    if &paste | return 'PASTE MODE  ' | endif
     return ''
 endfunction
 
-" Don't close window, when deleting a buffer
+" Close buffer without closing the window
 command! Bclose call <SID>BufcloseCloseIt()
 function! <SID>BufcloseCloseIt()
-    let l:currentBufNum = bufnr("%")
+    let l:currentBufNum   = bufnr("%")
     let l:alternateBufNum = bufnr("#")
-
     if buflisted(l:alternateBufNum)
         buffer #
     else
         bnext
     endif
-
     if bufnr("%") == l:currentBufNum
         new
     endif
-
     if buflisted(l:currentBufNum)
-        execute("bdelete! ".l:currentBufNum)
+        execute("bdelete! " . l:currentBufNum)
     endif
 endfunction
 
-" Delete trailing white space on save
+" Strip trailing whitespace without moving cursor
 fun! CleanExtraSpaces()
     let save_cursor = getpos(".")
-    let old_query = getreg('/')
+    let old_query   = getreg('/')
     silent! %s/\s\+$//e
     call setpos('.', save_cursor)
     call setreg('/', old_query)
 endfun
 
-" Disable auto-insertion of comment leaders when pressing Enter or o/O
-" Must run at BufEnter because filetype plugins reset formatoptions per buffer
-augroup ChopstickFormatOptions
-    autocmd!
-    autocmd BufEnter * setlocal formatoptions-=c formatoptions-=r formatoptions-=o
-augroup END
-
-" Auto-disable paste mode when leaving insert mode (prevents broken indentation)
-augroup ChopstickPaste
-    autocmd!
-    autocmd InsertLeave * set nopaste
-augroup END
-
-augroup ChopstickCleanup
-    autocmd!
-    " Run for real files only; skip special buffers (NERDTree, Startify, terminal, etc.)
-    autocmd BufWritePre * if empty(&buftype) && !empty(expand('<afile>')) | call CleanExtraSpaces() | endif
-augroup END
-
-" ============================================================================
-" => Auto Commands
-" ============================================================================
-
-augroup ChopstickFiletype
-    autocmd!
-    " Return to last edit position when opening files
-    autocmd BufReadPost * if line("'\"") > 1 && line("'\"") <= line("$") | exe "normal! g'\"" | endif
-
-    " Set specific file types
-    autocmd BufNewFile,BufRead *.json setlocal filetype=json
-    autocmd BufNewFile,BufRead *.md setlocal filetype=markdown
-    autocmd BufNewFile,BufRead *.jsx setlocal filetype=javascript.jsx
-    autocmd BufNewFile,BufRead *.tsx setlocal filetype=typescript.tsx
-
-    " Python specific settings
-    autocmd FileType python setlocal expandtab shiftwidth=4 tabstop=4 textwidth=88 colorcolumn=+1
-
-    " JavaScript / TypeScript specific settings
-    autocmd FileType javascript,typescript setlocal expandtab shiftwidth=2 tabstop=2 textwidth=100 colorcolumn=+1
-
-    " Go specific settings (standard: no textwidth limit, but 120 is common)
-    autocmd FileType go setlocal noexpandtab shiftwidth=4 tabstop=4 textwidth=120 colorcolumn=+1
-
-    " Rust specific settings
-    autocmd FileType rust setlocal expandtab shiftwidth=4 tabstop=4 textwidth=100 colorcolumn=+1
-
-    " HTML/CSS specific settings
-    autocmd FileType html,css setlocal expandtab shiftwidth=2 tabstop=2
-
-    " YAML specific settings
-    autocmd FileType yaml setlocal expandtab shiftwidth=2 tabstop=2
-
-    " Markdown specific settings (no line-length limit; wrap at window edge)
-    autocmd FileType markdown setlocal wrap linebreak spell textwidth=0 colorcolumn=0
-
-    " Shell script settings
-    autocmd FileType sh setlocal expandtab shiftwidth=2 tabstop=2 textwidth=80 colorcolumn=+1
-
-    " Makefile settings (must use tabs)
-    autocmd FileType make setlocal noexpandtab shiftwidth=8 tabstop=8
-
-    " JSON specific settings
-    autocmd FileType json setlocal expandtab shiftwidth=2 tabstop=2
-
-    " Docker specific settings
-    autocmd BufNewFile,BufRead Dockerfile* setlocal filetype=dockerfile
-    autocmd FileType dockerfile setlocal expandtab shiftwidth=2 tabstop=2
-augroup END
-
-" ============================================================================
-" => Status Line
-" ============================================================================
-
-" Always show the status line
-set laststatus=2
-
-" Format the status line (if not using airline)
-" set statusline=\ %{HasPaste()}%F%m%r%h\ %w\ \ CWD:\ %r%{getcwd()}%h\ \ \ Line:\ %l\ \ Column:\ %c
-
-" ============================================================================
-" => Misc
-" ============================================================================
-
-" Quickly open a markdown buffer for scribble
-map <leader>m :e ~/buffer.md<cr>
-
-" Toggle between number and relativenumber
+" Toggle between absolute and relative numbers
 function! ToggleNumber()
     if(&relativenumber == 1)
         set norelativenumber
@@ -998,26 +775,83 @@ function! ToggleNumber()
 endfunc
 
 " ============================================================================
-" => Performance Optimization
+" => Auto Commands
 " ============================================================================
 
-" Optimize for large files
+" Suppress comment continuation on Enter / o / O
+augroup ChopstickFormatOptions
+    autocmd!
+    autocmd BufEnter * setlocal formatoptions-=c formatoptions-=r formatoptions-=o
+augroup END
+
+" Auto-disable paste mode on leaving insert
+augroup ChopstickPaste
+    autocmd!
+    autocmd InsertLeave * set nopaste
+augroup END
+
+" Strip trailing whitespace on save (real files only)
+augroup ChopstickCleanup
+    autocmd!
+    autocmd BufWritePre *
+        \ if empty(&buftype) && !empty(expand('<afile>')) | call CleanExtraSpaces() | endif
+augroup END
+
+augroup ChopstickFiletype
+    autocmd!
+
+    " Restore cursor to last known position
+    autocmd BufReadPost *
+        \ if line("'\"") > 1 && line("'\"") <= line("$") | exe "normal! g'\"" | endif
+
+    " Filetype detection for common extensions
+    autocmd BufNewFile,BufRead *.json      setlocal filetype=json
+    autocmd BufNewFile,BufRead *.md        setlocal filetype=markdown
+    autocmd BufNewFile,BufRead *.jsx       setlocal filetype=javascript.jsx
+    autocmd BufNewFile,BufRead *.tsx       setlocal filetype=typescript.tsx
+    autocmd BufNewFile,BufRead Dockerfile* setlocal filetype=dockerfile
+
+    " Per-filetype formatting
+    autocmd FileType python
+        \ setlocal expandtab shiftwidth=4 tabstop=4 textwidth=88 colorcolumn=+1
+    autocmd FileType javascript,typescript
+        \ setlocal expandtab shiftwidth=2 tabstop=2 textwidth=100 colorcolumn=+1
+    autocmd FileType go
+        \ setlocal noexpandtab shiftwidth=4 tabstop=4 textwidth=120 colorcolumn=+1
+    autocmd FileType rust
+        \ setlocal expandtab shiftwidth=4 tabstop=4 textwidth=100 colorcolumn=+1
+    autocmd FileType c,cpp
+        \ setlocal expandtab shiftwidth=4 tabstop=4 textwidth=80 colorcolumn=+1
+    autocmd FileType html,css
+        \ setlocal expandtab shiftwidth=2 tabstop=2
+    autocmd FileType yaml
+        \ setlocal expandtab shiftwidth=2 tabstop=2
+    autocmd FileType markdown
+        \ setlocal wrap linebreak spell textwidth=0 colorcolumn=0 conceallevel=2
+    autocmd FileType sh
+        \ setlocal expandtab shiftwidth=2 tabstop=2 textwidth=80 colorcolumn=+1
+    autocmd FileType make
+        \ setlocal noexpandtab shiftwidth=8 tabstop=8
+    autocmd FileType json
+        \ setlocal expandtab shiftwidth=2 tabstop=2
+    autocmd FileType dockerfile
+        \ setlocal expandtab shiftwidth=2 tabstop=2
+augroup END
+
+" ============================================================================
+" => Performance
+" ============================================================================
+
 set synmaxcol=200
 set ttyfast
-
-" Don't scan included files for completion — makes Ctrl+n/p much faster (vim-sensible)
-set complete-=i
-
-" Reduce updatetime for better user experience
+set complete-=i   " don't scan included files — makes Ctrl+n/p much faster
 set updatetime=300
-
-" Don't pass messages to |ins-completion-menu|
 set shortmess+=c
 
-" Always show the signcolumn (simplified for TTY)
 if g:is_tty
-    " In TTY, only show signcolumn when there are signs
     set signcolumn=auto
+    set synmaxcol=120
+    set lazyredraw
 else
     if has("patch-8.1.1564")
         set signcolumn=number
@@ -1027,60 +861,54 @@ else
 endif
 
 " ============================================================================
-" => Project-Specific Settings
+" => Project-Local Config
 " ============================================================================
 
-" Load project-specific vimrc if it exists
-" This allows per-project customization
 set exrc
 set secure
-
-" Session options: exclude 'options' (stale plugin settings) and 'globals';
-" include terminal buffers — compatible with vim-obsession/vim-prosession
 set sessionoptions=blank,buffers,curdir,folds,help,tabpages,winsize,winpos,terminal
 
 " ============================================================================
-" => Additional Engineering Utilities
+" => Additional Utilities
 " ============================================================================
 
-" Quick format entire file
+" Quick re-indent entire file
 nnoremap <leader>F gg=G``
 
-" Quick save all buffers
+" Save all open buffers
 nnoremap <leader>wa :wa<CR>
 
-" Easier window resizing
-nnoremap <silent> <Leader>= :exe "resize " . (winheight(0) * 3/2)<CR>
-nnoremap <silent> <Leader>- :exe "resize " . (winheight(0) * 2/3)<CR>
-nnoremap <silent> <Leader>+ :exe "vertical resize " . (winwidth(0) * 3/2)<CR>
-nnoremap <silent> <Leader>_ :exe "vertical resize " . (winwidth(0) * 2/3)<CR>
+" Window resizing
+nnoremap <silent> <Leader>= :exe "resize "          . (winheight(0) * 3/2)<CR>
+nnoremap <silent> <Leader>- :exe "resize "          . (winheight(0) * 2/3)<CR>
+nnoremap <silent> <Leader>+ :exe "vertical resize " . (winwidth(0)  * 3/2)<CR>
+nnoremap <silent> <Leader>_ :exe "vertical resize " . (winwidth(0)  * 2/3)<CR>
 
-" Quick switch between last two files
+" Quick-switch between last two files
 nnoremap <leader><leader> <c-^>
 
-" Clear whitespace on empty lines
+" Strip trailing whitespace (manual, no auto-save)
 nnoremap <leader>W :%s/\s\+$//<CR>:let @/=''<CR>
 
-" Source current file
+" Source helpers
 nnoremap <leader>so :source %<CR>
-
-" Edit vimrc quickly
 nnoremap <leader>ev :edit $MYVIMRC<CR>
-
-" Reload vimrc with confirmation echo
 nnoremap <leader>sv :source $MYVIMRC<CR>:echo "vimrc reloaded"<CR>
 
 " Search and replace word under cursor
 nnoremap <leader>* :%s/\<<C-r><C-w>\>//g<Left><Left>
 
-" Copy file path to clipboard
-nnoremap <leader>cp :let @+ = expand("%:p")<CR>:echo "Copied path: " . expand("%:p")<CR>
-nnoremap <leader>cf :let @+ = expand("%:t")<CR>:echo "Copied filename: " . expand("%:t")<CR>
+" Copy path / filename to clipboard
+nnoremap <leader>cp :let @+ = expand("%:p")<CR>:echo "Copied: " . expand("%:p")<CR>
+nnoremap <leader>cf :let @+ = expand("%:t")<CR>:echo "Copied: " . expand("%:t")<CR>
 
-" Create parent directories on save if they don't exist
+" Scratch markdown buffer
+map <leader>m :e ~/buffer.md<cr>
+
+" Auto-create parent directories on save
 function! s:MkNonExDir(file, buf)
-    if empty(getbufvar(a:buf, '&buftype')) && a:file!~#'\v^\w+\:\/'
-        let dir=fnamemodify(a:file, ':h')
+    if empty(getbufvar(a:buf, '&buftype')) && a:file !~# '\v^\w+\:\/'
+        let dir = fnamemodify(a:file, ':h')
         if !isdirectory(dir)
             call mkdir(dir, 'p')
         endif
@@ -1088,107 +916,16 @@ function! s:MkNonExDir(file, buf)
 endfunction
 augroup BWCCreateDir
     autocmd!
-    " Guard: <afile> is empty for special buffers (NERDTree, Startify, etc.)
-    autocmd BufWritePre * if !empty(expand('<afile>')) | call s:MkNonExDir(expand('<afile>'), +expand('<abuf>')) | endif
+    autocmd BufWritePre *
+        \ if !empty(expand('<afile>')) |
+        \     call s:MkNonExDir(expand('<afile>'), +expand('<abuf>')) |
+        \ endif
 augroup END
 
-" In-Vim quick reference cheat sheet — ,? opens it, q closes it
-function! s:CheatSheet() abort
-    let l:name = '__ChopsticksCheatSheet__'
-    let l:winnr = bufwinnr(l:name)
-    if l:winnr > 0
-        execute l:winnr . 'wincmd w'
-        return
-    endif
-    execute 'botright new ' . l:name
-    setlocal buftype=nofile bufhidden=wipe nobuflisted noswapfile
-    call setline(1, [
-        \ '=== chopsticks — Quick Reference ===',
-        \ '',
-        \ 'MODES (Vim is modal — the most important concept)',
-        \ '  Normal    Default state. Navigate and run commands.',
-        \ '  Insert    Type text. Enter: i/a/o   Leave: Esc or jk',
-        \ '  Visual    Select text. Enter: v/V   Leave: Esc',
-        \ '',
-        \ 'SURVIVAL (learn these 4 first)',
-        \ '  Esc / jk      Exit insert or visual mode — back to Normal',
-        \ '  :q! + Enter   Quit without saving (emergency exit)',
-        \ '  ,x            Save and quit',
-        \ '  ,w            Save file  |  Ctrl+s  Save (normal + insert)',
-        \ '',
-        \ 'NAVIGATION',
-        \ '  h j k l       Left / Down / Up / Right',
-        \ '  Ctrl+p        Fuzzy find file  |  Ctrl+n  File tree',
-        \ '  Ctrl+o/i      Jump back / forward in history',
-        \ '  ,,            Switch to last file',
-        \ '',
-        \ 'SEARCH',
-        \ '  /text         Search forward  |  n  next  |  N  prev',
-        \ '  //            Search for visually selected text',
-        \ '  ,rg           Search project contents (ripgrep)',
-        \ '  ,rG           Ripgrep word under cursor',
-        \ '  ,*            Replace word under cursor (file-wide)',
-        \ '',
-        \ 'CODE INTELLIGENCE',
-        \ '  gd            Go to definition',
-        \ '  K             Hover documentation',
-        \ '  [g / ]g       Prev / next diagnostic (LSP)',
-        \ '  [e / ]e       Prev / next ALE error',
-        \ '  ,ca           Code action / auto-fix',
-        \ '  ,rn           Rename symbol',
-        \ '  ,f            Format selection  |  ,F  Format whole file',
-        \ '',
-        \ 'EDITING',
-        \ '  i / a / o     Insert before / after / on new line',
-        \ '  gc            Toggle comment (works in visual too)',
-        \ '  u / Ctrl+r    Undo / Redo',
-        \ '  ,p / ,P       Paste from system clipboard',
-        \ '  ,y / ,Y       Yank / line-yank to system clipboard',
-        \ '  s + 2 chars   EasyMotion jump anywhere on screen',
-        \ '',
-        \ 'GIT',
-        \ '  ,gs           Git status  |  ,gd  Diff  |  ,gb  Blame',
-        \ '  ,gc           Commit  |  ,gp  Push  |  ,gl  Pull',
-        \ '',
-        \ 'WINDOWS / PANES',
-        \ '  Ctrl+h/j/k/l  Move between Vim windows or tmux panes',
-        \ '  ,h / ,l       Prev / next buffer',
-        \ '  ,tv / ,th     Open terminal (vertical / horizontal)',
-        \ '',
-        \ 'TOOLS',
-        \ '  ,u            Undo tree (visual history)',
-        \ '  ,tt           Tagbar (code structure)',
-        \ '  ,o            File outline (LSP symbols)',
-        \ '',
-        \ 'TIP: When confused, press Esc. Then press , and wait 500ms',
-        \ '     for an interactive guide to ALL keybindings.',
-        \ '     Re-open this sheet with  ,?',
-        \ '',
-        \ '(press q to close)',
-        \ ])
-    setlocal nomodifiable readonly
-    nnoremap <buffer> <silent> q :bd<CR>
-endfunction
-nnoremap <silent> <leader>? :call <SID>CheatSheet()<CR>
-
 " ============================================================================
-" => Debugging Helpers
+" => Git Shortcuts
 " ============================================================================
 
-" Show syntax highlighting groups for word under cursor
-nmap <leader>sh :call <SID>SynStack()<CR>
-function! <SID>SynStack()
-  if !exists("*synstack")
-    return
-  endif
-  echo map(synstack(line('.'), col('.')), 'synIDattr(v:val, "name")')
-endfunc
-
-" ============================================================================
-" => Git Workflow Enhancements
-" ============================================================================
-
-" Git shortcuts
 nnoremap <leader>gs :Git status<CR>
 nnoremap <leader>gc :Git commit<CR>
 nnoremap <leader>gp :Git push<CR>
@@ -1200,14 +937,10 @@ nnoremap <leader>gb :Git blame<CR>
 " => Terminal Integration
 " ============================================================================
 
-" Better terminal navigation
 if has('terminal')
-    " Open terminal in split
     nnoremap <leader>tv :terminal<CR>
     nnoremap <leader>th :terminal ++rows=10<CR>
-
-    " Terminal mode mappings
-    " Double-Esc to exit terminal mode (single Esc passes through to the running program)
+    " Double-Esc exits terminal mode (single Esc passes through to the program)
     tnoremap <Esc><Esc> <C-\><C-n>
     tnoremap <C-h> <C-\><C-n><C-w>h
     tnoremap <C-j> <C-\><C-n><C-w>j
@@ -1216,15 +949,17 @@ if has('terminal')
 endif
 
 " ============================================================================
-" => Large File Handling
+" => Large File Handling  (>10 MB)
 " ============================================================================
 
-" Disable syntax highlighting and other features for large files (>10MB)
 let g:LargeFile = 1024 * 1024 * 10
 augroup LargeFile
     autocmd!
-    " Guard: <afile> is empty for special buffers
-    autocmd BufReadPre * if !empty(expand('<afile>')) | let f=getfsize(expand('<afile>')) | if f > g:LargeFile || f == -2 | call LargeFileSettings() | endif | endif
+    autocmd BufReadPre *
+        \ if !empty(expand('<afile>')) |
+        \     let f = getfsize(expand('<afile>')) |
+        \     if f > g:LargeFile || f == -2 | call LargeFileSettings() | endif |
+        \ endif
 augroup END
 
 function! LargeFileSettings()
@@ -1234,239 +969,123 @@ function! LargeFileSettings()
     setlocal noswapfile
     setlocal syntax=OFF
     let b:ale_enabled = 0
-    echo "Large file (>10MB): syntax, undo, and linting disabled for performance."
+    echo "Large file (>10 MB): syntax, undo, and linting disabled."
 endfunction
 
-" ============================================================================
-" => TTY and Basic Terminal Optimizations
-" ============================================================================
-
-" Additional optimizations for TTY/basic terminals
 if g:is_tty
-    " Disable syntax highlighting for very large files in TTY
     augroup ChopstickTTYLargeFile
         autocmd!
-        autocmd BufReadPre * if !empty(expand('<afile>')) && getfsize(expand('<afile>')) > 512000 | setlocal syntax=OFF | endif
+        autocmd BufReadPre *
+            \ if !empty(expand('<afile>')) && getfsize(expand('<afile>')) > 512000 |
+            \     setlocal syntax=OFF |
+            \ endif
     augroup END
 
-    " Simpler status line for TTY
-    set statusline=%f\ %h%w%m%r\ %=%(%l,%c%V\ %=\ %P%)
-
-    " Reduce syntax highlighting complexity in TTY (global is 200, lower here)
-    set synmaxcol=120
-
-    " lazyredraw is safe in TTY; avoid globally as it causes CoC float flicker
-    set lazyredraw
-endif
-
-" Provide helpful message on first run in TTY
-if g:is_tty && !exists("g:tty_message_shown")
-    augroup TTYMessage
-        autocmd!
-        autocmd VimEnter * echom "Running in TTY mode - some features disabled for performance"
-    augroup END
-    let g:tty_message_shown = 1
+    if !exists("g:tty_message_shown")
+        augroup TTYMessage
+            autocmd!
+            autocmd VimEnter * echom "TTY mode — visual features disabled"
+        augroup END
+        let g:tty_message_shown = 1
+    endif
 endif
 
 " ============================================================================
-" => Which-Key: Keybinding Hints
+" => Cheat Sheet  (,?)
 " ============================================================================
 
-" Show available bindings after <leader> with a 500ms pause
 set timeoutlen=500
 
-if exists('g:plugs["vim-which-key"]')
-    " Register after plugins are loaded (autoload functions available at VimEnter)
-    augroup ChopstickWhichKey
-        autocmd!
-        autocmd VimEnter * call which_key#register(',', 'g:which_key_map')
-    augroup END
-
-    nnoremap <silent> <leader> :<C-u>WhichKey ','<CR>
-    vnoremap <silent> <leader> :<C-u>WhichKeyVisual ','<CR>
-
-    " Top-level single-key bindings (w and q also have sub-groups below)
-    let g:which_key_map = {}
-    let g:which_key_map['x']  = 'save-and-quit'
-    let g:which_key_map['F']  = 'format-file'
-    let g:which_key_map['W']  = 'strip-trailing-whitespace'
-    let g:which_key_map['m']  = 'scratch-markdown'
-    let g:which_key_map['n']  = 'nerdtree-find'
-    let g:which_key_map['o']  = 'outline'
-    let g:which_key_map['b']  = 'buffers'
-    let g:which_key_map['h']  = 'prev-buffer'
-    let g:which_key_map['l']  = 'next-buffer'
-    let g:which_key_map['*']  = 'search-replace-word'
-    let g:which_key_map[',']  = 'last-file'
-    let g:which_key_map['y']  = 'clipboard-yank'
-    let g:which_key_map['Y']  = 'clipboard-yank-line'
-    let g:which_key_map['p']  = 'clipboard-paste-after'
-    let g:which_key_map['P']  = 'clipboard-paste-before'
-    let g:which_key_map['u']  = 'undotree-toggle'
-    let g:which_key_map['?']  = 'cheat-sheet'
-
-    " [a]LE lint group  ([e/]e navigate; <leader>aD for detail; <leader>ad for diagnostics)
-    let g:which_key_map['a'] = {
-        \ 'name': '+ale-lint',
-        \ 'D': 'ale-detail',
-        \ 'd': 'diagnostics',
-        \ }
-
-    " [c]ode / [c]opy group
-    let g:which_key_map['c'] = {
-        \ 'name': '+code/copy',
-        \ 'a': 'code-action-cursor',
-        \ 'A': 'code-action-source',
-        \ 'c': 'coc-commands',
-        \ 'D': 'diagnostics-list',
-        \ 'l': 'code-lens',
-        \ 'r': 'coc-list-resume',
-        \ 'p': 'copy-filepath',
-        \ 'f': 'copy-filename',
-        \ }
-
-    " [e]dit / [e]xplore group
-    let g:which_key_map['e'] = {
-        \ 'name': '+edit/explore',
-        \ 'v': 'edit-vimrc',
-        \ }
-
-    " [g]it group
-    let g:which_key_map['g'] = {
-        \ 'name': '+git',
-        \ 's': 'status',
-        \ 'c': 'commit',
-        \ 'p': 'push',
-        \ 'l': 'pull',
-        \ 'd': 'diff',
-        \ 'b': 'blame',
-        \ 'F': 'git-files-fzf',
-        \ }
-
-    " [q]uickfix group  (also: <leader>q = fast quit)
-    let g:which_key_map['q'] = {
-        \ 'name': '+quickfix',
-        \ 'f': 'lsp-fix-current',
-        \ 'o': 'open-quickfix',
-        \ 'c': 'close-quickfix',
-        \ }
-
-    " [r]efactor / [r]ipgrep / [r]eplace group
-    let g:which_key_map['r'] = {
-        \ 'name': '+search/refactor',
-        \ 'n': 'rename',
-        \ 'g': 'ripgrep',
-        \ 'G': 'ripgrep-word-under-cursor',
-        \ 't': 'tags-search',
-        \ }
-
-    " [s]pell / [s]ource group
-    let g:which_key_map['s'] = {
-        \ 'name': '+spell/source',
-        \ 's': 'toggle-spell',
-        \ 'n': 'next-spell',
-        \ 'p': 'prev-spell',
-        \ 'a': 'add-word',
-        \ '?': 'suggest',
-        \ 'v': 'source-vimrc',
-        \ 'o': 'source-file',
-        \ 'h': 'syntax-highlight-stack',
-        \ }
-
-    " [t]ab / [t]erminal group
-    let g:which_key_map['t'] = {
-        \ 'name': '+tab/terminal/tagbar',
-        \ 'n': 'new-tab',
-        \ 'o': 'tab-only',
-        \ 'c': 'close-tab',
-        \ 'm': 'move-tab',
-        \ 'l': 'last-tab',
-        \ 'e': 'edit-in-tab',
-        \ 'v': 'terminal-vertical',
-        \ 'h': 'terminal-horizontal',
-        \ 't': 'tagbar-toggle',
-        \ }
-
-    " [w]orkspace / [w]indow / save group  (also: <leader>w = fast save)
-    let g:which_key_map['w'] = {
-        \ 'name': '+save/window',
-        \ 'a': 'save-all',
-        \ 's': 'workspace-symbols',
-        \ }
-
-    " [c]hange-dir (standalone — <leader>cd changes window-local CWD)
-    let g:which_key_map['cd'] = 'change-local-dir'
-endif
-
-" ============================================================================
-" => Startify: Startup Screen
-" ============================================================================
-
-if exists('g:plugs["vim-startify"]')
-    " Static header — no system() calls so vim renders instantly on startup
-    let g:startify_custom_header = [
-        \ '  ███╗   ███╗ ██╗███╗   ██╗ ██████╗ ███████╗ █████╗ ███╗   ███╗ █████╗  ',
-        \ '  ████╗ ████║███║████╗  ██║██╔════╝ ██╔════╝██╔══██╗████╗ ████║██╔══██╗ ',
-        \ '  ██╔████╔██║╚██║██╔██╗ ██║██║  ███╗███████╗███████║██╔████╔██║███████║  ',
-        \ '  ██║╚██╔╝██║ ██║██║╚██╗██║██║   ██║╚════██║██╔══██║██║╚██╔╝██║██╔══██║ ',
-        \ '  ██║ ╚═╝ ██║ ██║██║ ╚████║╚██████╔╝███████║██║  ██║██║ ╚═╝ ██║██║  ██║ ',
-        \ '  ╚═╝     ╚═╝ ╚═╝╚═╝  ╚═══╝ ╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝╚═╝  ╚═╝',
+function! s:CheatSheet() abort
+    let l:name = '__ChopsticksCheatSheet__'
+    if bufwinnr(l:name) > 0
+        execute bufwinnr(l:name) . 'wincmd w'
+        return
+    endif
+    execute 'botright new ' . l:name
+    setlocal buftype=nofile bufhidden=wipe nobuflisted noswapfile
+    call setline(1, [
+        \ '=== chopsticks — Quick Reference ===',
         \ '',
-        \ ]
-
-    " Sessions first, then recent files — mirrors dashboard plugin ordering
-    let g:startify_lists = [
-        \ { 'type': 'sessions',  'header': ['   Sessions']       },
-        \ { 'type': 'files',     'header': ['   Recent Files']   },
-        \ { 'type': 'dir',       'header': ['   Current Dir']    },
-        \ { 'type': 'bookmarks', 'header': ['   Bookmarks']      },
-        \ ]
-
-    " Quick-access bookmarks for common config files
-    let g:startify_bookmarks = [
-        \ {'v': '~/.vimrc'},
-        \ {'z': '~/.zshrc'},
-        \ {'b': '~/.bashrc'},
-        \ ]
-
-    " Session integration
-    let g:startify_session_persistence    = 1   " Auto-save session on quit
-    let g:startify_session_autoload       = 1   " Auto-load Session.vim if present
-    let g:startify_change_to_vcs_root     = 1   " cd to git root on open
-    let g:startify_fortune_use_unicode    = 0   " ASCII only (KISS)
-    let g:startify_enable_special         = 0   " Hide <empty> / <quit> clutter
-
-    " Show more recent files
-    let g:startify_files_number = 8
-
-    " Left padding for list items (gives visual breathing room)
-    let g:startify_padding_left = 4
-
-    " Required for NERDTree compatibility (prevents buftype conflicts)
-    augroup ChopstickStartify
-        autocmd!
-        autocmd User Startified setlocal buftype=
-    augroup END
-endif
+        \ 'MODES',
+        \ '  Normal    Default. Navigate and run commands.',
+        \ '  Insert    Type text.  Enter: i/a/o   Leave: Esc or jk',
+        \ '  Visual    Select.     Enter: v/V      Leave: Esc',
+        \ '',
+        \ 'SURVIVAL',
+        \ '  Esc / jk      Exit insert or visual mode',
+        \ '  :q! + Enter   Quit without saving',
+        \ '  ,x            Save and quit  |  ,w  Save',
+        \ '  Ctrl+s        Save (normal + insert mode)',
+        \ '',
+        \ 'FILES & NAVIGATION',
+        \ '  Ctrl+p        Fuzzy find file (git-aware, FZF)',
+        \ '  ,e            Open netrw file browser',
+        \ '  ,E            Open netrw in vertical split',
+        \ '  ,b            Search open buffers (FZF)',
+        \ '  ,rg           Search project contents (ripgrep)',
+        \ '  ,rG           Ripgrep word under cursor',
+        \ '  ,,            Switch to last file (Ctrl+^)',
+        \ '  Ctrl+o / i    Jump back / forward in history',
+        \ '',
+        \ 'CODE INTELLIGENCE (vim-lsp)',
+        \ '  gd            Go to definition',
+        \ '  gy            Go to type definition',
+        \ '  gi            Go to implementation',
+        \ '  gr            Show references',
+        \ '  K             Hover documentation',
+        \ '  [g / ]g       Prev / next LSP diagnostic',
+        \ '  [e / ]e       Prev / next ALE error',
+        \ '  ,ca           Code action',
+        \ '  ,rn           Rename symbol',
+        \ '  ,f            Format buffer (or visual selection)',
+        \ '  ,o            File outline (symbols)',
+        \ '  ,ws           Workspace symbols',
+        \ '',
+        \ 'MARKDOWN',
+        \ '  ,mp           Open live browser preview (previm)',
+        \ '  ,mt           Table of contents',
+        \ '  zr            Unfold all headings',
+        \ '  zm            Fold all headings',
+        \ '',
+        \ 'EDITING',
+        \ '  gc            Toggle comment (visual mode too)',
+        \ '  s + 2 chars   EasyMotion — jump anywhere on screen',
+        \ '  ,u            Undo tree (visual branch history)',
+        \ '  ,y / ,Y       Yank / yank line to system clipboard',
+        \ '  ,p / ,P       Paste from system clipboard (after / before)',
+        \ '',
+        \ 'GIT',
+        \ '  ,gs  Status   ,gd  Diff   ,gb  Blame',
+        \ '  ,gc  Commit   ,gp  Push   ,gl  Pull',
+        \ '',
+        \ 'WINDOWS & PANES',
+        \ '  Ctrl+h/j/k/l  Navigate Vim splits and tmux panes',
+        \ '  ,h / ,l       Prev / next buffer',
+        \ '  ,tv / ,th     Open terminal (vertical / horizontal)',
+        \ '  Esc Esc       Exit terminal mode',
+        \ '',
+        \ 'SESSION',
+        \ '  :Obsess       Start tracking session',
+        \ '  :Obsess!      Stop tracking',
+        \ '',
+        \ '(press q to close)',
+        \ ])
+    setlocal nomodifiable readonly
+    nnoremap <buffer> <silent> q :bd<CR>
+endfunction
+nnoremap <silent> <leader>? :call <SID>CheatSheet()<CR>
 
 " ============================================================================
-" => IndentLine: Indent Guide Lines (non-TTY only)
+" => Debug Helpers
 " ============================================================================
 
-if !g:is_tty && exists('g:plugs["indentLine"]')
-    " Use simple ASCII bar as indent guide
-    let g:indentLine_char            = '|'
-    let g:indentLine_first_char      = '|'
-    let g:indentLine_showFirstIndentLevel = 1
-
-    " Disable in certain filetypes where it causes issues
-    let g:indentLine_fileTypeExclude = ['text', 'help', 'startify', 'nerdtree', 'markdown']
-    let g:indentLine_bufTypeExclude  = ['help', 'terminal', 'nofile']
-
-    " Conceal level settings (prevent hiding quotes in JSON/markdown)
-    let g:indentLine_setConceal      = 2
-    let g:indentLine_concealcursor   = ''
-endif
+" Show syntax highlight stack for word under cursor
+nmap <leader>sh :call <SID>SynStack()<CR>
+function! <SID>SynStack()
+    if !exists("*synstack") | return | endif
+    echo map(synstack(line('.'), col('.')), 'synIDattr(v:val, "name")')
+endfunc
 
 " ============================================================================
 " End of Configuration

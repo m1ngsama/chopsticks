@@ -10,7 +10,11 @@ set -eo pipefail
 REPO="https://github.com/m1ngsama/chopsticks.git"
 DEST="$HOME/.vim"
 
-GREEN='\033[0;32m'; YELLOW='\033[1;33m'; RED='\033[0;31m'; BOLD='\033[1m'; NC='\033[0m'
+if [[ -t 1 ]] && [[ -z "${NO_COLOR:-}" ]]; then
+    GREEN='\033[0;32m'; YELLOW='\033[1;33m'; RED='\033[0;31m'; BOLD='\033[1m'; NC='\033[0m'
+else
+    GREEN=''; YELLOW=''; RED=''; BOLD=''; NC=''
+fi
 ok()   { echo -e "${GREEN}[OK]${NC}  $1"; }
 warn() { echo -e "${YELLOW}[!]${NC}  $1"; }
 die()  { echo -e "${RED}[FATAL]${NC} $1" >&2; exit 1; }
@@ -42,7 +46,7 @@ if [[ -d "$DEST/.git" ]]; then
     warn "$DEST already exists — pulling latest changes"
     git -C "$DEST" pull --ff-only origin main 2>/dev/null || \
         warn "Could not pull latest — using existing version (run: git -C ~/.vim pull)"
-    ok "Repository updated"
+    ok "Repository updated ($(git -C "$DEST" describe --tags 2>/dev/null || git -C "$DEST" rev-parse --short HEAD))"
 elif [[ -d "$DEST" ]]; then
     die "$HOME/.vim exists but is not a chopsticks git repo.
   Back it up first:  mv ~/.vim ~/.vim.bak
@@ -50,7 +54,7 @@ elif [[ -d "$DEST" ]]; then
 else
     git clone --depth=1 "$REPO" "$DEST" || \
         die "Clone failed — check your network connection"
-    ok "Cloned to $DEST"
+    ok "Cloned to $DEST ($(git -C "$DEST" describe --tags 2>/dev/null || git -C "$DEST" rev-parse --short HEAD))"
 fi
 
 # ── Run installer ─────────────────────────────────────────────────────────────

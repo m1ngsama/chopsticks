@@ -56,6 +56,10 @@ vim .        # startup dashboard, current directory listed
 vim myfile   # edit a specific file
 ```
 
+> **First launch:** Vim will automatically install plugins on the first open
+> (takes 30–60 seconds depending on network). This is normal — wait for it
+> to finish, then restart Vim.
+
 ---
 
 ## Step 3: Set Up LSP
@@ -67,7 +71,9 @@ Open a source file, then run:
 ```
 
 This auto-detects the filetype and installs the correct language server.
-No Node.js required — vim-lsp runs on pure VimScript.
+vim-lsp itself runs on pure VimScript — no Node.js required. However,
+some language servers (JS/TS, HTML, CSS, JSON, YAML) are npm packages
+that need Node.js to run. Python, Go, and Rust servers don't need it.
 
 Check status:
 ```vim

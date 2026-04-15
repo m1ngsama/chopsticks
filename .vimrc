@@ -44,7 +44,7 @@ set wildmode=list:longest
 set wildignorecase
 set wildignore=*.docx,*.jpg,*.png,*.gif,*.pdf,*.pyc,*.exe,*.flv,*.img,*.xlsx
 set wildignore+=*/node_modules/*,*/.git/*,*/__pycache__/*,*/dist/*,*/build/*
-set path+=**
+" path+=** removed: hangs on large repos (node_modules); use Ctrl+p (FZF) instead
 set mouse=a
 set encoding=utf-8
 set foldmethod=indent
@@ -214,9 +214,9 @@ set smartindent
 let mapleader = ","
 
 " Saving / quitting
-nmap <leader>w :w!<cr>
-nmap <leader>q :q<cr>
-nmap <leader>x :x<cr>
+nnoremap <leader>w :w!<cr>
+nnoremap <leader>q :q<cr>
+nnoremap <leader>x :x<cr>
 
 " Clear search highlight
 nnoremap <silent> <leader><cr> :noh<cr>
@@ -235,7 +235,7 @@ nnoremap <leader>tm :tabmove
 nnoremap <leader>t<leader> :tabnext<cr>
 
 let g:lasttab = 1
-nmap <Leader>tl :exe "tabn ".g:lasttab<CR>
+nnoremap <Leader>tl :exe "tabn ".g:lasttab<CR>
 augroup ChopstickTabHistory
     autocmd!
     autocmd TabLeave * let g:lasttab = tabpagenr()
@@ -248,8 +248,8 @@ nnoremap <leader>cd :lcd %:p:h<cr>:pwd<cr>
 nnoremap <leader>e :Explore<CR>
 nnoremap <leader>E :Vexplore<CR>
 
-" Remap 0 to first non-blank
-map 0 ^
+" Remap 0 to first non-blank (all modes intentional)
+noremap 0 ^
 
 " Reselect last paste
 nnoremap gV `[v`]
@@ -354,19 +354,21 @@ let g:netrw_list_hide   .= ',\.pyc$,node_modules,\.git,__pycache__,\.DS_Store'
 
 " Ctrl+p: git-aware file search (GFiles inside repo, Files outside)
 function! s:SmartFiles() abort
-    if !empty(system('git rev-parse --show-toplevel 2>/dev/null'))
+    if isdirectory('.git') || finddir('.git', '.;') !=# ''
         GFiles
     else
         Files
     endif
 endfunction
 
-map <C-p>     :call <SID>SmartFiles()<CR>
-map <leader>b :Buffers<CR>
-map <leader>rg :Rg<CR>
-map <leader>rG :RgWord<CR>
-map <leader>rt :Tags<CR>
-map <leader>gF :GFiles<CR>
+if exists('g:plugs["fzf.vim"]')
+    nnoremap <C-p>     :call <SID>SmartFiles()<CR>
+    nnoremap <leader>b :Buffers<CR>
+    nnoremap <leader>rg :Rg<CR>
+    nnoremap <leader>rG :RgWord<CR>
+    nnoremap <leader>rt :Tags<CR>
+    nnoremap <leader>gF :GFiles<CR>
+endif
 
 let g:fzf_layout = { 'down': '40%' }
 
@@ -458,9 +460,11 @@ let g:ale_lint_on_text_changed = 'normal'
 let g:ale_lint_on_insert_leave = 1
 let g:ale_lint_on_enter        = 1
 
-nmap <silent> [e :ALEPrevious<cr>
-nmap <silent> ]e :ALENext<cr>
-nmap <silent> <leader>aD :ALEDetail<cr>
+if exists('g:plugs["ale"]')
+    nnoremap <silent> [e :ALEPrevious<cr>
+    nnoremap <silent> ]e :ALENext<cr>
+    nnoremap <silent> <leader>aD :ALEDetail<cr>
+endif
 
 " ============================================================================
 " => vim-go
@@ -573,15 +577,19 @@ let g:vim_markdown_follow_anchor      = 1
 let g:vim_markdown_new_list_item_indent = 2
 let g:vim_markdown_strikethrough      = 1
 
-" Table of contents in quickfix
-nnoremap <leader>mt :Toc<CR>
+" Table of contents (side window)
+if exists('g:plugs["vim-markdown"]')
+    nnoremap <leader>mt :Toc<CR>
+endif
 
 " ============================================================================
 " => previm  (Markdown browser preview)
 " ============================================================================
 
 " <leader>mp   open live-reloading preview in browser
-nnoremap <leader>mp :PrevimOpen<CR>
+if exists('g:plugs["previm"]')
+    nnoremap <leader>mp :PrevimOpen<CR>
+endif
 let g:previm_enable_realtime = 1
 
 " ============================================================================
@@ -591,19 +599,22 @@ let g:previm_enable_realtime = 1
 let g:EasyMotion_do_mapping = 0
 let g:EasyMotion_smartcase  = 1
 
-" s + two chars: jump anywhere on screen
-nmap s <Plug>(easymotion-overwin-f2)
-
-" Line motions
-nmap <Leader>j <Plug>(easymotion-j)
-nmap <Leader>k <Plug>(easymotion-k)
+if exists('g:plugs["vim-easymotion"]')
+    " s + two chars: jump anywhere on screen
+    nmap s <Plug>(easymotion-overwin-f2)
+    " Line motions
+    nmap <Leader>j <Plug>(easymotion-j)
+    nmap <Leader>k <Plug>(easymotion-k)
+endif
 
 " ============================================================================
 " => UndoTree
 " ============================================================================
 
-nnoremap <F5>       :UndotreeToggle<CR>
-nnoremap <leader>u  :UndotreeToggle<CR>
+if exists('g:plugs["undotree"]')
+    nnoremap <F5>       :UndotreeToggle<CR>
+    nnoremap <leader>u  :UndotreeToggle<CR>
+endif
 
 " ============================================================================
 " => IndentLine  (non-TTY only)
@@ -713,7 +724,6 @@ endfunction
 augroup SLColors
     autocmd!
     autocmd ColorScheme * call s:SLDefineColors()
-    autocmd VimEnter    * call s:SLDefineColors()
 augroup END
 
 " Current mode → [label, highlight-group]
@@ -949,12 +959,14 @@ augroup END
 " => Git Shortcuts
 " ============================================================================
 
-nnoremap <leader>gs :Git status<CR>
-nnoremap <leader>gc :Git commit<CR>
-nnoremap <leader>gp :Git push<CR>
-nnoremap <leader>gl :Git pull<CR>
-nnoremap <leader>gd :Gdiffsplit<CR>
-nnoremap <leader>gb :Git blame<CR>
+if exists('g:plugs["vim-fugitive"]')
+    nnoremap <leader>gs :Git status<CR>
+    nnoremap <leader>gc :Git commit<CR>
+    nnoremap <leader>gp :Git push<CR>
+    nnoremap <leader>gl :Git pull<CR>
+    nnoremap <leader>gd :Gdiffsplit<CR>
+    nnoremap <leader>gb :Git blame<CR>
+endif
 
 " ============================================================================
 " => Terminal Integration
@@ -1073,9 +1085,20 @@ function! s:CheatSheet() abort
         \ 'EDITING',
         \ '  gc            Toggle comment (visual mode too)',
         \ '  s + 2 chars   EasyMotion — jump anywhere on screen',
-        \ '  ,u            Undo tree (visual branch history)',
+        \ '  ,j / ,k       EasyMotion — line motions',
+        \ '  ,u / F5       Undo tree (visual branch history)',
         \ '  ,y / ,Y       Yank / yank line to system clipboard',
-        \ '  ,p / ,P       Paste from system clipboard (after / before)',
+        \ '  ,p / ,P       Paste from system clipboard',
+        \ '  Alt+j / Alt+k Move line down / up (also visual mode)',
+        \ '  ,F            Re-indent entire file',
+        \ '  ,W            Strip trailing whitespace',
+        \ '  ,*            Search and replace word under cursor',
+        \ '',
+        \ 'SPELLING',
+        \ '  ,ss           Toggle spell checking',
+        \ '  ,sn / ,sp     Next / prev misspelling',
+        \ '  ,sa           Add word to dictionary',
+        \ '  ,s?           Suggest corrections',
         \ '',
         \ 'GIT',
         \ '  ,gs  Status   ,gd  Diff   ,gb  Blame',
@@ -1084,8 +1107,19 @@ function! s:CheatSheet() abort
         \ 'WINDOWS & PANES',
         \ '  Ctrl+h/j/k/l  Navigate Vim splits and tmux panes',
         \ '  ,h / ,l       Prev / next buffer',
+        \ '  ,bd            Close buffer (keep layout)',
+        \ '  ,tn / ,tc     New tab / close tab  |  ,tl  Last tab',
         \ '  ,tv / ,th     Open terminal (vertical / horizontal)',
         \ '  Esc Esc       Exit terminal mode',
+        \ '  ,= / ,-       Resize height (grow / shrink)',
+        \ '  ,+ / ,_       Resize width  (grow / shrink)',
+        \ '',
+        \ 'UTILITIES',
+        \ '  ,ev / ,sv     Edit / reload ~/.vimrc',
+        \ '  ,cp / ,cf     Copy file path / filename to clipboard',
+        \ '  ,ms           Open scratch markdown buffer',
+        \ '  ,cd           Change CWD to current file directory',
+        \ '  F2  Paste   F3  Line#   F4  Relative#   F6  Invisible',
         \ '',
         \ 'SESSION',
         \ '  :Obsess       Start tracking session',
@@ -1103,7 +1137,7 @@ nnoremap <silent> <leader>? :call <SID>CheatSheet()<CR>
 " ============================================================================
 
 " Show syntax highlight stack for word under cursor
-nmap <leader>sh :call <SID>SynStack()<CR>
+nnoremap <leader>sh :call <SID>SynStack()<CR>
 function! <SID>SynStack()
     if !exists("*synstack") | return | endif
     echo map(synstack(line('.'), col('.')), 'synIDattr(v:val, "name")')

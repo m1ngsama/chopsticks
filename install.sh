@@ -1,23 +1,41 @@
 #!/usr/bin/env bash
 # install.sh - chopsticks vim configuration installer
-# Usage: cd /path/to/chopsticks && ./install.sh [--yes]
+# Usage: cd /path/to/chopsticks && ./install.sh [--yes] [--help]
 #
-# --yes  non-interactive: install all optional components automatically
+# --yes   non-interactive: install all optional components automatically
+# --help  show this help and exit
 
 set -eo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 AUTO_YES=0
-[[ "${1:-}" == "--yes" ]] && AUTO_YES=1
+for arg in "$@"; do
+    case "$arg" in
+        --yes)  AUTO_YES=1 ;;
+        --help|-h)
+            echo "Usage: ./install.sh [OPTIONS]"
+            echo ""
+            echo "Options:"
+            echo "  --yes    Non-interactive mode: select all defaults automatically"
+            echo "  --help   Show this help and exit"
+            echo ""
+            echo "Supported platforms: macOS (brew), Debian/Ubuntu (apt), Arch (pacman), Fedora (dnf)"
+            exit 0 ;;
+    esac
+done
 
-# ── Colours ───────────────────────────────────────────────────────────────────
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-RED='\033[0;31m'
-BOLD='\033[1m'
-CYAN='\033[0;36m'
-DIM='\033[2m'
-NC='\033[0m'
+# ── Colours (respect NO_COLOR and non-TTY) ───────────────────────────────────
+if [[ -t 1 ]] && [[ -z "${NO_COLOR:-}" ]]; then
+    GREEN='\033[0;32m'
+    YELLOW='\033[1;33m'
+    RED='\033[0;31m'
+    BOLD='\033[1m'
+    CYAN='\033[0;36m'
+    DIM='\033[2m'
+    NC='\033[0m'
+else
+    GREEN='' YELLOW='' RED='' BOLD='' CYAN='' DIM='' NC=''
+fi
 
 ok()   { echo -e "${GREEN}[OK]${NC}  $1"; }
 warn() { echo -e "${YELLOW}[!]${NC}  $1"; }
@@ -50,13 +68,14 @@ ask() {
 
 # ── Error trap ────────────────────────────────────────────────────────────────
 on_error() {
-    echo -e "\n${RED}[FATAL]${NC} Unexpected error at line ${BASH_LINENO[0]}." >&2
+    echo -e "\n${RED}[FATAL]${NC} Command '${BASH_COMMAND}' failed at line ${BASH_LINENO[0]}." >&2
     echo "  To get a full debug log:" >&2
     echo "    ./install.sh 2>&1 | tee /tmp/chopsticks-install.log" >&2
     echo "  Report issues: https://github.com/m1ngsama/chopsticks/issues" >&2
 }
 trap on_error ERR
-trap 'rm -f /tmp/chopsticks-hadolint /tmp/chopsticks-marksman 2>/dev/null' EXIT
+_TMPDIR=$(mktemp -d "${TMPDIR:-/tmp}/chopsticks-XXXXXX")
+trap 'rm -rf "$_TMPDIR" 2>/dev/null' EXIT
 
 # ── Safe download helper ──────────────────────────────────────────────────────
 safe_download() {
@@ -604,7 +623,7 @@ elif [[ $HAS_APT -eq 1 ]]; then
         else
             _do_binary_apt "hadolint" hadolint "$_I_HADOLINT" \
                 "https://github.com/hadolint/hadolint/releases/download/${HVER}/hadolint-Linux-${HARCH}" \
-                /tmp/chopsticks-hadolint
+                "$_TMPDIR/hadolint"
         fi
     else
         skip "hadolint"; SKIPPED+=("hadolint")
@@ -621,7 +640,7 @@ elif [[ $HAS_APT -eq 1 ]]; then
         else
             _do_binary_apt "marksman" marksman "$_I_MARKSMAN" \
                 "https://github.com/artempyanykh/marksman/releases/download/${MVER}/marksman-linux-${MARCH}" \
-                /tmp/chopsticks-marksman
+                "$_TMPDIR/marksman"
         fi
     else
         skip "marksman"; SKIPPED+=("marksman")
@@ -714,8 +733,10 @@ else
         if command -v "$check" >/dev/null 2>&1; then
             ok "$pkg (already installed)"; return
         fi
-        if pip3 install --quiet "$pkg" 2>/dev/null || \
-           pip3 install --quiet --break-system-packages "$pkg" 2>/dev/null; then
+        if pip3 install --quiet "$pkg" 2>/dev/null; then
+            ok "$pkg"; INSTALLED+=("$pkg")
+        elif pip3 install --quiet --break-system-packages "$pkg" 2>/dev/null; then
+            warn "$pkg installed with --break-system-packages (consider using a virtualenv)"
             ok "$pkg"; INSTALLED+=("$pkg")
         else
             fail "$pkg"; FAILED+=("$pkg")

@@ -124,6 +124,10 @@ Supported languages and their servers:
 | Markdown | marksman |
 | SQL | sqls |
 
+**Note:** While vim-lsp itself needs no Node.js, some language servers (TypeScript,
+HTML, CSS, JSON, YAML) are npm packages that require Node.js to run. Python (pylsp),
+Go (gopls), and Rust (rust-analyzer) language servers do not need Node.js.
+
 **Markdown LSP** requires `marksman` as a standalone binary:
 
 ```bash
@@ -203,8 +207,14 @@ Press `,?` at any time to open the built-in cheat sheet.
 | `Space` | Toggle code fold |
 | `Y` | Yank to end of line |
 | `Ctrl+d` / `Ctrl+u` | Half-page scroll, cursor centred |
-| `Alt+j` / `Alt+k` | Move line down / up |
+| `Alt+j` / `Alt+k` | Move line down / up (normal and visual) |
 | `,u` | Undo tree (visual branch history) |
+| `F2` | Toggle paste mode |
+| `F3` / `F4` | Toggle line numbers / relative numbers |
+| `F5` | Toggle undo tree |
+| `F6` | Toggle invisible characters |
+| `gV` | Reselect last paste |
+| `//` | Search visual selection |
 
 ### Survival
 
@@ -212,7 +222,8 @@ Press `,?` at any time to open the built-in cheat sheet.
 |-----|--------|
 | `jk` | Exit insert mode |
 | `Esc` | Exit insert / visual mode |
-| `Ctrl+s` | Save |
+| `jk` | Exit insert mode |
+| `Ctrl+s` | Save (any mode) |
 | `,w` | Save |
 | `,x` | Save and quit |
 | `,q` | Quit |
@@ -227,6 +238,13 @@ Press `,?` at any time to open the built-in cheat sheet.
 | `Esc Esc` | Exit terminal mode |
 | `,tn` / `,tc` | New tab / close tab |
 | `,tl` | Toggle to last tab |
+| `,ev` / `,sv` | Edit / reload `~/.vimrc` |
+| `,cp` / `,cf` | Copy file path / filename to clipboard |
+| `,*` | Search and replace word under cursor |
+| `,F` | Re-indent entire file |
+| `,W` | Strip trailing whitespace |
+| `,ms` | Open scratch markdown buffer |
+| `,ss` | Toggle spell checking |
 
 ---
 

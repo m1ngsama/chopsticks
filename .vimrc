@@ -160,6 +160,9 @@ call plug#end()
 " ============================================================================
 
 if g:has_true_color && has('termguicolors') && !g:is_tty
+    " Required for true color inside tmux
+    let &t_8f = "\<Esc>[38;2;%lu;%lu;%lum"
+    let &t_8b = "\<Esc>[48;2;%lu;%lu;%lum"
     set termguicolors
 endif
 
@@ -216,20 +219,20 @@ nmap <leader>q :q<cr>
 nmap <leader>x :x<cr>
 
 " Clear search highlight
-map <silent> <leader><cr> :noh<cr>
+nnoremap <silent> <leader><cr> :noh<cr>
 
 " Buffer navigation
-map <leader>bd :Bclose<cr>
-map <leader>ba :bufdo bd<cr>
-map <leader>l  :bnext<cr>
-map <leader>h  :bprevious<cr>
+nnoremap <leader>bd :Bclose<cr>
+nnoremap <leader>ba :bufdo bd<cr>
+nnoremap <leader>l  :bnext<cr>
+nnoremap <leader>h  :bprevious<cr>
 
 " Tab management
-map <leader>tn :tabnew<cr>
-map <leader>to :tabonly<cr>
-map <leader>tc :tabclose<cr>
-map <leader>tm :tabmove
-map <leader>t<leader> :tabnext<cr>
+nnoremap <leader>tn :tabnew<cr>
+nnoremap <leader>to :tabonly<cr>
+nnoremap <leader>tc :tabclose<cr>
+nnoremap <leader>tm :tabmove
+nnoremap <leader>t<leader> :tabnext<cr>
 
 let g:lasttab = 1
 nmap <Leader>tl :exe "tabn ".g:lasttab<CR>
@@ -238,8 +241,8 @@ augroup ChopstickTabHistory
     autocmd TabLeave * let g:lasttab = tabpagenr()
 augroup END
 
-map <leader>te :tabedit <C-r>=expand("%:p:h")<cr>/
-map <leader>cd :lcd %:p:h<cr>:pwd<cr>
+nnoremap <leader>te :tabedit <C-r>=expand("%:p:h")<cr>/
+nnoremap <leader>cd :lcd %:p:h<cr>:pwd<cr>
 
 " File browser (netrw — built-in, no plugins)
 nnoremap <leader>e :Explore<CR>
@@ -255,18 +258,18 @@ nnoremap gV `[v`]
 cnoremap <C-p> <Up>
 cnoremap <C-n> <Down>
 
-" Move lines
-nmap <M-j> mz:m+<cr>`z
-nmap <M-k> mz:m-2<cr>`z
-vnoremap J :m '>+1<CR>gv=gv
-vnoremap K :m '<-2<CR>gv=gv
+" Move lines (Alt+j / Alt+k in both normal and visual mode)
+nnoremap <M-j> :m .+1<CR>==
+nnoremap <M-k> :m .-2<CR>==
+vnoremap <M-j> :m '>+1<CR>gv=gv
+vnoremap <M-k> :m '<-2<CR>gv=gv
 
 " Spell checking
-map <leader>ss :setlocal spell!<cr>
-map <leader>sn ]s
-map <leader>sp [s
-map <leader>sa zg
-map <leader>s? z=
+nnoremap <leader>ss :setlocal spell!<cr>
+nnoremap <leader>sn ]s
+nnoremap <leader>sp [s
+nnoremap <leader>sa zg
+nnoremap <leader>s? z=
 
 " Toggle modes
 set pastetoggle=<F2>
@@ -506,7 +509,11 @@ let g:lsp_signs_warning     = {'text': '!'}
 let g:lsp_signs_information = {'text': 'i'}
 let g:lsp_signs_hint        = {'text': '>'}
 
-set completeopt=menuone,noinsert,noselect
+if has('patch-8.1.1517')
+    set completeopt=menuone,noinsert,noselect,popup
+else
+    set completeopt=menuone,noinsert,noselect
+endif
 set pumheight=15
 let g:asyncomplete_auto_popup       = 1
 let g:asyncomplete_auto_completeopt = 1
@@ -587,9 +594,9 @@ let g:EasyMotion_smartcase  = 1
 " s + two chars: jump anywhere on screen
 nmap s <Plug>(easymotion-overwin-f2)
 
-" J/K: line motions
-map <Leader>j <Plug>(easymotion-j)
-map <Leader>k <Plug>(easymotion-k)
+" Line motions
+nmap <Leader>j <Plug>(easymotion-j)
+nmap <Leader>k <Plug>(easymotion-k)
 
 " ============================================================================
 " => UndoTree
@@ -620,12 +627,12 @@ endif
 
 if exists('g:plugs["vim-startify"]')
     let g:startify_custom_header = [
-        \ '  ███╗   ███╗ ██╗███╗   ██╗ ██████╗ ███████╗ █████╗ ███╗   ███╗ █████╗  ',
-        \ '  ████╗ ████║███║████╗  ██║██╔════╝ ██╔════╝██╔══██╗████╗ ████║██╔══██╗ ',
-        \ '  ██╔████╔██║╚██║██╔██╗ ██║██║  ███╗███████╗███████║██╔████╔██║███████║  ',
-        \ '  ██║╚██╔╝██║ ██║██║╚██╗██║██║   ██║╚════██║██╔══██║██║╚██╔╝██║██╔══██║ ',
-        \ '  ██║ ╚═╝ ██║ ██║██║ ╚████║╚██████╔╝███████║██║  ██║██║ ╚═╝ ██║██║  ██║ ',
-        \ '  ╚═╝     ╚═╝ ╚═╝╚═╝  ╚═══╝ ╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝╚═╝  ╚═╝',
+        \ '         ██████╗██╗  ██╗ ██████╗ ██████╗ ███████╗████████╗██╗ ██████╗██╗  ██╗███████╗',
+        \ '        ██╔════╝██║  ██║██╔═══██╗██╔══██╗██╔════╝╚══██╔══╝██║██╔════╝██║ ██╔╝██╔════╝',
+        \ '        ██║     ███████║██║   ██║██████╔╝███████╗   ██║   ██║██║     █████╔╝ ███████╗',
+        \ '        ██║     ██╔══██║██║   ██║██╔═══╝ ╚════██║   ██║   ██║██║     ██╔═██╗ ╚════██║',
+        \ '        ╚██████╗██║  ██║╚██████╔╝██║     ███████║   ██║   ██║╚██████╗██║  ██╗███████║',
+        \ '         ╚═════╝╚═╝  ╚═╝ ╚═════╝ ╚═╝     ╚══════╝   ╚═╝   ╚═╝ ╚═════╝╚═╝  ╚═╝╚══════╝',
         \ '',
         \ ]
 
@@ -636,11 +643,16 @@ if exists('g:plugs["vim-startify"]')
         \ { 'type': 'bookmarks', 'header': ['   Bookmarks']    },
         \ ]
 
-    let g:startify_bookmarks = [
-        \ {'v': '~/.vimrc'},
-        \ {'z': '~/.zshrc'},
-        \ {'b': '~/.bashrc'},
-        \ ]
+    let g:startify_bookmarks = [{'v': '~/.vimrc'}]
+    if filereadable(expand('~/.zshrc'))
+        call add(g:startify_bookmarks, {'z': '~/.zshrc'})
+    endif
+    if filereadable(expand('~/.bashrc'))
+        call add(g:startify_bookmarks, {'b': '~/.bashrc'})
+    endif
+    if filereadable(expand('~/.config/fish/config.fish'))
+        call add(g:startify_bookmarks, {'f': '~/.config/fish/config.fish'})
+    endif
 
     let g:startify_session_persistence = 1
     let g:startify_session_autoload    = 1
@@ -797,20 +809,13 @@ endfunc
 " Suppress comment continuation on Enter / o / O
 augroup ChopstickFormatOptions
     autocmd!
-    autocmd BufEnter * setlocal formatoptions-=c formatoptions-=r formatoptions-=o
+    autocmd FileType * setlocal formatoptions-=c formatoptions-=r formatoptions-=o
 augroup END
 
 " Auto-disable paste mode on leaving insert
 augroup ChopstickPaste
     autocmd!
     autocmd InsertLeave * set nopaste
-augroup END
-
-" Strip trailing whitespace on save (real files only)
-augroup ChopstickCleanup
-    autocmd!
-    autocmd BufWritePre *
-        \ if empty(&buftype) && !empty(expand('<afile>')) | call CleanExtraSpaces() | endif
 augroup END
 
 augroup ChopstickFiletype
@@ -907,7 +912,7 @@ nnoremap <leader><leader> <c-^>
 nnoremap <leader>W :%s/\s\+$//<CR>:let @/=''<CR>
 
 " Source helpers
-nnoremap <leader>so :source %<CR>
+nnoremap <leader>so :if &filetype ==# 'vim' <Bar> source % <Bar> echo "Sourced " . expand('%') <Bar> else <Bar> echo "Not a vim file" <Bar> endif<CR>
 nnoremap <leader>ev :edit $MYVIMRC<CR>
 nnoremap <leader>sv :source $MYVIMRC<CR>:echo "vimrc reloaded"<CR>
 
@@ -915,8 +920,10 @@ nnoremap <leader>sv :source $MYVIMRC<CR>:echo "vimrc reloaded"<CR>
 nnoremap <leader>* :%s/\<<C-r><C-w>\>//g<Left><Left>
 
 " Copy path / filename to clipboard
-nnoremap <leader>cp :let @+ = expand("%:p")<CR>:echo "Copied: " . expand("%:p")<CR>
-nnoremap <leader>cf :let @+ = expand("%:t")<CR>:echo "Copied: " . expand("%:t")<CR>
+if has('clipboard')
+    nnoremap <leader>cp :let @+ = expand("%:p")<CR>:echo "Copied: " . expand("%:p")<CR>
+    nnoremap <leader>cf :let @+ = expand("%:t")<CR>:echo "Copied: " . expand("%:t")<CR>
+endif
 
 " Scratch markdown buffer
 nnoremap <leader>ms :e ~/buffer.md<cr>
@@ -981,7 +988,6 @@ augroup END
 function! LargeFileSettings()
     setlocal bufhidden=unload
     setlocal undolevels=-1
-    setlocal eventignore+=FileType
     setlocal noswapfile
     setlocal syntax=
     let b:ale_enabled = 0

@@ -587,6 +587,11 @@ endif
 " ============================================================================
 
 " <leader>mp   open live-reloading preview in browser
+if has('macunix')
+    let g:previm_open_cmd = '/usr/bin/open'
+elseif executable('xdg-open')
+    let g:previm_open_cmd = 'xdg-open'
+endif
 if exists('g:plugs["previm"]')
     nnoremap <leader>mp :PrevimOpen<CR>
 endif

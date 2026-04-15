@@ -72,10 +72,11 @@ safe_download() {
 # ── Cross-platform package install helper ─────────────────────────────────────
 pkg_install() {
     local brew_pkg="${1:-}" apt_pkg="${2:-}" pac_pkg="${3:-}" dnf_pkg="${4:-}"
-    if   [[ $HAS_BREW   -eq 1 && -n "$brew_pkg" ]]; then brew install "$brew_pkg" >/dev/null 2>&1
+    if   [[ $OS == "macos" && $HAS_BREW -eq 1 && -n "$brew_pkg" ]]; then brew install "$brew_pkg" >/dev/null 2>&1
     elif [[ $HAS_APT    -eq 1 && -n "$apt_pkg"  && $HAS_SUDO -eq 1 ]]; then sudo apt-get install -y "$apt_pkg" >/dev/null 2>&1
     elif [[ $HAS_PACMAN -eq 1 && -n "$pac_pkg"  && $HAS_SUDO -eq 1 ]]; then sudo pacman -S --noconfirm "$pac_pkg" >/dev/null 2>&1
     elif [[ $HAS_DNF    -eq 1 && -n "$dnf_pkg"  && $HAS_SUDO -eq 1 ]]; then sudo dnf install -y "$dnf_pkg" >/dev/null 2>&1
+    elif [[ $HAS_BREW   -eq 1 && -n "$brew_pkg" ]]; then brew install "$brew_pkg" >/dev/null 2>&1
     else return 1
     fi
 }
@@ -164,11 +165,14 @@ _menu_checkbox() {
     local _key _esc _i
 
     tput civis 2>/dev/null   # hide cursor
-    _menu_draw
+    local _first=1
 
     while true; do
-        tput cuu "$_lines" 2>/dev/null   # move back to top of menu
+        if [[ $_first -eq 0 ]]; then
+            tput cuu "$_lines" 2>/dev/null   # move back to top of menu
+        fi
         _menu_draw
+        _first=0
 
         IFS= read -r -s -n1 _key </dev/tty
         if [[ $_key == $'\x1b' ]]; then
@@ -412,6 +416,9 @@ _vim_run() {
         vim --not-a-term "$@" 2>/dev/null
     fi
 }
+if [[ -d "$HOME/.vim/plugged" ]] && [[ -n "$(ls -A "$HOME/.vim/plugged" 2>/dev/null)" ]]; then
+    warn "PlugClean: removing plugins not listed in .vimrc from ~/.vim/plugged"
+fi
 _vim_run +'PlugClean!' +qall || true  # remove plugins no longer in vimrc; ignore exit code (none expected)
 _vim_run +'PlugInstall --sync' +qall || true  # fzf post-install hook may exit non-zero; harmless
 
@@ -558,6 +565,10 @@ _do_binary_apt() {
     if command -v "$check" >/dev/null 2>&1; then
         ok "$name (already installed)"; return
     fi
+    if [[ $HAS_SUDO -ne 1 ]]; then
+        fail "$name — sudo not available, cannot install to /usr/local/bin"
+        FAILED+=("$name"); return
+    fi
     if safe_download "$url" "$tmp"; then
         chmod +x "$tmp" && sudo mv "$tmp" /usr/local/bin/"$check"
         ok "$name"; INSTALLED+=("$name")
@@ -583,20 +594,38 @@ elif [[ $HAS_APT -eq 1 ]]; then
     _do_sys "shellcheck"      shellcheck "$_I_SHELLCHECK" "" shellcheck      "" ""
 
     # hadolint: no apt package — binary from GitHub releases
-    HARCH=$(arch_github)
-    HVER=$(curl -fsSL https://api.github.com/repos/hadolint/hadolint/releases/latest \
-           | grep '"tag_name"' | cut -d'"' -f4 2>/dev/null) || HVER=""
-    _do_binary_apt "hadolint" hadolint "$_I_HADOLINT" \
-        "https://github.com/hadolint/hadolint/releases/download/${HVER}/hadolint-Linux-${HARCH}" \
-        /tmp/chopsticks-hadolint
+    if [[ $_I_HADOLINT -ge 0 ]] && _selected "$_I_HADOLINT"; then
+        HARCH=$(arch_github)
+        HVER=$(curl -fsSL https://api.github.com/repos/hadolint/hadolint/releases/latest \
+               | grep '"tag_name"' | cut -d'"' -f4 2>/dev/null) || HVER=""
+        if [[ -z "$HVER" ]]; then
+            fail "hadolint — could not determine latest release version"
+            FAILED+=("hadolint")
+        else
+            _do_binary_apt "hadolint" hadolint "$_I_HADOLINT" \
+                "https://github.com/hadolint/hadolint/releases/download/${HVER}/hadolint-Linux-${HARCH}" \
+                /tmp/chopsticks-hadolint
+        fi
+    else
+        skip "hadolint"; SKIPPED+=("hadolint")
+    fi
 
     # marksman: no apt package — binary from GitHub releases
-    MARCH=$(arch_linux_x64)
-    MVER=$(curl -fsSL https://api.github.com/repos/artempyanykh/marksman/releases/latest \
-           | grep '"tag_name"' | cut -d'"' -f4 2>/dev/null) || MVER=""
-    _do_binary_apt "marksman" marksman "$_I_MARKSMAN" \
-        "https://github.com/artempyanykh/marksman/releases/download/${MVER}/marksman-linux-${MARCH}" \
-        /tmp/chopsticks-marksman
+    if [[ $_I_MARKSMAN -ge 0 ]] && _selected "$_I_MARKSMAN"; then
+        MARCH=$(arch_linux_x64)
+        MVER=$(curl -fsSL https://api.github.com/repos/artempyanykh/marksman/releases/latest \
+               | grep '"tag_name"' | cut -d'"' -f4 2>/dev/null) || MVER=""
+        if [[ -z "$MVER" ]]; then
+            fail "marksman — could not determine latest release version"
+            FAILED+=("marksman")
+        else
+            _do_binary_apt "marksman" marksman "$_I_MARKSMAN" \
+                "https://github.com/artempyanykh/marksman/releases/download/${MVER}/marksman-linux-${MARCH}" \
+                /tmp/chopsticks-marksman
+        fi
+    else
+        skip "marksman"; SKIPPED+=("marksman")
+    fi
 
 elif [[ $HAS_PACMAN -eq 1 ]]; then
     _do_sys "ripgrep"         rg         "$_I_RIPGREP"    "" "" ripgrep    ""
@@ -610,16 +639,22 @@ elif [[ $HAS_DNF -eq 1 ]]; then
     _do_sys "ripgrep"         rg         "$_I_RIPGREP"    "" "" "" ripgrep
     _do_sys "fzf"             fzf        "$_I_FZF"        "" "" "" fzf
     _do_sys "shellcheck"      shellcheck "$_I_SHELLCHECK" "" "" "" ShellCheck
-    if [[ $_I_CTAGS -ge 0 ]] && _selected "$_I_CTAGS"; then
-        skip "universal-ctags — Fedora: install manually: sudo dnf install ctags"
+    if [[ $_I_CTAGS -ge 0 ]]; then
+        if _selected "$_I_CTAGS"; then
+            skip "universal-ctags — Fedora: install manually: sudo dnf install ctags"
+        fi
         SKIPPED+=("universal-ctags")
     fi
-    if [[ $_I_HADOLINT -ge 0 ]] && _selected "$_I_HADOLINT"; then
-        skip "hadolint — Fedora: install manually: https://github.com/hadolint/hadolint/releases"
+    if [[ $_I_HADOLINT -ge 0 ]]; then
+        if _selected "$_I_HADOLINT"; then
+            skip "hadolint — Fedora: install manually: https://github.com/hadolint/hadolint/releases"
+        fi
         SKIPPED+=("hadolint")
     fi
-    if [[ $_I_MARKSMAN -ge 0 ]] && _selected "$_I_MARKSMAN"; then
-        skip "marksman — Fedora: install manually: https://github.com/artempyanykh/marksman/releases"
+    if [[ $_I_MARKSMAN -ge 0 ]]; then
+        if _selected "$_I_MARKSMAN"; then
+            skip "marksman — Fedora: install manually: https://github.com/artempyanykh/marksman/releases"
+        fi
         SKIPPED+=("marksman")
     fi
 else

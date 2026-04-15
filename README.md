@@ -86,11 +86,10 @@ cd ~/.vim && ./install.sh
 3. Backs up existing `~/.vimrc`, then symlinks `~/.vimrc → ~/.vim/.vimrc`
 4. Installs vim-plug and runs `:PlugInstall`
 5. Offers to install system tools (ripgrep, fzf, ctags, shellcheck, hadolint, marksman)
-6. Offers to install Node.js via nvm (for npm formatters — optional)
-7. Offers to install npm formatters (prettier, eslint, etc.)
-8. Offers to install Python formatters/linters (black, isort, flake8, etc.)
-9. Offers to install Go tools (gopls, goimports, staticcheck)
-10. Offers to append vim-tmux-navigator bindings to `~/.tmux.conf`
+6. Offers to install npm formatters (prettier, eslint, etc.) — requires Node.js
+7. Offers to install Python formatters/linters (black, isort, flake8, etc.)
+8. Offers to install Go tools (gopls, goimports, staticcheck)
+9. Offers to append vim-tmux-navigator bindings to `~/.tmux.conf`
 
 **Supported platforms:** macOS (Homebrew), Debian/Ubuntu (apt), Arch (pacman), Fedora (dnf).
 
@@ -150,10 +149,12 @@ Press `,?` at any time to open the built-in cheat sheet.
 | `,E` | Open netrw in vertical split |
 | `,b` | Search open buffers (FZF) |
 | `,rg` | Project-wide search (ripgrep + FZF) |
-| `,rG` | Ripgrep for word under cursor |
+| `,rG` | Ripgrep word under cursor (fixed-string) |
 | `,,` | Switch to last file |
 | `,l` / `,h` | Next / previous buffer |
 | `,bd` | Close current buffer (preserves window layout) |
+| `,wa` | Save all open buffers |
+| `,cd` | Change working directory to current file's directory |
 
 ### Code Intelligence (vim-lsp)
 
@@ -179,7 +180,7 @@ Press `,?` at any time to open the built-in cheat sheet.
 | Key | Action |
 |-----|--------|
 | `,mp` | Open live preview in browser (previm) |
-| `,mt` | Table of contents |
+| `,mt` | Table of contents (side window) |
 | `zr` / `zm` | Unfold / fold all headings |
 
 ### Git (vim-fugitive)
@@ -253,7 +254,7 @@ No Node.js required. Uses `open` (macOS) or `xdg-open` (Linux).
 ### Table of contents
 
 ```vim
-,mt    " open TOC in a quickfix window — press Enter to jump to heading
+,mt    " open TOC in a side window — press Enter to jump to heading
 ```
 
 ---
@@ -307,7 +308,7 @@ bind-key -n 'C-l' if-shell "$is_vim" 'send-keys C-l' 'select-pane -R'
 
 ### TTY / SSH Support
 
-Detected automatically when `$TERM` is `linux` or `screen`. In TTY mode:
+Detected automatically when `$TERM` is unset, `dumb`, `linux`, `screen`, or contains `builtin`. In TTY mode:
 
 - True colour and cursorline disabled
 - FZF preview windows disabled

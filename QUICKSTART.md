@@ -142,7 +142,7 @@ K               Show documentation
 | Key | Action |
 |-----|--------|
 | `,mp` | Open live preview in browser |
-| `,mt` | Table of contents |
+| `,mt` | Table of contents (side window) |
 | `zr` / `zm` | Unfold / fold all headings |
 
 Formatting in the buffer is live: `**bold**` renders as bold,

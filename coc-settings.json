@@ -6,8 +6,5 @@
       "filetypes": ["markdown"],
       "rootPatterns": [".git", ".marksman.toml"]
     }
-  },
-  "coc.preferences.formatOnSaveFiletypes": [
-    "markdown"
-  ]
+  }
 }

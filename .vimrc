@@ -96,7 +96,10 @@ let data_dir = has('nvim') ? stdpath('data') . '/site' : '~/.vim'
 if empty(glob(data_dir . '/autoload/plug.vim'))
     silent execute '!curl -fLo '.data_dir.'/autoload/plug.vim --create-dirs '
         \ . 'https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim'
-    autocmd VimEnter * PlugInstall --sync | source $MYVIMRC
+    augroup PlugBootstrap
+        autocmd!
+        autocmd VimEnter * PlugInstall --sync | source $MYVIMRC
+    augroup END
 endif
 
 call plug#begin('~/.vim/plugged')
@@ -358,7 +361,7 @@ endfunction
 map <C-p>     :call <SID>SmartFiles()<CR>
 map <leader>b :Buffers<CR>
 map <leader>rg :Rg<CR>
-map <leader>rG :Rg -F <C-r><C-w><CR>
+map <leader>rG :RgWord<CR>
 map <leader>rt :Tags<CR>
 map <leader>gF :GFiles<CR>
 
@@ -382,6 +385,19 @@ else
         \   'rg --column --line-number --no-heading --color=always --smart-case -- '
         \   .shellescape(<q-args>), 1, fzf#vim#with_preview(), <bang>0)
     command! -bang GFiles call fzf#vim#gitfiles('', fzf#vim#with_preview(), <bang>0)
+endif
+
+" RgWord: fixed-string search for word under cursor (flags before --)
+if g:is_tty
+    command! -bang -nargs=* RgWord
+        \ call fzf#vim#grep(
+        \   'rg --column --line-number --no-heading --color=always --smart-case -F -- '
+        \   .shellescape(expand('<cword>')), 1, <bang>0)
+else
+    command! -bang -nargs=* RgWord
+        \ call fzf#vim#grep(
+        \   'rg --column --line-number --no-heading --color=always --smart-case -F -- '
+        \   .shellescape(expand('<cword>')), 1, fzf#vim#with_preview(), <bang>0)
 endif
 
 " ============================================================================
@@ -450,8 +466,8 @@ nmap <silent> <leader>aD :ALEDetail<cr>
 " vim-lsp (gopls) handles all Go intelligence; disable vim-go's own LSP layer
 let g:go_gopls_enabled            = 0
 let g:go_code_completion_enabled  = 0
-let g:go_def_mode                 = 'gopls'
-let g:go_info_mode                = 'gopls'
+let g:go_def_mode                 = 'godef'
+let g:go_info_mode                = 'godef'
 let g:go_fmt_autosave             = 0  " ALE handles format-on-save
 let g:go_imports_autosave         = 0
 let g:go_highlight_types          = 1
@@ -903,7 +919,7 @@ nnoremap <leader>cp :let @+ = expand("%:p")<CR>:echo "Copied: " . expand("%:p")<
 nnoremap <leader>cf :let @+ = expand("%:t")<CR>:echo "Copied: " . expand("%:t")<CR>
 
 " Scratch markdown buffer
-map <leader>m :e ~/buffer.md<cr>
+nnoremap <leader>ms :e ~/buffer.md<cr>
 
 " Auto-create parent directories on save
 function! s:MkNonExDir(file, buf)
@@ -930,7 +946,7 @@ nnoremap <leader>gs :Git status<CR>
 nnoremap <leader>gc :Git commit<CR>
 nnoremap <leader>gp :Git push<CR>
 nnoremap <leader>gl :Git pull<CR>
-nnoremap <leader>gd :Gdiff<CR>
+nnoremap <leader>gd :Gdiffsplit<CR>
 nnoremap <leader>gb :Git blame<CR>
 
 " ============================================================================
@@ -967,7 +983,7 @@ function! LargeFileSettings()
     setlocal undolevels=-1
     setlocal eventignore+=FileType
     setlocal noswapfile
-    setlocal syntax=OFF
+    setlocal syntax=
     let b:ale_enabled = 0
     echo "Large file (>10 MB): syntax, undo, and linting disabled."
 endfunction
@@ -977,7 +993,7 @@ if g:is_tty
         autocmd!
         autocmd BufReadPre *
             \ if !empty(expand('<afile>')) && getfsize(expand('<afile>')) > 512000 |
-            \     setlocal syntax=OFF |
+            \     setlocal syntax= |
             \ endif
     augroup END
 

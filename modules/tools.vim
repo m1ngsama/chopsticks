@@ -86,43 +86,31 @@ augroup BWCCreateDir
         \ endif
 augroup END
 
-" ── Large File Handling (>10 MB) ────────────────────────────────────────────
+" ── Large File Handling ──────────────────────────────────────────────────────
 
 let g:LargeFile = 1024 * 1024 * 10
-augroup LargeFile
+let s:tty_large  = g:is_tty ? 512000 : g:LargeFile
+
+augroup ChopstickLargeFile
     autocmd!
     autocmd BufReadPre *
         \ if !empty(expand('<afile>')) |
-        \     let f = getfsize(expand('<afile>')) |
-        \     if f > g:LargeFile || f == -2 | call LargeFileSettings() | endif |
+        \     let s:fsize = getfsize(expand('<afile>')) |
+        \     if s:fsize > g:LargeFile || s:fsize == -2 |
+        \         setlocal bufhidden=unload undolevels=-1 noswapfile syntax= |
+        \         let b:ale_enabled = 0 |
+        \     elseif g:is_tty && s:fsize > s:tty_large |
+        \         setlocal syntax= |
+        \     endif |
         \ endif
 augroup END
 
-function! LargeFileSettings()
-    setlocal bufhidden=unload
-    setlocal undolevels=-1
-    setlocal noswapfile
-    setlocal syntax=
-    let b:ale_enabled = 0
-    echo "Large file (>10 MB): syntax, undo, and linting disabled."
-endfunction
-
-if g:is_tty
-    augroup ChopstickTTYLargeFile
+if g:is_tty && !exists("g:tty_message_shown")
+    augroup TTYMessage
         autocmd!
-        autocmd BufReadPre *
-            \ if !empty(expand('<afile>')) && getfsize(expand('<afile>')) > 512000 |
-            \     setlocal syntax= |
-            \ endif
+        autocmd VimEnter * echom "TTY mode — visual features disabled"
     augroup END
-
-    if !exists("g:tty_message_shown")
-        augroup TTYMessage
-            autocmd!
-            autocmd VimEnter * echom "TTY mode — visual features disabled"
-        augroup END
-        let g:tty_message_shown = 1
-    endif
+    let g:tty_message_shown = 1
 endif
 
 " ── Run Current File (,cr) ──────────────────────────────────────────────────

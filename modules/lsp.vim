@@ -18,10 +18,13 @@ let g:lsp_settings_filetype_markdown   = ['marksman']
 let g:lsp_settings_filetype_sql        = ['sqls']
 
 let g:lsp_diagnostics_virtual_text_enabled = !g:is_tty
+let g:lsp_diagnostics_virtual_text_delay   = 200
 let g:lsp_diagnostics_highlights_enabled   = !g:is_tty
 let g:lsp_document_highlight_enabled       = !g:is_tty
+let g:lsp_document_highlight_delay         = 200
 let g:lsp_signs_enabled                    = 1
 let g:lsp_diagnostics_echo_cursor          = 1
+let g:lsp_diagnostics_echo_delay           = 100
 let g:lsp_completion_documentation_enabled = 1
 
 let g:lsp_signs_error       = {'text': 'X'}

@@ -24,7 +24,10 @@ Plug 'airblade/vim-gitgutter'
 Plug 'tpope/vim-surround'
 Plug 'tpope/vim-commentary'
 Plug 'tpope/vim-repeat'
-Plug 'tpope/vim-unimpaired'
+" tpope/vim-unimpaired removed: 2.5ms startup cost, we define our own
+" [q/]q (quickfix), [e/]e (ALE), [x/]x (conflict) — unimpaired's [b/]b
+" is covered by ,h/,l. Blank line insertion ([<Space>) added below.
+
 Plug 'tpope/vim-sleuth'
 Plug 'wellle/targets.vim'
 Plug 'jiangmiao/auto-pairs'

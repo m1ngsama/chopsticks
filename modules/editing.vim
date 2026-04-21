@@ -33,6 +33,11 @@ if exists('##TextYankPost') && has('timers')
     augroup END
 endif
 
+" ── Blank Line Insertion (replaces vim-unimpaired) ──────────────────────────
+
+nnoremap <silent> [<Space> :<C-u>put! =repeat(nr2char(10), v:count1)<CR>'[
+nnoremap <silent> ]<Space> :<C-u>put  =repeat(nr2char(10), v:count1)<CR>
+
 " ── Auto-Clear Search Highlight ─────────────────────────────────────────────
 
 augroup ChopstickSearchHL

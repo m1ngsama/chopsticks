@@ -14,7 +14,7 @@ curl -fsSL https://raw.githubusercontent.com/m1ngsama/chopsticks/main/get.sh | b
 
 You SSH into a box. You need to edit code. You want LSP, fuzzy find, git integration, format-on-save — not a 20-minute setup ritual.
 
-chopsticks gives you 30 plugins, 12 modules, and a sane config in one command. It degrades gracefully on TTY. It works the same on your MacBook and your Arch server.
+chopsticks gives you 29 plugins, 12 modules, and a sane config in one command. It degrades gracefully on TTY. It works the same on your MacBook and your Arch server.
 
 ## What's in the box
 
@@ -86,7 +86,7 @@ ALE and vim-lsp coexist cleanly (`ale_disable_lsp=1`). ALE handles linting + for
 ├── .vimrc              thin loader
 ├── modules/
 │   ├── env.vim         TTY detection, truecolor
-│   ├── plugins.vim     vim-plug + 30 plugins
+│   ├── plugins.vim     vim-plug + 29 plugins
 │   ├── core.vim        settings, keymaps, performance
 │   ├── ui.vim          colorscheme, statusline, startify
 │   ├── editing.vim     easymotion, yank highlight

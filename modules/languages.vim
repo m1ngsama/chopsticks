@@ -19,12 +19,6 @@ augroup ChopstickFiletype
     autocmd BufReadPost *
         \ if line("'\"") > 1 && line("'\"") <= line("$") | exe "normal! g'\"" | endif
 
-    autocmd BufNewFile,BufRead *.json      setlocal filetype=json
-    autocmd BufNewFile,BufRead *.md        setlocal filetype=markdown
-    autocmd BufNewFile,BufRead *.jsx       setlocal filetype=javascript.jsx
-    autocmd BufNewFile,BufRead *.tsx       setlocal filetype=typescript.tsx
-    autocmd BufNewFile,BufRead Dockerfile* setlocal filetype=dockerfile
-
     autocmd FileType python
         \ setlocal expandtab shiftwidth=4 tabstop=4 textwidth=88 colorcolumn=+1
     autocmd FileType javascript,typescript

@@ -1,329 +1,127 @@
 # chopsticks
 
-> Flowing vim for any machine — SSH servers included.
+Vim config for people who ship code on any machine. Pure VimScript. No Node.js. Works over SSH.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE)
 [![Vim 8.0+](https://img.shields.io/badge/Vim-8.0%2B-brightgreen?style=flat-square)](https://www.vim.org/)
-[![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux-lightgrey?style=flat-square)](#installation)
-[![Release](https://img.shields.io/github/v/release/m1ngsama/chopsticks?style=flat-square&label=release&color=orange)](https://github.com/m1ngsama/chopsticks/releases)
+[![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux-lightgrey?style=flat-square)](#install)
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/m1ngsama/chopsticks/main/get.sh | bash
 ```
 
----
+## Why
 
-## What You Get
+You SSH into a box. You need to edit code. You want LSP, fuzzy find, git integration, format-on-save — not a 20-minute setup ritual.
 
-**30 plugins. One command. Zero Node.js dependency.**
+chopsticks gives you 30 plugins, 12 modules, and a sane config in one command. It degrades gracefully on TTY. It works the same on your MacBook and your Arch server.
 
-| Feature | What it does |
-|---------|-------------|
-| **LSP everywhere** | Completion, go-to-definition, hover docs, rename — pure VimScript, works over SSH |
-| **Format on save** | ALE runs black, prettier, gofmt automatically. Errors show in statusline. |
-| **Fuzzy everything** | Files, buffers, grep, tags, marks, command history — all via FZF with preview |
-| **Zen mode** | Goyo + Limelight: distraction-free writing. `,zen` and the world disappears |
-| **Run any file** | `,cr` detects filetype and runs it: Python, Go, Rust, JS, C, Shell, and more |
-| **Smart indentation** | vim-sleuth auto-detects tabs vs spaces from existing files. No config needed. |
-| **Yank highlight** | Yanked text flashes — instant visual feedback, never guess what you copied |
-| **Search that clears** | Search highlights disappear after you stop moving. No more `,<cr>` spam. |
-| **Git workflow** | Status, diff, blame, push, pull. Conflict marker navigation with `[x`/`]x`. |
-| **Window maximize** | `,z` toggles current split to full screen and back. |
-| **Sudo save** | `:w!!` when you forgot to open as root |
-| **ALE in statusline** | Error and warning counts always visible — no surprises |
-| **30+ key mappings** | Every common action is one or two keystrokes away. `,?` shows them all. |
-| **TTY-aware** | SSH, console, slow connections — degrades gracefully, never breaks |
+## What's in the box
 
----
+| | |
+|-|-|
+| **LSP** | completion, go-to-def, hover, rename, code actions — pure VimScript |
+| **Lint + format** | ALE runs black, prettier, gofmt, rustfmt on save |
+| **Fuzzy find** | files, buffers, grep, tags, marks, commands — FZF |
+| **Git** | status, diff, blame, push, pull, conflict markers |
+| **Zen mode** | `,zen` — Goyo + Limelight, distraction-free writing |
+| **Run file** | `,cr` — auto-detects language, runs it |
+| **TTY-aware** | degrades gracefully on SSH, console, slow links |
 
-## Installation
-
-### One command
+## Install
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/m1ngsama/chopsticks/main/get.sh | bash
 ```
 
-### Git clone
+Or manually:
 
 ```bash
 git clone https://github.com/m1ngsama/chopsticks.git ~/.vim
 cd ~/.vim && ./install.sh
 ```
 
-### Non-interactive / CI
+macOS (brew), Debian/Ubuntu (apt), Arch (pacman), Fedora (dnf).
 
-```bash
-curl -fsSL ... | bash -s -- --yes
-```
+Open vim. Plugins install on first launch. Restart when done.
 
-**Supported:** macOS (Homebrew), Debian/Ubuntu (apt), Arch (pacman), Fedora (dnf).
+## Keys
 
-The installer detects your environment, installs vim-plug, plugins, and offers
-system tools (ripgrep, fzf, ctags, shellcheck, marksman) plus language-specific
-formatters and linters.
-
----
-
-## Key Mappings
-
-**Leader key:** `,` (comma). Press `,?` to open the built-in cheat sheet.
-
-### Files and Search
-
-| Key | Action |
-|-----|--------|
-| `Ctrl+p` | Fuzzy file search — git-aware |
-| `,b` | Search open buffers |
-| `,rg` | Project-wide ripgrep search |
-| `,rG` | Ripgrep word under cursor |
-| `,fh` | Recent files history |
-| `,fl` / `,fL` | Search lines in buffer / all buffers |
-| `,fc` | Commands | `,fm` Marks |
-| `,f/` / `,f:` | Search / command history |
-| `,e` / `,E` | File browser / vertical split |
-| `,,` | Switch to last file |
-| `,cd` | Change CWD to current file's directory |
-
-### Code Intelligence (vim-lsp)
-
-| Key | Action |
-|-----|--------|
-| `gd` | Go to definition |
-| `gy` | Type definition |
-| `gi` | Implementation |
-| `gr` | References |
-| `K` | Hover documentation |
-| `[g` / `]g` | Previous / next LSP diagnostic |
-| `[e` / `]e` | Previous / next ALE error |
-| `,rn` | Rename symbol |
-| `,f` | Format buffer / selection |
-| `,ca` | Code action |
-| `,o` | File outline (symbols) |
-| `,ws` | Workspace symbols |
-| `,cr` | **Run current file** (auto-detects language) |
-
-Install LSP servers on demand:
-```vim
-:LspInstallServer   " auto-detects filetype
-:LspStatus          " check server status
-```
-
-| Language | Server |
-|----------|--------|
-| Python | pylsp |
-| JS / TS | typescript-language-server |
-| Go | gopls |
-| Rust | rust-analyzer |
-| C / C++ | clangd |
-| Shell | bash-language-server |
-| HTML / CSS / JSON / YAML | vscode-*-language-server |
-| Markdown | marksman |
-| SQL | sqls |
-
-### Markdown and Writing
-
-| Key | Action |
-|-----|--------|
-| `,zen` | **Zen mode** — Goyo + Limelight, distraction-free |
-| `,mp` | Live browser preview (previm) |
-| `,mt` | Table of contents |
-| `zr` / `zm` | Unfold / fold all headings |
-
-Markdown buffers automatically enable `wrap`, `spell`, and concealment
-(bold renders as bold, headings hide `#` markers, raw syntax shows on cursor line).
-
-### Git
-
-| Key | Action |
-|-----|--------|
-| `,gs` | Status |
-| `,gd` | Diff |
-| `,gb` | Blame |
-| `,gc` | Commit |
-| `,gp` | Push |
-| `,gl` | Pull |
-| `[x` / `]x` | Navigate conflict markers |
-
-### Editing
-
-| Key | Action |
-|-----|--------|
-| `s` + 2 chars | EasyMotion — jump anywhere on screen |
-| `gc` | Toggle comment (works in visual mode) |
-| `Y` | Yank to end of line |
-| `,y` / `,Y` | Yank to system clipboard |
-| `Alt+j` / `Alt+k` | Move line down / up |
-| `,u` | Undo tree (visual branch history) |
-| `,F` | Re-indent entire file |
-| `,W` | Strip trailing whitespace |
-| `,*` | Search and replace word under cursor |
-| `gV` | Reselect last paste |
-| `//` | Search visual selection |
-
-### Windows and Navigation
-
-| Key | Action |
-|-----|--------|
-| `Ctrl+h/j/k/l` | Navigate Vim splits **and** tmux panes |
-| `,z` | **Maximize / restore** current window |
-| `,h` / `,l` | Previous / next buffer |
-| `,bd` | Close buffer (keep window layout) |
-| `,tv` / `,th` | Terminal (vertical / horizontal) |
-| `Esc Esc` | Exit terminal mode |
-| `]q` / `[q` | Next / previous quickfix entry |
-| `Ctrl+d` / `Ctrl+u` | Half-page scroll, cursor centred |
-
-### Quick Reference
-
-| Key | Action |
-|-----|--------|
-| `,?` | Open built-in cheat sheet |
-| `jk` | Exit insert mode |
-| `Ctrl+s` | Save (any mode) |
-| `:w!!` | Sudo save |
-| `,w` / `,x` / `,q` | Save / save+quit / quit |
-| `,ev` / `,sv` | Edit / reload `~/.vimrc` |
-| `,so` | Source current vim file |
-| `F2` Paste | `F3` Line# | `F4` Relative# | `F6` Invisible chars |
-
----
-
-## Features
-
-### Statusline
-
-Native, hand-written. Solarized palette. Shows mode, file, git branch, filetype,
-ALE error/warning count, and cursor position. Background matches tmux bar.
+Leader: `,` — press `,?` for the full cheat sheet.
 
 ```
- N  ~/.vimrc [+]              E:1 W:3   main  [vim]  42:7  68%
+Ctrl+p    fuzzy find file          gd    go to definition
+,rg       ripgrep project          K     hover docs
+,gs       git status               ,cr   run current file
+,zen      zen mode                 ,f    format
+,w        save                     ,q    quit
+jk        exit insert mode         ,?    cheat sheet
 ```
 
-Mode block changes colour: Normal=yellow, Insert=blue, Visual=magenta, Replace=red.
+**Files** — `Ctrl+p` find / `,b` buffers / `,rg` grep / `,rG` grep word / `,fh` recent / `,e` browser / `,,` last file
 
-### Smart Defaults
+**Code** — `gd` def / `gy` type / `gi` impl / `gr` refs / `K` docs / `[g` `]g` diagnostics / `,rn` rename / `,ca` action / `,o` outline
 
-- **vim-sleuth** auto-detects indentation from existing files
-- **Yank highlight** flashes copied text for 150ms
-- **Search highlight** auto-clears after cursor stops moving
-- **QuickFix** auto-opens after `:grep`, `:make`, or `:Rg`
-- **Format on save** via ALE (black, prettier, gofmt, rustfmt, etc.)
-- **Auto-create directories** on save — write to `new/path/file.txt` without `mkdir` first
-- **Cursor restore** — reopens files at the last cursor position
+**Edit** — `s`+2ch jump / `gc` comment / `cs"'` surround / `Alt+j/k` move line / `,u` undo tree / `,y` clipboard / `,*` replace word
 
-### Session Management
+**Git** — `,gs` status / `,gd` diff / `,gb` blame / `,gc` commit / `,gp` push / `]x` `[x` conflict markers
+
+**Windows** — `Ctrl+hjkl` navigate (+ tmux) / `,z` maximize / `,h` `,l` buffers / `,tv` `,th` terminal / `Esc Esc` exit terminal
+
+## LSP
 
 ```vim
-:Obsess     " start tracking the current session
-:Obsess!    " stop tracking
+:LspInstallServer    " auto-detects filetype
+:LspStatus           " check what's running
 ```
 
-Sessions auto-restore when you open Vim in the same directory.
+pylsp, gopls, rust-analyzer, clangd, marksman — no Node.js. JS/TS servers need Node.
 
-### TTY / SSH Support
-
-Detected automatically. In TTY mode:
-- True colour and cursorline disabled
-- FZF preview windows disabled
-- IndentLine guides disabled
-- Simplified statusline
-- Syntax column limit reduced
-
-### Large File Handling
-
-Files over 10 MB: syntax highlighting, undo history, and linting automatically disabled.
-
-### Project-Local Config
-
-```vim
-" my-project/.vimrc
-set shiftwidth=2
-let g:ale_python_black_options = '--line-length=100'
-```
-
----
-
-## Plugins (30)
-
-| Category | Plugins |
-|----------|---------|
-| **Navigation** | fzf, fzf.vim |
-| **Git** | vim-fugitive, vim-gitgutter |
-| **LSP** | vim-lsp, vim-lsp-settings, asyncomplete.vim, asyncomplete-lsp.vim |
-| **Lint/Format** | ALE |
-| **Editing** | vim-surround, vim-commentary, vim-repeat, vim-unimpaired, vim-sleuth, targets.vim, auto-pairs, vim-easymotion |
-| **Language** | vim-javascript, yats.vim, vim-markdown, vim-go |
-| **Writing** | previm, goyo.vim, limelight.vim |
-| **UI** | vim-solarized8, undotree, vim-startify, indentLine |
-| **Session** | vim-obsession, vim-tmux-navigator |
-
----
-
-## Learn
-
-New to chopsticks? Run the interactive tutorial:
-
-```vim
-:ChopsticksLearn
-```
-
-It walks you through every feature — file finding, LSP, git, zen mode,
-and more — with exercises you can try in real time. (For Vim basics, run
-`:Tutor` first.)
-
----
+ALE and vim-lsp coexist cleanly (`ale_disable_lsp=1`). ALE handles linting + formatting. vim-lsp handles everything else.
 
 ## Architecture
 
-chopsticks follows the Unix philosophy: each concern lives in its own file.
-
 ```
 ~/.vim/
-├── .vimrc              ← thin loader (sources modules in order)
+├── .vimrc              thin loader
 ├── modules/
-│   ├── env.vim         ← environment detection (TTY, truecolor)
-│   ├── plugins.vim     ← vim-plug bootstrap + 30 plugin declarations
-│   ├── core.vim        ← general settings, keymaps, performance
-│   ├── ui.vim          ← colorscheme, statusline, startify
-│   ├── editing.vim     ← EasyMotion, yank highlight, search auto-clear
-│   ├── navigation.vim  ← FZF, netrw, window management, terminal
-│   ├── lsp.vim         ← vim-lsp + asyncomplete
-│   ├── lint.vim        ← ALE linting and format-on-save
-│   ├── git.vim         ← Fugitive, GitGutter, conflict navigation
-│   ├── writing.vim     ← Markdown, previm, goyo + limelight
-│   ├── languages.vim   ← vim-go, per-filetype settings
-│   └── tools.vim       ← cheat sheet, run file, helpers
+│   ├── env.vim         TTY detection, truecolor
+│   ├── plugins.vim     vim-plug + 30 plugins
+│   ├── core.vim        settings, keymaps, performance
+│   ├── ui.vim          colorscheme, statusline, startify
+│   ├── editing.vim     easymotion, yank highlight
+│   ├── navigation.vim  fzf, netrw, windows, terminal
+│   ├── lsp.vim         vim-lsp, asyncomplete
+│   ├── lint.vim        ale, format-on-save
+│   ├── git.vim         fugitive, gitgutter
+│   ├── writing.vim     markdown, previm, zen mode
+│   ├── languages.vim   vim-go, filetype settings
+│   └── tools.vim       cheat sheet, run file, helpers
 └── tutor/
-    └── chopsticks.tutor  ← interactive tutorial
+    └── chopsticks.tutor
 ```
 
-Each module is self-contained. Want to disable git integration? Remove
-`call s:load('git')` from `.vimrc`. Want to add your own module? Create
-`modules/mine.vim` and add `call s:load('mine')`.
+Each module is self-contained. Comment out `call s:load('git')` in `.vimrc` to disable git. Add `call s:load('mine')` to load your own.
 
----
+## Learn
 
-## Customization
-
-Edit `~/.vimrc` directly (`,ev` opens it, `,sv` reloads), or edit individual
-modules under `modules/`. Per-project overrides go in a `.vimrc` at your
-project root.
-
----
+```vim
+:ChopsticksLearn     " interactive tutorial — 10 lessons
+:Tutor               " vim basics (if needed first)
+,?                   " cheat sheet
+```
 
 ## Troubleshooting
 
-| Problem | Solution |
-|---------|----------|
+| Problem | Fix |
+|---------|-----|
 | Plugins not loading | `:PlugInstall` then `:PlugUpdate` |
 | LSP not starting | `:LspInstallServer` for current filetype |
-| Colors look wrong | `export COLORTERM=truecolor` in your shell rc |
-| ALE linters missing | `which flake8 black prettier eslint` to verify PATH |
-| `Ctrl+s` freezes terminal | Add `stty -ixon` to `~/.bashrc` or `~/.zshrc` |
-| Markdown preview broken | Ensure `open` (macOS) or `xdg-open` (Linux) works |
+| Colors wrong | `export COLORTERM=truecolor` in shell rc |
+| `Ctrl+s` freezes | `stty -ixon` in shell rc |
+| Everything slow | Large file? Check `:echo &syntax` — auto-disabled >10MB |
 
----
+More in the [wiki](https://github.com/m1ngsama/chopsticks/wiki).
 
 ## License
 

@@ -52,6 +52,7 @@ set foldlevel=99
 set splitbelow
 set splitright
 set backspace=indent,eol,start
+set nrformats-=octal
 set autoread
 set cmdheight=1
 set hidden
@@ -518,7 +519,7 @@ endif
 set pumheight=15
 let g:asyncomplete_auto_popup       = 1
 let g:asyncomplete_auto_completeopt = 0
-let g:asyncomplete_popup_delay      = 200
+let g:asyncomplete_popup_delay      = 50
 
 " Completion popup navigation
 inoremap <expr> <Tab>   pumvisible() ? "\<C-n>" : "\<Tab>"
@@ -818,7 +819,7 @@ endfunc
 " Suppress comment continuation on Enter / o / O
 augroup ChopstickFormatOptions
     autocmd!
-    autocmd FileType * setlocal formatoptions-=c formatoptions-=r formatoptions-=o
+    autocmd FileType * setlocal formatoptions-=c formatoptions-=r formatoptions-=o formatoptions+=j
 augroup END
 
 " Auto-disable paste mode on leaving insert

@@ -111,7 +111,7 @@ Supported languages and their servers:
 
 | Language | Server |
 |----------|--------|
-| Python | pylsp / pyright |
+| Python | pylsp |
 | JavaScript / TypeScript | typescript-language-server |
 | Go | gopls |
 | Rust | rust-analyzer |

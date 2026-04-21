@@ -26,6 +26,7 @@ Vim is **modal** — the keyboard behaves differently depending on which mode yo
 | `,w` or `Ctrl+s` | Save |
 
 Once in Normal mode, press `,?` to open the cheat sheet.
+Run `:ChopsticksLearn` for a full interactive tutorial.
 
 ---
 

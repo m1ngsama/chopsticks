@@ -260,10 +260,55 @@ let g:ale_python_black_options = '--line-length=100'
 
 ---
 
+## Learn
+
+New to chopsticks? Run the interactive tutorial:
+
+```vim
+:ChopsticksLearn
+```
+
+It walks you through every feature — file finding, LSP, git, zen mode,
+and more — with exercises you can try in real time. (For Vim basics, run
+`:Tutor` first.)
+
+---
+
+## Architecture
+
+chopsticks follows the Unix philosophy: each concern lives in its own file.
+
+```
+~/.vim/
+├── .vimrc              ← thin loader (sources modules in order)
+├── modules/
+│   ├── env.vim         ← environment detection (TTY, truecolor)
+│   ├── plugins.vim     ← vim-plug bootstrap + 30 plugin declarations
+│   ├── core.vim        ← general settings, keymaps, performance
+│   ├── ui.vim          ← colorscheme, statusline, startify
+│   ├── editing.vim     ← EasyMotion, yank highlight, search auto-clear
+│   ├── navigation.vim  ← FZF, netrw, window management, terminal
+│   ├── lsp.vim         ← vim-lsp + asyncomplete
+│   ├── lint.vim        ← ALE linting and format-on-save
+│   ├── git.vim         ← Fugitive, GitGutter, conflict navigation
+│   ├── writing.vim     ← Markdown, previm, goyo + limelight
+│   ├── languages.vim   ← vim-go, per-filetype settings
+│   └── tools.vim       ← cheat sheet, run file, helpers
+└── tutor/
+    └── chopsticks.tutor  ← interactive tutorial
+```
+
+Each module is self-contained. Want to disable git integration? Remove
+`call s:load('git')` from `.vimrc`. Want to add your own module? Create
+`modules/mine.vim` and add `call s:load('mine')`.
+
+---
+
 ## Customization
 
-Edit `~/.vimrc` directly (`,ev` opens it, `,sv` reloads). Per-project overrides
-go in a `.vimrc` at your project root.
+Edit `~/.vimrc` directly (`,ev` opens it, `,sv` reloads), or edit individual
+modules under `modules/`. Per-project overrides go in a `.vimrc` at your
+project root.
 
 ---
 

@@ -1,0 +1,220 @@
+" core.vim — general settings, basic keymaps, performance, indentation
+
+filetype on
+filetype plugin on
+filetype indent on
+syntax on
+
+set number
+set relativenumber
+
+if !g:is_tty
+    set cursorline
+endif
+
+set nobackup
+set scrolloff=10
+set nowrap
+set incsearch
+set ignorecase
+set smartcase
+set showcmd
+set showmode
+set hlsearch
+set history=1000
+set wildmenu
+set wildmode=list:longest
+set wildignorecase
+set wildignore=*.docx,*.jpg,*.png,*.gif,*.pdf,*.pyc,*.exe,*.flv,*.img,*.xlsx
+set wildignore+=*/node_modules/*,*/.git/*,*/__pycache__/*,*/dist/*,*/build/*
+set mouse=a
+set encoding=utf-8
+set foldmethod=indent
+set foldlevel=99
+set splitbelow
+set splitright
+set backspace=indent,eol,start
+set nrformats-=octal
+set autoread
+set cmdheight=1
+set hidden
+set whichwrap+=<,>,h,l
+set magic
+set showmatch
+set mat=2
+set noerrorbells
+set novisualbell
+set t_vb=
+set ttimeout
+set ttimeoutlen=10
+
+if $COLORTERM ==# 'gnome-terminal'
+    set t_Co=256
+endif
+
+if has("gui_running")
+    set guioptions-=T
+    set guioptions-=e
+    set t_Co=256
+    set guitablabel=%M\ %t
+endif
+
+set display+=lastline
+set ffs=unix,dos,mac
+set nowb
+set noswapfile
+
+if has('persistent_undo')
+    set undofile
+    let &undodir = expand('~/.vim/.undo')
+    silent! call mkdir(&undodir, 'p', 0700)
+endif
+
+" ── Text, Tab and Indent ────────────────────────────────────────────────────
+
+if g:is_tty
+    set listchars=tab:>-,trail:.,extends:>,precedes:<,nbsp:_
+else
+    set listchars=tab:→\ ,trail:·,extends:▸,precedes:◂,nbsp:·
+endif
+
+set expandtab
+set smarttab
+set shiftwidth=4
+set tabstop=4
+set lbr
+set tw=0
+set autoindent
+set smartindent
+
+" ── Leader ──────────────────────────────────────────────────────────────────
+
+let mapleader = ","
+
+" ── Basic Keymaps ───────────────────────────────────────────────────────────
+
+nnoremap <leader>w :w!<cr>
+nnoremap <leader>q :q<cr>
+nnoremap <leader>x :x<cr>
+
+nnoremap <silent> <leader><cr> :noh<cr>
+
+nnoremap <leader>bd :Bclose<cr>
+nnoremap <leader>ba :bufdo bd<cr>
+nnoremap <leader>l  :bnext<cr>
+nnoremap <leader>h  :bprevious<cr>
+
+nnoremap <leader>tn :tabnew<cr>
+nnoremap <leader>to :tabonly<cr>
+nnoremap <leader>tc :tabclose<cr>
+nnoremap <leader>tm :tabmove
+nnoremap <leader>t<leader> :tabnext<cr>
+
+let g:lasttab = 1
+nnoremap <Leader>tl :exe "tabn ".g:lasttab<CR>
+augroup ChopstickTabHistory
+    autocmd!
+    autocmd TabLeave * let g:lasttab = tabpagenr()
+augroup END
+
+nnoremap <leader>te :tabedit <C-r>=expand("%:p:h")<cr>/
+nnoremap <leader>cd :lcd %:p:h<cr>:pwd<cr>
+
+nnoremap 0 ^
+nnoremap gV `[v`]
+
+cnoremap <C-p> <Up>
+cnoremap <C-n> <Down>
+
+nnoremap <M-j> :m .+1<CR>==
+nnoremap <M-k> :m .-2<CR>==
+vnoremap <M-j> :m '>+1<CR>gv=gv
+vnoremap <M-k> :m '<-2<CR>gv=gv
+
+nnoremap <leader>ss :setlocal spell!<cr>
+nnoremap <leader>sn ]s
+nnoremap <leader>sp [s
+nnoremap <leader>sa zg
+nnoremap <leader>s? z=
+
+set pastetoggle=<F2>
+nnoremap <F3> :set invnumber<CR>
+nnoremap <F4> :set invrelativenumber<CR>
+nnoremap <F6> :set list!<CR>
+
+nnoremap <space> za
+
+nnoremap Y y$
+nnoremap Q <nop>
+
+inoremap jk <Esc>
+
+vnoremap < <gv
+vnoremap > >gv
+
+nnoremap n nzzzv
+nnoremap N Nzzzv
+
+vnoremap // y/\V<C-r>=escape(@",'/\')<CR><CR>
+
+nnoremap <silent> <C-s> :w<CR>
+inoremap <silent> <C-s> <C-o>:w<CR>
+
+nnoremap <C-d> <C-d>zz
+nnoremap <C-u> <C-u>zz
+
+if has('clipboard')
+    nnoremap <leader>y "+y
+    vnoremap <leader>y "+y
+    nnoremap <leader>Y "+Y
+    nnoremap <leader>p "+p
+    nnoremap <leader>P "+P
+endif
+
+nnoremap <leader>qo :copen<CR>
+nnoremap <leader>qc :cclose<CR>
+
+augroup ChopstickResize
+    autocmd!
+    autocmd VimResized * wincmd =
+augroup END
+
+" ── Performance ─────────────────────────────────────────────────────────────
+
+set synmaxcol=200
+set ttyfast
+set lazyredraw
+set complete-=i
+set updatetime=300
+set shortmess+=c
+
+if g:is_tty
+    set signcolumn=auto
+    set synmaxcol=120
+else
+    if has("patch-8.1.1564")
+        set signcolumn=number
+    else
+        set signcolumn=yes
+    endif
+endif
+
+" ── Project-Local Config ────────────────────────────────────────────────────
+
+set exrc
+set secure
+set sessionoptions=blank,buffers,curdir,folds,help,tabpages,winsize,winpos,terminal
+
+" ── Format Options ──────────────────────────────────────────────────────────
+
+augroup ChopstickFormatOptions
+    autocmd!
+    autocmd FileType * setlocal formatoptions-=c formatoptions-=r formatoptions-=o formatoptions+=j
+augroup END
+
+augroup ChopstickPaste
+    autocmd!
+    autocmd InsertLeave * set nopaste
+augroup END
+
+set timeoutlen=500

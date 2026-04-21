@@ -380,18 +380,6 @@ else
 fi
 
 mkdir -p "$HOME/.vim"
-COC_CFG="$HOME/.vim/coc-settings.json"
-if [ -f "$COC_CFG" ] && [ ! -L "$COC_CFG" ]; then
-    TS=$(date +%Y%m%d_%H%M%S)
-    warn "Backing up existing coc-settings.json → $COC_CFG.backup.$TS"
-    mv "$COC_CFG" "$COC_CFG.backup.$TS"
-fi
-ln -sf "$SCRIPT_DIR/coc-settings.json" "$COC_CFG"
-if [[ -L "$COC_CFG" ]]; then
-    ok "$HOME/.vim/coc-settings.json → $SCRIPT_DIR/coc-settings.json"
-else
-    warn "coc-settings.json symlink failed (non-fatal)"
-fi
 
 # ============================================================================
 # 3. vim-plug + Plugins

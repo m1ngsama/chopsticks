@@ -54,7 +54,7 @@ set splitright
 set backspace=indent,eol,start
 set autoread
 set cmdheight=1
-set hid
+set hidden
 set whichwrap+=<,>,h,l
 set magic
 set showmatch
@@ -62,7 +62,6 @@ set mat=2
 set noerrorbells
 set novisualbell
 set t_vb=
-set tm=500
 set ttimeout
 set ttimeoutlen=10
 
@@ -142,7 +141,7 @@ Plug 'previm/previm'
 " ── UI ────────────────────────────────────────────────────────────────────────
 Plug 'mbbill/undotree'
 Plug 'mhinz/vim-startify'
-Plug 'altercation/vim-colors-solarized'
+Plug 'lifepillar/vim-solarized8'
 if !g:is_tty
     Plug 'Yggdroot/indentLine'
 endif
@@ -160,7 +159,6 @@ call plug#end()
 " ============================================================================
 
 if g:has_true_color && has('termguicolors') && !g:is_tty
-    " Required for true color inside tmux
     let &t_8f = "\<Esc>[38;2;%lu;%lu;%lum"
     let &t_8b = "\<Esc>[48;2;%lu;%lu;%lum"
     set termguicolors
@@ -168,11 +166,9 @@ endif
 
 set background=dark
 
-if &t_Co >= 256 && !g:is_tty
+if !g:is_tty
     try
-        " 256-color approximation — works on any terminal, no palette setup needed
-        let g:solarized_termcolors = 256
-        colorscheme solarized
+        colorscheme solarized8
     catch
         colorscheme default
     endtry
@@ -203,7 +199,7 @@ set smarttab
 set shiftwidth=4
 set tabstop=4
 set lbr
-set tw=500
+set tw=0
 set autoindent
 set smartindent
 
@@ -248,8 +244,8 @@ nnoremap <leader>cd :lcd %:p:h<cr>:pwd<cr>
 nnoremap <leader>e :Explore<CR>
 nnoremap <leader>E :Vexplore<CR>
 
-" Remap 0 to first non-blank (all modes intentional)
-noremap 0 ^
+" Remap 0 to first non-blank
+nnoremap 0 ^
 
 " Reselect last paste
 nnoremap gV `[v`]
@@ -300,7 +296,7 @@ vnoremap // y/\V<C-r>=escape(@",'/\')<CR><CR>
 
 " Save from any mode
 nnoremap <silent> <C-s> :w<CR>
-inoremap <silent> <C-s> <Esc>:w<CR>a
+inoremap <silent> <C-s> <C-o>:w<CR>
 
 " Scroll keeping cursor centred
 nnoremap <C-d> <C-d>zz
@@ -419,11 +415,13 @@ let g:gitgutter_sign_modified_removed = '~'
 " => ALE  (async linting + format-on-save)
 " ============================================================================
 
+let g:ale_disable_lsp = 1
+
 let g:ale_linters = {
 \   'python':     ['flake8', 'pylint'],
 \   'javascript': ['eslint'],
-\   'typescript': ['eslint', 'tsserver'],
-\   'go':         ['gopls', 'staticcheck'],
+\   'typescript': ['eslint'],
+\   'go':         ['staticcheck'],
 \   'rust':       ['cargo'],
 \   'c':          ['cc'],
 \   'sh':         ['shellcheck'],
@@ -440,7 +438,7 @@ let g:ale_fixers = {
 \   'python':     ['black', 'isort'],
 \   'javascript': ['prettier', 'eslint'],
 \   'typescript': ['prettier', 'eslint'],
-\   'go':         ['gofmt', 'goimports'],
+\   'go':         ['goimports'],
 \   'rust':       ['rustfmt'],
 \   'c':          ['clang-format'],
 \   'json':       ['prettier'],
@@ -454,6 +452,7 @@ let g:ale_fixers = {
 \}
 
 let g:ale_fix_on_save          = 1
+let g:ale_python_isort_options = '--profile black'
 let g:ale_sign_error           = 'X'
 let g:ale_sign_warning         = '!'
 let g:ale_lint_on_text_changed = 'normal'
@@ -470,12 +469,10 @@ endif
 " => vim-go
 " ============================================================================
 
-" vim-lsp (gopls) handles all Go intelligence; disable vim-go's own LSP layer
+" vim-lsp (gopls) handles all Go intelligence; vim-go is for syntax only
 let g:go_gopls_enabled            = 0
 let g:go_code_completion_enabled  = 0
-let g:go_def_mode                 = 'godef'
-let g:go_info_mode                = 'godef'
-let g:go_fmt_autosave             = 0  " ALE handles format-on-save
+let g:go_fmt_autosave             = 0
 let g:go_imports_autosave         = 0
 let g:go_highlight_types          = 1
 let g:go_highlight_fields         = 1
@@ -486,7 +483,7 @@ let g:go_highlight_function_calls = 1
 " => vim-lsp  (primary LSP backend — pure VimScript, no Node.js)
 " ============================================================================
 
-let g:lsp_settings_filetype_python     = ['pylsp', 'pyright-langserver']
+let g:lsp_settings_filetype_python     = ['pylsp']
 let g:lsp_settings_filetype_go         = ['gopls']
 let g:lsp_settings_filetype_rust       = ['rust-analyzer']
 let g:lsp_settings_filetype_typescript = ['typescript-language-server']
@@ -520,7 +517,7 @@ else
 endif
 set pumheight=15
 let g:asyncomplete_auto_popup       = 1
-let g:asyncomplete_auto_completeopt = 1
+let g:asyncomplete_auto_completeopt = 0
 let g:asyncomplete_popup_delay      = 200
 
 " Completion popup navigation
@@ -691,10 +688,6 @@ if exists('g:plugs["vim-startify"]')
         augroup END
     endif
 
-    augroup ChopstickStartify
-        autocmd!
-        autocmd User Startified setlocal buftype=
-    augroup END
 endif
 
 " ============================================================================
@@ -730,6 +723,7 @@ augroup SLColors
     autocmd!
     autocmd ColorScheme * call s:SLDefineColors()
 augroup END
+call s:SLDefineColors()
 
 " Current mode → [label, highlight-group]
 function! SLMode() abort
@@ -880,14 +874,14 @@ augroup END
 
 set synmaxcol=200
 set ttyfast
-set complete-=i   " don't scan included files — makes Ctrl+n/p much faster
+set lazyredraw
+set complete-=i
 set updatetime=300
 set shortmess+=c
 
 if g:is_tty
     set signcolumn=auto
     set synmaxcol=120
-    set lazyredraw
 else
     if has("patch-8.1.1564")
         set signcolumn=number

@@ -378,7 +378,7 @@ linting to prevent stalling.
 - **vim-easymotion** — `s` + 2 chars to jump anywhere
 
 ### UI
-- **vim-colors-solarized** — color scheme
+- **vim-solarized8** — color scheme (truecolor support)
 - **undotree** — visual undo branch history
 - **vim-startify** — startup dashboard and session list
 - **indentLine** — indent guides (non-TTY)

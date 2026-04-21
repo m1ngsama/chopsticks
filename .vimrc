@@ -117,6 +117,7 @@ Plug 'tpope/vim-surround'
 Plug 'tpope/vim-commentary'
 Plug 'tpope/vim-repeat'
 Plug 'tpope/vim-unimpaired'
+Plug 'tpope/vim-sleuth'
 Plug 'wellle/targets.vim'
 Plug 'jiangmiao/auto-pairs'
 Plug 'easymotion/vim-easymotion'
@@ -136,8 +137,10 @@ Plug 'HerringtonDarkholme/yats.vim'
 Plug 'preservim/vim-markdown'
 Plug 'fatih/vim-go'
 
-" ── Markdown Preview ──────────────────────────────────────────────────────────
+" ── Markdown Preview & Writing ────────────────────────────────────────────────
 Plug 'previm/previm'
+Plug 'junegunn/goyo.vim'
+Plug 'junegunn/limelight.vim'
 
 " ── UI ────────────────────────────────────────────────────────────────────────
 Plug 'mbbill/undotree'
@@ -359,12 +362,19 @@ function! s:SmartFiles() abort
 endfunction
 
 if exists('g:plugs["fzf.vim"]')
-    nnoremap <C-p>     :call <SID>SmartFiles()<CR>
-    nnoremap <leader>b :Buffers<CR>
+    nnoremap <C-p>      :call <SID>SmartFiles()<CR>
+    nnoremap <leader>b  :Buffers<CR>
     nnoremap <leader>rg :Rg<CR>
     nnoremap <leader>rG :RgWord<CR>
     nnoremap <leader>rt :Tags<CR>
     nnoremap <leader>gF :GFiles<CR>
+    nnoremap <leader>fh :History<CR>
+    nnoremap <leader>fc :Commands<CR>
+    nnoremap <leader>fm :Marks<CR>
+    nnoremap <leader>fl :BLines<CR>
+    nnoremap <leader>fL :Lines<CR>
+    nnoremap <leader>f/ :History/<CR>
+    nnoremap <leader>f: :History:<CR>
 endif
 
 let g:fzf_layout = { 'down': '40%' }
@@ -596,6 +606,34 @@ endif
 let g:previm_enable_realtime = 1
 
 " ============================================================================
+" => Goyo + Limelight  (zen mode for focused writing)
+" ============================================================================
+
+if exists('g:plugs["goyo.vim"]')
+    let g:goyo_width  = 80
+    let g:goyo_height = '85%'
+    nnoremap <leader>zen :Goyo<CR>
+
+    function! s:goyo_enter()
+        if exists('g:plugs["limelight.vim"]') | Limelight | endif
+        set wrap linebreak scrolloff=999
+    endfunction
+    function! s:goyo_leave()
+        if exists('g:plugs["limelight.vim"]') | Limelight! | endif
+        set nowrap nolinebreak scrolloff=10
+    endfunction
+
+    augroup ChopstickGoyo
+        autocmd!
+        autocmd User GoyoEnter nested call s:goyo_enter()
+        autocmd User GoyoLeave nested call s:goyo_leave()
+    augroup END
+endif
+
+let g:limelight_conceal_ctermfg = 240
+let g:limelight_conceal_guifg   = '#586e75'
+
+" ============================================================================
 " => EasyMotion
 " ============================================================================
 
@@ -746,6 +784,16 @@ function! SLGit() abort
     return empty(l:b) ? '' : '  ' . l:b . ' '
 endfunction
 
+" ALE error/warning count
+function! SLAle() abort
+    if !exists('*ale#statusline#Count') | return '' | endif
+    let l:c = ale#statusline#Count(bufnr(''))
+    let l:e = l:c.error + l:c.style_error
+    let l:w = l:c.warning + l:c.style_warning
+    if l:e == 0 && l:w == 0 | return '' | endif
+    return printf(' E:%d W:%d ', l:e, l:w)
+endfunction
+
 " Assemble the statusline on every redraw
 function! SLBuild() abort
     let [l:label, l:hl] = SLMode()
@@ -753,6 +801,7 @@ function! SLBuild() abort
     let l:s .= '%#SLBody# %f '
     let l:s .= '%#SLFlag#%m%r'
     let l:s .= '%#SLBody#%='
+    let l:s .= '%#SLFlag#' . SLAle()
     let l:s .= '%#SLGit#'  . SLGit()
     let l:s .= '%#SLFtype# %y '
     let l:s .= '%#SLRight# %l:%c  %P '
@@ -1041,89 +1090,71 @@ function! s:CheatSheet() abort
     call setline(1, [
         \ '=== chopsticks — Quick Reference ===',
         \ '',
-        \ 'MODES',
-        \ '  Normal    Default. Navigate and run commands.',
-        \ '  Insert    Type text.  Enter: i/a/o   Leave: Esc or jk',
-        \ '  Visual    Select.     Enter: v/V      Leave: Esc',
-        \ '',
         \ 'SURVIVAL',
         \ '  Esc / jk      Exit insert or visual mode',
         \ '  :q! + Enter   Quit without saving',
-        \ '  ,x            Save and quit  |  ,w  Save',
-        \ '  Ctrl+s        Save (normal + insert mode)',
+        \ '  ,x  Save+quit   ,w  Save   Ctrl+s  Save (any mode)',
+        \ '  :w!!          Sudo save (when you forgot to open as root)',
         \ '',
-        \ 'FILES & NAVIGATION',
-        \ '  Ctrl+p        Fuzzy find file (git-aware, FZF)',
-        \ '  ,e            Open netrw file browser',
-        \ '  ,E            Open netrw in vertical split',
-        \ '  ,b            Search open buffers (FZF)',
+        \ 'FILES & SEARCH',
+        \ '  Ctrl+p        Fuzzy find file (git-aware)',
+        \ '  ,e / ,E       File browser / vertical split',
+        \ '  ,b            Search open buffers',
         \ '  ,rg           Search project contents (ripgrep)',
         \ '  ,rG           Ripgrep word under cursor',
+        \ '  ,fh           Recent files history',
+        \ '  ,fl / ,fL     Search lines in buffer / all buffers',
+        \ '  ,fc           Commands  |  ,fm  Marks',
+        \ '  ,f/ / ,f:     Search / command history',
         \ '  ,,            Switch to last file (Ctrl+^)',
-        \ '  Ctrl+o / i    Jump back / forward in history',
         \ '',
         \ 'CODE INTELLIGENCE (vim-lsp)',
-        \ '  gd            Go to definition',
-        \ '  gy            Go to type definition',
-        \ '  gi            Go to implementation',
-        \ '  gr            Show references',
-        \ '  K             Hover documentation',
-        \ '  [g / ]g       Prev / next LSP diagnostic',
-        \ '  [e / ]e       Prev / next ALE error',
-        \ '  ,ca           Code action',
-        \ '  ,rn           Rename symbol',
-        \ '  ,f            Format buffer (or visual selection)',
-        \ '  ,o            File outline (symbols)',
-        \ '  ,ws           Workspace symbols',
+        \ '  gd  Definition   gy  Type def   gi  Impl   gr  Refs',
+        \ '  K               Hover documentation',
+        \ '  [g / ]g         Prev / next LSP diagnostic',
+        \ '  [e / ]e         Prev / next ALE error',
+        \ '  ,ca  Code action   ,rn  Rename   ,f  Format',
+        \ '  ,o   File outline   ,ws  Workspace symbols',
+        \ '  ,cr             Run current file',
         \ '',
-        \ 'MARKDOWN',
-        \ '  ,mp           Open live browser preview (previm)',
+        \ 'MARKDOWN & WRITING',
+        \ '  ,mp           Live browser preview (previm)',
         \ '  ,mt           Table of contents',
-        \ '  zr            Unfold all headings',
-        \ '  zm            Fold all headings',
+        \ '  ,zen          Zen mode (Goyo + Limelight)',
+        \ '  zr / zm       Unfold / fold all headings',
         \ '',
         \ 'EDITING',
         \ '  gc            Toggle comment (visual mode too)',
-        \ '  s + 2 chars   EasyMotion — jump anywhere on screen',
-        \ '  ,j / ,k       EasyMotion — line motions',
-        \ '  ,u / F5       Undo tree (visual branch history)',
-        \ '  ,y / ,Y       Yank / yank line to system clipboard',
-        \ '  ,p / ,P       Paste from system clipboard',
-        \ '  Alt+j / Alt+k Move line down / up (also visual mode)',
-        \ '  ,F            Re-indent entire file',
-        \ '  ,W            Strip trailing whitespace',
+        \ '  s + 2 chars   EasyMotion jump anywhere',
+        \ '  ,u / F5       Undo tree',
+        \ '  ,y / ,Y       Yank to system clipboard',
+        \ '  Alt+j / Alt+k Move line down / up',
+        \ '  ,F  Re-indent file   ,W  Strip trailing whitespace',
         \ '  ,*            Search and replace word under cursor',
-        \ '',
-        \ 'SPELLING',
-        \ '  ,ss           Toggle spell checking',
-        \ '  ,sn / ,sp     Next / prev misspelling',
-        \ '  ,sa           Add word to dictionary',
-        \ '  ,s?           Suggest corrections',
         \ '',
         \ 'GIT',
         \ '  ,gs  Status   ,gd  Diff   ,gb  Blame',
         \ '  ,gc  Commit   ,gp  Push   ,gl  Pull',
+        \ '  [x / ]x       Navigate git conflict markers',
         \ '',
         \ 'WINDOWS & PANES',
-        \ '  Ctrl+h/j/k/l  Navigate Vim splits and tmux panes',
-        \ '  ,h / ,l       Prev / next buffer',
-        \ '  ,bd            Close buffer (keep layout)',
-        \ '  ,tn / ,tc     New tab / close tab  |  ,tl  Last tab',
-        \ '  ,tv / ,th     Open terminal (vertical / horizontal)',
+        \ '  Ctrl+h/j/k/l  Navigate splits and tmux panes',
+        \ '  ,h / ,l       Prev / next buffer   ,bd  Close buffer',
+        \ '  ,z            Maximize / restore current window',
+        \ '  ,tv / ,th     Terminal (vertical / horizontal)',
         \ '  Esc Esc       Exit terminal mode',
-        \ '  ,= / ,-       Resize height (grow / shrink)',
-        \ '  ,+ / ,_       Resize width  (grow / shrink)',
+        \ '  ,= / ,-       Resize height   ,+ / ,_  Resize width',
+        \ '',
+        \ 'QUICKFIX',
+        \ '  ,qo / ,qc     Open / close quickfix',
+        \ '  ]q / [q        Next / prev quickfix entry',
         \ '',
         \ 'UTILITIES',
         \ '  ,ev / ,sv     Edit / reload ~/.vimrc',
         \ '  ,cp / ,cf     Copy file path / filename to clipboard',
-        \ '  ,ms           Open scratch markdown buffer',
-        \ '  ,cd           Change CWD to current file directory',
-        \ '  F2  Paste   F3  Line#   F4  Relative#   F6  Invisible',
-        \ '',
-        \ 'SESSION',
-        \ '  :Obsess       Start tracking session',
-        \ '  :Obsess!      Stop tracking',
+        \ '  ,ms  Scratch buffer   ,cd  CD to file dir',
+        \ '  ,ss  Toggle spell   ,so  Source current vim file',
+        \ '  F2 Paste  F3 Line#  F4 Relative#  F6 Invisible',
         \ '',
         \ '(press q to close)',
         \ ])
@@ -1133,10 +1164,99 @@ endfunction
 nnoremap <silent> <leader>? :call <SID>CheatSheet()<CR>
 
 " ============================================================================
+" => Yank Highlight  (flash yanked region for visual feedback)
+" ============================================================================
+
+if exists('##TextYankPost') && has('timers')
+    function! s:YankHighlight() abort
+        if v:event.operator !=# 'y' | return | endif
+        let l:m = matchadd('IncSearch',
+            \ printf('\%%>%dl\%%<%dl', line("'[") - 1, line("']") + 1))
+        call timer_start(150, {-> matchdelete(l:m)})
+    endfunction
+    augroup ChopstickYankHL
+        autocmd!
+        autocmd TextYankPost * call s:YankHighlight()
+    augroup END
+endif
+
+" ============================================================================
+" => Auto-Clear Search Highlight  (clear after idle)
+" ============================================================================
+
+augroup ChopstickSearchHL
+    autocmd!
+    autocmd CursorHold * if get(v:, 'hlsearch', 0) | let v:hlsearch = 0 | endif
+augroup END
+
+" ============================================================================
+" => Run Current File  (,cr)
+" ============================================================================
+
+function! s:RunFile() abort
+    write
+    let l:ft   = &filetype
+    let l:file = shellescape(expand('%:p'))
+    if     l:ft ==# 'python'     | execute '!python3 '  . l:file
+    elseif l:ft ==# 'javascript' | execute '!node '     . l:file
+    elseif l:ft ==# 'typescript' | execute '!npx ts-node ' . l:file
+    elseif l:ft ==# 'go'         | execute '!go run '   . l:file
+    elseif l:ft ==# 'rust'       | execute '!cargo run'
+    elseif l:ft ==# 'sh'         | execute '!bash '     . l:file
+    elseif l:ft ==# 'c'          | execute '!gcc -o /tmp/a.out ' . l:file . ' && /tmp/a.out'
+    elseif l:ft ==# 'lua'        | execute '!lua '      . l:file
+    elseif l:ft ==# 'ruby'       | execute '!ruby '     . l:file
+    elseif l:ft ==# 'perl'       | execute '!perl '     . l:file
+    else | echo 'No runner for filetype: ' . l:ft
+    endif
+endfunction
+nnoremap <leader>cr :call <SID>RunFile()<CR>
+
+" ============================================================================
+" => Git Conflict Navigation  ([x / ]x)
+" ============================================================================
+
+nnoremap <silent> ]x /^\(<<<<<<<\\|=======\\|>>>>>>>\)<CR>
+nnoremap <silent> [x ?^\(<<<<<<<\\|=======\\|>>>>>>>\)<CR>
+
+" ============================================================================
+" => Window Maximize Toggle  (,z)
+" ============================================================================
+
+function! s:ToggleMaximize() abort
+    if exists('t:maximize_session')
+        execute t:maximize_session
+        unlet t:maximize_session
+    else
+        let t:maximize_session = winrestcmd()
+        resize | vertical resize
+    endif
+endfunction
+nnoremap <silent> <leader>z :call <SID>ToggleMaximize()<CR>
+
+" ============================================================================
+" => Sudo Save  (:w!! when you forget to open as root)
+" ============================================================================
+
+cnoremap w!! w !sudo tee > /dev/null %
+
+" ============================================================================
+" => QuickFix Improvements
+" ============================================================================
+
+augroup ChopstickQF
+    autocmd!
+    autocmd QuickFixCmdPost [^l]* cwindow
+    autocmd QuickFixCmdPost l*    lwindow
+augroup END
+
+nnoremap <silent> ]q :cnext<CR>
+nnoremap <silent> [q :cprev<CR>
+
+" ============================================================================
 " => Debug Helpers
 " ============================================================================
 
-" Show syntax highlight stack for word under cursor
 nnoremap <leader>sh :call <SID>SynStack()<CR>
 function! <SID>SynStack()
     if !exists("*synstack") | return | endif

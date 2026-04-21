@@ -142,13 +142,15 @@ K               Show documentation
 | `[g` | Jump to previous diagnostic |
 | `K` | Read the error message |
 | `,ca` | Apply code action / auto-fix |
+| `,cr` | Run current file (auto-detects language) |
 
-### Markdown
+### Markdown & Writing
 
 | Key | Action |
 |-----|--------|
 | `,mp` | Open live preview in browser |
 | `,mt` | Table of contents (side window) |
+| `,zen` | Zen mode (Goyo + Limelight) |
 | `zr` / `zm` | Unfold / fold all headings |
 
 Formatting in the buffer is live: `**bold**` renders as bold,
@@ -164,6 +166,7 @@ the cursor enters that line.
 ,gc   commit
 ,gp   push
 ,gl   pull
+[x / ]x   navigate conflict markers
 ```
 
 ---
@@ -192,28 +195,31 @@ CODE
   K               Show documentation
   [g / ]g         Prev / next LSP diagnostic
   [e / ]e         Prev / next ALE error
-  ,rn             Rename symbol
-  ,ca             Code action
-  ,f              Format buffer / selection
-
-MARKDOWN
-  ,mp   Live preview  |  ,mt  Table of contents
-
-GIT
-  ,gs  Status  |  ,gd  Diff  |  ,gb  Blame
-  ,gc  Commit  |  ,gp  Push  |  ,gl  Pull
-
-WINDOWS / PANES
-  Ctrl+h/j/k/l    Move between Vim windows or tmux panes
-  ,h / ,l         Prev / next buffer
-  ,tv / ,th       Terminal (vertical / horizontal)
-  Esc Esc         Exit terminal mode
-  ,u              Undo tree
+  ,rn  Rename   ,ca  Code action   ,f  Format
+  ,cr             Run current file
 
 SEARCH
+  ,rg  Ripgrep   ,rG  Ripgrep word   ,fh  Recent files
+  ,fl  Lines in buffer   ,fc  Commands   ,fm  Marks
   /text  Forward  |  ?text  Backward  |  n  next  |  N  prev
   //     Search visually selected text
   ,*     Replace word under cursor (file-wide)
+
+MARKDOWN
+  ,mp  Preview  |  ,mt  TOC  |  ,zen  Zen mode
+
+GIT
+  ,gs  Status   ,gd  Diff   ,gb  Blame
+  ,gc  Commit   ,gp  Push   ,gl  Pull
+  [x / ]x       Navigate conflict markers
+
+WINDOWS
+  Ctrl+h/j/k/l  Navigate splits and tmux panes
+  ,z             Maximize / restore window
+  ,h / ,l        Prev / next buffer
+  ,tv / ,th      Terminal (vertical / horizontal)
+  Esc Esc        Exit terminal mode
+  ]q / [q        Next / prev quickfix entry
 ```
 
 ---

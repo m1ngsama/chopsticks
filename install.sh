@@ -429,7 +429,7 @@ fi
 _vim_run +'PlugClean!' +qall || true  # remove plugins no longer in vimrc; ignore exit code (none expected)
 _vim_run +'PlugInstall --sync' +qall || true  # fzf post-install hook may exit non-zero; harmless
 
-_plug_count=$(ls -1 "$HOME/.vim/plugged" 2>/dev/null | wc -l | tr -d ' ')
+_plug_count=$(find "$HOME/.vim/plugged" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l | tr -d ' ')
 if [[ $_plug_count -eq 0 ]]; then
     die "Plugin installation failed — ~/.vim/plugged is empty. Check network and retry."
 fi

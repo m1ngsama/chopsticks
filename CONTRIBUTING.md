@@ -1,0 +1,30 @@
+# Contributing
+
+## Rules
+
+1. **No Node.js dependencies.** The LSP engine is pure VimScript. Some language servers need Node — that's fine. The config itself must not.
+2. **Startup matters.** Run `vim --startuptime /tmp/s.log -c qa!` before and after. If your change adds >1ms, it needs a good reason.
+3. **Works on TTY.** Test over SSH. If it breaks in a terminal without true color, fix it or gate it behind `g:is_tty`.
+4. **One module, one concern.** Don't put git config in lsp.vim.
+
+## Adding a plugin
+
+1. Add the `Plug` line to `modules/plugins.vim`
+2. If it's not needed at startup, lazy-load it: `Plug 'foo/bar', { 'on': 'FooCommand' }`
+3. Put config in the appropriate module
+4. Update the cheat sheet in `modules/tools.vim` if you add keybindings
+5. Test on both macOS and Linux
+
+## Reporting bugs
+
+Open an issue. Include:
+- OS and Vim version
+- Whether you're on SSH/TTY
+- Steps to reproduce
+
+## Code style
+
+- Named augroups with `autocmd!`
+- No comments explaining *what* — only *why*
+- `exists('g:plugs["..."]')` guards for plugin-dependent config
+- Test with `vim -u .vimrc --startuptime /tmp/s.log -c qa!`

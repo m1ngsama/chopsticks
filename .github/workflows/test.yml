@@ -1,0 +1,66 @@
+name: test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  startup:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Vim
+        run: |
+          if [ "$(uname)" = "Darwin" ]; then
+            brew install vim
+          else
+            sudo apt-get update && sudo apt-get install -y vim
+          fi
+
+      - name: Install vim-plug
+        run: |
+          curl -fLo ~/.vim/autoload/plug.vim --create-dirs \
+            https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+
+      - name: Symlink config
+        run: |
+          ln -sf "$PWD" ~/.vim/chopsticks-src
+          ln -sf "$PWD/.vimrc" ~/.vimrc
+          mkdir -p ~/.vim/modules
+          cp modules/*.vim ~/.vim/modules/
+
+      - name: Install plugins
+        run: vim -es -u .vimrc -c 'PlugInstall --sync' -c 'qa!' 2>&1 || true
+
+      - name: Test startup
+        run: |
+          vim -u .vimrc -es -N -c 'qa!' 2>&1
+          echo "Vim exited cleanly"
+
+      - name: Verify modules load
+        run: |
+          vim -u .vimrc -N -c 'redir! > /tmp/test.txt | echo len(g:plugs) | redir END | qa!' 2>/dev/null
+          PLUGS=$(cat /tmp/test.txt | tr -d '[:space:]')
+          echo "Plugins registered: $PLUGS"
+          if [ "$PLUGS" -lt 25 ]; then
+            echo "FAIL: expected 25+ plugins, got $PLUGS"
+            exit 1
+          fi
+
+      - name: Measure startup time
+        run: |
+          vim -u .vimrc --startuptime /tmp/startup.log -c 'qa!' 2>/dev/null
+          tail -1 /tmp/startup.log
+
+  shellcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Shellcheck install.sh
+        run: shellcheck install.sh get.sh

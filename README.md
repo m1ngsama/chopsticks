@@ -1,32 +1,49 @@
-# chopsticks
+<p align="center">
+  <img src=".github/demo.gif" alt="chopsticks demo" width="720">
+</p>
 
-Vim config for people who ship code on any machine. Pure VimScript. No Node.js. Works over SSH.
+<h1 align="center">chopsticks</h1>
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE)
-[![Vim 8.0+](https://img.shields.io/badge/Vim-8.0%2B-brightgreen?style=flat-square)](https://www.vim.org/)
-[![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux-lightgrey?style=flat-square)](#install)
+<p align="center">
+  <strong>Vim for engineers. 29 plugins, 19ms startup, works over SSH.</strong>
+</p>
+
+<p align="center">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square" alt="MIT License"></a>
+  <a href="https://www.vim.org/"><img src="https://img.shields.io/badge/Vim-8.0%2B-brightgreen?style=flat-square" alt="Vim 8.0+"></a>
+  <a href="#install"><img src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux-lightgrey?style=flat-square" alt="Platform"></a>
+  <a href="https://github.com/m1ngsama/chopsticks/actions"><img src="https://img.shields.io/github/actions/workflow/status/m1ngsama/chopsticks/test.yml?style=flat-square&label=tests" alt="Tests"></a>
+  <a href="https://github.com/m1ngsama/chopsticks/releases"><img src="https://img.shields.io/github/v/release/m1ngsama/chopsticks?style=flat-square&color=orange" alt="Release"></a>
+</p>
+
+---
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/m1ngsama/chopsticks/main/get.sh | bash
 ```
 
+---
+
 ## Why
 
-You SSH into a box. You need to edit code. You want LSP, fuzzy find, git integration, format-on-save — not a 20-minute setup ritual.
+You SSH into a server. You need to edit code. You want LSP, fuzzy find, git integration, format-on-save — not a 20-minute setup.
 
-chopsticks gives you 29 plugins, 12 modules, and a sane config in one command. It degrades gracefully on TTY. It works the same on your MacBook and your Arch server.
+chopsticks gives you a production-ready Vim config in one command. Pure VimScript — no Node.js for the core. Degrades gracefully on TTY. Works the same on your MacBook and your headless Arch box.
+
+**19ms startup** with 29 plugins, LSP, linting, and a hand-built statusline. Faster than most people's empty vimrc.
 
 ## What's in the box
 
 | | |
 |-|-|
-| **LSP** | completion, go-to-def, hover, rename, code actions — pure VimScript |
-| **Lint + format** | ALE runs black, prettier, gofmt, rustfmt on save |
-| **Fuzzy find** | files, buffers, grep, tags, marks, commands — FZF |
-| **Git** | status, diff, blame, push, pull, conflict markers |
-| **Zen mode** | `,zen` — Goyo + Limelight, distraction-free writing |
-| **Run file** | `,cr` — auto-detects language, runs it |
-| **TTY-aware** | degrades gracefully on SSH, console, slow links |
+| **LSP** | completion, go-to-def, hover, rename, code actions — pure VimScript ([vim-lsp](https://github.com/prabirshrestha/vim-lsp)) |
+| **Lint + format** | [ALE](https://github.com/dense-analysis/ale) runs black, prettier, gofmt, rustfmt on save |
+| **Fuzzy find** | files, buffers, grep, tags, marks, commands — [FZF](https://github.com/junegunn/fzf.vim) |
+| **Git** | status, diff, blame, push, pull, conflict markers — [fugitive](https://github.com/tpope/vim-fugitive) + [gitgutter](https://github.com/airblade/vim-gitgutter) |
+| **Zen mode** | `,zen` — [Goyo](https://github.com/junegunn/goyo.vim) + [Limelight](https://github.com/junegunn/limelight.vim) |
+| **Run file** | `,cr` — auto-detects Python, Go, Rust, JS, C, Shell, and more |
+| **TTY-aware** | degrades gracefully on SSH, console, slow links — never breaks |
+| **19ms startup** | lazy-loaded plugins, deferred LSP init, zero redundant work |
 
 ## Install
 
@@ -41,13 +58,13 @@ git clone https://github.com/m1ngsama/chopsticks.git ~/.vim
 cd ~/.vim && ./install.sh
 ```
 
-macOS (brew), Debian/Ubuntu (apt), Arch (pacman), Fedora (dnf).
+Supports macOS (brew), Debian/Ubuntu (apt), Arch (pacman), Fedora (dnf).
 
-Open vim. Plugins install on first launch. Restart when done.
+First launch installs plugins automatically (30-60s). Restart vim when done.
 
 ## Keys
 
-Leader: `,` — press `,?` for the full cheat sheet.
+Leader: `,` — press `,?` for the full cheat sheet inside vim.
 
 ```
 Ctrl+p    fuzzy find file          gd    go to definition
@@ -58,15 +75,34 @@ Ctrl+p    fuzzy find file          gd    go to definition
 jk        exit insert mode         ,?    cheat sheet
 ```
 
-**Files** — `Ctrl+p` find / `,b` buffers / `,rg` grep / `,rG` grep word / `,fh` recent / `,e` browser / `,,` last file
+<details>
+<summary><strong>All keybindings</strong></summary>
 
-**Code** — `gd` def / `gy` type / `gi` impl / `gr` refs / `K` docs / `[g` `]g` diagnostics / `,rn` rename / `,ca` action / `,o` outline
+### Files
 
-**Edit** — `s`+2ch jump / `gc` comment / `cs"'` surround / `Alt+j/k` move line / `,u` undo tree / `,y` clipboard / `,*` replace word
+`Ctrl+p` find | `,b` buffers | `,rg` grep | `,rG` grep word | `,fh` recent | `,e` browser | `,,` last file
 
-**Git** — `,gs` status / `,gd` diff / `,gb` blame / `,gc` commit / `,gp` push / `]x` `[x` conflict markers
+### Code
 
-**Windows** — `Ctrl+hjkl` navigate (+ tmux) / `,z` maximize / `,h` `,l` buffers / `,tv` `,th` terminal / `Esc Esc` exit terminal
+`gd` def | `gy` type | `gi` impl | `gr` refs | `K` docs | `[g` `]g` diagnostics | `,rn` rename | `,ca` action | `,o` outline | `,cr` run
+
+### Edit
+
+`s`+2ch jump | `gc` comment | `cs"'` surround | `Alt+j/k` move line | `,u` undo tree | `,y` clipboard | `,*` replace word
+
+### Git
+
+`,gs` status | `,gd` diff | `,gb` blame | `,gc` commit | `,gp` push | `]x` `[x` conflict
+
+### Windows
+
+`Ctrl+hjkl` navigate (+ tmux) | `,z` maximize | `,h` `,l` buffers | `,tv` terminal | `Esc Esc` exit terminal
+
+### Writing
+
+`,zen` zen mode | `,mp` markdown preview | `,mt` table of contents
+
+</details>
 
 ## LSP
 
@@ -75,7 +111,7 @@ jk        exit insert mode         ,?    cheat sheet
 :LspStatus           " check what's running
 ```
 
-pylsp, gopls, rust-analyzer, clangd, marksman — no Node.js. JS/TS servers need Node.
+pylsp, gopls, rust-analyzer, clangd, marksman, sqls — no Node.js. JS/TS servers need Node.
 
 ALE and vim-lsp coexist cleanly (`ale_disable_lsp=1`). ALE handles linting + formatting. vim-lsp handles everything else.
 
@@ -83,12 +119,12 @@ ALE and vim-lsp coexist cleanly (`ale_disable_lsp=1`). ALE handles linting + for
 
 ```
 ~/.vim/
-├── .vimrc              thin loader
+├── .vimrc              thin loader (12 lines)
 ├── modules/
 │   ├── env.vim         TTY detection, truecolor
 │   ├── plugins.vim     vim-plug + 29 plugins
 │   ├── core.vim        settings, keymaps, performance
-│   ├── ui.vim          colorscheme, statusline, startify
+│   ├── ui.vim          solarized, statusline, startify
 │   ├── editing.vim     easymotion, yank highlight
 │   ├── navigation.vim  fzf, netrw, windows, terminal
 │   ├── lsp.vim         vim-lsp, asyncomplete
@@ -101,15 +137,27 @@ ALE and vim-lsp coexist cleanly (`ale_disable_lsp=1`). ALE handles linting + for
     └── chopsticks.tutor
 ```
 
-Each module is self-contained. Comment out `call s:load('git')` in `.vimrc` to disable git. Add `call s:load('mine')` to load your own.
+Each module is self-contained. Comment out one line in `.vimrc` to disable it. Add your own with `call s:load('mine')`.
 
 ## Learn
 
 ```vim
 :ChopsticksLearn     " interactive tutorial — 10 lessons
-:Tutor               " vim basics (if needed first)
-,?                   " cheat sheet
+,?                   " cheat sheet (every binding)
 ```
+
+## Performance
+
+| Metric | Value |
+|--------|-------|
+| Startup time | **19ms** (29 plugins loaded) |
+| Lazy-loaded | 8 plugins (on command or filetype) |
+| Built-in plugins skipped | 10 (gzip, tar, zip, vimball, etc.) |
+| Runtime lint delay | 200ms (no thrashing during edits) |
+| Large file threshold | 10MB (auto-disables syntax + undo) |
+| TTY large file | 500KB (syntax disabled) |
+
+Measured with `vim --startuptime`. We benchmark every change.
 
 ## Troubleshooting
 
@@ -119,9 +167,13 @@ Each module is self-contained. Comment out `call s:load('git')` in `.vimrc` to d
 | LSP not starting | `:LspInstallServer` for current filetype |
 | Colors wrong | `export COLORTERM=truecolor` in shell rc |
 | `Ctrl+s` freezes | `stty -ixon` in shell rc |
-| Everything slow | Large file? Check `:echo &syntax` — auto-disabled >10MB |
+| Everything slow | Large file? Auto-disabled >10MB |
 
 More in the [wiki](https://github.com/m1ngsama/chopsticks/wiki).
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md). The two rules that matter: no Node.js dependencies, and don't regress startup time.
 
 ## License
 

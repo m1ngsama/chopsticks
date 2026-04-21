@@ -1,5 +1,7 @@
 " lsp.vim — vim-lsp settings, asyncomplete, LSP buffer keymaps
 
+let g:lsp_settings_lazyload = 1
+
 let g:lsp_settings_filetype_python     = ['pylsp']
 let g:lsp_settings_filetype_go         = ['gopls']
 let g:lsp_settings_filetype_rust       = ['rust-analyzer']

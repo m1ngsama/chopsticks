@@ -1,9 +1,5 @@
 " core.vim — general settings, basic keymaps, performance, indentation
-
-filetype on
-filetype plugin on
-filetype indent on
-syntax on
+" filetype/syntax already enabled by plug#end() in plugins.vim
 
 set number
 set relativenumber
@@ -186,7 +182,7 @@ set ttyfast
 set lazyredraw
 set complete-=i
 set updatetime=300
-set shortmess+=c
+set shortmess+=cI
 
 if g:is_tty
     set signcolumn=auto

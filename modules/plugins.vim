@@ -28,7 +28,7 @@ Plug 'tpope/vim-unimpaired'
 Plug 'tpope/vim-sleuth'
 Plug 'wellle/targets.vim'
 Plug 'jiangmiao/auto-pairs'
-Plug 'easymotion/vim-easymotion'
+Plug 'easymotion/vim-easymotion', { 'on': '<Plug>(easymotion' }
 
 " ── Linting & Formatting ────────────────────────────────────────────────────
 Plug 'dense-analysis/ale'
@@ -40,18 +40,18 @@ Plug 'prabirshrestha/asyncomplete.vim'
 Plug 'prabirshrestha/asyncomplete-lsp.vim'
 
 " ── Language Syntax ──────────────────────────────────────────────────────────
-Plug 'pangloss/vim-javascript'
-Plug 'HerringtonDarkholme/yats.vim'
-Plug 'preservim/vim-markdown'
-Plug 'fatih/vim-go'
+Plug 'pangloss/vim-javascript', { 'for': ['javascript', 'javascript.jsx'] }
+Plug 'HerringtonDarkholme/yats.vim', { 'for': ['typescript', 'typescript.tsx'] }
+Plug 'preservim/vim-markdown', { 'for': 'markdown' }
+Plug 'fatih/vim-go', { 'for': 'go' }
 
 " ── Markdown Preview & Writing ───────────────────────────────────────────────
-Plug 'previm/previm'
-Plug 'junegunn/goyo.vim'
-Plug 'junegunn/limelight.vim'
+Plug 'previm/previm', { 'on': 'PrevimOpen' }
+Plug 'junegunn/goyo.vim', { 'on': 'Goyo' }
+Plug 'junegunn/limelight.vim', { 'on': ['Limelight', 'Limelight!'] }
 
 " ── UI ───────────────────────────────────────────────────────────────────────
-Plug 'mbbill/undotree'
+Plug 'mbbill/undotree', { 'on': 'UndotreeToggle' }
 Plug 'mhinz/vim-startify'
 Plug 'lifepillar/vim-solarized8'
 if !g:is_tty

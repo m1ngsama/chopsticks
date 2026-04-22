@@ -42,6 +42,7 @@ Plug 'prabirshrestha/asyncomplete-lsp.vim'
 Plug 'pangloss/vim-javascript', { 'for': ['javascript', 'javascript.jsx'] }
 Plug 'HerringtonDarkholme/yats.vim', { 'for': ['typescript', 'typescript.tsx'] }
 Plug 'preservim/vim-markdown', { 'for': 'markdown' }
+Plug 'previm/previm', { 'on': 'PrevimOpen' }
 Plug 'fatih/vim-go', { 'for': 'go' }
 
 " ── UI ───────────────────────────────────────────────────────────────────────

@@ -87,6 +87,7 @@ Ctrl+h/j/k/l   splits + tmux panes
 ## Markdown
 
 ```
+,mp             preview in browser
 ,mt             table of contents
 ```
 

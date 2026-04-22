@@ -155,6 +155,8 @@ function! s:CheatSheet() abort
         \ '  ,f        format',
         \ '  ,o        outline',
         \ '  ,cr       run file',
+        \ '  ,mp       markdown preview',
+        \ '  ,mt       table of contents',
         \ '  [g ]g     LSP diagnostics',
         \ '  [e ]e     ALE errors',
         \ '',

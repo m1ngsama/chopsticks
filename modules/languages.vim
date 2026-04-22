@@ -17,6 +17,16 @@ if exists('g:plugs["vim-markdown"]')
     nnoremap <leader>mt :Toc<CR>
 endif
 
+if has('macunix')
+    let g:previm_open_cmd = '/usr/bin/open'
+elseif executable('xdg-open')
+    let g:previm_open_cmd = 'xdg-open'
+endif
+let g:previm_enable_realtime = 1
+if exists('g:plugs["previm"]')
+    nnoremap <leader>mp :PrevimOpen<CR>
+endif
+
 " ── vim-go (syntax only — vim-lsp handles intelligence) ─────────────────────
 
 let g:go_gopls_enabled            = 0

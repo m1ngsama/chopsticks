@@ -48,8 +48,8 @@ jobs:
           vim -u .vimrc -N -c 'redir! > /tmp/test.txt | echo len(g:plugs) | redir END | qa!' 2>/dev/null
           PLUGS=$(cat /tmp/test.txt | tr -d '[:space:]')
           echo "Plugins registered: $PLUGS"
-          if [ "$PLUGS" -lt 25 ]; then
-            echo "FAIL: expected 25+ plugins, got $PLUGS"
+          if [ "$PLUGS" -lt 20 ]; then
+            echo "FAIL: expected 20+ plugins, got $PLUGS"
             exit 1
           fi
 

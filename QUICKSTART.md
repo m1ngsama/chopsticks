@@ -26,8 +26,7 @@ Esc / jk        back to Normal
 ,x              save + quit
 :q!             force quit
 Ctrl+s          save from any mode
-,?              cheat sheet
-:ChopsticksLearn  interactive tutorial
+,?              cheat sheet (toggle sidebar)
 ```
 
 ## Find things
@@ -85,11 +84,9 @@ Ctrl+h/j/k/l   splits + tmux panes
 ,tv / ,th       terminal
 ```
 
-## Write prose
+## Markdown
 
 ```
-,zen            zen mode (Goyo + Limelight)
-,mp             markdown preview in browser
 ,mt             table of contents
 ```
 

@@ -113,3 +113,47 @@ augroup END
 
 nnoremap <silent> ]q :cnext<CR>
 nnoremap <silent> [q :cprev<CR>
+
+" ── Cheat Sheet (,?) ────────────────────────────────────────────────────────
+
+function! s:CheatSheet() abort
+    let l:name = '__ChopsticksCheatSheet__'
+    if bufwinnr(l:name) > 0
+        execute bufwinnr(l:name) . 'wincmd w | bd'
+        return
+    endif
+    execute 'botright new ' . l:name
+    setlocal buftype=nofile bufhidden=wipe nobuflisted noswapfile
+    call setline(1, [
+        \ 'chopsticks — quick reference            ,? toggle this sheet',
+        \ '',
+        \ 'FILES          Ctrl+p find | ,b buffers | ,rg grep | ,rG grep word',
+        \ '               ,e sidebar (cwd) | ,E sidebar (file dir) | ,, last file',
+        \ '               ,fh recent | ,fl lines | ,fc commands | ,fm marks',
+        \ '',
+        \ 'CODE           gd def | gy type | gi impl | gr refs | K docs',
+        \ '               ,rn rename | ,ca action | ,f format | ,o outline',
+        \ '               [g ]g diagnostics | [e ]e ALE errors | ,cr run file',
+        \ '',
+        \ 'EDIT           gc comment | s+2ch jump | cs"'' surround | ,u undo tree',
+        \ '               ,y clipboard yank | Alt+j/k move line | ,* replace word',
+        \ '               ,F re-indent | ,W strip whitespace',
+        \ '',
+        \ 'GIT            ,gs status | ,gd diff | ,gb blame | ,gc commit',
+        \ '               ,gp push | ,gl pull | [x ]x conflict markers',
+        \ '',
+        \ 'WINDOWS        Ctrl+hjkl navigate | ,h ,l buffers | ,bd close buf',
+        \ '               ,z maximize | ,= ,- resize | ,tv ,th terminal',
+        \ '               ]q [q quickfix | ,qo ,qc open/close qf',
+        \ '',
+        \ 'TOGGLE         F2 paste | F3 line# | F4 relative# | F6 invisible',
+        \ '               ,ss spell | ,e sidebar',
+        \ '',
+        \ 'SURVIVAL       ,w save | ,q quit | ,x save+quit | Ctrl+s save',
+        \ '               jk escape | :w!! sudo save | ,ev ,sv edit/reload vimrc',
+        \ ])
+    setlocal nomodifiable readonly
+    nnoremap <buffer> <silent> q :bd<CR>
+    nnoremap <buffer> <silent> <leader>? :bd<CR>
+endfunction
+nnoremap <silent> <leader>? :call <SID>CheatSheet()<CR>

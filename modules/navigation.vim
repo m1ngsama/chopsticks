@@ -4,13 +4,42 @@
 
 let g:netrw_liststyle    = 3
 let g:netrw_banner       = 0
-let g:netrw_browse_split = 0
+let g:netrw_browse_split = 4
 let g:netrw_winsize      = 25
+let g:netrw_altv         = 1
 let g:netrw_list_hide    = '\(^\|\s\s\)\zs\.\S\+'
 let g:netrw_list_hide   .= ',\.pyc$,node_modules,\.git,__pycache__,\.DS_Store'
 
-nnoremap <leader>e :Explore<CR>
-nnoremap <leader>E :Vexplore<CR>
+function! s:ToggleSidebar(...) abort
+    let l:dir = a:0 ? a:1 : getcwd()
+    if exists('t:netrw_sidebar_buf')
+        let l:win = bufwinnr(t:netrw_sidebar_buf)
+        if l:win != -1
+            let l:cur = winnr()
+            execute l:win . 'wincmd w'
+            close
+            if l:cur > l:win
+                execute (l:cur - 1) . 'wincmd w'
+            endif
+            unlet t:netrw_sidebar_buf
+            return
+        endif
+        unlet t:netrw_sidebar_buf
+    endif
+    execute '1wincmd w'
+    execute 'Vexplore ' . fnameescape(l:dir)
+    vertical resize 30
+    let t:netrw_sidebar_buf = bufnr('%')
+    wincmd l
+endfunction
+
+nnoremap <silent> <leader>e :call <SID>ToggleSidebar()<CR>
+nnoremap <silent> <leader>E :call <SID>ToggleSidebar(expand('%:p:h'))<CR>
+
+augroup ChopstickNetrw
+    autocmd!
+    autocmd FileType netrw setlocal bufhidden=wipe
+augroup END
 
 " ── FZF ─────────────────────────────────────────────────────────────────────
 
@@ -78,9 +107,11 @@ function! s:ToggleMaximize() abort
     if exists('t:maximize_session')
         execute t:maximize_session
         unlet t:maximize_session
+        echo 'Window: restored'
     else
         let t:maximize_session = winrestcmd()
         resize | vertical resize
+        echo 'Window: MAXIMIZED'
     endif
 endfunction
 nnoremap <silent> <leader>z :call <SID>ToggleMaximize()<CR>

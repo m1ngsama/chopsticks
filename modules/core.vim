@@ -127,16 +127,16 @@ nnoremap <M-k> :m .-2<CR>==
 vnoremap <M-j> :m '>+1<CR>gv=gv
 vnoremap <M-k> :m '<-2<CR>gv=gv
 
-nnoremap <leader>ss :setlocal spell!<cr>
+nnoremap <silent> <leader>ss :setlocal spell!<CR>:echo 'Spell: ' . (&spell ? 'ON' : 'OFF')<CR>
 nnoremap <leader>sn ]s
 nnoremap <leader>sp [s
 nnoremap <leader>sa zg
 nnoremap <leader>s? z=
 
-set pastetoggle=<F2>
-nnoremap <F3> :set invnumber<CR>
-nnoremap <F4> :set invrelativenumber<CR>
-nnoremap <F6> :set list!<CR>
+nnoremap <silent> <F2> :set paste!<CR>:echo 'Paste: ' . (&paste ? 'ON' : 'OFF')<CR>
+nnoremap <silent> <F3> :set invnumber<CR>:echo 'Line numbers: ' . (&number ? 'ON' : 'OFF')<CR>
+nnoremap <silent> <F4> :set invrelativenumber<CR>:echo 'Relative numbers: ' . (&relativenumber ? 'ON' : 'OFF')<CR>
+nnoremap <silent> <F6> :set list!<CR>:echo 'List chars: ' . (&list ? 'ON' : 'OFF')<CR>
 
 nnoremap <space> za
 

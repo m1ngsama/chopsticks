@@ -1,4 +1,4 @@
-" ui.vim — colorscheme, statusline, startify, indentline
+" ui.vim — colorscheme, statusline, startify
 
 " ── Colorscheme (Solarized Dark — matches tmux palette) ────────────────────
 
@@ -28,49 +28,16 @@ if has("gui_running")
     endif
 endif
 
-" ── IndentLine (non-TTY only) ───────────────────────────────────────────────
-
-if !g:is_tty && exists('g:plugs["indentLine"]')
-    let g:indentLine_char                 = '|'
-    let g:indentLine_first_char           = '|'
-    let g:indentLine_showFirstIndentLevel = 1
-    let g:indentLine_fileTypeExclude      = ['text', 'help', 'startify', 'markdown']
-    let g:indentLine_bufTypeExclude       = ['help', 'terminal', 'nofile']
-    let g:indentLine_setConceal           = 2
-    let g:indentLine_concealcursor        = ''
-endif
-
 " ── Startify ────────────────────────────────────────────────────────────────
 
 if exists('g:plugs["vim-startify"]')
-    let g:startify_custom_header = [
-        \ '         ██████╗██╗  ██╗ ██████╗ ██████╗ ███████╗████████╗██╗ ██████╗██╗  ██╗███████╗',
-        \ '        ██╔════╝██║  ██║██╔═══██╗██╔══██╗██╔════╝╚══██╔══╝██║██╔════╝██║ ██╔╝██╔════╝',
-        \ '        ██║     ███████║██║   ██║██████╔╝███████╗   ██║   ██║██║     █████╔╝ ███████╗',
-        \ '        ██║     ██╔══██║██║   ██║██╔═══╝ ╚════██║   ██║   ██║██║     ██╔═██╗ ╚════██║',
-        \ '        ╚██████╗██║  ██║╚██████╔╝██║     ███████║   ██║   ██║╚██████╗██║  ██╗███████║',
-        \ '         ╚═════╝╚═╝  ╚═╝ ╚═════╝ ╚═╝     ╚══════╝   ╚═╝   ╚═╝ ╚═════╝╚═╝  ╚═╝╚══════╝',
-        \ '',
-        \ ]
-
     let g:startify_lists = [
         \ { 'type': 'sessions',  'header': ['   Sessions']     },
         \ { 'type': 'files',     'header': ['   Recent Files'] },
         \ { 'type': 'dir',       'header': ['   Current Dir']  },
-        \ { 'type': 'bookmarks', 'header': ['   Bookmarks']    },
         \ ]
 
-    let g:startify_bookmarks = [{'v': '~/.vimrc'}]
-    if filereadable(expand('~/.zshrc'))
-        call add(g:startify_bookmarks, {'z': '~/.zshrc'})
-    endif
-    if filereadable(expand('~/.bashrc'))
-        call add(g:startify_bookmarks, {'b': '~/.bashrc'})
-    endif
-    if filereadable(expand('~/.config/fish/config.fish'))
-        call add(g:startify_bookmarks, {'f': '~/.config/fish/config.fish'})
-    endif
-
+    let g:startify_bookmarks          = [{'v': '~/.vimrc'}]
     let g:startify_session_persistence = 1
     let g:startify_session_autoload    = 1
     let g:startify_change_to_vcs_root  = 1
@@ -158,37 +125,11 @@ function! SLAle() abort
     return printf(' E:%d W:%d ', l:e, l:w)
 endfunction
 
-function! SLBufCount() abort
-    let l:n = len(filter(range(1, bufnr('$')), 'buflisted(v:val)'))
-    return l:n > 1 ? ' ' . l:n . ' bufs ' : ''
-endfunction
-
 function! SLFlags() abort
     let l:f = ''
     if &paste | let l:f .= ' PASTE' | endif
     if &spell | let l:f .= ' SPELL' | endif
-    if exists('t:maximize_session') | let l:f .= ' MAX' | endif
     return empty(l:f) ? '' : l:f . ' '
-endfunction
-
-function! SLLsp() abort
-    if !exists('*lsp#get_server_names') | return '' | endif
-    let l:servers = lsp#get_server_names()
-    if empty(l:servers) | return '' | endif
-    let l:status = lsp#get_server_status(l:servers[0])
-    if l:status ==# 'running'
-        return ' ' . l:servers[0] . ' '
-    elseif l:status ==# 'starting' || l:status ==# 'not running'
-        return ' ' . l:servers[0] . '… '
-    endif
-    return ''
-endfunction
-
-function! SLEncoding() abort
-    let l:enc = &fileencoding !=# '' ? &fileencoding : &encoding
-    let l:fmt = &fileformat
-    if l:enc ==? 'utf-8' && l:fmt ==# 'unix' | return '' | endif
-    return ' ' . l:enc . '[' . l:fmt . '] '
 endfunction
 
 function! SLBuild() abort
@@ -198,11 +139,8 @@ function! SLBuild() abort
     let l:s .= '%#SLFlag#%m%r'
     let l:s .= '%#SLFlag#' . SLFlags()
     let l:s .= '%#SLBody#%='
-    let l:s .= '%#SLBody#' . SLBufCount()
     let l:s .= '%#SLFlag#' . SLAle()
-    let l:s .= '%#SLRight#' . SLLsp()
     let l:s .= '%#SLGit#'  . SLGit()
-    let l:s .= '%#SLRight#' . SLEncoding()
     let l:s .= '%#SLFtype# %y '
     let l:s .= '%#SLRight# %l:%c  %P '
     return l:s

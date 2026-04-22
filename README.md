@@ -5,7 +5,7 @@
 <h1 align="center">chopsticks</h1>
 
 <p align="center">
-  <strong>Vim for engineers. 24 plugins, works over SSH.</strong>
+  <strong>Vim for engineers. 25 plugins, works over SSH.</strong>
 </p>
 
 <p align="center">
@@ -30,7 +30,7 @@ You SSH into a server. You need to edit code. You want LSP, fuzzy find, git inte
 
 chopsticks gives you a production-ready Vim config in one command. Pure VimScript — no Node.js for the core. Degrades gracefully on TTY. Works the same on your MacBook and your headless Arch box.
 
-**24 plugins**, LSP, linting, and a hand-built statusline. No bloat, no decorations, just tools.
+**25 plugins**, LSP, linting, and a hand-built statusline. No bloat, no decorations, just tools.
 
 ## What's in the box
 
@@ -120,7 +120,7 @@ ALE and vim-lsp coexist cleanly (`ale_disable_lsp=1`). ALE handles linting + for
 ├── .vimrc              thin loader
 ├── modules/
 │   ├── env.vim         TTY detection, truecolor
-│   ├── plugins.vim     vim-plug + 24 plugins
+│   ├── plugins.vim     vim-plug + 25 plugins
 │   ├── core.vim        settings, keymaps, performance
 │   ├── ui.vim          solarized, statusline, startify
 │   ├── editing.vim     easymotion, yank highlight

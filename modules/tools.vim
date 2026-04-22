@@ -159,6 +159,7 @@ function! s:CheatSheet() abort
         \ '  ,mt       table of contents',
         \ '  [g ]g     LSP diagnostics',
         \ '  [e ]e     ALE errors',
+        \ '  :LspInstallServer  setup LSP',
         \ '',
         \ '  ── edit ──────────────────',
         \ '  gc        comment',

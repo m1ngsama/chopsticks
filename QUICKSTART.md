@@ -8,7 +8,7 @@ Five minutes from zero to a working Vim setup.
 curl -fsSL https://raw.githubusercontent.com/m1ngsama/chopsticks/main/get.sh | bash
 ```
 
-Open vim. Plugins install automatically on first launch (30-60s). Restart vim.
+Open vim. First launch auto-installs plugins — **wait 30-60s, don't close vim**. Restart when done.
 
 ## Modes
 
@@ -52,7 +52,7 @@ K               hover docs
 Tab / S-Tab     cycle completions
 ```
 
-Install language servers with `:LspInstallServer` (auto-detects filetype).
+**First time in a new language?** Run `:LspInstallServer` — it auto-detects filetype and installs the right server. Do this once per language.
 
 ## Git
 

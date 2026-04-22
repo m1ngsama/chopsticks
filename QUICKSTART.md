@@ -91,4 +91,10 @@ Ctrl+h/j/k/l   splits + tmux panes
 ,mt             table of contents
 ```
 
+## Health check
+
+```
+:ChopsticksStatus       see what's installed and what's missing
+```
+
 See [README](README.md) for the full reference. See the [wiki](https://github.com/m1ngsama/chopsticks/wiki) for deep dives.

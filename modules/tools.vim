@@ -296,6 +296,7 @@ function! s:CheatSheet() abort
         \ '  :w!!      sudo save',
         \ '  ,ev       edit vimrc',
         \ '  ,sv       reload vimrc',
+        \ '  :ChopsticksStatus  health',
         \ ])
     setlocal nomodifiable readonly
     nnoremap <buffer> <silent> q :bd<CR>

@@ -1,4 +1,21 @@
-" languages.vim — vim-go config, per-filetype autocmds
+" languages.vim — vim-go, vim-markdown, per-filetype autocmds
+
+" ── vim-markdown ───────────────────────────────────────────────────────────
+
+let g:vim_markdown_conceal             = 1
+let g:vim_markdown_conceal_code_blocks = 0
+let g:vim_markdown_folding_disabled    = 0
+let g:vim_markdown_folding_level       = 2
+let g:vim_markdown_frontmatter        = 1
+let g:vim_markdown_toml_frontmatter   = 1
+let g:vim_markdown_json_frontmatter   = 1
+let g:vim_markdown_follow_anchor      = 1
+let g:vim_markdown_new_list_item_indent = 2
+let g:vim_markdown_strikethrough      = 1
+
+if exists('g:plugs["vim-markdown"]')
+    nnoremap <leader>mt :Toc<CR>
+endif
 
 " ── vim-go (syntax only — vim-lsp handles intelligence) ─────────────────────
 

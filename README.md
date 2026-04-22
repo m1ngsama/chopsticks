@@ -5,7 +5,7 @@
 <h1 align="center">chopsticks</h1>
 
 <p align="center">
-  <strong>Vim for engineers. 29 plugins, 19ms startup, works over SSH.</strong>
+  <strong>Vim for engineers. 24 plugins, works over SSH.</strong>
 </p>
 
 <p align="center">
@@ -30,7 +30,7 @@ You SSH into a server. You need to edit code. You want LSP, fuzzy find, git inte
 
 chopsticks gives you a production-ready Vim config in one command. Pure VimScript — no Node.js for the core. Degrades gracefully on TTY. Works the same on your MacBook and your headless Arch box.
 
-**19ms startup** with 29 plugins, LSP, linting, and a hand-built statusline. Faster than most people's empty vimrc.
+**24 plugins**, LSP, linting, and a hand-built statusline. No bloat, no decorations, just tools.
 
 ## What's in the box
 
@@ -40,10 +40,8 @@ chopsticks gives you a production-ready Vim config in one command. Pure VimScrip
 | **Lint + format** | [ALE](https://github.com/dense-analysis/ale) runs black, prettier, gofmt, rustfmt on save |
 | **Fuzzy find** | files, buffers, grep, tags, marks, commands — [FZF](https://github.com/junegunn/fzf.vim) |
 | **Git** | status, diff, blame, push, pull, conflict markers — [fugitive](https://github.com/tpope/vim-fugitive) + [gitgutter](https://github.com/airblade/vim-gitgutter) |
-| **Zen mode** | `,zen` — [Goyo](https://github.com/junegunn/goyo.vim) + [Limelight](https://github.com/junegunn/limelight.vim) |
 | **Run file** | `,cr` — auto-detects Python, Go, Rust, JS, C, Shell, and more |
 | **TTY-aware** | degrades gracefully on SSH, console, slow links — never breaks |
-| **19ms startup** | lazy-loaded plugins, deferred LSP init, zero redundant work |
 
 ## Install
 
@@ -64,15 +62,15 @@ First launch installs plugins automatically (30-60s). Restart vim when done.
 
 ## Keys
 
-Leader: `,` — press `,?` for the full cheat sheet inside vim.
+Leader: `,`
 
 ```
 Ctrl+p    fuzzy find file          gd    go to definition
 ,rg       ripgrep project          K     hover docs
-,gs       git status               ,cr   run current file
-,zen      zen mode                 ,f    format
+,e        toggle file sidebar      ,cr   run current file
+,gs       git status               ,f    format
 ,w        save                     ,q    quit
-jk        exit insert mode         ,?    cheat sheet
+jk        exit insert mode         ,bd   close buffer
 ```
 
 <details>
@@ -100,7 +98,7 @@ jk        exit insert mode         ,?    cheat sheet
 
 ### Writing
 
-`,zen` zen mode | `,mp` markdown preview | `,mt` table of contents
+`,mt` table of contents
 
 </details>
 
@@ -119,10 +117,10 @@ ALE and vim-lsp coexist cleanly (`ale_disable_lsp=1`). ALE handles linting + for
 
 ```
 ~/.vim/
-├── .vimrc              thin loader (12 lines)
+├── .vimrc              thin loader
 ├── modules/
 │   ├── env.vim         TTY detection, truecolor
-│   ├── plugins.vim     vim-plug + 29 plugins
+│   ├── plugins.vim     vim-plug + 24 plugins
 │   ├── core.vim        settings, keymaps, performance
 │   ├── ui.vim          solarized, statusline, startify
 │   ├── editing.vim     easymotion, yank highlight
@@ -130,34 +128,20 @@ ALE and vim-lsp coexist cleanly (`ale_disable_lsp=1`). ALE handles linting + for
 │   ├── lsp.vim         vim-lsp, asyncomplete
 │   ├── lint.vim        ale, format-on-save
 │   ├── git.vim         fugitive, gitgutter
-│   ├── writing.vim     markdown, previm, zen mode
-│   ├── languages.vim   vim-go, filetype settings
-│   └── tools.vim       cheat sheet, run file, helpers
-└── tutor/
-    └── chopsticks.tutor
+│   ├── languages.vim   vim-go, markdown, filetype settings
+│   └── tools.vim       run file, quickfix, helpers
 ```
 
 Each module is self-contained. Comment out one line in `.vimrc` to disable it. Add your own with `call s:load('mine')`.
-
-## Learn
-
-```vim
-:ChopsticksLearn     " interactive tutorial — 10 lessons
-,?                   " cheat sheet (every binding)
-```
 
 ## Performance
 
 | Metric | Value |
 |--------|-------|
-| Startup time | **19ms** (29 plugins loaded) |
-| Lazy-loaded | 8 plugins (on command or filetype) |
+| Lazy-loaded | 6 plugins (on command or filetype) |
 | Built-in plugins skipped | 10 (gzip, tar, zip, vimball, etc.) |
-| Runtime lint delay | 200ms (no thrashing during edits) |
 | Large file threshold | 10MB (auto-disables syntax + undo) |
 | TTY large file | 500KB (syntax disabled) |
-
-Measured with `vim --startuptime`. We benchmark every change.
 
 ## Troubleshooting
 

@@ -100,20 +100,6 @@ nnoremap <leader>ba :bufdo bd<cr>
 nnoremap <leader>l  :bnext<cr>
 nnoremap <leader>h  :bprevious<cr>
 
-nnoremap <leader>tn :tabnew<cr>
-nnoremap <leader>to :tabonly<cr>
-nnoremap <leader>tc :tabclose<cr>
-nnoremap <leader>tm :tabmove
-nnoremap <leader>t<leader> :tabnext<cr>
-
-let g:lasttab = 1
-nnoremap <Leader>tl :exe "tabn ".g:lasttab<CR>
-augroup ChopstickTabHistory
-    autocmd!
-    autocmd TabLeave * let g:lasttab = tabpagenr()
-augroup END
-
-nnoremap <leader>te :tabedit <C-r>=expand("%:p:h")<cr>/
 nnoremap <leader>cd :lcd %:p:h<cr>:pwd<cr>
 
 nnoremap 0 ^
@@ -128,10 +114,6 @@ vnoremap <M-j> :m '>+1<CR>gv=gv
 vnoremap <M-k> :m '<-2<CR>gv=gv
 
 nnoremap <silent> <leader>ss :setlocal spell!<CR>:echo 'Spell: ' . (&spell ? 'ON' : 'OFF')<CR>
-nnoremap <leader>sn ]s
-nnoremap <leader>sp [s
-nnoremap <leader>sa zg
-nnoremap <leader>s? z=
 
 nnoremap <silent> <F2> :set paste!<CR>:echo 'Paste: ' . (&paste ? 'ON' : 'OFF')<CR>
 nnoremap <silent> <F3> :set invnumber<CR>:echo 'Line numbers: ' . (&number ? 'ON' : 'OFF')<CR>

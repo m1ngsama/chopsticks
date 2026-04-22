@@ -50,4 +50,6 @@ if exists('g:plugs["ale"]')
     nnoremap <silent> [e :ALEPrevious<cr>
     nnoremap <silent> ]e :ALENext<cr>
     nnoremap <silent> <leader>aD :ALEDetail<cr>
+    nnoremap <silent> <leader>af :let g:ale_fix_on_save = !g:ale_fix_on_save
+        \ <bar> echo 'Format on save: ' . (g:ale_fix_on_save ? 'ON' : 'OFF')<cr>
 endif

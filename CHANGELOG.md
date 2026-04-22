@@ -4,6 +4,15 @@
 
 ### Added
 - `:ChopsticksStatus` diagnostic command — checks system tools, LSP servers, linters, formatters
+- `,af` toggle format-on-save (ALE `fix_on_save`)
+- `,gL` git log graph (last 20 commits)
+- `,gC` FZF git commits search, `,gB` buffer commits
+
+### Fixed
+- `g:loaded_logipat` typo → `g:loaded_logiPat` — logiPat was loading fully (0.478ms wasted)
+
+### Changed
+- Skip 2 more built-in plugins: openPlugin, manpager (10 → 12 total)
 
 ## 2.1.0 — 2025-04-22
 

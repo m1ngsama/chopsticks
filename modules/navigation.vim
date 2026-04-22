@@ -60,6 +60,8 @@ if exists('g:plugs["fzf.vim"]')
     nnoremap <leader>fL :Lines<CR>
     nnoremap <leader>f/ :History/<CR>
     nnoremap <leader>f: :History:<CR>
+    nnoremap <leader>gC :Commits<CR>
+    nnoremap <leader>gB :BCommits<CR>
 endif
 
 let g:fzf_layout = { 'down': '40%' }

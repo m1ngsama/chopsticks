@@ -18,6 +18,7 @@ if exists('g:plugs["vim-fugitive"]')
     nnoremap <leader>gl :Git pull<CR>
     nnoremap <leader>gd :Gdiffsplit<CR>
     nnoremap <leader>gb :Git blame<CR>
+    nnoremap <leader>gL :Git log --oneline --graph -20<CR>
 endif
 
 " ── Conflict Navigation ────────────────────────────────────────────────────

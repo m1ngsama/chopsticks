@@ -92,7 +92,7 @@ jk        exit insert mode         ,?    cheat sheet
 
 ### Git
 
-`,gs` status | `,gd` diff | `,gb` blame | `,gc` commit | `,gp` push | `,gl` pull | `]x` `[x` conflict
+`,gs` status | `,gd` diff | `,gb` blame | `,gc` commit | `,gp` push | `,gl` pull | `,gL` log graph | `,gC` FZF commits | `,gB` buffer commits | `]x` `[x` conflict
 
 ### Windows
 
@@ -104,7 +104,7 @@ jk        exit insert mode         ,?    cheat sheet
 
 ### Toggle
 
-`F2` paste | `F3` line numbers | `F4` relative numbers | `F6` invisible chars | `,ss` spell check
+`F2` paste | `F3` line numbers | `F4` relative numbers | `F6` invisible chars | `,ss` spell check | `,af` format on save
 
 ### Utilities
 
@@ -150,7 +150,7 @@ Each module is self-contained. Comment out one line in `.vimrc` to disable it. A
 | Metric | Value |
 |--------|-------|
 | Lazy-loaded | 7 plugins (on command or filetype) |
-| Built-in plugins skipped | 10 (gzip, tar, zip, vimball, etc.) |
+| Built-in plugins skipped | 12 (gzip, tar, zip, vimball, logiPat, etc.) |
 | Large file threshold | 10MB (auto-disables syntax + undo) |
 | TTY large file | 500KB (syntax disabled) |
 

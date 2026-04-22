@@ -1,12 +1,17 @@
 # chopsticks demo — "what can I do with this?"
 # Record: cd ~/.vim && vhs .github/demo.tape
 #
-# Setup: mkdir -p /tmp/demo-project && cd /tmp/demo-project
-#   Create app.py, utils.py, config.yaml (small Python project)
-#   git init && git add -A && git commit -m "init"
+# Pre-record setup:
+#   1. Create demo project:
+#      mkdir -p /tmp/demo-project && cd /tmp/demo-project
+#      Create app.py, utils.py, config.yaml (with docstrings to avoid lint noise)
+#      git init && git add -A && git commit -m "init"
 #
-# Optional LSP: open a .py file in vim, run :LspInstallServer
-#   then uncomment the LSP section below
+#   2. Clean Startify recent files so personal paths don't leak:
+#      rm -f ~/.viminfo
+#
+#   3. Optional LSP: vim utils.py → :LspInstallServer → quit
+#      then uncomment LSP section below
 
 Output .github/demo.gif
 Set Shell bash
@@ -22,50 +27,52 @@ Type "cd /tmp/demo-project && vim ."
 Enter
 Sleep 2.5s
 
-# ── 2. Fuzzy find — instant file search ────────────────────────────────────
+# ── 2. Fuzzy find — open a file instantly ──────────────────────────────────
+# move focus to the main window first
+Type@100ms "\x17l"
+Sleep 0.3s
 Ctrl+p
 Sleep 0.8s
-Type "utils"
+Type "app"
 Sleep 1s
 Enter
-Sleep 1.2s
+Sleep 1.5s
 
-# ── 3. Ripgrep — search across entire project ──────────────────────────────
+# ── 3. Ripgrep — search "greet" across project ─────────────────────────────
 Type ",rg"
 Sleep 0.8s
 Type "greet"
-Sleep 1s
+Sleep 1.2s
 Escape
 Sleep 0.5s
 
-# ── 4. Run file — one keystroke ─────────────────────────────────────────────
-# open app.py first
-Ctrl+p
-Sleep 0.5s
-Type "app"
-Sleep 0.8s
-Enter
-Sleep 1s
+# ── 4. Run file — see output immediately ───────────────────────────────────
 Type ",cr"
-Sleep 2s
+Sleep 2.5s
+# dismiss "Press ENTER" prompt
 Enter
-Sleep 0.5s
-
-# ── 5. File sidebar toggle ─────────────────────────────────────────────────
-Type ",e"
-Sleep 1.5s
-Type ",e"
 Sleep 0.8s
 
-# ── 6. Git status ──────────────────────────────────────────────────────────
+# ── 5. Git status ──────────────────────────────────────────────────────────
 Type ",gs"
-Sleep 1.5s
+Sleep 2s
 Type "q"
 Sleep 0.5s
 
-# ── 7. Cheat sheet — discover everything ───────────────────────────────────
+# ── 6. Sidebar toggle ──────────────────────────────────────────────────────
+# close the vim . sidebar first
+Type ",e"
+Sleep 0.5s
+# re-open it
+Type ",e"
+Sleep 1.5s
+# close it
+Type ",e"
+Sleep 0.8s
+
+# ── 7. Cheat sheet — discover all keybindings ──────────────────────────────
 Type ",?"
-Sleep 2.5s
+Sleep 3s
 Type "q"
 Sleep 0.5s
 
@@ -73,22 +80,3 @@ Sleep 0.5s
 Type ":qa!"
 Enter
 Sleep 0.5s
-
-# ── (optional) LSP — uncomment after :LspInstallServer in a .py file ──────
-# Ctrl+p
-# Sleep 0.5s
-# Type "utils"
-# Sleep 0.8s
-# Enter
-# Sleep 1.5s
-# Type "/greet"
-# Enter
-# Sleep 0.5s
-# Type "K"
-# Sleep 2s
-# Escape
-# Sleep 0.5s
-# Type "gd"
-# Sleep 1.5s
-# Ctrl+o
-# Sleep 0.8s

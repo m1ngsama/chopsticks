@@ -114,6 +114,95 @@ augroup END
 nnoremap <silent> ]q :cnext<CR>
 nnoremap <silent> [q :cprev<CR>
 
+" ── Status Diagnostic (:ChopsticksStatus) ───────────────────────────────────
+
+function! s:Check(name, cmd) abort
+    return executable(a:cmd) ? '  OK  ' . a:name : '  --  ' . a:name . '  (missing: ' . a:cmd . ')'
+endfunction
+
+function! s:LspCheck(ft, server) abort
+    if !exists('*lsp#get_server_names')
+        return '  --  ' . a:ft . '  (vim-lsp not loaded)'
+    endif
+    let l:dir = expand('~/.local/share/vim-lsp-settings/servers/' . a:server)
+    if isdirectory(l:dir)
+        return '  OK  ' . a:ft . '  (' . a:server . ')'
+    endif
+    return '  --  ' . a:ft . '  (:LspInstallServer in a ' . a:ft . ' file)'
+endfunction
+
+function! s:ChopsticksStatus() abort
+    let l:lines = []
+    call add(l:lines, 'chopsticks status')
+    call add(l:lines, repeat('─', 50))
+    call add(l:lines, '')
+
+    call add(l:lines, '── system tools ──')
+    call add(l:lines, s:Check('fzf', 'fzf'))
+    call add(l:lines, s:Check('ripgrep', 'rg'))
+    call add(l:lines, s:Check('git', 'git'))
+    call add(l:lines, s:Check('curl', 'curl'))
+    call add(l:lines, s:Check('node', 'node'))
+    call add(l:lines, s:Check('python3', 'python3'))
+    call add(l:lines, s:Check('go', 'go'))
+    call add(l:lines, '')
+
+    call add(l:lines, '── lsp servers ──  (:LspInstallServer to install)')
+    call add(l:lines, s:LspCheck('python', 'pylsp'))
+    call add(l:lines, s:LspCheck('go', 'gopls'))
+    call add(l:lines, s:LspCheck('rust', 'rust-analyzer'))
+    call add(l:lines, s:LspCheck('typescript', 'typescript-language-server'))
+    call add(l:lines, s:LspCheck('c/c++', 'clangd'))
+    call add(l:lines, s:LspCheck('bash', 'bash-language-server'))
+    call add(l:lines, s:LspCheck('html', 'vscode-html-language-server'))
+    call add(l:lines, s:LspCheck('json', 'vscode-json-language-server'))
+    call add(l:lines, s:LspCheck('yaml', 'yaml-language-server'))
+    call add(l:lines, s:LspCheck('markdown', 'marksman'))
+    call add(l:lines, s:LspCheck('sql', 'sqls'))
+    call add(l:lines, '')
+
+    call add(l:lines, '── linters ──')
+    call add(l:lines, s:Check('flake8 (python)', 'flake8'))
+    call add(l:lines, s:Check('pylint (python)', 'pylint'))
+    call add(l:lines, s:Check('eslint (js/ts)', 'eslint'))
+    call add(l:lines, s:Check('staticcheck (go)', 'staticcheck'))
+    call add(l:lines, s:Check('shellcheck (sh)', 'shellcheck'))
+    call add(l:lines, s:Check('yamllint (yaml)', 'yamllint'))
+    call add(l:lines, s:Check('hadolint (docker)', 'hadolint'))
+    call add(l:lines, s:Check('markdownlint (md)', 'markdownlint'))
+    call add(l:lines, '')
+
+    call add(l:lines, '── formatters ──  (format-on-save is ON)')
+    call add(l:lines, s:Check('black (python)', 'black'))
+    call add(l:lines, s:Check('isort (python)', 'isort'))
+    call add(l:lines, s:Check('prettier (js/ts/json/md)', 'prettier'))
+    call add(l:lines, s:Check('goimports (go)', 'goimports'))
+    call add(l:lines, s:Check('rustfmt (rust)', 'rustfmt'))
+    call add(l:lines, s:Check('clang-format (c)', 'clang-format'))
+    call add(l:lines, '')
+
+    let l:ok = len(filter(copy(l:lines), 'v:val =~# "  OK  "'))
+    let l:miss = len(filter(copy(l:lines), 'v:val =~# "  --  "'))
+    call add(l:lines, repeat('─', 50))
+    call add(l:lines, '  ' . l:ok . ' ready, ' . l:miss . ' missing')
+    call add(l:lines, '')
+    call add(l:lines, '  Install missing tools with ./install.sh')
+    call add(l:lines, '  Install LSP servers with :LspInstallServer')
+
+    let l:name = '__ChopsticksStatus__'
+    if bufwinnr(l:name) > 0
+        execute bufwinnr(l:name) . 'wincmd w | bd'
+    endif
+    execute 'botright new ' . l:name
+    resize 45
+    setlocal buftype=nofile bufhidden=wipe nobuflisted noswapfile
+    setlocal nowrap nonumber norelativenumber signcolumn=no
+    call setline(1, l:lines)
+    setlocal nomodifiable readonly
+    nnoremap <buffer> <silent> q :bd<CR>
+endfunction
+command! ChopsticksStatus call s:ChopsticksStatus()
+
 " ── Cheat Sheet (,?) ────────────────────────────────────────────────────────
 
 function! s:CheatSheet() abort

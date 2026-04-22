@@ -5,7 +5,7 @@
 <h1 align="center">chopsticks</h1>
 
 <p align="center">
-  <strong>Vim for engineers. 25 plugins, works over SSH.</strong>
+  <strong>Vim for engineers. ~25 plugins, works over SSH.</strong>
 </p>
 
 <p align="center">
@@ -30,14 +30,14 @@ You SSH into a server. You need to edit code. You want LSP, fuzzy find, git inte
 
 chopsticks gives you a production-ready Vim config in one command. Pure VimScript — no Node.js for the core. Degrades gracefully on TTY. Works the same on your MacBook and your headless Arch box.
 
-**25 plugins**, LSP, linting, and a hand-built statusline. No bloat, no decorations, just tools.
+**24–25 plugins** (tmux-navigator loads only inside tmux), LSP, linting, and a hand-built statusline. No bloat, no decorations, just tools.
 
 ## What's in the box
 
 | Feature | Description |
 |---------|-------------|
 | **LSP** | completion, go-to-def, hover, rename, code actions — pure VimScript ([vim-lsp](https://github.com/prabirshrestha/vim-lsp)) |
-| **Lint + format** | [ALE](https://github.com/dense-analysis/ale) runs black, prettier, gofmt, rustfmt on save |
+| **Lint + format** | [ALE](https://github.com/dense-analysis/ale) runs black, prettier, goimports, rustfmt on save |
 | **Fuzzy find** | files, buffers, grep, tags, marks, commands — [FZF](https://github.com/junegunn/fzf.vim) |
 | **Git** | status, diff, blame, push, pull, conflict markers — [fugitive](https://github.com/tpope/vim-fugitive) + [gitgutter](https://github.com/airblade/vim-gitgutter) |
 | **Run file** | `,cr` — auto-detects Python, Go, Rust, JS, C, Shell, and more |
@@ -131,7 +131,7 @@ ALE and vim-lsp coexist cleanly (`ale_disable_lsp=1`). ALE handles linting + for
 ├── .vimrc              thin loader
 ├── modules/
 │   ├── env.vim         TTY detection, truecolor, skip built-in plugins
-│   ├── plugins.vim     vim-plug + 25 plugins
+│   ├── plugins.vim     vim-plug + 24–25 plugins
 │   ├── core.vim        settings, keymaps, performance
 │   ├── ui.vim          solarized, statusline, startify
 │   ├── editing.vim     easymotion, yank highlight, blank lines

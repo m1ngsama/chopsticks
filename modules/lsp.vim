@@ -52,7 +52,9 @@ inoremap <expr> <CR>    pumvisible() ? asyncomplete#close_popup() : "\<CR>"
 
 function! s:on_lsp_buffer_enabled() abort
     setlocal omnifunc=lsp#complete
-    setlocal signcolumn=yes
+    if !g:is_tty
+        setlocal signcolumn=yes
+    endif
 
     nmap <buffer> gd          <plug>(lsp-definition)
     nmap <buffer> gy          <plug>(lsp-type-definition)

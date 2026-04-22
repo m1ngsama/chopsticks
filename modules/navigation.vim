@@ -84,7 +84,7 @@ command! -bang -nargs=* RgWord
     \ call fzf#vim#grep(
     \   'rg --column --line-number --no-heading --color=always --smart-case -F -- '
     \   .shellescape(expand('<cword>')), 1, s:Preview(), <bang>0)
-command! -bang GFiles call fzf#vim#gitfiles('', s:Preview(), <bang>0)
+command! -bang -nargs=? GFiles call fzf#vim#gitfiles(<q-args>, s:Preview(), <bang>0)
 
 " ── Window Navigation ───────────────────────────────────────────────────────
 

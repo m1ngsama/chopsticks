@@ -37,8 +37,8 @@
 - Sidebar toggle (`,e` / `,E`) — left-side netrw with `topleft vertical`, winfixwidth, proper toggle
 - Enriched statusline — SLMode, SLGit, SLAle, SLFlags
 - Toggle feedback — F2/F3/F4/F6/`,ss` echo current state
-- `vim .` layout — netrw left + Startify right, proper proportions
-- Interactive tutorial (`:ChopsticksLearn`)
+- `vim .` layout — netrw left + Startify right (removed in later refactor)
+- Interactive tutorial (`:ChopsticksLearn` — removed in later release)
 
 ### Removed (Unix minimalism refactor)
 - **565 lines** of dead code and bloat

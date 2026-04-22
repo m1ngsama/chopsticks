@@ -423,7 +423,7 @@ _vim_run() {
         vim --not-a-term "$@" 2>/dev/null
     fi
 }
-if [[ -d "$HOME/.vim/plugged" ]] && [[ -n "$(ls -A "$HOME/.vim/plugged" 2>/dev/null)" ]]; then
+if [[ -d "$HOME/.vim/plugged" ]] && [[ -n "$(find "$HOME/.vim/plugged" -mindepth 1 -maxdepth 1 2>/dev/null)" ]]; then
     warn "PlugClean: removing plugins not listed in .vimrc from ~/.vim/plugged"
 fi
 _vim_run +'PlugClean!' +qall || true  # remove plugins no longer in vimrc; ignore exit code (none expected)

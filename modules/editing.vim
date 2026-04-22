@@ -25,7 +25,7 @@ if exists('##TextYankPost') && has('timers')
         if v:event.operator !=# 'y' | return | endif
         let l:m = matchadd('IncSearch',
             \ printf('\%%>%dl\%%<%dl', line("'[") - 1, line("']") + 1))
-        call timer_start(150, {-> matchdelete(l:m)})
+        call timer_start(150, {-> execute('silent! call matchdelete(' . l:m . ')')})
     endfunction
     augroup ChopstickYankHL
         autocmd!

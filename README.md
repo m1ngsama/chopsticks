@@ -34,8 +34,8 @@ chopsticks gives you a production-ready Vim config in one command. Pure VimScrip
 
 ## What's in the box
 
-| | |
-|-|-|
+| Feature | Description |
+|---------|-------------|
 | **LSP** | completion, go-to-def, hover, rename, code actions — pure VimScript ([vim-lsp](https://github.com/prabirshrestha/vim-lsp)) |
 | **Lint + format** | [ALE](https://github.com/dense-analysis/ale) runs black, prettier, gofmt, rustfmt on save |
 | **Fuzzy find** | files, buffers, grep, tags, marks, commands — [FZF](https://github.com/junegunn/fzf.vim) |

@@ -79,15 +79,29 @@ if exists('g:plugs["vim-startify"]')
     let g:startify_files_number        = 8
     let g:startify_padding_left        = 4
 
+    function! s:SetupDirView() abort
+        if argc() != 1 || !isdirectory(argv()[0]) || exists('s:std_in')
+            return
+        endif
+        let l:dir = fnameescape(argv()[0])
+        execute 'cd ' . l:dir
+        vertical rightbelow vnew
+        if exists(':Startify') == 2
+            Startify
+        else
+            enew
+        endif
+        wincmd h
+        vertical resize 30
+        setlocal winfixwidth
+        wincmd l
+    endfunction
+
     if !g:is_tty
         augroup ChopstickStartup
             autocmd!
             autocmd StdinReadPre * let s:std_in = 1
-            autocmd VimEnter *
-                \ if argc() == 1 && isdirectory(argv()[0]) && !exists('s:std_in') |
-                \     exe 'cd ' . fnameescape(argv()[0]) |
-                \     if exists(':Startify') == 2 | Startify | else | enew | endif |
-                \ endif
+            autocmd VimEnter * nested call <SID>SetupDirView()
         augroup END
     endif
 
@@ -144,14 +158,51 @@ function! SLAle() abort
     return printf(' E:%d W:%d ', l:e, l:w)
 endfunction
 
+function! SLBufCount() abort
+    let l:n = len(filter(range(1, bufnr('$')), 'buflisted(v:val)'))
+    return l:n > 1 ? ' ' . l:n . ' bufs ' : ''
+endfunction
+
+function! SLFlags() abort
+    let l:f = ''
+    if &paste | let l:f .= ' PASTE' | endif
+    if &spell | let l:f .= ' SPELL' | endif
+    if exists('t:maximize_session') | let l:f .= ' MAX' | endif
+    return empty(l:f) ? '' : l:f . ' '
+endfunction
+
+function! SLLsp() abort
+    if !exists('*lsp#get_server_names') | return '' | endif
+    let l:servers = lsp#get_server_names()
+    if empty(l:servers) | return '' | endif
+    let l:status = lsp#get_server_status(l:servers[0])
+    if l:status ==# 'running'
+        return ' ' . l:servers[0] . ' '
+    elseif l:status ==# 'starting' || l:status ==# 'not running'
+        return ' ' . l:servers[0] . '… '
+    endif
+    return ''
+endfunction
+
+function! SLEncoding() abort
+    let l:enc = &fileencoding !=# '' ? &fileencoding : &encoding
+    let l:fmt = &fileformat
+    if l:enc ==? 'utf-8' && l:fmt ==# 'unix' | return '' | endif
+    return ' ' . l:enc . '[' . l:fmt . '] '
+endfunction
+
 function! SLBuild() abort
     let [l:label, l:hl] = SLMode()
     let l:s  = '%#' . l:hl . '#' . l:label
     let l:s .= '%#SLBody# %f '
     let l:s .= '%#SLFlag#%m%r'
+    let l:s .= '%#SLFlag#' . SLFlags()
     let l:s .= '%#SLBody#%='
+    let l:s .= '%#SLBody#' . SLBufCount()
     let l:s .= '%#SLFlag#' . SLAle()
+    let l:s .= '%#SLRight#' . SLLsp()
     let l:s .= '%#SLGit#'  . SLGit()
+    let l:s .= '%#SLRight#' . SLEncoding()
     let l:s .= '%#SLFtype# %y '
     let l:s .= '%#SLRight# %l:%c  %P '
     return l:s

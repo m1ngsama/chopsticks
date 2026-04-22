@@ -178,7 +178,7 @@ function! s:CheatSheet() abort
         \ '',
         \ 'FILES & SEARCH',
         \ '  Ctrl+p        Fuzzy find file (git-aware)',
-        \ '  ,e / ,E       File browser / vertical split',
+        \ '  ,e / ,E       Toggle tree sidebar (cwd / file dir)',
         \ '  ,b            Search open buffers',
         \ '  ,rg           Search project contents (ripgrep)',
         \ '  ,rG           Ripgrep word under cursor',

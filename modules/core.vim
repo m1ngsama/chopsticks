@@ -160,9 +160,13 @@ augroup END
 " ── Performance ─────────────────────────────────────────────────────────────
 
 set synmaxcol=200
-set ttyfast
 set lazyredraw
 set complete-=i
+
+if executable('rg')
+    set grepprg=rg\ --vimgrep\ --smart-case
+    set grepformat=%f:%l:%c:%m
+endif
 set updatetime=300
 set shortmess+=cI
 
@@ -182,6 +186,10 @@ endif
 set exrc
 set secure
 set sessionoptions=blank,buffers,curdir,folds,help,tabpages,winsize,winpos,terminal
+
+if has("patch-8.1.0360")
+    set diffopt=filler,internal,context:3,algorithm:histogram,indent-heuristic
+endif
 
 " ── Format Options ──────────────────────────────────────────────────────────
 

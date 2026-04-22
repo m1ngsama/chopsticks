@@ -49,6 +49,8 @@ Plug 'fatih/vim-go', { 'for': 'go' }
 Plug 'mbbill/undotree', { 'on': 'UndotreeToggle' }
 Plug 'mhinz/vim-startify'
 Plug 'lifepillar/vim-solarized8'
-Plug 'christoomey/vim-tmux-navigator'
+if !empty($TMUX)
+    Plug 'christoomey/vim-tmux-navigator'
+endif
 
 call plug#end()

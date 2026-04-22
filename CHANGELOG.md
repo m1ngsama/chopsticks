@@ -13,6 +13,12 @@
 
 ### Changed
 - Skip 2 more built-in plugins: openPlugin, manpager (10 → 12 total)
+- Remove deprecated `set ttyfast` (no-op since Vim 8)
+- Add `grepprg=rg --vimgrep` — `:grep` now uses ripgrep + quickfix
+- Add `diffopt` with histogram algorithm and indent-heuristic
+- Consolidate FZF Rg/RgWord/GFiles commands (DRY refactor)
+- vim-tmux-navigator: conditional load (only inside tmux), fallback `Ctrl+hjkl` mappings outside
+- Add `Ctrl+hjkl` window navigation fallback when tmux-navigator not loaded
 
 ## 2.1.0 — 2025-04-22
 

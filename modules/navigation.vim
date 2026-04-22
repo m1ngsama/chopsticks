@@ -72,30 +72,27 @@ else
     let g:fzf_preview_window = ['right:50%', 'ctrl-/']
 endif
 
-if g:is_tty
-    command! -bang -nargs=* Rg
-        \ call fzf#vim#grep(
-        \   'rg --column --line-number --no-heading --color=always --smart-case -- '
-        \   .shellescape(<q-args>), 1, <bang>0)
-    command! -bang GFiles call fzf#vim#gitfiles('', <bang>0)
-else
-    command! -bang -nargs=* Rg
-        \ call fzf#vim#grep(
-        \   'rg --column --line-number --no-heading --color=always --smart-case -- '
-        \   .shellescape(<q-args>), 1, fzf#vim#with_preview(), <bang>0)
-    command! -bang GFiles call fzf#vim#gitfiles('', fzf#vim#with_preview(), <bang>0)
-endif
+function! s:Preview() abort
+    return g:is_tty ? {} : fzf#vim#with_preview()
+endfunction
 
-if g:is_tty
-    command! -bang -nargs=* RgWord
-        \ call fzf#vim#grep(
-        \   'rg --column --line-number --no-heading --color=always --smart-case -F -- '
-        \   .shellescape(expand('<cword>')), 1, <bang>0)
-else
-    command! -bang -nargs=* RgWord
-        \ call fzf#vim#grep(
-        \   'rg --column --line-number --no-heading --color=always --smart-case -F -- '
-        \   .shellescape(expand('<cword>')), 1, fzf#vim#with_preview(), <bang>0)
+command! -bang -nargs=* Rg
+    \ call fzf#vim#grep(
+    \   'rg --column --line-number --no-heading --color=always --smart-case -- '
+    \   .shellescape(<q-args>), 1, s:Preview(), <bang>0)
+command! -bang -nargs=* RgWord
+    \ call fzf#vim#grep(
+    \   'rg --column --line-number --no-heading --color=always --smart-case -F -- '
+    \   .shellescape(expand('<cword>')), 1, s:Preview(), <bang>0)
+command! -bang GFiles call fzf#vim#gitfiles('', s:Preview(), <bang>0)
+
+" ── Window Navigation ───────────────────────────────────────────────────────
+
+if empty($TMUX)
+    nnoremap <C-h> <C-w>h
+    nnoremap <C-j> <C-w>j
+    nnoremap <C-k> <C-w>k
+    nnoremap <C-l> <C-w>l
 endif
 
 " ── Window Maximize Toggle ──────────────────────────────────────────────────

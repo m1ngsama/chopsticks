@@ -12,25 +12,20 @@ let g:netrw_list_hide   .= ',\.pyc$,node_modules,\.git,__pycache__,\.DS_Store'
 
 function! s:ToggleSidebar(...) abort
     let l:dir = a:0 ? a:1 : getcwd()
-    if exists('t:netrw_sidebar_buf')
-        let l:win = bufwinnr(t:netrw_sidebar_buf)
-        if l:win != -1
-            let l:cur = winnr()
-            execute l:win . 'wincmd w'
-            close
-            if l:cur > l:win
-                execute (l:cur - 1) . 'wincmd w'
-            endif
-            unlet t:netrw_sidebar_buf
-            return
+    if getbufvar(winbufnr(1), '&filetype') ==# 'netrw' && getwinvar(1, '&winfixwidth')
+        let l:cur = winnr()
+        1wincmd w
+        close
+        if l:cur > 1
+            execute (l:cur - 1) . 'wincmd w'
         endif
-        unlet t:netrw_sidebar_buf
+        return
     endif
-    execute '1wincmd w'
-    execute 'Vexplore ' . fnameescape(l:dir)
-    vertical resize 30
-    let t:netrw_sidebar_buf = bufnr('%')
-    wincmd l
+    execute 'topleft vertical 30new'
+    execute 'Explore ' . fnameescape(l:dir)
+    setlocal winfixwidth
+    setlocal bufhidden=wipe
+    wincmd p
 endfunction
 
 nnoremap <silent> <leader>e :call <SID>ToggleSidebar()<CR>

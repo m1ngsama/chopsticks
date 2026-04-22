@@ -85,15 +85,16 @@ if exists('g:plugs["vim-startify"]')
         endif
         let l:dir = fnameescape(argv()[0])
         execute 'cd ' . l:dir
-        execute 'Vexplore ' . l:dir
-        vertical resize 30
-        let t:netrw_sidebar_buf = bufnr('%')
-        wincmd l
+        vertical rightbelow vnew
         if exists(':Startify') == 2
             Startify
         else
             enew
         endif
+        wincmd h
+        vertical resize 30
+        setlocal winfixwidth
+        wincmd l
     endfunction
 
     if !g:is_tty

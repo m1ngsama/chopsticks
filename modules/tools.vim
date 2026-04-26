@@ -22,6 +22,7 @@ endfunction
 " ── Utilities ──────────────────────────────────────────────────────────────
 
 nnoremap <leader>F gg=G``
+vnoremap <leader>F =
 nnoremap <leader>wa :wa<CR>
 
 nnoremap <silent> <Leader>= :exe "resize "          . (winheight(0) * 3/2)<CR>
@@ -30,11 +31,13 @@ nnoremap <silent> <Leader>- :exe "resize "          . (winheight(0) * 2/3)<CR>
 nnoremap <leader><leader> <c-^>
 
 nnoremap <leader>W :%s/\s\+$//<CR>:let @/=''<CR>
+vnoremap <leader>W :s/\s\+$//<CR>:let @/=''<CR>gv
 
 nnoremap <leader>ev :edit $MYVIMRC<CR>
 nnoremap <leader>sv :source $MYVIMRC<CR>:echo "vimrc reloaded"<CR>
 
 nnoremap <leader>* :%s/\<<C-r><C-w>\>//g<Left><Left>
+vnoremap <leader>* :s///g<Left><Left><Left>
 
 if has('clipboard')
     nnoremap <leader>cp :let @+ = expand("%:p")<CR>:echo "Copied: " . expand("%:p")<CR>
@@ -256,11 +259,11 @@ function! s:CheatSheet() abort
         \ '  s+2ch     easymotion jump',
         \ '  cs"''      surround',
         \ '  ,u        undo tree',
-        \ '  ,y        clipboard yank',
-        \ '  Alt+j/k   move line',
-        \ '  ,*        replace word',
-        \ '  ,F        re-indent file',
-        \ '  ,W        strip whitespace',
+        \ '  ,y ,p     clipboard y/p  (v)',
+        \ '  Alt+j/k   move line      (v)',
+        \ '  ,*        replace word    (v)',
+        \ '  ,F        re-indent       (v)',
+        \ '  ,W        strip trailing  (v)',
         \ '',
         \ '  ── git ───────────────────',
         \ '  ,gs       status',

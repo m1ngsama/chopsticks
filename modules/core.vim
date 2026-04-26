@@ -103,6 +103,7 @@ nnoremap <leader>h  :bprevious<cr>
 nnoremap <leader>cd :lcd %:p:h<cr>:pwd<cr>
 
 nnoremap 0 ^
+vnoremap 0 ^
 nnoremap gV `[v`]
 
 cnoremap <C-p> <Up>
@@ -139,14 +140,18 @@ nnoremap <silent> <C-s> :w<CR>
 inoremap <silent> <C-s> <C-o>:w<CR>
 
 nnoremap <C-d> <C-d>zz
+vnoremap <C-d> <C-d>zz
 nnoremap <C-u> <C-u>zz
+vnoremap <C-u> <C-u>zz
 
 if has('clipboard')
     nnoremap <leader>y "+y
     vnoremap <leader>y "+y
     nnoremap <leader>Y "+Y
     nnoremap <leader>p "+p
+    vnoremap <leader>p "+p
     nnoremap <leader>P "+P
+    vnoremap <leader>P "+P
 endif
 
 nnoremap <leader>qo :copen<CR>

@@ -178,13 +178,8 @@ set shortmess+=cI
 if g:is_tty
     set signcolumn=auto
     set synmaxcol=120
-else
-    if has("patch-8.1.1564")
-        set signcolumn=number
-    else
-        set signcolumn=yes
-    endif
 endif
+" non-TTY signcolumn is set in ui.vim (=yes, fixed-width to prevent jitter)
 
 " ── Project-Local Config ────────────────────────────────────────────────────
 

@@ -184,3 +184,43 @@ set statusline=%!SLBuild()
 if g:is_tty
     set statusline=%f\ %h%w%m%r\ %=%(%l,%c%V\ %=\ %P%)
 endif
+
+" ── Tabline (native — shows listed buffers when >1, else hidden) ───────────
+
+function! s:TLDefineColors() abort
+    hi TabLine     ctermbg=234 ctermfg=244 cterm=none guibg=#002b36 guifg=#839496 gui=none
+    hi TabLineSel  ctermbg=235 ctermfg=136 cterm=bold guibg=#073642 guifg=#b58900 gui=bold
+    hi TabLineFill ctermbg=234 ctermfg=240 cterm=none guibg=#002b36 guifg=#586e75 gui=none
+endfunction
+
+augroup TLColors
+    autocmd!
+    autocmd ColorScheme * call s:TLDefineColors()
+augroup END
+call s:TLDefineColors()
+
+function! TLBuild() abort
+    let l:s = ''
+    let l:cur = bufnr('%')
+    for l:b in range(1, bufnr('$'))
+        if !buflisted(l:b) || getbufvar(l:b, '&buftype') !=# '' | continue | endif
+        let l:hl   = (l:b == l:cur) ? '%#TabLineSel#' : '%#TabLine#'
+        let l:name = bufname(l:b)
+        let l:name = empty(l:name) ? '[No Name]' : fnamemodify(l:name, ':t')
+        let l:mod  = getbufvar(l:b, '&modified') ? ' +' : ''
+        let l:s .= l:hl . ' ' . l:b . ' ' . l:name . l:mod . ' '
+    endfor
+    let l:s .= '%#TabLineFill#%='
+    return l:s
+endfunction
+
+if !g:is_tty
+    set showtabline=1
+    set tabline=%!TLBuild()
+endif
+
+" ── SignColumn: always reserve a column so width never jitters ─────────────
+
+if !g:is_tty
+    set signcolumn=yes
+endif

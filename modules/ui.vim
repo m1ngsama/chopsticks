@@ -10,15 +10,48 @@ endif
 
 set background=dark
 
+function! s:WarnSolarized8Missing(...) abort
+    echohl WarningMsg
+    echom 'chopsticks: solarized8 not installed — run :PlugInstall'
+    echohl None
+endfunction
+
 if !g:is_tty
     try
         colorscheme solarized8
-    catch
+    catch /^Vim\%((\a\+)\)\=:E185/
         colorscheme default
+        if has('timers')
+            call timer_start(500, function('s:WarnSolarized8Missing'))
+        else
+            augroup ChopstickColorschemeWarn
+                autocmd!
+                autocmd VimEnter * call s:WarnSolarized8Missing()
+            augroup END
+        endif
     endtry
 else
     colorscheme default
 endif
+
+" ── Window separators, fillchars, cursorline visibility ────────────────────
+
+if !g:is_tty
+    set fillchars+=vert:│,eob:\
+endif
+
+function! s:UIPolish() abort
+    hi VertSplit    ctermbg=234 ctermfg=240 guibg=#002b36 guifg=#586e75 cterm=NONE gui=NONE
+    hi CursorLine   ctermbg=235             guibg=#0c4452                cterm=NONE gui=NONE
+    hi CursorLineNr ctermbg=235 ctermfg=136 guibg=#0c4452 guifg=#b58900  cterm=bold gui=bold
+    hi SignColumn   ctermbg=234             guibg=#002b36
+endfunction
+
+augroup ChopstickUIPolish
+    autocmd!
+    autocmd ColorScheme * call s:UIPolish()
+augroup END
+if !g:is_tty | call s:UIPolish() | endif
 
 if has("gui_running")
     if has("gui_gtk2") || has("gui_gtk3")

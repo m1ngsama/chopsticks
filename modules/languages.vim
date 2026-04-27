@@ -47,23 +47,23 @@ augroup ChopstickFiletype
         \ if line("'\"") > 1 && line("'\"") <= line("$") | exe "normal! g'\"" | endif
 
     autocmd FileType python
-        \ setlocal expandtab shiftwidth=4 tabstop=4 textwidth=88 colorcolumn=+1
+        \ setlocal expandtab shiftwidth=4 tabstop=4 textwidth=88
     autocmd FileType javascript,typescript
-        \ setlocal expandtab shiftwidth=2 tabstop=2 textwidth=100 colorcolumn=+1
+        \ setlocal expandtab shiftwidth=2 tabstop=2 textwidth=100
     autocmd FileType go
-        \ setlocal noexpandtab shiftwidth=4 tabstop=4 textwidth=120 colorcolumn=+1
+        \ setlocal noexpandtab shiftwidth=4 tabstop=4 textwidth=120
     autocmd FileType rust
-        \ setlocal expandtab shiftwidth=4 tabstop=4 textwidth=100 colorcolumn=+1
+        \ setlocal expandtab shiftwidth=4 tabstop=4 textwidth=100
     autocmd FileType c,cpp
-        \ setlocal expandtab shiftwidth=4 tabstop=4 textwidth=80 colorcolumn=+1
+        \ setlocal expandtab shiftwidth=4 tabstop=4 textwidth=80
     autocmd FileType html,css
         \ setlocal expandtab shiftwidth=2 tabstop=2
     autocmd FileType yaml
         \ setlocal expandtab shiftwidth=2 tabstop=2
     autocmd FileType markdown
-        \ setlocal wrap linebreak spell textwidth=0 colorcolumn=0 conceallevel=2
+        \ setlocal wrap linebreak spell textwidth=0 conceallevel=2
     autocmd FileType sh
-        \ setlocal expandtab shiftwidth=2 tabstop=2 textwidth=80 colorcolumn=+1
+        \ setlocal expandtab shiftwidth=2 tabstop=2 textwidth=80
     autocmd FileType make
         \ setlocal noexpandtab shiftwidth=8 tabstop=8
     autocmd FileType json

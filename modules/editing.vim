@@ -44,3 +44,26 @@ augroup ChopstickSearchHL
     autocmd!
     autocmd CursorHold * if get(v:, 'hlsearch', 0) | let v:hlsearch = 0 | endif
 augroup END
+
+" ── Overlength Highlight (only chars past textwidth, not the whole column) ─
+
+function! s:OverLengthApply() abort
+    if exists('w:overlength_match')
+        silent! call matchdelete(w:overlength_match)
+        unlet w:overlength_match
+    endif
+    if &textwidth <= 0 || &buftype !=# '' | return | endif
+    let w:overlength_match = matchadd('OverLength', '\%>' . &textwidth . 'v.\+', -1)
+endfunction
+
+function! s:OverLengthDefineHL() abort
+    hi default OverLength ctermbg=52 ctermfg=NONE guibg=#3a1f1f guifg=NONE
+endfunction
+
+augroup ChopstickOverLength
+    autocmd!
+    autocmd ColorScheme    * call s:OverLengthDefineHL()
+    autocmd OptionSet      textwidth call s:OverLengthApply()
+    autocmd BufWinEnter,WinEnter,FileType * call s:OverLengthApply()
+augroup END
+call s:OverLengthDefineHL()

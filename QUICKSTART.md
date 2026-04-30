@@ -10,13 +10,17 @@ curl -fsSL https://raw.githubusercontent.com/m1ngsama/chopsticks/main/get.sh | b
 
 Open vim. First launch auto-installs plugins — **wait 30-60s, don't close vim**. Restart when done.
 
+Default profile is `engineer`. Put `let g:chopsticks_profile = 'minimal'`
+before loading chopsticks for a smaller core-only setup, or use `full` for the
+heavier Markdown/LSP feedback.
+
 ## Modes
 
-| Mode | Enter | Leave |
-|------|-------|-------|
-| Normal | startup default | — |
+| Mode   | Enter           | Leave         |
+| ------ | --------------- | ------------- |
+| Normal | startup default | —             |
 | Insert | `i` / `a` / `o` | `Esc` or `jk` |
-| Visual | `v` / `V` | `Esc` |
+| Visual | `v` / `V`       | `Esc`         |
 
 ## Survival
 
@@ -67,7 +71,7 @@ Tab / S-Tab     cycle completions
 ## Edit
 
 ```
-s + 2 chars     EasyMotion jump
+,S + 2 chars    EasyMotion jump
 gc              toggle comment
 cs"'            change surrounding " to '
 Alt+j / Alt+k   move line
@@ -90,6 +94,9 @@ Ctrl+h/j/k/l   splits + tmux panes
 ,mp             preview in browser
 ,mt             table of contents
 ```
+
+Markdown is quiet by default: no real-time lint, no spell noise, no concealed
+syntax. Enable the heavier Markdown tools only when you want them.
 
 ## Health check
 

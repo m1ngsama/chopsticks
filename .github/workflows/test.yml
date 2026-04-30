@@ -36,16 +36,33 @@ jobs:
           cp modules/*.vim ~/.vim/modules/
 
       - name: Install plugins
-        run: vim -es -u .vimrc -c 'PlugInstall --sync' -c 'qa!' 2>&1 || true
+        run: |
+          set +e
+          vim -i NONE -es -u .vimrc -N -c 'PlugInstall --sync' -c 'qa!' 2>&1
+          plug_status=$?
+          set -e
+          if [ "$plug_status" -ne 0 ]; then
+            echo "PlugInstall exited with $plug_status; validating plugin directories"
+          fi
+          for plugin in fzf fzf.vim vim-fugitive vim-gitgutter ale vim-lsp vim-lsp-settings asyncomplete.vim asyncomplete-lsp.vim vim-markdown; do
+            test -d "$HOME/.vim/plugged/$plugin" || {
+              echo "FAIL: missing plugin $plugin"
+              exit 1
+            }
+          done
 
       - name: Test startup
         run: |
-          vim -u .vimrc -es -N -c 'qa!' 2>&1
+          vim -u .vimrc -i NONE -es -N -c 'qa!' 2>&1
           echo "Vim exited cleanly"
 
       - name: Verify modules load
         run: |
-          vim -u .vimrc -N -c 'redir! > /tmp/test.txt | echo len(g:plugs) | redir END | qa!' 2>/dev/null
+          vim -u .vimrc -i NONE -es -N \
+            -c 'redir! > /tmp/test.txt' \
+            -c 'silent echo len(g:plugs)' \
+            -c 'redir END' \
+            -c 'qa!' 2>/dev/null
           PLUGS=$(cat /tmp/test.txt | tr -d '[:space:]')
           echo "Plugins registered: $PLUGS"
           if [ "$PLUGS" -lt 20 ]; then
@@ -53,10 +70,35 @@ jobs:
             exit 1
           fi
 
+      - name: Verify minimal profile
+        run: |
+          vim -u NONE -i NONE -es -N \
+            -c 'let g:chopsticks_profile = "minimal"' \
+            -c 'source .vimrc' \
+            -c 'if has_key(g:plugs, "ale") || has_key(g:plugs, "vim-lsp") || has_key(g:plugs, "vim-lsp-settings") || has_key(g:plugs, "asyncomplete.vim") | cquit | endif' \
+            -c 'qa!' 2>&1
+
+      - name: Verify Markdown quiet defaults
+        run: |
+          vim -u .vimrc -i NONE -es -N README.md \
+            -c 'set filetype=markdown' \
+            -c 'if &l:spell || &l:conceallevel != 0 || &l:signcolumn !=# "no" || exists("g:lsp_settings_filetype_markdown") | cquit | endif' \
+            -c 'qa!' 2>&1
+
+      - name: Verify ergonomic defaults
+        run: |
+          vim -u .vimrc -i NONE -es -N \
+            -c 'if maparg("s", "n") !=# "" | cquit | endif' \
+            -c 'if maparg(",w", "n") =~# "!" | cquit | endif' \
+            -c 'if !&swapfile || !&writebackup || &directory !~# "\.vim/.swap" | cquit | endif' \
+            -c 'qa!' 2>&1
+
       - name: Measure startup time
         run: |
-          vim -u .vimrc --startuptime /tmp/startup.log -c 'qa!' 2>/dev/null
+          vim -u .vimrc -i NONE --startuptime /tmp/startup.log -es -N -c 'qa!' 2>/dev/null
           tail -1 /tmp/startup.log
+          STARTUP_MS=$(tail -1 /tmp/startup.log | awk '{print $1}')
+          awk -v ms="$STARTUP_MS" 'BEGIN { if (ms > 150) exit 1 }'
 
   shellcheck:
     runs-on: ubuntu-latest
@@ -64,3 +106,12 @@ jobs:
       - uses: actions/checkout@v4
       - name: Shellcheck install.sh
         run: shellcheck install.sh get.sh
+
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install markdownlint
+        run: npm install -g markdownlint-cli
+      - name: Lint Markdown
+        run: markdownlint README.md QUICKSTART.md CONTRIBUTING.md CHANGELOG.md

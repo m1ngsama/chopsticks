@@ -1,8 +1,12 @@
 " lint.vim — ALE async linting and format-on-save
 
+if !g:chopsticks_enable_lint
+    finish
+endif
+
 let g:ale_disable_lsp = 1
 
-let g:ale_linters = {
+let s:ale_linters = {
 \   'python':     ['flake8', 'pylint'],
 \   'javascript': ['eslint'],
 \   'typescript': ['eslint'],
@@ -14,11 +18,16 @@ let g:ale_linters = {
 \   'dockerfile': ['hadolint'],
 \   'css':        ['stylelint'],
 \   'scss':       ['stylelint'],
-\   'markdown':   ['markdownlint'],
 \   'sql':        ['sqlfluff'],
 \}
 
-let g:ale_fixers = {
+if g:chopsticks_markdown_lint
+    let s:ale_linters.markdown = ['markdownlint']
+endif
+
+let g:ale_linters = s:ale_linters
+
+let s:ale_fixers = {
 \   '*':          ['remove_trailing_lines', 'trim_whitespace'],
 \   'python':     ['black', 'isort'],
 \   'javascript': ['prettier', 'eslint'],
@@ -32,9 +41,14 @@ let g:ale_fixers = {
 \   'css':        ['prettier'],
 \   'scss':       ['prettier'],
 \   'less':       ['prettier'],
-\   'markdown':   ['prettier'],
 \   'sql':        ['sqlfluff'],
 \}
+
+if g:chopsticks_markdown_format_on_save
+    let s:ale_fixers.markdown = ['prettier']
+endif
+
+let g:ale_fixers = s:ale_fixers
 
 let g:ale_fix_on_save          = 1
 let g:ale_python_isort_options = '--profile black'
@@ -45,6 +59,7 @@ let g:ale_lint_on_insert_leave = 1
 let g:ale_lint_on_enter        = 1
 let g:ale_lint_delay           = 200
 let g:ale_echo_delay           = 100
+let g:ale_virtualtext_cursor   = get(g:, 'ale_virtualtext_cursor', 'disabled')
 
 if exists('g:plugs["ale"]')
     nnoremap <silent> [e :ALEPrevious<cr>

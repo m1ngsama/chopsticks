@@ -29,25 +29,33 @@ Plug 'wellle/targets.vim'
 Plug 'jiangmiao/auto-pairs'
 Plug 'easymotion/vim-easymotion', { 'on': '<Plug>(easymotion' }
 
-" ── Linting & Formatting ────────────────────────────────────────────────────
-Plug 'dense-analysis/ale'
+if g:chopsticks_enable_lint
+    " ── Linting & Formatting ────────────────────────────────────────────────
+    Plug 'dense-analysis/ale'
+endif
 
-" ── LSP + Completion ─────────────────────────────────────────────────────────
-Plug 'prabirshrestha/vim-lsp'
-Plug 'mattn/vim-lsp-settings'
-Plug 'prabirshrestha/asyncomplete.vim'
-Plug 'prabirshrestha/asyncomplete-lsp.vim'
+if g:chopsticks_enable_lsp
+    " ── LSP + Completion ─────────────────────────────────────────────────────
+    Plug 'prabirshrestha/vim-lsp'
+    Plug 'mattn/vim-lsp-settings'
+    Plug 'prabirshrestha/asyncomplete.vim'
+    Plug 'prabirshrestha/asyncomplete-lsp.vim'
+endif
 
 " ── Language Syntax ──────────────────────────────────────────────────────────
-Plug 'pangloss/vim-javascript', { 'for': ['javascript', 'javascript.jsx'] }
-Plug 'HerringtonDarkholme/yats.vim', { 'for': ['typescript', 'typescript.tsx'] }
 Plug 'preservim/vim-markdown', { 'for': 'markdown' }
-Plug 'previm/previm', { 'on': 'PrevimOpen' }
-Plug 'fatih/vim-go', { 'for': 'go' }
+if g:chopsticks_enable_extra_languages
+    Plug 'pangloss/vim-javascript', { 'for': ['javascript', 'javascript.jsx'] }
+    Plug 'HerringtonDarkholme/yats.vim', { 'for': ['typescript', 'typescript.tsx'] }
+    Plug 'previm/previm', { 'on': 'PrevimOpen' }
+    Plug 'fatih/vim-go', { 'for': 'go' }
+endif
 
 " ── UI ───────────────────────────────────────────────────────────────────────
-Plug 'mbbill/undotree', { 'on': 'UndotreeToggle' }
-Plug 'mhinz/vim-startify'
+if g:chopsticks_enable_ui_extras
+    Plug 'mbbill/undotree', { 'on': 'UndotreeToggle' }
+    Plug 'mhinz/vim-startify'
+endif
 Plug 'lifepillar/vim-solarized8'
 if !empty($TMUX)
     Plug 'christoomey/vim-tmux-navigator'

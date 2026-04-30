@@ -6,7 +6,7 @@ let g:EasyMotion_do_mapping = 0
 let g:EasyMotion_smartcase  = 1
 
 if exists('g:plugs["vim-easymotion"]')
-    nmap s <Plug>(easymotion-overwin-f2)
+    nmap <Leader>S <Plug>(easymotion-overwin-f2)
     nmap <Leader>j <Plug>(easymotion-j)
     nmap <Leader>k <Plug>(easymotion-k)
 endif

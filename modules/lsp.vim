@@ -1,5 +1,9 @@
 " lsp.vim — vim-lsp settings, asyncomplete, LSP buffer keymaps
 
+if !g:chopsticks_enable_lsp
+    finish
+endif
+
 let g:lsp_settings_lazyload = 1
 
 let g:lsp_settings_filetype_python     = ['pylsp']
@@ -14,10 +18,13 @@ let g:lsp_settings_filetype_css        = ['vscode-css-language-server']
 let g:lsp_settings_filetype_scss       = ['vscode-css-language-server']
 let g:lsp_settings_filetype_json       = ['vscode-json-language-server']
 let g:lsp_settings_filetype_yaml       = ['yaml-language-server']
-let g:lsp_settings_filetype_markdown   = ['marksman']
 let g:lsp_settings_filetype_sql        = ['sqls']
 
-let g:lsp_diagnostics_virtual_text_enabled = !g:is_tty
+if g:chopsticks_markdown_lsp
+    let g:lsp_settings_filetype_markdown = ['marksman']
+endif
+
+let g:lsp_diagnostics_virtual_text_enabled = g:chopsticks_lsp_virtual_text
 let g:lsp_diagnostics_virtual_text_delay   = 200
 let g:lsp_diagnostics_highlights_enabled   = !g:is_tty
 let g:lsp_document_highlight_enabled       = !g:is_tty
@@ -52,7 +59,7 @@ inoremap <expr> <CR>    pumvisible() ? asyncomplete#close_popup() : "\<CR>"
 
 function! s:on_lsp_buffer_enabled() abort
     setlocal omnifunc=lsp#complete
-    if !g:is_tty
+    if !g:is_tty && &filetype !=# 'markdown'
         setlocal signcolumn=yes
     endif
 

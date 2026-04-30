@@ -172,13 +172,22 @@ function! s:ChopsticksStatus() abort
     call add(l:lines, s:Check('shellcheck (sh)', 'shellcheck'))
     call add(l:lines, s:Check('yamllint (yaml)', 'yamllint'))
     call add(l:lines, s:Check('hadolint (docker)', 'hadolint'))
-    call add(l:lines, s:Check('markdownlint (md)', 'markdownlint'))
+    if get(g:, 'chopsticks_markdown_lint', 0)
+        call add(l:lines, s:Check('markdownlint (md)', 'markdownlint'))
+    else
+        call add(l:lines, '  off markdownlint (md)  (disabled by default)')
+    endif
     call add(l:lines, '')
 
-    call add(l:lines, '── formatters ──  (format-on-save is ON)')
+    call add(l:lines, '── formatters ──  (format-on-save is ' . (get(g:, 'ale_fix_on_save', 0) ? 'ON' : 'OFF') . ')')
     call add(l:lines, s:Check('black (python)', 'black'))
     call add(l:lines, s:Check('isort (python)', 'isort'))
-    call add(l:lines, s:Check('prettier (js/ts/json/md)', 'prettier'))
+    call add(l:lines, s:Check('prettier (js/ts/json)', 'prettier'))
+    if get(g:, 'chopsticks_markdown_format_on_save', 0)
+        call add(l:lines, s:Check('prettier (md)', 'prettier'))
+    else
+        call add(l:lines, '  off prettier (md)  (disabled by default)')
+    endif
     call add(l:lines, s:Check('goimports (go)', 'goimports'))
     call add(l:lines, s:Check('rustfmt (rust)', 'rustfmt'))
     call add(l:lines, s:Check('clang-format (c)', 'clang-format'))
@@ -256,7 +265,7 @@ function! s:CheatSheet() abort
         \ '',
         \ '  ── edit ──────────────────',
         \ '  gc        comment',
-        \ '  s+2ch     easymotion jump',
+        \ '  ,S+2ch    easymotion jump',
         \ '  cs"''      surround',
         \ '  ,u        undo tree',
         \ '  ,y ,p     clipboard y/p  (v)',

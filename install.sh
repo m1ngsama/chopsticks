@@ -467,19 +467,19 @@ if [[ $HAS_PKG_MGR -eq 1 ]]; then
     : $(( _idx++ ))
 
     _I_CTAGS=$_idx
-    _ITEMS+=("universal-ctags|code symbol index (backing engine for ,rt tag jumps)|1")
+    _ITEMS+=("universal-ctags|Optional symbol index for ,rt tag jumps|0")
     : $(( _idx++ ))
 
     _I_SHELLCHECK=$_idx
-    _ITEMS+=("shellcheck|shell script static analysis (ALE integration, on-save)|1")
+    _ITEMS+=("shellcheck|Optional shell script static analysis via ALE|0")
     : $(( _idx++ ))
 
     _I_HADOLINT=$_idx
-    _ITEMS+=("hadolint|Dockerfile linting (ALE integration, on-save)|1")
+    _ITEMS+=("hadolint|Optional Dockerfile linting via ALE|0")
     : $(( _idx++ ))
 
     _I_MARKSMAN=$_idx
-    _ITEMS+=("marksman|Markdown LSP — completion · go-to-definition · live diagnostics|1")
+    _ITEMS+=("marksman|Optional Markdown LSP — enable with g:chopsticks_markdown_lsp|0")
     : $(( _idx++ ))
 else
     warn "No package manager available — system tools skipped"
@@ -488,21 +488,21 @@ fi
 # ── npm tools ────────────────────────────────────────────────────────────────
 if [[ $HAS_NODE -eq 1 ]]; then
     _I_NPM=$_idx
-    _ITEMS+=("npm formatter suite|prettier / eslint / markdownlint / stylelint / tsc — ALE fix-on-save|1")
+    _ITEMS+=("npm formatter suite|Optional prettier / eslint / markdownlint / stylelint / tsc|0")
     : $(( _idx++ ))
 fi
 
 # ── Python tools ─────────────────────────────────────────────────────────────
 if [[ $HAS_PIP -eq 1 ]]; then
     _I_PYTHON=$_idx
-    _ITEMS+=("Python tool suite|black / isort / flake8 / pylint / yamllint / sqlfluff — ALE fix-on-save|1")
+    _ITEMS+=("Python tool suite|Optional black / isort / flake8 / pylint / yamllint / sqlfluff|0")
     : $(( _idx++ ))
 fi
 
 # ── Go tools ─────────────────────────────────────────────────────────────────
 if [[ $HAS_GO -eq 1 ]]; then
     _I_GO=$_idx
-    _ITEMS+=("Go tool suite|gopls (LSP) / goimports / staticcheck — completion · format · analysis|1")
+    _ITEMS+=("Go tool suite|Optional gopls / goimports / staticcheck|0")
     : $(( _idx++ ))
 fi
 
@@ -510,7 +510,7 @@ fi
 if command -v tmux >/dev/null 2>&1; then
     if ! grep -q 'vim-tmux-navigator' "$HOME/.tmux.conf" 2>/dev/null; then
         _I_TMUX=$_idx
-        _ITEMS+=("tmux integration|seamless Ctrl+h/j/k/l navigation between vim and tmux panes|1")
+        _ITEMS+=("tmux integration|Optional Ctrl+h/j/k/l navigation between vim and tmux panes|0")
         : $(( _idx++ ))
     else
         ok "tmux integration (vim-tmux-navigator already configured)"

@@ -34,16 +34,16 @@ chopsticks gives you a production-ready Vim config in one command. Pure VimScrip
 
 ## What's in the box
 
-| Feature | Description |
-|---------|-------------|
-| **LSP** | completion, go-to-def, hover, rename, code actions — pure VimScript ([vim-lsp](https://github.com/prabirshrestha/vim-lsp)) |
-| **Lint + format** | [ALE](https://github.com/dense-analysis/ale) runs black, prettier, goimports, rustfmt on save |
-| **Fuzzy find** | files, buffers, grep, tags, marks, commands — [FZF](https://github.com/junegunn/fzf.vim) |
-| **Git** | status, diff, blame, push, pull, conflict markers — [fugitive](https://github.com/tpope/vim-fugitive) + [gitgutter](https://github.com/airblade/vim-gitgutter) |
-| **Run file** | `,cr` — auto-detects Python, Go, Rust, JS, C, Shell, and more |
-| **Markdown** | live preview in browser (`,mp`), table of contents (`,mt`) |
-| **Diagnostics** | `:ChopsticksStatus` — see what's installed, what's missing, how to fix it |
-| **TTY-aware** | degrades gracefully on SSH, console, slow links — never breaks |
+| Feature           | Description                                                                                                                                                    |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **LSP**           | completion, go-to-def, hover, rename, code actions — pure VimScript ([vim-lsp](https://github.com/prabirshrestha/vim-lsp))                                     |
+| **Lint + format** | [ALE](https://github.com/dense-analysis/ale) runs black, prettier, goimports, rustfmt on save                                                                  |
+| **Fuzzy find**    | files, buffers, grep, tags, marks, commands — [FZF](https://github.com/junegunn/fzf.vim)                                                                       |
+| **Git**           | status, diff, blame, push, pull, conflict markers — [fugitive](https://github.com/tpope/vim-fugitive) + [gitgutter](https://github.com/airblade/vim-gitgutter) |
+| **Run file**      | `,cr` — auto-detects Python, Go, Rust, JS, C, Shell, and more                                                                                                  |
+| **Markdown**      | quiet writing defaults, browser preview (`,mp`), table of contents (`,mt`)                                                                                     |
+| **Diagnostics**   | `:ChopsticksStatus` — see what's installed, what's missing, how to fix it                                                                                      |
+| **TTY-aware**     | degrades gracefully on SSH, console, slow links — never breaks                                                                                                 |
 
 ## Install
 
@@ -61,6 +61,21 @@ cd ~/.vim && ./install.sh
 Supports macOS (brew), Debian/Ubuntu (apt), Arch (pacman), Fedora (dnf).
 
 First launch installs plugins automatically (30-60s). Restart vim when done.
+
+## Profiles
+
+Default profile: `engineer`.
+
+```vim
+" Put this before sourcing chopsticks.
+let g:chopsticks_profile = 'minimal'   " core navigation/editing/git/markdown
+let g:chopsticks_profile = 'engineer'  " default: LSP, ALE, syntax extras
+let g:chopsticks_profile = 'full'      " engineer + heavier Markdown feedback
+```
+
+`minimal` avoids LSP, ALE, completion plugins, extra language syntax plugins,
+Startify, and UndoTree. `full` keeps those and opts into Markdown lint, format,
+spell, conceal, Marksman, and LSP virtual text.
 
 ## Keys
 
@@ -88,7 +103,7 @@ jk        exit insert mode         ,?    cheat sheet
 
 ### Edit
 
-`s`+2ch jump | `gc` comment | `cs"'` surround | `Alt+j/k` move line | `,u` undo tree | `,y` clipboard | `,*` replace word | `,F` re-indent | `,W` strip whitespace | `[<Space>` `]<Space>` blank lines
+`,S`+2ch jump | `gc` comment | `cs"'` surround | `Alt+j/k` move line | `,u` undo tree | `,y` clipboard | `,*` replace word | `,F` re-indent | `,W` strip whitespace | `[<Space>` `]<Space>` blank lines
 
 ### Git
 
@@ -120,9 +135,35 @@ jk        exit insert mode         ,?    cheat sheet
 :ChopsticksStatus    " see all tools + LSP + linters at a glance
 ```
 
-pylsp, gopls, rust-analyzer, clangd, marksman, sqls — no Node.js. JS/TS servers need Node.
+pylsp, gopls, rust-analyzer, clangd, sqls — no Node.js. JS/TS servers need Node.
+Markdown LSP (`marksman`) is opt-in so prose buffers stay quiet by default.
 
 ALE and vim-lsp coexist cleanly (`ale_disable_lsp=1`). ALE handles linting + formatting. vim-lsp handles everything else.
+
+## Markdown
+
+Markdown opens in writing mode: wrapped text, no spell noise, no concealed
+syntax, no sign column, no real-time markdownlint, and no Marksman diagnostics.
+The explicit commands still work:
+
+```vim
+,mp    " preview in browser
+,mt    " table of contents
+```
+
+Opt into heavier Markdown tooling from your own vimrc before loading
+chopsticks:
+
+```vim
+let g:chopsticks_markdown_lint = 1
+let g:chopsticks_markdown_format_on_save = 1
+let g:chopsticks_markdown_lsp = 1
+let g:chopsticks_markdown_spell = 1
+let g:chopsticks_markdown_conceal = 1
+let g:previm_enable_realtime = 1
+```
+
+For Markdown LSP, install or select `marksman` first.
 
 ## Architecture
 
@@ -147,23 +188,23 @@ Each module is self-contained. Comment out one line in `.vimrc` to disable it. A
 
 ## Performance
 
-| Metric | Value |
-|--------|-------|
-| Lazy-loaded | 7 plugins (on command or filetype) |
+| Metric                   | Value                                       |
+| ------------------------ | ------------------------------------------- |
+| Lazy-loaded              | 7 plugins (on command or filetype)          |
 | Built-in plugins skipped | 12 (gzip, tar, zip, vimball, logiPat, etc.) |
-| Large file threshold | 10MB (auto-disables syntax + undo) |
-| TTY large file | 500KB (syntax disabled) |
+| Large file threshold     | 10MB (auto-disables syntax + undo)          |
+| TTY large file           | 500KB (syntax disabled)                     |
 
 ## Troubleshooting
 
-| Problem | Fix |
-|---------|-----|
-| Plugins not loading | `:PlugInstall` then `:PlugUpdate` |
-| LSP not starting | `:LspInstallServer` for current filetype |
-| Colors wrong | `export COLORTERM=truecolor` in shell rc |
-| `Ctrl+s` freezes | `stty -ixon` in shell rc |
-| Everything slow | Large file? Auto-disabled >10MB |
-| What's installed? | `:ChopsticksStatus` shows tools, LSP, linters |
+| Problem             | Fix                                           |
+| ------------------- | --------------------------------------------- |
+| Plugins not loading | `:PlugInstall` then `:PlugUpdate`             |
+| LSP not starting    | `:LspInstallServer` for current filetype      |
+| Colors wrong        | `export COLORTERM=truecolor` in shell rc      |
+| `Ctrl+s` freezes    | `stty -ixon` in shell rc                      |
+| Everything slow     | Large file? Auto-disabled >10MB               |
+| What's installed?   | `:ChopsticksStatus` shows tools, LSP, linters |
 
 More in the [wiki](https://github.com/m1ngsama/chopsticks/wiki).
 

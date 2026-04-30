@@ -2,9 +2,10 @@
 
 " ── vim-markdown ───────────────────────────────────────────────────────────
 
-let g:vim_markdown_conceal             = 1
+let g:vim_markdown_conceal             = get(g:, 'vim_markdown_conceal',
+    \ g:chopsticks_markdown_conceal)
 let g:vim_markdown_conceal_code_blocks = 0
-let g:vim_markdown_folding_disabled    = 0
+let g:vim_markdown_folding_disabled    = get(g:, 'vim_markdown_folding_disabled', 1)
 let g:vim_markdown_folding_level       = 2
 let g:vim_markdown_frontmatter        = 1
 let g:vim_markdown_toml_frontmatter   = 1
@@ -22,7 +23,7 @@ if has('macunix')
 elseif executable('xdg-open')
     let g:previm_open_cmd = 'xdg-open'
 endif
-let g:previm_enable_realtime = 1
+let g:previm_enable_realtime = get(g:, 'previm_enable_realtime', 0)
 if exists('g:plugs["previm"]')
     nnoremap <leader>mp :PrevimOpen<CR>
 endif
@@ -39,6 +40,22 @@ let g:go_highlight_functions      = 1
 let g:go_highlight_function_calls = 1
 
 " ── Filetype Detection ──────────────────────────────────────────────────────
+
+function! s:MarkdownDefaults() abort
+    setlocal wrap linebreak textwidth=0 colorcolumn=0 signcolumn=no
+    let &l:conceallevel = get(g:, 'chopsticks_markdown_conceal', 0) ? 2 : 0
+
+    if get(g:, 'chopsticks_markdown_spell', 0)
+        setlocal spell
+    else
+        setlocal nospell
+    endif
+
+    if !get(g:, 'chopsticks_markdown_lint', 0)
+        \ && !get(g:, 'chopsticks_markdown_format_on_save', 0)
+        let b:ale_enabled = 0
+    endif
+endfunction
 
 augroup ChopstickFiletype
     autocmd!
@@ -60,8 +77,7 @@ augroup ChopstickFiletype
         \ setlocal expandtab shiftwidth=2 tabstop=2
     autocmd FileType yaml
         \ setlocal expandtab shiftwidth=2 tabstop=2
-    autocmd FileType markdown
-        \ setlocal wrap linebreak spell textwidth=0 conceallevel=2
+    autocmd FileType markdown call s:MarkdownDefaults()
     autocmd FileType sh
         \ setlocal expandtab shiftwidth=2 tabstop=2 textwidth=80
     autocmd FileType make

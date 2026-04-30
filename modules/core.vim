@@ -57,8 +57,14 @@ endif
 
 set display+=lastline
 set ffs=unix,dos,mac
-set nowb
-set noswapfile
+set writebackup
+
+if has('unix')
+    let s:swap_dir = expand(get(g:, 'chopsticks_swap_dir', '~/.vim/.swap'))
+    let &directory = s:swap_dir . '//,/tmp//'
+    silent! call mkdir(s:swap_dir, 'p', 0700)
+endif
+set swapfile
 
 if has('persistent_undo')
     set undofile
@@ -89,7 +95,7 @@ let mapleader = ","
 
 " ── Basic Keymaps ───────────────────────────────────────────────────────────
 
-nnoremap <leader>w :w!<cr>
+nnoremap <leader>w :w<cr>
 nnoremap <leader>q :q<cr>
 nnoremap <leader>x :x<cr>
 

@@ -2,7 +2,7 @@
 # install.sh - chopsticks vim configuration installer
 # Usage: cd /path/to/chopsticks && ./install.sh [--yes] [--help]
 #
-# --yes   non-interactive: install all optional components automatically
+# --yes   non-interactive: use default component selections
 # --help  show this help and exit
 
 set -eo pipefail
@@ -16,7 +16,7 @@ for arg in "$@"; do
             echo "Usage: ./install.sh [OPTIONS]"
             echo ""
             echo "Options:"
-            echo "  --yes    Non-interactive mode: select all defaults automatically"
+            echo "  --yes    Non-interactive mode: use default component selections"
             echo "  --help   Show this help and exit"
             echo ""
             echo "Supported platforms: macOS (brew), Debian/Ubuntu (apt), Arch (pacman), Fedora (dnf)"

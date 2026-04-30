@@ -22,6 +22,8 @@ let g:chopsticks_enable_extra_languages = get(g:,
     \ 'chopsticks_enable_extra_languages', !s:profile_minimal)
 let g:chopsticks_enable_ui_extras = get(g:, 'chopsticks_enable_ui_extras',
     \ !s:profile_minimal)
+let g:chopsticks_enable_markdown_preview = get(g:,
+    \ 'chopsticks_enable_markdown_preview', !s:profile_minimal)
 
 let g:chopsticks_markdown_lint = get(g:, 'chopsticks_markdown_lint',
     \ s:profile_full)

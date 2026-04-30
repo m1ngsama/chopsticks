@@ -10,8 +10,8 @@ curl -fsSL https://raw.githubusercontent.com/m1ngsama/chopsticks/main/get.sh | b
 
 Open vim. First launch auto-installs plugins — **wait 30-60s, don't close vim**. Restart when done.
 
-Default profile is `engineer`. Put `let g:chopsticks_profile = 'minimal'`
-before loading chopsticks for a smaller core-only setup, or use `full` for the
+Default profile is `engineer`. Put `let g:chopsticks_profile = 'minimal'` in
+`~/.config/chopsticks.vim` for a smaller core-only setup, or use `full` for the
 heavier Markdown/LSP feedback.
 
 ## Modes

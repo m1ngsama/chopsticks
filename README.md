@@ -67,15 +67,18 @@ First launch installs plugins automatically (30-60s). Restart vim when done.
 Default profile: `engineer`.
 
 ```vim
-" Put this before sourcing chopsticks.
+" Put this in ~/.config/chopsticks.vim.
 let g:chopsticks_profile = 'minimal'   " core navigation/editing/git/markdown
 let g:chopsticks_profile = 'engineer'  " default: LSP, ALE, syntax extras
 let g:chopsticks_profile = 'full'      " engineer + heavier Markdown feedback
 ```
 
 `minimal` avoids LSP, ALE, completion plugins, extra language syntax plugins,
-Startify, and UndoTree. `full` keeps those and opts into Markdown lint, format,
-spell, conceal, Marksman, and LSP virtual text.
+Startify, UndoTree, and browser Markdown preview. `full` keeps those and opts
+into Markdown lint, format, spell, conceal, Marksman, and LSP virtual text.
+
+Project updates leave `~/.config/chopsticks.vim` alone, so put local choices
+there instead of editing the managed `.vimrc`.
 
 ## Keys
 

@@ -4,6 +4,8 @@
 
 ### Added
 
+- `~/.config/chopsticks.vim` local pre-load config for profile and user choices
+- `g:chopsticks_enable_markdown_preview` to control Previm independently
 - `g:chopsticks_profile` with `minimal`, `engineer`, and `full` profiles
 - `.markdownlint.json` aligned with the project's README/changelog style
 - `:ChopsticksStatus` diagnostic command — checks system tools, LSP servers, linters, formatters
@@ -24,6 +26,9 @@
 - Swap files are enabled again and stored under `~/.vim/.swap` for crash recovery
 - Installer defaults are slimmer: only core search tools stay selected by default;
   language and lint suites are opt-in
+- `:ChopsticksStatus` now respects disabled LSP/lint profiles instead of reporting
+  intentionally disabled tools as missing
+- `,sv` now clears the load guard before sourcing `$MYVIMRC`
 - CI now verifies key plugin directories, Markdown quiet defaults, markdownlint,
   and an explicit startup-time threshold
 - Skip 2 more built-in plugins: openPlugin, manpager (10 → 12 total)

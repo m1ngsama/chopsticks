@@ -1,7 +1,12 @@
+let g:chopsticks_dir = fnamemodify(resolve(expand('<sfile>')), ':h')
+let s:local_config = expand(get(g:, 'chopsticks_local_config',
+    \ '~/.config/chopsticks.vim'))
+if filereadable(s:local_config)
+    execute 'source ' . fnameescape(s:local_config)
+endif
+
 if exists('g:chopsticks_loaded') | finish | endif
 let g:chopsticks_loaded = 1
-
-let g:chopsticks_dir = fnamemodify(resolve(expand('<sfile>')), ':h')
 
 function! s:load(mod) abort
     execute 'source ' . g:chopsticks_dir . '/modules/' . a:mod . '.vim'

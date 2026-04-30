@@ -34,7 +34,7 @@ nnoremap <leader>W :%s/\s\+$//<CR>:let @/=''<CR>
 vnoremap <leader>W :s/\s\+$//<CR>:let @/=''<CR>gv
 
 nnoremap <leader>ev :edit $MYVIMRC<CR>
-nnoremap <leader>sv :source $MYVIMRC<CR>:echo "vimrc reloaded"<CR>
+nnoremap <leader>sv :unlet! g:chopsticks_loaded<CR>:source $MYVIMRC<CR>:echo "vimrc reloaded"<CR>
 
 nnoremap <leader>* :%s/\<<C-r><C-w>\>//g<Left><Left>
 vnoremap <leader>* :s///g<Left><Left><Left>
@@ -123,7 +123,14 @@ function! s:Check(name, cmd) abort
     return executable(a:cmd) ? '  OK  ' . a:name : '  --  ' . a:name . '  (missing: ' . a:cmd . ')'
 endfunction
 
+function! s:Off(name, reason) abort
+    return '  off ' . a:name . '  (' . a:reason . ')'
+endfunction
+
 function! s:LspCheck(ft, server) abort
+    if !get(g:, 'chopsticks_enable_lsp', 1)
+        return s:Off(a:ft, 'LSP disabled by profile')
+    endif
     if !exists('*lsp#get_server_names')
         return '  --  ' . a:ft . '  (vim-lsp not loaded)'
     endif
@@ -165,32 +172,40 @@ function! s:ChopsticksStatus() abort
     call add(l:lines, '')
 
     call add(l:lines, '── linters ──')
-    call add(l:lines, s:Check('flake8 (python)', 'flake8'))
-    call add(l:lines, s:Check('pylint (python)', 'pylint'))
-    call add(l:lines, s:Check('eslint (js/ts)', 'eslint'))
-    call add(l:lines, s:Check('staticcheck (go)', 'staticcheck'))
-    call add(l:lines, s:Check('shellcheck (sh)', 'shellcheck'))
-    call add(l:lines, s:Check('yamllint (yaml)', 'yamllint'))
-    call add(l:lines, s:Check('hadolint (docker)', 'hadolint'))
-    if get(g:, 'chopsticks_markdown_lint', 0)
-        call add(l:lines, s:Check('markdownlint (md)', 'markdownlint'))
+    if get(g:, 'chopsticks_enable_lint', 1)
+        call add(l:lines, s:Check('flake8 (python)', 'flake8'))
+        call add(l:lines, s:Check('pylint (python)', 'pylint'))
+        call add(l:lines, s:Check('eslint (js/ts)', 'eslint'))
+        call add(l:lines, s:Check('staticcheck (go)', 'staticcheck'))
+        call add(l:lines, s:Check('shellcheck (sh)', 'shellcheck'))
+        call add(l:lines, s:Check('yamllint (yaml)', 'yamllint'))
+        call add(l:lines, s:Check('hadolint (docker)', 'hadolint'))
+        if get(g:, 'chopsticks_markdown_lint', 0)
+            call add(l:lines, s:Check('markdownlint (md)', 'markdownlint'))
+        else
+            call add(l:lines, s:Off('markdownlint (md)', 'disabled by default'))
+        endif
     else
-        call add(l:lines, '  off markdownlint (md)  (disabled by default)')
+        call add(l:lines, s:Off('ALE linters', 'lint disabled by profile'))
     endif
     call add(l:lines, '')
 
     call add(l:lines, '── formatters ──  (format-on-save is ' . (get(g:, 'ale_fix_on_save', 0) ? 'ON' : 'OFF') . ')')
-    call add(l:lines, s:Check('black (python)', 'black'))
-    call add(l:lines, s:Check('isort (python)', 'isort'))
-    call add(l:lines, s:Check('prettier (js/ts/json)', 'prettier'))
-    if get(g:, 'chopsticks_markdown_format_on_save', 0)
-        call add(l:lines, s:Check('prettier (md)', 'prettier'))
+    if get(g:, 'chopsticks_enable_lint', 1)
+        call add(l:lines, s:Check('black (python)', 'black'))
+        call add(l:lines, s:Check('isort (python)', 'isort'))
+        call add(l:lines, s:Check('prettier (js/ts/json)', 'prettier'))
+        if get(g:, 'chopsticks_markdown_format_on_save', 0)
+            call add(l:lines, s:Check('prettier (md)', 'prettier'))
+        else
+            call add(l:lines, s:Off('prettier (md)', 'disabled by default'))
+        endif
+        call add(l:lines, s:Check('goimports (go)', 'goimports'))
+        call add(l:lines, s:Check('rustfmt (rust)', 'rustfmt'))
+        call add(l:lines, s:Check('clang-format (c)', 'clang-format'))
     else
-        call add(l:lines, '  off prettier (md)  (disabled by default)')
+        call add(l:lines, s:Off('ALE formatters', 'lint disabled by profile'))
     endif
-    call add(l:lines, s:Check('goimports (go)', 'goimports'))
-    call add(l:lines, s:Check('rustfmt (rust)', 'rustfmt'))
-    call add(l:lines, s:Check('clang-format (c)', 'clang-format'))
     call add(l:lines, '')
 
     let l:ok = len(filter(copy(l:lines), 'v:val =~# "  OK  "'))
@@ -199,7 +214,9 @@ function! s:ChopsticksStatus() abort
     call add(l:lines, '  ' . l:ok . ' ready, ' . l:miss . ' missing')
     call add(l:lines, '')
     call add(l:lines, '  Install missing tools with ./install.sh')
-    call add(l:lines, '  Install LSP servers with :LspInstallServer')
+    if get(g:, 'chopsticks_enable_lsp', 1)
+        call add(l:lines, '  Install LSP servers with :LspInstallServer')
+    endif
 
     let l:name = '__ChopsticksStatus__'
     if bufwinnr(l:name) > 0

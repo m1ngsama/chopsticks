@@ -44,10 +44,12 @@ endif
 
 " ── Language Syntax ──────────────────────────────────────────────────────────
 Plug 'preservim/vim-markdown', { 'for': 'markdown' }
+if g:chopsticks_enable_markdown_preview
+    Plug 'previm/previm', { 'on': 'PrevimOpen' }
+endif
 if g:chopsticks_enable_extra_languages
     Plug 'pangloss/vim-javascript', { 'for': ['javascript', 'javascript.jsx'] }
     Plug 'HerringtonDarkholme/yats.vim', { 'for': ['typescript', 'typescript.tsx'] }
-    Plug 'previm/previm', { 'on': 'PrevimOpen' }
     Plug 'fatih/vim-go', { 'for': 'go' }
 endif
 

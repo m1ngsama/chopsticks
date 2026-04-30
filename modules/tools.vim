@@ -34,7 +34,7 @@ nnoremap <leader>W :%s/\s\+$//<CR>:let @/=''<CR>
 vnoremap <leader>W :s/\s\+$//<CR>:let @/=''<CR>gv
 
 nnoremap <leader>ev :edit $MYVIMRC<CR>
-nnoremap <leader>sv :unlet! g:chopsticks_loaded<CR>:source $MYVIMRC<CR>:echo "vimrc reloaded"<CR>
+nnoremap <leader>sv :unlet! g:chopsticks_loaded<CR>:execute 'source ' . fnameescape($MYVIMRC)<CR>:echo "vimrc reloaded"<CR>
 
 nnoremap <leader>* :%s/\<<C-r><C-w>\>//g<Left><Left>
 vnoremap <leader>* :s///g<Left><Left><Left>
@@ -240,12 +240,13 @@ function! s:CheatSheet() abort
         execute bufwinnr(l:name) . 'wincmd w | bd'
         return
     endif
-    execute 'vertical botright new ' . l:name
-    vertical resize 42
-    setlocal buftype=nofile bufhidden=wipe nobuflisted noswapfile
-    setlocal nowrap nonumber norelativenumber signcolumn=no
-    setlocal winfixwidth
-    call setline(1, [
+
+    let l:has_lsp = get(g:, 'chopsticks_enable_lsp', 1)
+    let l:has_lint = get(g:, 'chopsticks_enable_lint', 1)
+    let l:has_undotree = exists('g:plugs["undotree"]')
+    let l:has_previm = exists('g:plugs["previm"]')
+
+    let l:lines = [
         \ '  chopsticks         ,? close',
         \ '  ─────────────────────────────',
         \ '',
@@ -263,28 +264,50 @@ function! s:CheatSheet() abort
         \ '  ,fm       marks',
         \ '',
         \ '  ── code ──────────────────',
-        \ '  gd        definition',
-        \ '  gy        type definition',
-        \ '  gi        implementation',
-        \ '  gr        references',
-        \ '  K         hover docs',
-        \ '  ,rn       rename',
-        \ '  ,ca       code action',
-        \ '  ,f        format',
-        \ '  ,o        outline',
-        \ '  ,cr       run file',
-        \ '  ,mp       markdown preview',
-        \ '  ,mt       table of contents',
-        \ '  [g ]g     LSP diagnostics',
-        \ '  [e ]e     ALE errors',
-        \ '  ,af       format on save',
-        \ '  :LspInstallServer  setup LSP',
+        \ ]
+
+    if l:has_lsp
+        call extend(l:lines, [
+            \ '  gd        definition',
+            \ '  gy        type definition',
+            \ '  gi        implementation',
+            \ '  gr        references',
+            \ '  K         hover docs',
+            \ '  ,rn       rename',
+            \ '  ,ca       code action',
+            \ '  ,f        format',
+            \ '  ,o        outline',
+            \ '  [g ]g     LSP diagnostics',
+            \ '  :LspInstallServer  setup LSP',
+            \ ])
+    endif
+
+    call add(l:lines, '  ,cr       run file')
+    if l:has_previm
+        call add(l:lines, '  ,mp       markdown preview')
+    endif
+    call add(l:lines, '  ,mt       table of contents')
+
+    if l:has_lint
+        call extend(l:lines, [
+            \ '  [e ]e     ALE errors',
+            \ '  ,af       format on save',
+            \ ])
+    endif
+
+    call extend(l:lines, [
         \ '',
         \ '  ── edit ──────────────────',
         \ '  gc        comment',
         \ '  ,S+2ch    easymotion jump',
         \ '  cs"''      surround',
-        \ '  ,u        undo tree',
+        \ ])
+
+    if l:has_undotree
+        call add(l:lines, '  ,u        undo tree')
+    endif
+
+    call extend(l:lines, [
         \ '  ,y ,p     clipboard y/p  (v)',
         \ '  Alt+j/k   move line      (v)',
         \ '  ,*        replace word    (v)',
@@ -330,6 +353,13 @@ function! s:CheatSheet() abort
         \ '  ,sv       reload vimrc',
         \ '  :ChopsticksStatus  health',
         \ ])
+
+    execute 'vertical botright new ' . l:name
+    vertical resize 42
+    setlocal buftype=nofile bufhidden=wipe nobuflisted noswapfile
+    setlocal nowrap nonumber norelativenumber signcolumn=no
+    setlocal winfixwidth
+    call setline(1, l:lines)
     setlocal nomodifiable readonly
     nnoremap <buffer> <silent> q :bd<CR>
     nnoremap <buffer> <silent> <leader>? :bd<CR>

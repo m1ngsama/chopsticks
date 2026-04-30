@@ -19,6 +19,12 @@
 
 ### Changed
 
+- `,?` cheat sheet is now profile-aware and hides LSP/ALE/preview/UndoTree keys
+  when those features are disabled
+- Module reload/source paths now use `fnameescape()` so installs in paths with
+  spaces are handled correctly
+- CI now verifies path-safe module loading, the local config hook, and
+  minimal-profile cheat sheet output
 - Markdown now opens in quiet writing mode by default: no real-time markdownlint,
   no Marksman LSP, no spell noise, no conceal, no sign column, and no realtime preview
 - Native `s` is no longer shadowed by EasyMotion; use `,S` for the two-character jump

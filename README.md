@@ -78,7 +78,8 @@ Startify, UndoTree, and browser Markdown preview. `full` keeps those and opts
 into Markdown lint, format, spell, conceal, Marksman, and LSP virtual text.
 
 Project updates leave `~/.config/chopsticks.vim` alone, so put local choices
-there instead of editing the managed `.vimrc`.
+there instead of editing the managed `.vimrc`. The `,?` cheat sheet follows the
+active profile and only shows keys for enabled features.
 
 ## Keys
 

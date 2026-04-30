@@ -9,7 +9,7 @@ if exists('g:chopsticks_loaded') | finish | endif
 let g:chopsticks_loaded = 1
 
 function! s:load(mod) abort
-    execute 'source ' . g:chopsticks_dir . '/modules/' . a:mod . '.vim'
+    execute 'source ' . fnameescape(g:chopsticks_dir . '/modules/' . a:mod . '.vim')
 endfunction
 
 call s:load('env')

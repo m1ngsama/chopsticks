@@ -104,4 +104,7 @@ syntax. Enable the heavier Markdown tools only when you want them.
 :ChopsticksStatus       see what's installed and what's missing
 ```
 
+The `,?` cheat sheet follows your active profile, so `minimal` users only see
+keys for features that are actually loaded.
+
 See [README](README.md) for the full reference. See the [wiki](https://github.com/m1ngsama/chopsticks/wiki) for deep dives.

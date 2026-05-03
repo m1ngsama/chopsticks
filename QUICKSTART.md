@@ -17,6 +17,12 @@ without prompting. You can later put `let g:chopsticks_profile = 'minimal'` in
 `${XDG_CONFIG_HOME:-~/.config}/chopsticks.vim` for a smaller core-only setup,
 or use `full` for the heavier Markdown/LSP feedback.
 
+To switch later without reinstalling anything:
+
+```bash
+cd ~/.vim && ./install.sh --configure-only --profile=full
+```
+
 ## Modes
 
 | Mode   | Enter           | Leave         |

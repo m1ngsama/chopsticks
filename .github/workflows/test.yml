@@ -164,6 +164,21 @@ jobs:
       - uses: actions/checkout@v4
       - name: Shellcheck install.sh
         run: shellcheck install.sh get.sh
+      - name: Verify installer profile-only modes
+        run: |
+          XDG_CONFIG_HOME=/tmp/chopsticks-dry ./install.sh --dry-run --profile=full \
+            | tee /tmp/chopsticks-dry-run.txt
+          grep -q 'Profile: full' /tmp/chopsticks-dry-run.txt
+          test ! -e /tmp/chopsticks-dry/chopsticks.vim
+
+          XDG_CONFIG_HOME=/tmp/chopsticks-config ./install.sh --configure-only --profile=minimal
+          grep -q "let g:chopsticks_profile = 'minimal'" /tmp/chopsticks-config/chopsticks.vim
+
+          XDG_CONFIG_HOME=/tmp/chopsticks-config ./install.sh --configure-only --profile=full
+          grep -q "let g:chopsticks_profile = 'full'" /tmp/chopsticks-config/chopsticks.vim
+
+          XDG_CONFIG_HOME=/tmp/chopsticks-default ./install.sh --configure-only --yes
+          grep -q "let g:chopsticks_profile = 'engineer'" /tmp/chopsticks-default/chopsticks.vim
 
   docs:
     runs-on: ubuntu-latest

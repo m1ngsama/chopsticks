@@ -4,6 +4,8 @@
 #
 # --yes              non-interactive: use default profile/component selections
 # --profile=PROFILE  choose minimal, engineer, or full without prompting
+# --configure-only   update local chopsticks profile config and exit
+# --dry-run          show resolved profile/config path without writing files
 # --help             show this help and exit
 
 set -eo pipefail
@@ -11,6 +13,8 @@ set -eo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 AUTO_YES=0
 REQUESTED_PROFILE=""
+CONFIGURE_ONLY=0
+DRY_RUN=0
 for arg in "$@"; do
     case "$arg" in
         --yes)  AUTO_YES=1 ;;
@@ -18,6 +22,8 @@ for arg in "$@"; do
         --profile)
             echo "Use --profile=minimal, --profile=engineer, or --profile=full" >&2
             exit 1 ;;
+        --configure-only) CONFIGURE_ONLY=1 ;;
+        --dry-run) DRY_RUN=1 ;;
         --help|-h)
             echo "Usage: ./install.sh [OPTIONS]"
             echo ""
@@ -25,6 +31,10 @@ for arg in "$@"; do
             echo "  --yes    Non-interactive mode: use default profile/component selections"
             echo "  --profile=PROFILE"
             echo "           Select minimal, engineer, or full without prompting"
+            echo "  --configure-only"
+            echo "           Update local profile config and exit; no plugins or tools installed"
+            echo "  --dry-run"
+            echo "           Show resolved profile/config path without writing files"
             echo "  --help   Show this help and exit"
             echo ""
             echo "Supported platforms: macOS (brew), Debian/Ubuntu (apt), Arch (pacman), Fedora (dnf)"
@@ -150,6 +160,20 @@ configure_profile() {
     existing="$(profile_from_config)"
 
     step "Configuring Vim profile"
+    if [[ $DRY_RUN -eq 1 ]]; then
+        if [[ -n "$REQUESTED_PROFILE" ]]; then
+            CONFIG_PROFILE="$REQUESTED_PROFILE"
+        elif [[ -n "$existing" ]]; then
+            CONFIG_PROFILE="$existing"
+        else
+            CONFIG_PROFILE="engineer"
+        fi
+        info "Dry run: no files will be changed"
+        info "Profile: $CONFIG_PROFILE"
+        info "Local config: $LOCAL_CONFIG"
+        return
+    fi
+
     if [[ -n "$REQUESTED_PROFILE" ]]; then
         CONFIG_PROFILE="$REQUESTED_PROFILE"
         write_profile_config "$CONFIG_PROFILE"
@@ -175,11 +199,16 @@ configure_profile() {
     else
         if [[ $AUTO_YES -eq 1 ]] || ! { true </dev/tty; } 2>/dev/null; then
             CONFIG_PROFILE="engineer"
+            if [[ $CONFIGURE_ONLY -eq 1 ]]; then
+                write_profile_config "$CONFIG_PROFILE"
+                ok "Profile saved: $CONFIG_PROFILE ($LOCAL_CONFIG)"
+                return
+            fi
             info "Profile: engineer (default; create $LOCAL_CONFIG to change later)"
             return
         fi
         choose_profile engineer
-        if [[ "$CONFIG_PROFILE" == "engineer" ]]; then
+        if [[ "$CONFIG_PROFILE" == "engineer" && $CONFIGURE_ONLY -eq 0 ]]; then
             info "Profile: engineer (default; no local override written)"
         else
             write_profile_config "$CONFIG_PROFILE"
@@ -188,16 +217,41 @@ configure_profile() {
     fi
 }
 
-# ── Error trap ────────────────────────────────────────────────────────────────
+# ── Error trap / cleanup ──────────────────────────────────────────────────────
 on_error() {
     echo -e "\n${RED}[FATAL]${NC} Command '${BASH_COMMAND}' failed at line ${BASH_LINENO[0]}." >&2
     echo "  To get a full debug log:" >&2
     echo "    ./install.sh 2>&1 | tee /tmp/chopsticks-install.log" >&2
     echo "  Report issues: https://github.com/m1ngsama/chopsticks/issues" >&2
 }
+cleanup() {
+    if [[ ${_MENU_CURSOR_HIDDEN:-0} -eq 1 ]]; then
+        tput cnorm 2>/dev/null || true
+    fi
+    [[ -n "${_TMPDIR:-}" ]] && rm -rf "$_TMPDIR" 2>/dev/null
+}
+on_interrupt() {
+    echo "" >&2
+    die "Interrupted."
+}
 trap on_error ERR
 _TMPDIR=$(mktemp -d "${TMPDIR:-/tmp}/chopsticks-XXXXXX")
-trap 'rm -rf "$_TMPDIR" 2>/dev/null' EXIT
+trap cleanup EXIT
+trap on_interrupt INT TERM
+
+if [[ $DRY_RUN -eq 1 || $CONFIGURE_ONLY -eq 1 ]]; then
+    echo -e "${BOLD}chopsticks — Vim Configuration Installer${NC}"
+    echo "----------------------------------------"
+    configure_profile
+    if [[ $DRY_RUN -eq 1 ]]; then
+        exit 0
+    fi
+    echo ""
+    echo -e "${GREEN}Configuration complete.${NC}"
+    echo "  Profile: $CONFIG_PROFILE"
+    echo "  Local config: $LOCAL_CONFIG"
+    exit 0
+fi
 
 # ── Safe download helper ──────────────────────────────────────────────────────
 safe_download() {
@@ -305,7 +359,9 @@ _menu_checkbox() {
     local _lines=$(( 3 + 2 * _MENU_N ))
     local _key _esc _i
 
-    tput civis 2>/dev/null   # hide cursor
+    if tput civis 2>/dev/null; then
+        _MENU_CURSOR_HIDDEN=1
+    fi
     local _first=1
 
     while true; do
@@ -333,7 +389,10 @@ _menu_checkbox() {
         fi
     done
 
-    tput cnorm 2>/dev/null   # restore cursor
+    if [[ ${_MENU_CURSOR_HIDDEN:-0} -eq 1 ]]; then
+        tput cnorm 2>/dev/null || true
+        _MENU_CURSOR_HIDDEN=0
+    fi
     echo ""
     MENU_SEL=("${_MENU_SELS[@]}")
 }

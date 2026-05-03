@@ -62,6 +62,9 @@ cd ~/.vim && ./install.sh --profile=engineer
 Supports macOS (brew), Debian/Ubuntu (apt), Arch (pacman), Fedora (dnf).
 
 First launch installs plugins automatically (30-60s). Restart vim when done.
+Use `./install.sh --dry-run --profile=full` to inspect the resolved profile and
+config path without changing files. Use `./install.sh --configure-only
+--profile=minimal` to switch profiles without reinstalling plugins or tools.
 
 ## Profiles
 

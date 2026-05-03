@@ -49,13 +49,14 @@ chopsticks gives you a production-ready Vim config in one command. Pure VimScrip
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/m1ngsama/chopsticks/main/get.sh | bash
+curl -fsSL https://raw.githubusercontent.com/m1ngsama/chopsticks/main/get.sh | bash -s -- --profile=minimal
 ```
 
 Or manually:
 
 ```bash
 git clone https://github.com/m1ngsama/chopsticks.git ~/.vim
-cd ~/.vim && ./install.sh
+cd ~/.vim && ./install.sh --profile=engineer
 ```
 
 Supports macOS (brew), Debian/Ubuntu (apt), Arch (pacman), Fedora (dnf).
@@ -64,10 +65,13 @@ First launch installs plugins automatically (30-60s). Restart vim when done.
 
 ## Profiles
 
-Default profile: `engineer`.
+Default profile: `engineer`. Interactive installs ask for this profile before
+plugins are installed; `--profile=minimal`, `--profile=engineer`, or
+`--profile=full` selects it without prompting. `--yes` keeps the existing local
+profile or uses `engineer`.
 
 ```vim
-" Put this in ~/.config/chopsticks.vim.
+" Put this in ${XDG_CONFIG_HOME:-~/.config}/chopsticks.vim.
 let g:chopsticks_profile = 'minimal'   " core navigation/editing/git/markdown
 let g:chopsticks_profile = 'engineer'  " default: LSP, ALE, syntax extras
 let g:chopsticks_profile = 'full'      " engineer + heavier Markdown feedback

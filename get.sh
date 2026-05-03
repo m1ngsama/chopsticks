@@ -20,6 +20,24 @@ warn() { echo -e "${YELLOW}[!]${NC}  $1"; }
 die()  { echo -e "${RED}[FATAL]${NC} $1" >&2; exit 1; }
 step() { echo -e "\n${BOLD}==> $1${NC}"; }
 
+repo_origin() {
+    git -C "$DEST" config --get remote.origin.url 2>/dev/null || true
+}
+
+is_chopsticks_repo() {
+    local origin="$1"
+    origin="${origin%/}"
+    origin="${origin%.git}"
+    case "$origin" in
+        https://github.com/m1ngsama/chopsticks|\
+        git@github.com:m1ngsama/chopsticks|\
+        ssh://git@github.com/m1ngsama/chopsticks)
+            return 0 ;;
+        *)
+            return 1 ;;
+    esac
+}
+
 echo -e "${BOLD}chopsticks — One-command installer${NC}"
 echo "----------------------------------"
 echo "  Repo: $REPO"
@@ -43,6 +61,17 @@ ok "git $(git --version | awk '{print $3}')"
 step "Setting up $DEST"
 
 if [[ -d "$DEST/.git" ]]; then
+    ORIGIN="$(repo_origin)"
+    if ! is_chopsticks_repo "$ORIGIN"; then
+        die "$DEST is a git repo, but it does not look like chopsticks.
+  origin: ${ORIGIN:-none}
+  Back it up first:  mv ~/.vim ~/.vim.bak
+  Then re-run:       curl -fsSL https://raw.githubusercontent.com/m1ngsama/chopsticks/main/get.sh | bash"
+    fi
+    [[ -f "$DEST/install.sh" && -f "$DEST/.vimrc" ]] || \
+        die "$DEST looks incomplete. Expected install.sh and .vimrc.
+  Back it up first:  mv ~/.vim ~/.vim.bak
+  Then re-run:       curl -fsSL https://raw.githubusercontent.com/m1ngsama/chopsticks/main/get.sh | bash"
     warn "$DEST already exists — pulling latest changes"
     git -C "$DEST" pull --ff-only origin main 2>/dev/null || \
         warn "Could not pull latest — using existing version (run: git -C ~/.vim pull)"

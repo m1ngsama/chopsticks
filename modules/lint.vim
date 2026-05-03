@@ -50,7 +50,7 @@ endif
 
 let g:ale_fixers = s:ale_fixers
 
-let g:ale_fix_on_save          = 1
+let g:ale_fix_on_save          = get(g:, 'ale_fix_on_save', 1)
 let g:ale_python_isort_options = '--profile black'
 let g:ale_sign_error           = 'X'
 let g:ale_sign_warning         = '!'

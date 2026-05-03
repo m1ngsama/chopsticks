@@ -1,6 +1,9 @@
 let g:chopsticks_dir = fnamemodify(resolve(expand('<sfile>')), ':h')
+let s:xdg_config_home = !empty($XDG_CONFIG_HOME) && $XDG_CONFIG_HOME =~# '^/'
+    \ ? $XDG_CONFIG_HOME
+    \ : '~/.config'
 let s:local_config = expand(get(g:, 'chopsticks_local_config',
-    \ '~/.config/chopsticks.vim'))
+    \ s:xdg_config_home . '/chopsticks.vim'))
 if filereadable(s:local_config)
     execute 'source ' . fnameescape(s:local_config)
 endif

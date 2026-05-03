@@ -12,10 +12,18 @@
 - `,af` toggle format-on-save (ALE `fix_on_save`)
 - `,gL` git log graph (last 20 commits)
 - `,gC` FZF git commits search, `,gB` buffer commits
+- Interactive installer profile selection for `minimal`, `engineer`, and `full`
+- `install.sh --profile=minimal|engineer|full` for scripted profile selection
 
 ### Fixed
 
 - `g:loaded_logipat` typo → `g:loaded_logiPat` — logiPat was loading fully (0.478ms wasted)
+- `get.sh` now refuses to update an existing `~/.vim` git repo unless its
+  origin is chopsticks
+- Large file protection now stays active after filetype and syntax autocommands
+- `g:ale_fix_on_save = 0` in local config is now respected
+- Local config now respects absolute `XDG_CONFIG_HOME` instead of hardcoding
+  `~/.config`
 
 ### Changed
 
@@ -37,6 +45,11 @@
 - `,sv` now clears the load guard before sourcing `$MYVIMRC`
 - CI now verifies key plugin directories, Markdown quiet defaults, markdownlint,
   and an explicit startup-time threshold
+- Installer plugin validation now checks every plugin required by the active profile
+- The optional tool menu now hides LSP/lint suites in `minimal` and selects
+  Marksman by default in `full`
+- tmux integration is written as a managed block so future installer runs can
+  update it without appending duplicate bindings
 - Skip 2 more built-in plugins: openPlugin, manpager (10 → 12 total)
 - Remove deprecated `set ttyfast` (no-op since Vim 8)
 - Add `grepprg=rg --vimgrep` — `:grep` now uses ripgrep + quickfix

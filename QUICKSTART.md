@@ -6,13 +6,16 @@ Five minutes from zero to a working Vim setup.
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/m1ngsama/chopsticks/main/get.sh | bash
+curl -fsSL https://raw.githubusercontent.com/m1ngsama/chopsticks/main/get.sh | bash -s -- --profile=minimal
 ```
 
 Open vim. First launch auto-installs plugins — **wait 30-60s, don't close vim**. Restart when done.
 
-Default profile is `engineer`. Put `let g:chopsticks_profile = 'minimal'` in
-`~/.config/chopsticks.vim` for a smaller core-only setup, or use `full` for the
-heavier Markdown/LSP feedback.
+Default profile is `engineer`. Interactive installs ask for a profile first;
+`--profile=minimal`, `--profile=engineer`, or `--profile=full` selects it
+without prompting. You can later put `let g:chopsticks_profile = 'minimal'` in
+`${XDG_CONFIG_HOME:-~/.config}/chopsticks.vim` for a smaller core-only setup,
+or use `full` for the heavier Markdown/LSP feedback.
 
 ## Modes
 

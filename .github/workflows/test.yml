@@ -95,6 +95,15 @@ jobs:
             -c 'if g:chopsticks_profile !=# "minimal" || has_key(g:plugs, "ale") || has_key(g:plugs, "vim-lsp") | cquit | endif' \
             -c 'qa!' 2>&1
 
+      - name: Verify XDG local config hook
+        run: |
+          mkdir -p /tmp/chopsticks-xdg
+          printf "%s\n" "let g:chopsticks_profile = 'minimal'" > /tmp/chopsticks-xdg/chopsticks.vim
+          XDG_CONFIG_HOME=/tmp/chopsticks-xdg vim -u NONE -i NONE -es -N \
+            -c 'source .vimrc' \
+            -c 'if g:chopsticks_profile !=# "minimal" || has_key(g:plugs, "ale") || has_key(g:plugs, "vim-lsp") | cquit | endif' \
+            -c 'qa!' 2>&1
+
       - name: Verify profile-aware cheat sheet
         run: |
           vim -u NONE -i NONE -es -N \
@@ -124,6 +133,22 @@ jobs:
             -c 'if maparg("s", "n") !=# "" | cquit | endif' \
             -c 'if maparg(",w", "n") =~# "!" | cquit | endif' \
             -c 'if !&swapfile || !&writebackup || &directory !~# "\.vim/.swap" | cquit | endif' \
+            -c 'qa!' 2>&1
+
+      - name: Verify local ALE override
+        run: |
+          vim -u NONE -i NONE -es -N \
+            -c 'let g:ale_fix_on_save = 0' \
+            -c 'source .vimrc' \
+            -c 'if g:ale_fix_on_save != 0 | cquit | endif' \
+            -c 'qa!' 2>&1
+
+      - name: Verify large file protection
+        run: |
+          truncate -s 11000000 /tmp/chopsticks-large.py
+          vim -u .vimrc -i NONE -es -N /tmp/chopsticks-large.py \
+            -c 'set filetype=python' \
+            -c 'if &l:syntax !=# "" || &l:undolevels != -1 || &l:swapfile || get(b:, "ale_enabled", 1) != 0 | cquit | endif' \
             -c 'qa!' 2>&1
 
       - name: Measure startup time

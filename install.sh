@@ -1,28 +1,43 @@
 #!/usr/bin/env bash
 # install.sh - chopsticks vim configuration installer
-# Usage: cd /path/to/chopsticks && ./install.sh [--yes] [--help]
+# Usage: cd /path/to/chopsticks && ./install.sh [--yes] [--profile=engineer] [--help]
 #
-# --yes   non-interactive: use default component selections
-# --help  show this help and exit
+# --yes              non-interactive: use default profile/component selections
+# --profile=PROFILE  choose minimal, engineer, or full without prompting
+# --help             show this help and exit
 
 set -eo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 AUTO_YES=0
+REQUESTED_PROFILE=""
 for arg in "$@"; do
     case "$arg" in
         --yes)  AUTO_YES=1 ;;
+        --profile=*) REQUESTED_PROFILE="${arg#*=}" ;;
+        --profile)
+            echo "Use --profile=minimal, --profile=engineer, or --profile=full" >&2
+            exit 1 ;;
         --help|-h)
             echo "Usage: ./install.sh [OPTIONS]"
             echo ""
             echo "Options:"
-            echo "  --yes    Non-interactive mode: use default component selections"
+            echo "  --yes    Non-interactive mode: use default profile/component selections"
+            echo "  --profile=PROFILE"
+            echo "           Select minimal, engineer, or full without prompting"
             echo "  --help   Show this help and exit"
             echo ""
             echo "Supported platforms: macOS (brew), Debian/Ubuntu (apt), Arch (pacman), Fedora (dnf)"
             exit 0 ;;
     esac
 done
+case "$REQUESTED_PROFILE" in
+    ""|minimal|engineer|full) ;;
+    *)
+        echo "Invalid profile: $REQUESTED_PROFILE" >&2
+        echo "Use: minimal, engineer, or full" >&2
+        exit 1 ;;
+esac
 
 # ── Colours (respect NO_COLOR and non-TTY) ───────────────────────────────────
 if [[ -t 1 ]] && [[ -z "${NO_COLOR:-}" ]]; then
@@ -51,6 +66,13 @@ info() { echo "     $1"; }
 INSTALLED=()
 SKIPPED=()
 FAILED=()
+if [[ -n "${XDG_CONFIG_HOME:-}" && "$XDG_CONFIG_HOME" == /* ]]; then
+    CONFIG_HOME="$XDG_CONFIG_HOME"
+else
+    CONFIG_HOME="$HOME/.config"
+fi
+LOCAL_CONFIG="$CONFIG_HOME/chopsticks.vim"
+CONFIG_PROFILE="${REQUESTED_PROFILE:-engineer}"
 
 # Ask yes/no; reads from /dev/tty so it works under: curl | bash
 ask() {
@@ -64,6 +86,106 @@ ask() {
         return 1
     fi
     [[ "$reply" =~ ^[Yy]$ ]]
+}
+
+profile_from_config() {
+    [[ -f "$LOCAL_CONFIG" ]] || return 0
+    sed -nE "s/^[[:space:]]*let[[:space:]]+g:chopsticks_profile[[:space:]]*=[[:space:]]*['\"](minimal|engineer|full)['\"].*/\1/p" \
+        "$LOCAL_CONFIG" | tail -n1
+}
+
+choose_profile() {
+    local default="${1:-engineer}" reply
+    while true; do
+        echo "Choose Vim profile:"
+        echo "  1) minimal   core navigation/editing/git/markdown; no LSP/ALE/completion extras"
+        echo "  2) engineer  default; LSP, ALE, completion, syntax extras"
+        echo "  3) full      engineer plus heavier Markdown lint/spell/conceal/LSP feedback"
+        if [[ -t 0 ]]; then
+            read -r -p "Profile [$default]: " reply
+        elif { true </dev/tty; } 2>/dev/null; then
+            read -r -p "Profile [$default]: " reply </dev/tty
+        else
+            CONFIG_PROFILE="$default"
+            return
+        fi
+        reply="${reply:-$default}"
+        case "$reply" in
+            1|minimal)  CONFIG_PROFILE="minimal"; return ;;
+            2|engineer) CONFIG_PROFILE="engineer"; return ;;
+            3|full)     CONFIG_PROFILE="full"; return ;;
+            *) warn "Choose 1, 2, 3, minimal, engineer, or full." ;;
+        esac
+    done
+}
+
+write_profile_config() {
+    local profile="$1" config_dir tmp
+    config_dir="$(dirname "$LOCAL_CONFIG")"
+    mkdir -p "$config_dir"
+
+    if [[ -f "$LOCAL_CONFIG" ]] && \
+       grep -Eq '^[[:space:]]*let[[:space:]]+g:chopsticks_profile[[:space:]]*=' "$LOCAL_CONFIG"; then
+        tmp="$_TMPDIR/chopsticks-local-config"
+        awk -v profile="$profile" '
+            /^[[:space:]]*let[[:space:]]+g:chopsticks_profile[[:space:]]*=/ && !done {
+                printf "let g:chopsticks_profile = \047%s\047\n", profile
+                done = 1
+                next
+            }
+            { print }
+        ' "$LOCAL_CONFIG" > "$tmp"
+        mv "$tmp" "$LOCAL_CONFIG"
+    else
+        [[ -s "$LOCAL_CONFIG" ]] && printf '\n' >> "$LOCAL_CONFIG"
+        {
+            echo '" chopsticks local preferences'
+            echo "let g:chopsticks_profile = '$profile'"
+        } >> "$LOCAL_CONFIG"
+    fi
+}
+
+configure_profile() {
+    local existing
+    existing="$(profile_from_config)"
+
+    step "Configuring Vim profile"
+    if [[ -n "$REQUESTED_PROFILE" ]]; then
+        CONFIG_PROFILE="$REQUESTED_PROFILE"
+        write_profile_config "$CONFIG_PROFILE"
+        ok "Profile saved: $CONFIG_PROFILE ($LOCAL_CONFIG)"
+        return
+    fi
+
+    if [[ -n "$existing" ]]; then
+        CONFIG_PROFILE="$existing"
+        ok "Profile: $CONFIG_PROFILE ($LOCAL_CONFIG)"
+        if [[ $AUTO_YES -eq 1 ]] || ! { true </dev/tty; } 2>/dev/null; then
+            return
+        fi
+        if ask "Change profile now?"; then
+            choose_profile "$existing"
+            if [[ "$CONFIG_PROFILE" != "$existing" ]]; then
+                write_profile_config "$CONFIG_PROFILE"
+                ok "Profile saved: $CONFIG_PROFILE ($LOCAL_CONFIG)"
+            else
+                skip "profile unchanged"
+            fi
+        fi
+    else
+        if [[ $AUTO_YES -eq 1 ]] || ! { true </dev/tty; } 2>/dev/null; then
+            CONFIG_PROFILE="engineer"
+            info "Profile: engineer (default; create $LOCAL_CONFIG to change later)"
+            return
+        fi
+        choose_profile engineer
+        if [[ "$CONFIG_PROFILE" == "engineer" ]]; then
+            info "Profile: engineer (default; no local override written)"
+        else
+            write_profile_config "$CONFIG_PROFILE"
+            ok "Profile saved: $CONFIG_PROFILE ($LOCAL_CONFIG)"
+        fi
+    fi
 }
 
 # ── Error trap ────────────────────────────────────────────────────────────────
@@ -381,6 +503,8 @@ fi
 
 mkdir -p "$HOME/.vim"
 
+configure_profile
+
 # ============================================================================
 # 3. vim-plug + Plugins
 # ============================================================================
@@ -423,11 +547,50 @@ _vim_run() {
         vim --not-a-term "$@" 2>/dev/null
     fi
 }
+
+verify_plugins() {
+    local required_file="$_TMPDIR/required-plugins.txt"
+    local verify_script="$_TMPDIR/required-plugins.vim"
+    local missing=() dir
+
+    cat > "$verify_script" <<'VIMEOF'
+if !exists('g:plugs')
+    cquit
+endif
+let s:dirs = []
+for s:plug in values(g:plugs)
+    let s:dir = get(s:plug, 'dir', '')
+    if !empty(s:dir)
+        call add(s:dirs, fnamemodify(s:dir, ':p'))
+    endif
+endfor
+call writefile(s:dirs, $CHOPSTICKS_REQUIRED_PLUGINS)
+qa!
+VIMEOF
+
+    CHOPSTICKS_REQUIRED_PLUGINS="$required_file" \
+        vim -u "$SCRIPT_DIR/.vimrc" -i NONE -es -N -S "$verify_script" >/dev/null 2>&1 || return 1
+
+    [[ -s "$required_file" ]] || return 1
+    while IFS= read -r dir; do
+        [[ -z "$dir" ]] && continue
+        [[ -d "$dir" ]] || missing+=("$dir")
+    done < "$required_file"
+
+    if [[ ${#missing[@]} -gt 0 ]]; then
+        fail "Plugin installation incomplete — missing:"
+        for dir in "${missing[@]}"; do echo "  ! $dir"; done
+        return 1
+    fi
+}
+
 if [[ -d "$HOME/.vim/plugged" ]] && [[ -n "$(find "$HOME/.vim/plugged" -mindepth 1 -maxdepth 1 2>/dev/null)" ]]; then
     warn "PlugClean: removing plugins not listed in .vimrc from ~/.vim/plugged"
 fi
 _vim_run +'PlugClean!' +qall || true  # remove plugins no longer in vimrc; ignore exit code (none expected)
 _vim_run +'PlugInstall --sync' +qall || true  # fzf post-install hook may exit non-zero; harmless
+
+verify_plugins || die "Plugin installation failed — retry with a stable network connection."
 
 _plug_count=$(find "$HOME/.vim/plugged" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l | tr -d ' ')
 if [[ $_plug_count -eq 0 ]]; then
@@ -440,9 +603,14 @@ ok "Plugins installed ($_plug_count)"
 # ============================================================================
 
 step "Select optional components"
+info "Vim profile: $CONFIG_PROFILE"
 
 _ITEMS=()
 _idx=0
+_PROFILE_TOOLING=1
+[[ $CONFIG_PROFILE == "minimal" ]] && _PROFILE_TOOLING=0
+_MARKSMAN_DEFAULT=0
+[[ $CONFIG_PROFILE == "full" ]] && _MARKSMAN_DEFAULT=1
 
 # Index map (-1 = not in menu / unavailable)
 _I_RIPGREP=-1; _I_FZF=-1; _I_CTAGS=-1; _I_SHELLCHECK=-1
@@ -470,37 +638,41 @@ if [[ $HAS_PKG_MGR -eq 1 ]]; then
     _ITEMS+=("universal-ctags|Optional symbol index for ,rt tag jumps|0")
     : $(( _idx++ ))
 
-    _I_SHELLCHECK=$_idx
-    _ITEMS+=("shellcheck|Optional shell script static analysis via ALE|0")
-    : $(( _idx++ ))
+    if [[ $_PROFILE_TOOLING -eq 1 ]]; then
+        _I_SHELLCHECK=$_idx
+        _ITEMS+=("shellcheck|Optional shell script static analysis via ALE|0")
+        : $(( _idx++ ))
 
-    _I_HADOLINT=$_idx
-    _ITEMS+=("hadolint|Optional Dockerfile linting via ALE|0")
-    : $(( _idx++ ))
+        _I_HADOLINT=$_idx
+        _ITEMS+=("hadolint|Optional Dockerfile linting via ALE|0")
+        : $(( _idx++ ))
 
-    _I_MARKSMAN=$_idx
-    _ITEMS+=("marksman|Optional Markdown LSP — enable with g:chopsticks_markdown_lsp|0")
-    : $(( _idx++ ))
+        _I_MARKSMAN=$_idx
+        _ITEMS+=("marksman|Markdown LSP for full profile or explicit Markdown LSP|$_MARKSMAN_DEFAULT")
+        : $(( _idx++ ))
+    else
+        skip "lint/LSP system tools hidden by minimal profile"
+    fi
 else
     warn "No package manager available — system tools skipped"
 fi
 
 # ── npm tools ────────────────────────────────────────────────────────────────
-if [[ $HAS_NODE -eq 1 ]]; then
+if [[ $HAS_NODE -eq 1 && $_PROFILE_TOOLING -eq 1 ]]; then
     _I_NPM=$_idx
     _ITEMS+=("npm formatter suite|Optional prettier / eslint / markdownlint / stylelint / tsc|0")
     : $(( _idx++ ))
 fi
 
 # ── Python tools ─────────────────────────────────────────────────────────────
-if [[ $HAS_PIP -eq 1 ]]; then
+if [[ $HAS_PIP -eq 1 && $_PROFILE_TOOLING -eq 1 ]]; then
     _I_PYTHON=$_idx
     _ITEMS+=("Python tool suite|Optional black / isort / flake8 / pylint / yamllint / sqlfluff|0")
     : $(( _idx++ ))
 fi
 
 # ── Go tools ─────────────────────────────────────────────────────────────────
-if [[ $HAS_GO -eq 1 ]]; then
+if [[ $HAS_GO -eq 1 && $_PROFILE_TOOLING -eq 1 ]]; then
     _I_GO=$_idx
     _ITEMS+=("Go tool suite|Optional gopls / goimports / staticcheck|0")
     : $(( _idx++ ))
@@ -680,6 +852,9 @@ step "npm tools (formatters + linters)"
 if [[ $HAS_NODE -eq 0 ]]; then
     skip "npm tools (Node.js not installed)"
     SKIPPED+=("prettier" "markdownlint-cli" "stylelint" "eslint" "typescript")
+elif [[ $_PROFILE_TOOLING -eq 0 ]]; then
+    skip "npm tools (minimal profile)"
+    SKIPPED+=("prettier" "markdownlint-cli" "stylelint" "eslint" "typescript")
 elif [[ $_I_NPM -lt 0 ]] || ! _selected "$_I_NPM"; then
     skip "npm formatter suite (skipped by user)"
     SKIPPED+=("prettier" "markdownlint-cli" "stylelint" "eslint" "typescript")
@@ -711,6 +886,9 @@ step "Python tools (formatters + linters)"
 
 if [[ $HAS_PIP -eq 0 ]]; then
     skip "Python tools (pip3 not installed)"
+    SKIPPED+=("black" "isort" "flake8" "pylint" "yamllint" "sqlfluff")
+elif [[ $_PROFILE_TOOLING -eq 0 ]]; then
+    skip "Python tools (minimal profile)"
     SKIPPED+=("black" "isort" "flake8" "pylint" "yamllint" "sqlfluff")
 elif [[ $_I_PYTHON -lt 0 ]] || ! _selected "$_I_PYTHON"; then
     skip "Python tool suite (skipped by user)"
@@ -746,6 +924,9 @@ step "Go tools"
 
 if [[ $HAS_GO -eq 0 ]]; then
     skip "Go tools (go not installed — see https://go.dev/dl/)"
+    SKIPPED+=("gopls" "goimports" "staticcheck")
+elif [[ $_PROFILE_TOOLING -eq 0 ]]; then
+    skip "Go tools (minimal profile)"
     SKIPPED+=("gopls" "goimports" "staticcheck")
 elif [[ $_I_GO -lt 0 ]] || ! _selected "$_I_GO"; then
     skip "Go tool suite (skipped by user)"
@@ -789,14 +970,26 @@ elif ! _selected "$_I_TMUX"; then
     SKIPPED+=("tmux-navigator-config")
 else
     TMUX_CONF="$HOME/.tmux.conf"
-    cat >> "$TMUX_CONF" << 'TMUXEOF'
+    TMUX_BEGIN="# >>> chopsticks vim-tmux-navigator >>>"
+    TMUX_END="# <<< chopsticks vim-tmux-navigator <<<"
+    if [[ -f "$TMUX_CONF" ]] && grep -Fq "$TMUX_BEGIN" "$TMUX_CONF"; then
+        tmp="$_TMPDIR/tmux.conf"
+        awk -v begin="$TMUX_BEGIN" -v end="$TMUX_END" '
+            $0 == begin { skip = 1; next }
+            $0 == end { skip = 0; next }
+            !skip { print }
+        ' "$TMUX_CONF" > "$tmp"
+        mv "$tmp" "$TMUX_CONF"
+    fi
+    cat >> "$TMUX_CONF" << TMUXEOF
 
-# vim-tmux-navigator: seamless Ctrl+h/j/k/l navigation between vim and tmux
+$TMUX_BEGIN
 is_vim="ps -o state= -o comm= -t '#{pane_tty}' | grep -iqE '^[^TXZ ]+ +(\S+\/)?g?(view|n?vim?x?)(diff)?$'"
-bind-key -n 'C-h' if-shell "$is_vim" 'send-keys C-h' 'select-pane -L'
-bind-key -n 'C-j' if-shell "$is_vim" 'send-keys C-j' 'select-pane -D'
-bind-key -n 'C-k' if-shell "$is_vim" 'send-keys C-k' 'select-pane -U'
-bind-key -n 'C-l' if-shell "$is_vim" 'send-keys C-l' 'select-pane -R'
+bind-key -n 'C-h' if-shell "\$is_vim" 'send-keys C-h' 'select-pane -L'
+bind-key -n 'C-j' if-shell "\$is_vim" 'send-keys C-j' 'select-pane -D'
+bind-key -n 'C-k' if-shell "\$is_vim" 'send-keys C-k' 'select-pane -U'
+bind-key -n 'C-l' if-shell "\$is_vim" 'send-keys C-l' 'select-pane -R'
+$TMUX_END
 TMUXEOF
     ok "vim-tmux-navigator bindings appended to ~/.tmux.conf"
     warn "Reload tmux config now: tmux source-file ~/.tmux.conf"
@@ -827,6 +1020,11 @@ echo ""
 echo -e "${BOLD}=======================================${NC}"
 echo -e "${GREEN}Installation complete.${NC}"
 echo -e "${BOLD}=======================================${NC}"
+
+echo -e "\n${BOLD}Profile:${NC} $CONFIG_PROFILE"
+if [[ -f "$LOCAL_CONFIG" ]]; then
+    echo "  Local config: $LOCAL_CONFIG"
+fi
 
 if [[ ${#INSTALLED[@]} -gt 0 ]]; then
     echo -e "\n${GREEN}Installed:${NC}"

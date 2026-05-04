@@ -19,6 +19,7 @@
 - `get.sh --dry-run` for safe bootstrap previews before clone/update/install
 - `CHOPSTICKS_DEST=/absolute/path` to test or install the bootstrap target elsewhere
 - `scripts/test.sh` local test runner reused by GitHub Actions
+- `scripts/test.sh quick`, `--help`, and `list` for easier local test discovery
 
 ### Fixed
 
@@ -59,6 +60,7 @@
 - Bootstrap dry-run now refuses unrelated existing git repos before any writes
 - CI now shares shell, installer, bootstrap, docs, and Vim smoke checks with
   the local test runner
+- CI now checks the test runner help and group-list commands
 - Skip 2 more built-in plugins: openPlugin, manpager (10 → 12 total)
 - Remove deprecated `set ttyfast` (no-op since Vim 8)
 - Add `grepprg=rg --vimgrep` — `:grep` now uses ripgrep + quickfix

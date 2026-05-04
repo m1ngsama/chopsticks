@@ -58,6 +58,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Check test runner CLI
+        run: |
+          scripts/test.sh --help
+          scripts/test.sh list
       - name: Run shell and installer tests
         run: scripts/test.sh shell installer bootstrap
 

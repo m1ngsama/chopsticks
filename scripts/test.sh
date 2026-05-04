@@ -27,6 +27,29 @@ need() {
     }
 }
 
+usage() {
+    cat <<'EOF'
+Usage: scripts/test.sh [group...]
+
+Groups:
+  quick       shell, docs, installer, and bootstrap checks
+  shell       shell syntax, executability, and shellcheck
+  docs        markdownlint for project docs
+  installer   install.sh dry-run/configure-only profile checks
+  bootstrap   get.sh dry-run safety checks
+  vim         Vim smoke tests; requires plugins in ~/.vim/plugged
+  all         quick plus vim
+
+Options:
+  -h, --help  show this help
+  list        print group names, one per line
+EOF
+}
+
+list_groups() {
+    printf '%s\n' quick shell docs installer bootstrap vim all
+}
+
 check_shell() {
     step "Shell syntax and lint"
     need bash
@@ -194,20 +217,27 @@ check_vim() {
 
 run_group() {
     case "$1" in
+        quick)
+            check_shell
+            check_docs
+            check_installer_modes
+            check_bootstrap
+            ;;
         shell) check_shell ;;
         docs) check_docs ;;
         installer) check_installer_modes ;;
         bootstrap) check_bootstrap ;;
         vim) check_vim ;;
         all)
-            check_shell
-            check_docs
-            check_installer_modes
-            check_bootstrap
+            run_group quick
             check_vim
             ;;
+        list | --list) list_groups ;;
+        -h | --help) usage ;;
         *)
-            echo "Usage: scripts/test.sh [shell|docs|installer|bootstrap|vim|all]..." >&2
+            echo "Unknown test group: $1" >&2
+            echo >&2
+            usage >&2
             exit 1 ;;
     esac
 }

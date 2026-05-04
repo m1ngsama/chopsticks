@@ -19,10 +19,12 @@
 ## Local tests
 
 ```bash
-scripts/test.sh shell docs installer bootstrap
+scripts/test.sh --help
+scripts/test.sh quick
 scripts/test.sh vim
 ```
 
+`scripts/test.sh quick` runs shell, docs, installer, and bootstrap checks without requiring Vim plugins.
 `scripts/test.sh vim` expects plugins to be installed under `~/.vim/plugged`.
 Use `STARTUP_LIMIT_MS=150 scripts/test.sh vim` to match CI's startup threshold.
 

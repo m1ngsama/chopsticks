@@ -13,7 +13,18 @@
 2. If it's not needed at startup, lazy-load it: `Plug 'foo/bar', { 'on': 'FooCommand' }`
 3. Put config in the appropriate module
 4. Update the cheat sheet in `modules/tools.vim` if you add keybindings
-5. Test on both macOS and Linux
+5. Run `scripts/test.sh vim` locally after installing plugins
+6. Test on both macOS and Linux when changing terminal or package-manager behavior
+
+## Local tests
+
+```bash
+scripts/test.sh shell docs installer bootstrap
+scripts/test.sh vim
+```
+
+`scripts/test.sh vim` expects plugins to be installed under `~/.vim/plugged`.
+Use `STARTUP_LIMIT_MS=150 scripts/test.sh vim` to match CI's startup threshold.
 
 ## Reporting bugs
 
@@ -28,4 +39,4 @@ Open an issue. Include:
 - Named augroups with `autocmd!`
 - No comments explaining _what_ — only _why_
 - `exists('g:plugs["..."]')` guards for plugin-dependent config
-- Test with `vim -u .vimrc -i NONE --startuptime /tmp/s.log -es -N -c qa!`
+- Test with `scripts/test.sh vim`

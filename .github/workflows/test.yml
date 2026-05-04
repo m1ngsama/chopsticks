@@ -51,157 +51,15 @@ jobs:
             }
           done
 
-      - name: Test startup
-        run: |
-          vim -u .vimrc -i NONE -es -N -c 'qa!' 2>&1
-          echo "Vim exited cleanly"
-
-      - name: Verify modules load
-        run: |
-          vim -u .vimrc -i NONE -es -N \
-            -c 'redir! > /tmp/test.txt' \
-            -c 'silent echo len(g:plugs)' \
-            -c 'redir END' \
-            -c 'qa!' 2>/dev/null
-          PLUGS=$(cat /tmp/test.txt | tr -d '[:space:]')
-          echo "Plugins registered: $PLUGS"
-          if [ "$PLUGS" -lt 20 ]; then
-            echo "FAIL: expected 20+ plugins, got $PLUGS"
-            exit 1
-          fi
-
-      - name: Verify path-safe module loading
-        run: |
-          mkdir -p "/tmp/chopsticks path/modules"
-          cp .vimrc "/tmp/chopsticks path/.vimrc"
-          cp modules/*.vim "/tmp/chopsticks path/modules/"
-          vim -u "/tmp/chopsticks path/.vimrc" -i NONE -es -N -c 'qa!' 2>&1
-
-      - name: Verify minimal profile
-        run: |
-          vim -u NONE -i NONE -es -N \
-            -c 'let g:chopsticks_profile = "minimal"' \
-            -c 'source .vimrc' \
-            -c 'if has_key(g:plugs, "ale") || has_key(g:plugs, "vim-lsp") || has_key(g:plugs, "vim-lsp-settings") || has_key(g:plugs, "asyncomplete.vim") | cquit | endif' \
-            -c 'qa!' 2>&1
-
-      - name: Verify local config hook
-        run: |
-          mkdir -p /tmp/chopsticks-ci
-          printf "%s\n" "let g:chopsticks_profile = 'minimal'" > /tmp/chopsticks-ci/local.vim
-          vim -u NONE -i NONE -es -N \
-            -c 'let g:chopsticks_local_config = "/tmp/chopsticks-ci/local.vim"' \
-            -c 'source .vimrc' \
-            -c 'if g:chopsticks_profile !=# "minimal" || has_key(g:plugs, "ale") || has_key(g:plugs, "vim-lsp") | cquit | endif' \
-            -c 'qa!' 2>&1
-
-      - name: Verify XDG local config hook
-        run: |
-          mkdir -p /tmp/chopsticks-xdg
-          printf "%s\n" "let g:chopsticks_profile = 'minimal'" > /tmp/chopsticks-xdg/chopsticks.vim
-          XDG_CONFIG_HOME=/tmp/chopsticks-xdg vim -u NONE -i NONE -es -N \
-            -c 'source .vimrc' \
-            -c 'if g:chopsticks_profile !=# "minimal" || has_key(g:plugs, "ale") || has_key(g:plugs, "vim-lsp") | cquit | endif' \
-            -c 'qa!' 2>&1
-
-      - name: Verify profile-aware cheat sheet
-        run: |
-          vim -u NONE -i NONE -es -N \
-            -c 'let g:chopsticks_profile = "minimal"' \
-            -c 'source .vimrc' \
-            -c 'normal ,?' \
-            -c 'redir! > /tmp/chopsticks-cheat.txt' \
-            -c 'silent %print' \
-            -c 'redir END' \
-            -c 'qa!' 2>&1
-          if grep -Eq 'definition|LspInstallServer|ALE errors|undo tree|markdown preview' /tmp/chopsticks-cheat.txt; then
-            cat /tmp/chopsticks-cheat.txt
-            exit 1
-          fi
-          grep -q ',cr       run file' /tmp/chopsticks-cheat.txt
-
-      - name: Verify Markdown quiet defaults
-        run: |
-          vim -u .vimrc -i NONE -es -N README.md \
-            -c 'set filetype=markdown' \
-            -c 'if &l:spell || &l:conceallevel != 0 || &l:signcolumn !=# "no" || exists("g:lsp_settings_filetype_markdown") | cquit | endif' \
-            -c 'qa!' 2>&1
-
-      - name: Verify ergonomic defaults
-        run: |
-          vim -u .vimrc -i NONE -es -N \
-            -c 'if maparg("s", "n") !=# "" | cquit | endif' \
-            -c 'if maparg(",w", "n") =~# "!" | cquit | endif' \
-            -c 'if !&swapfile || !&writebackup || &directory !~# "\.vim/.swap" | cquit | endif' \
-            -c 'qa!' 2>&1
-
-      - name: Verify local ALE override
-        run: |
-          vim -u NONE -i NONE -es -N \
-            -c 'let g:ale_fix_on_save = 0' \
-            -c 'source .vimrc' \
-            -c 'if g:ale_fix_on_save != 0 | cquit | endif' \
-            -c 'qa!' 2>&1
-
-      - name: Verify large file protection
-        run: |
-          truncate -s 11000000 /tmp/chopsticks-large.py
-          vim -u .vimrc -i NONE -es -N /tmp/chopsticks-large.py \
-            -c 'set filetype=python' \
-            -c 'if &l:syntax !=# "" || &l:undolevels != -1 || &l:swapfile || get(b:, "ale_enabled", 1) != 0 | cquit | endif' \
-            -c 'qa!' 2>&1
-
-      - name: Measure startup time
-        run: |
-          vim -u .vimrc -i NONE --startuptime /tmp/startup.log -es -N -c 'qa!' 2>/dev/null
-          tail -1 /tmp/startup.log
-          STARTUP_MS=$(tail -1 /tmp/startup.log | awk '{print $1}')
-          awk -v ms="$STARTUP_MS" 'BEGIN { if (ms > 150) exit 1 }'
+      - name: Run Vim smoke tests
+        run: scripts/test.sh vim
 
   shellcheck:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Shellcheck install.sh
-        run: shellcheck install.sh get.sh
-      - name: Verify installer profile-only modes
-        run: |
-          XDG_CONFIG_HOME=/tmp/chopsticks-dry ./install.sh --dry-run --profile=full \
-            | tee /tmp/chopsticks-dry-run.txt
-          grep -q 'Profile: full' /tmp/chopsticks-dry-run.txt
-          test ! -e /tmp/chopsticks-dry/chopsticks.vim
-
-          XDG_CONFIG_HOME=/tmp/chopsticks-config ./install.sh --configure-only --profile=minimal
-          grep -q "let g:chopsticks_profile = 'minimal'" /tmp/chopsticks-config/chopsticks.vim
-
-          XDG_CONFIG_HOME=/tmp/chopsticks-config ./install.sh --configure-only --profile=full
-          grep -q "let g:chopsticks_profile = 'full'" /tmp/chopsticks-config/chopsticks.vim
-
-          XDG_CONFIG_HOME=/tmp/chopsticks-default ./install.sh --configure-only --yes
-          grep -q "let g:chopsticks_profile = 'engineer'" /tmp/chopsticks-default/chopsticks.vim
-
-      - name: Verify bootstrap dry-run safety
-        run: |
-          CHOPSTICKS_DEST=/tmp/chopsticks-bootstrap ./get.sh --dry-run --profile=minimal \
-            | tee /tmp/chopsticks-get-dry-run.txt
-          grep -q 'Would clone' /tmp/chopsticks-get-dry-run.txt
-          test ! -e /tmp/chopsticks-bootstrap
-
-          mkdir -p /tmp/not-chopsticks
-          git init /tmp/not-chopsticks
-          git -C /tmp/not-chopsticks remote add origin https://github.com/example/not-chopsticks.git
-          if CHOPSTICKS_DEST=/tmp/not-chopsticks ./get.sh --dry-run; then
-            echo "Expected get.sh to reject non-chopsticks repo"
-            exit 1
-          fi
-
-          mkdir -p /tmp/chopsticks-existing
-          git init /tmp/chopsticks-existing
-          git -C /tmp/chopsticks-existing remote add origin https://github.com/m1ngsama/chopsticks.git
-          touch /tmp/chopsticks-existing/install.sh /tmp/chopsticks-existing/.vimrc
-          CHOPSTICKS_DEST=/tmp/chopsticks-existing ./get.sh --dry-run --yes \
-            | tee /tmp/chopsticks-get-existing.txt
-          grep -q 'Would update existing chopsticks repo' /tmp/chopsticks-get-existing.txt
+      - name: Run shell and installer tests
+        run: scripts/test.sh shell installer bootstrap
 
   docs:
     runs-on: ubuntu-latest
@@ -210,4 +68,4 @@ jobs:
       - name: Install markdownlint
         run: npm install -g markdownlint-cli
       - name: Lint Markdown
-        run: markdownlint README.md QUICKSTART.md CONTRIBUTING.md CHANGELOG.md
+        run: scripts/test.sh docs

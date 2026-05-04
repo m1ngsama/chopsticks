@@ -18,6 +18,7 @@
 - `install.sh --configure-only` to update local profile config without reinstalling
 - `get.sh --dry-run` for safe bootstrap previews before clone/update/install
 - `CHOPSTICKS_DEST=/absolute/path` to test or install the bootstrap target elsewhere
+- `scripts/test.sh` local test runner reused by GitHub Actions
 
 ### Fixed
 
@@ -56,6 +57,8 @@
   update it without appending duplicate bindings
 - Installer cleanup now restores the cursor after interrupted checkbox menus
 - Bootstrap dry-run now refuses unrelated existing git repos before any writes
+- CI now shares shell, installer, bootstrap, docs, and Vim smoke checks with
+  the local test runner
 - Skip 2 more built-in plugins: openPlugin, manpager (10 → 12 total)
 - Remove deprecated `set ttyfast` (no-op since Vim 8)
 - Add `grepprg=rg --vimgrep` — `:grep` now uses ripgrep + quickfix

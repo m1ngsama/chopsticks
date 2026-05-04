@@ -7,6 +7,7 @@ Five minutes from zero to a working Vim setup.
 ```bash
 curl -fsSL https://raw.githubusercontent.com/m1ngsama/chopsticks/main/get.sh | bash
 curl -fsSL https://raw.githubusercontent.com/m1ngsama/chopsticks/main/get.sh | bash -s -- --profile=minimal
+curl -fsSL https://raw.githubusercontent.com/m1ngsama/chopsticks/main/get.sh | bash -s -- --dry-run --profile=full
 ```
 
 Open vim. First launch auto-installs plugins — **wait 30-60s, don't close vim**. Restart when done.

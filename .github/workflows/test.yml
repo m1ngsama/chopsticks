@@ -180,6 +180,29 @@ jobs:
           XDG_CONFIG_HOME=/tmp/chopsticks-default ./install.sh --configure-only --yes
           grep -q "let g:chopsticks_profile = 'engineer'" /tmp/chopsticks-default/chopsticks.vim
 
+      - name: Verify bootstrap dry-run safety
+        run: |
+          CHOPSTICKS_DEST=/tmp/chopsticks-bootstrap ./get.sh --dry-run --profile=minimal \
+            | tee /tmp/chopsticks-get-dry-run.txt
+          grep -q 'Would clone' /tmp/chopsticks-get-dry-run.txt
+          test ! -e /tmp/chopsticks-bootstrap
+
+          mkdir -p /tmp/not-chopsticks
+          git init /tmp/not-chopsticks
+          git -C /tmp/not-chopsticks remote add origin https://github.com/example/not-chopsticks.git
+          if CHOPSTICKS_DEST=/tmp/not-chopsticks ./get.sh --dry-run; then
+            echo "Expected get.sh to reject non-chopsticks repo"
+            exit 1
+          fi
+
+          mkdir -p /tmp/chopsticks-existing
+          git init /tmp/chopsticks-existing
+          git -C /tmp/chopsticks-existing remote add origin https://github.com/m1ngsama/chopsticks.git
+          touch /tmp/chopsticks-existing/install.sh /tmp/chopsticks-existing/.vimrc
+          CHOPSTICKS_DEST=/tmp/chopsticks-existing ./get.sh --dry-run --yes \
+            | tee /tmp/chopsticks-get-existing.txt
+          grep -q 'Would update existing chopsticks repo' /tmp/chopsticks-get-existing.txt
+
   docs:
     runs-on: ubuntu-latest
     steps:

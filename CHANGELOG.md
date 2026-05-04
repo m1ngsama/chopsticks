@@ -16,6 +16,8 @@
 - `install.sh --profile=minimal|engineer|full` for scripted profile selection
 - `install.sh --dry-run` to show the resolved profile/config path without writes
 - `install.sh --configure-only` to update local profile config without reinstalling
+- `get.sh --dry-run` for safe bootstrap previews before clone/update/install
+- `CHOPSTICKS_DEST=/absolute/path` to test or install the bootstrap target elsewhere
 
 ### Fixed
 
@@ -53,6 +55,7 @@
 - tmux integration is written as a managed block so future installer runs can
   update it without appending duplicate bindings
 - Installer cleanup now restores the cursor after interrupted checkbox menus
+- Bootstrap dry-run now refuses unrelated existing git repos before any writes
 - Skip 2 more built-in plugins: openPlugin, manpager (10 → 12 total)
 - Remove deprecated `set ttyfast` (no-op since Vim 8)
 - Add `grepprg=rg --vimgrep` — `:grep` now uses ripgrep + quickfix

@@ -50,6 +50,7 @@ chopsticks gives you a production-ready Vim config in one command. Pure VimScrip
 ```bash
 curl -fsSL https://raw.githubusercontent.com/m1ngsama/chopsticks/main/get.sh | bash
 curl -fsSL https://raw.githubusercontent.com/m1ngsama/chopsticks/main/get.sh | bash -s -- --profile=minimal
+curl -fsSL https://raw.githubusercontent.com/m1ngsama/chopsticks/main/get.sh | bash -s -- --dry-run --profile=full
 ```
 
 Or manually:
@@ -60,6 +61,8 @@ cd ~/.vim && ./install.sh --profile=engineer
 ```
 
 Supports macOS (brew), Debian/Ubuntu (apt), Arch (pacman), Fedora (dnf).
+Set `CHOPSTICKS_DEST=/absolute/path` before running `get.sh` to install
+somewhere other than `~/.vim`.
 
 First launch installs plugins automatically (30-60s). Restart vim when done.
 Use `./install.sh --dry-run --profile=full` to inspect the resolved profile and

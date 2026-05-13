@@ -1075,14 +1075,18 @@ fi
 # ============================================================================
 
 step "LSP language servers"
-info "vim-lsp installs language servers on demand — no action needed here."
-info ""
-info "To install a server: open a source file in Vim and run:"
-info "  :LspInstallServer"
-info ""
-info "Supported: Python, JS/TS, Go, Rust, C/C++, Shell, HTML, CSS, JSON, YAML, Markdown, SQL"
-info ""
-info "For Markdown LSP (marksman), the installer already handled it above."
+if [[ $CONFIG_PROFILE == "minimal" ]]; then
+    skip "LSP disabled by minimal profile"
+else
+    info "vim-lsp installs language servers on demand — no action needed here."
+    info ""
+    info "To install a server: open a source file in Vim and run:"
+    info "  :LspInstallServer"
+    info ""
+    info "Supported: Python, JS/TS, Go, Rust, C/C++, Shell, HTML, CSS, JSON, YAML, Markdown, SQL"
+    info ""
+    info "For Markdown LSP (marksman), the installer already handled it above."
+fi
 
 # ============================================================================
 # Summary
@@ -1122,13 +1126,18 @@ echo -e "  ${CYAN}vim .${NC}          Open dashboard in current directory"
 echo -e "  ${CYAN}vim myfile${NC}     Edit a specific file"
 echo ""
 echo -e "${BOLD}  First steps inside Vim${NC}"
-echo -e "  ${CYAN}Esc${NC} or ${CYAN}jk${NC}     Exit insert mode → back to Normal"
+echo -e "  ${CYAN}Esc${NC}          Exit insert mode → back to Normal"
 echo -e "  ${CYAN}:q!${NC} + Enter   Emergency quit without saving"
 echo -e "  ${CYAN},x${NC}            Save and quit"
 echo -e "  ${CYAN},?${NC}            Open cheat sheet"
-echo -e "  ${CYAN}:LspInstallServer${NC}  Install LSP for current filetype"
-echo ""
-echo -e "${YELLOW}[!]${NC}  Ctrl+s is mapped to save in Vim."
-echo    "     If it freezes your terminal, add this to ~/.bashrc or ~/.zshrc:"
-echo -e "     ${CYAN}stty -ixon${NC}"
+if [[ $CONFIG_PROFILE != "minimal" ]]; then
+    echo -e "  ${CYAN}:LspInstallServer${NC}  Install LSP for current filetype"
+fi
+if [[ -f "$LOCAL_CONFIG" ]] && \
+   grep -Eq '^[[:space:]]*let[[:space:]]+g:chopsticks_enable_ctrl_s_save[[:space:]]*=[[:space:]]*1([[:space:]]|$)' "$LOCAL_CONFIG"; then
+    echo ""
+    echo -e "${YELLOW}[!]${NC}  Ctrl+s is mapped to save in Vim."
+    echo    "     If it freezes your terminal, add this to ~/.bashrc or ~/.zshrc:"
+    echo -e "     ${CYAN}stty -ixon${NC}"
+fi
 echo ""

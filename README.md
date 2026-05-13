@@ -81,6 +81,7 @@ profile or uses `engineer`.
 let g:chopsticks_profile = 'minimal'   " core navigation/editing/git/markdown
 let g:chopsticks_profile = 'engineer'  " default: LSP, ALE, syntax extras
 let g:chopsticks_profile = 'full'      " engineer + heavier Markdown feedback
+let g:chopsticks_enable_jk_escape = 1  " optional: insert-mode jk exits insert
 ```
 
 `minimal` avoids LSP, ALE, completion plugins, extra language syntax plugins,
@@ -96,12 +97,12 @@ active profile and only shows keys for enabled features.
 Leader: `,`
 
 ```
-Ctrl+p    fuzzy find file          ,dd   go to definition
+,ff       fuzzy find file          ,dd   go to definition
 ,rg       ripgrep project          ,dk   hover docs
 ,e        toggle file sidebar      ,cr   run current file
 ,gs       git status               ,f    format
 ,w        save                     ,q    quit
-jk        exit insert mode         ,?    cheat sheet
+Esc       exit insert mode         ,?    cheat sheet
 ```
 
 <details>

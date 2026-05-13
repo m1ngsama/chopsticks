@@ -85,6 +85,7 @@ let g:chopsticks_enable_jk_escape = 1  " optional: insert-mode jk exits insert
 let g:chopsticks_enable_ctrl_s_save = 1 " optional: Ctrl-S saves
 let g:chopsticks_enable_sudo_save_bang = 1 " optional: :w!! sudo save
 let g:chopsticks_enable_completion_keymaps = 1 " optional: Tab/Enter completion
+let g:chopsticks_enable_auto_pairs = 1 " optional: automatic pair insertion
 ```
 
 `minimal` avoids LSP, ALE, completion plugins, extra language syntax plugins,

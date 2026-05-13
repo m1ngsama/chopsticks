@@ -26,8 +26,11 @@ Plug 'tpope/vim-commentary'
 Plug 'tpope/vim-repeat'
 Plug 'tpope/vim-sleuth'
 Plug 'wellle/targets.vim'
-Plug 'jiangmiao/auto-pairs'
 Plug 'easymotion/vim-easymotion', { 'on': '<Plug>(easymotion' }
+
+if g:chopsticks_enable_auto_pairs
+    Plug 'jiangmiao/auto-pairs'
+endif
 
 if g:chopsticks_enable_lint
     " ── Linting & Formatting ────────────────────────────────────────────────

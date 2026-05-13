@@ -108,8 +108,6 @@ nnoremap <leader>h  :bprevious<cr>
 
 nnoremap <leader>cd :lcd %:p:h<cr>:pwd<cr>
 
-nnoremap 0 ^
-vnoremap 0 ^
 nnoremap gV `[v`]
 
 cnoremap <C-p> <Up>

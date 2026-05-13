@@ -229,6 +229,10 @@ function! s:ChopsticksStatus() abort
 
     call add(l:lines, '── lsp servers ──  (:LspInstallServer to install)')
     call add(l:lines, s:LspStackCheck())
+    if get(g:, 'chopsticks_enable_lsp', 1)
+        call add(l:lines, '  LSP actions are buffer-local and start after a server attaches.')
+        call add(l:lines, '  Missing one? Open that filetype and run :LspInstallServer once.')
+    endif
     call add(l:lines, s:LspCheck('python', 'pylsp'))
     call add(l:lines, s:LspCheck('go', 'gopls'))
     call add(l:lines, s:LspCheck('rust', 'rust-analyzer'))
@@ -350,6 +354,7 @@ function! s:CheatSheet() abort
             \ '  ,o        outline',
             \ '  [g ]g     LSP diagnostics',
             \ '  :LspInstallServer  setup LSP',
+            \ '  :ChopsticksStatus   check LSP setup',
             \ ])
     endif
 

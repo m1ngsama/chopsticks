@@ -203,6 +203,8 @@ check_vim() {
 
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \
         -c 'if maparg("0", "n") !=# "" || maparg("0", "v") !=# "" || maparg("Y", "n") !=# "" || maparg("Q", "n") !=# "" || maparg("<Space>", "n") !=# "" | cquit | endif' \
+        -c 'if maparg("<C-p>", "n") !=# "" | cquit | endif' \
+        -c 'if maparg(",ff", "n") !~# "SmartFiles" | cquit | endif' \
         -c 'qa!' 2>&1
 
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \
@@ -260,10 +262,11 @@ check_vim() {
         -c 'redir END' \
         -c 'qa!' 2>&1
     grep -Fq ':ChopsticksStatus   check LSP setup' "$TMP_ROOT/cheat-default.txt"
+    grep -Fq ',ff       files' "$TMP_ROOT/cheat-default.txt"
     grep -Fq ',dd       definition' "$TMP_ROOT/cheat-default.txt"
     grep -Fq ',dk       hover docs' "$TMP_ROOT/cheat-default.txt"
     grep -Fq ',dp ,dn   LSP diagnostics' "$TMP_ROOT/cheat-default.txt"
-    if grep -Eq 'gd        definition|K         hover docs|\\[g \\]g     LSP diagnostics' "$TMP_ROOT/cheat-default.txt"; then
+    if grep -Eq 'Ctrl\\+p    find file|gd        definition|K         hover docs|\\[g \\]g     LSP diagnostics' "$TMP_ROOT/cheat-default.txt"; then
         cat "$TMP_ROOT/cheat-default.txt"
         exit 1
     fi

@@ -109,7 +109,7 @@ jk        exit insert mode         ,?    cheat sheet
 
 ### Files
 
-`Ctrl+p` find | `,b` buffers | `,rg` grep | `,rG` grep word | `,fh` recent | `,fl` lines | `,e` browser | `,E` browser (file dir) | `,,` last file
+`,ff` find | `,b` buffers | `,rg` grep | `,rG` grep word | `,fh` recent | `,fl` lines | `,e` browser | `,E` browser (file dir) | `,,` last file
 
 ### Code
 

@@ -186,6 +186,51 @@ check_vim() {
         -c 'if g:chopsticks_profile !=# "minimal" || has_key(g:plugs, "ale") || has_key(g:plugs, "vim-lsp") | cquit | endif' \
         -c 'qa!' 2>&1
 
+    XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \
+        -c 'ChopsticksStatus' \
+        -c "redir! > $TMP_ROOT/status-default.txt" \
+        -c 'silent %print' \
+        -c 'redir END' \
+        -c 'qa!' 2>&1
+    if grep -Fq 'vim-lsp not loaded' "$TMP_ROOT/status-default.txt"; then
+        cat "$TMP_ROOT/status-default.txt"
+        exit 1
+    fi
+    grep -Fq 'OK  vim-lsp stack  (installed)' "$TMP_ROOT/status-default.txt"
+    grep -Fq 'python  (:LspInstallServer in a python file)' "$TMP_ROOT/status-default.txt"
+
+    XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \
+        -c 'silent! delcommand LspStatus' \
+        -c 'silent! delcommand LspInstallServer' \
+        -c 'ChopsticksStatus' \
+        -c "redir! > $TMP_ROOT/status-lsp-not-loaded.txt" \
+        -c 'silent %print' \
+        -c 'redir END' \
+        -c 'qa!' 2>&1
+    grep -Fq 'OK  vim-lsp stack  (installed; not loaded yet)' "$TMP_ROOT/status-lsp-not-loaded.txt"
+
+    vim -u NONE -i NONE -es -N \
+        -c 'let g:chopsticks_profile = "minimal"' \
+        -c 'source .vimrc' \
+        -c 'ChopsticksStatus' \
+        -c "redir! > $TMP_ROOT/status-minimal.txt" \
+        -c 'silent %print' \
+        -c 'redir END' \
+        -c 'qa!' 2>&1
+    grep -Fq 'off vim-lsp stack  (LSP disabled by profile)' "$TMP_ROOT/status-minimal.txt"
+    grep -Fq 'off python  (LSP disabled by profile)' "$TMP_ROOT/status-minimal.txt"
+
+    mkdir -p "$TMP_ROOT/missing-home/.vim/autoload"
+    cp "$HOME/.vim/autoload/plug.vim" "$TMP_ROOT/missing-home/.vim/autoload/plug.vim"
+    HOME="$TMP_ROOT/missing-home" XDG_CONFIG_HOME="$EMPTY_XDG" \
+        vim -u .vimrc -i NONE -es -N \
+        -c 'ChopsticksStatus' \
+        -c "redir! > $TMP_ROOT/status-missing-plugin.txt" \
+        -c 'silent %print' \
+        -c 'redir END' \
+        -c 'qa!' 2>&1
+    grep -Fq 'vim-lsp not installed; run :PlugInstall' "$TMP_ROOT/status-missing-plugin.txt"
+
     vim -u NONE -i NONE -es -N \
         -c 'let g:chopsticks_profile = "minimal"' \
         -c 'source .vimrc' \

@@ -147,12 +147,58 @@ function! s:Off(name, reason) abort
     return '  off ' . a:name . '  (' . a:reason . ')'
 endfunction
 
-function! s:LspCheck(ft, server) abort
-    if !get(g:, 'chopsticks_enable_lsp', 1)
-        return s:Off(a:ft, 'LSP disabled by profile')
+function! s:PlugDir(name) abort
+    if !exists('g:plugs') || !has_key(g:plugs, a:name)
+        return ''
     endif
-    if !exists('*lsp#get_server_names')
-        return '  --  ' . a:ft . '  (vim-lsp not loaded)'
+    return fnamemodify(get(g:plugs[a:name], 'dir', ''), ':p')
+endfunction
+
+function! s:PlugInstalled(name) abort
+    let l:dir = s:PlugDir(a:name)
+    return !empty(l:dir) && isdirectory(l:dir)
+endfunction
+
+function! s:LspStackIssue() abort
+    if !get(g:, 'chopsticks_enable_lsp', 1)
+        return 'LSP disabled by profile'
+    endif
+    if empty(s:PlugDir('vim-lsp'))
+        return 'vim-lsp not declared by this profile'
+    endif
+    if !s:PlugInstalled('vim-lsp')
+        return 'vim-lsp not installed; run :PlugInstall'
+    endif
+    if empty(s:PlugDir('vim-lsp-settings'))
+        return 'vim-lsp-settings not declared by this profile'
+    endif
+    if !s:PlugInstalled('vim-lsp-settings')
+        return 'vim-lsp-settings not installed; run :PlugInstall'
+    endif
+    return ''
+endfunction
+
+function! s:LspStackCheck() abort
+    let l:issue = s:LspStackIssue()
+    if l:issue ==# 'LSP disabled by profile'
+        return s:Off('vim-lsp stack', l:issue)
+    endif
+    if !empty(l:issue)
+        return '  --  vim-lsp stack  (' . l:issue . ')'
+    endif
+    if exists(':LspStatus') == 2 || exists(':LspInstallServer') == 2
+        return '  OK  vim-lsp stack  (installed)'
+    endif
+    return '  OK  vim-lsp stack  (installed; not loaded yet)'
+endfunction
+
+function! s:LspCheck(ft, server) abort
+    let l:issue = s:LspStackIssue()
+    if l:issue ==# 'LSP disabled by profile'
+        return s:Off(a:ft, l:issue)
+    endif
+    if !empty(l:issue)
+        return '  --  ' . a:ft . '  (' . l:issue . ')'
     endif
     let l:dir = expand('~/.local/share/vim-lsp-settings/servers/' . a:server)
     if isdirectory(l:dir)
@@ -178,6 +224,7 @@ function! s:ChopsticksStatus() abort
     call add(l:lines, '')
 
     call add(l:lines, '── lsp servers ──  (:LspInstallServer to install)')
+    call add(l:lines, s:LspStackCheck())
     call add(l:lines, s:LspCheck('python', 'pylsp'))
     call add(l:lines, s:LspCheck('go', 'gopls'))
     call add(l:lines, s:LspCheck('rust', 'rust-analyzer'))

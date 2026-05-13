@@ -16,11 +16,15 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install Vim
+        timeout-minutes: 5
         run: |
-          if [ "$(uname)" = "Darwin" ]; then
+          if command -v vim >/dev/null 2>&1; then
+            vim --version | head -1
+          elif [ "$(uname)" = "Darwin" ]; then
             brew install vim
           else
-            sudo apt-get update && sudo apt-get install -y vim
+            sudo apt-get update
+            sudo apt-get install -y vim
           fi
 
       - name: Install vim-plug

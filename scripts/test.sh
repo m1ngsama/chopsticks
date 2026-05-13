@@ -205,6 +205,7 @@ check_vim() {
         -c 'let last_change_map = nr2char(96) . "[v" . nr2char(96) . "]"' \
         -c 'if maparg("0", "n") !=# "" || maparg("0", "v") !=# "" || maparg("Y", "n") !=# "" || maparg("Q", "n") !=# "" || maparg("<Space>", "n") !=# "" || maparg("//", "v") !=# "" || maparg("gV", "n") !=# "" || maparg("jk", "i") !=# "" || maparg("<C-s>", "n") !=# "" || maparg("<C-s>", "i") !=# "" || maparg("<C-h>", "n") !=# "" || maparg("<C-j>", "n") !=# "" || maparg("<C-k>", "n") !=# "" || maparg("<C-l>", "n") !=# "" || maparg("<C-p>", "n") !=# "" || maparg("<C-p>", "c") !=# "" || maparg("<C-n>", "c") !=# "" || maparg("w!!", "c") !=# "" | cquit | endif' \
         -c 'if has_key(g:plugs, "auto-pairs") || maparg("<Tab>", "i") =~# "pumvisible" || maparg("<S-Tab>", "i") =~# "pumvisible" || maparg("<CR>", "i") =~# "asyncomplete#close_popup" || maparg("<CR>", "i") =~# "AutoPairs" | cquit | endif' \
+        -c 'if maparg("<Esc><Esc>", "t") !=# "" || maparg("<C-h>", "t") !=# "" || maparg("<C-j>", "t") !=# "" || maparg("<C-k>", "t") !=# "" || maparg("<C-l>", "t") !=# "" | cquit | endif' \
         -c 'if maparg(",/", "v") !~# "escape" || maparg(",v", "n") !=# last_change_map || maparg(",ff", "n") !~# "SmartFiles" | cquit | endif' \
         -c 'qa!' 2>&1
 
@@ -227,6 +228,12 @@ check_vim() {
         -c 'let g:chopsticks_enable_auto_pairs = 1' \
         -c 'source .vimrc' \
         -c 'if !has_key(g:plugs, "auto-pairs") | cquit | endif' \
+        -c 'qa!' 2>&1
+
+    XDG_CONFIG_HOME="$EMPTY_XDG" vim -u NONE -i NONE -es -N \
+        -c 'let g:chopsticks_enable_terminal_keymaps = 1' \
+        -c 'source .vimrc' \
+        -c 'if has("terminal") && (maparg("<Esc><Esc>", "t") !~# "<C-\\\\><C-N>" || maparg("<C-h>", "t") !~# "<C-W>h" || maparg("<C-j>", "t") !~# "<C-W>j" || maparg("<C-k>", "t") !~# "<C-W>k" || maparg("<C-l>", "t") !~# "<C-W>l") | cquit | endif' \
         -c 'qa!' 2>&1
 
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \

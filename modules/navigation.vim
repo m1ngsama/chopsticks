@@ -106,9 +106,11 @@ nnoremap <silent> <leader>z :call <SID>ToggleMaximize()<CR>
 if has('terminal')
     nnoremap <leader>tv :terminal<CR>
     nnoremap <leader>th :terminal ++rows=10<CR>
-    tnoremap <Esc><Esc> <C-\><C-n>
-    tnoremap <C-h> <C-\><C-n><C-w>h
-    tnoremap <C-j> <C-\><C-n><C-w>j
-    tnoremap <C-k> <C-\><C-n><C-w>k
-    tnoremap <C-l> <C-\><C-n><C-w>l
+    if g:chopsticks_enable_terminal_keymaps
+        tnoremap <Esc><Esc> <C-\><C-n>
+        tnoremap <C-h> <C-\><C-n><C-w>h
+        tnoremap <C-j> <C-\><C-n><C-w>j
+        tnoremap <C-k> <C-\><C-n><C-w>k
+        tnoremap <C-l> <C-\><C-n><C-w>l
+    endif
 endif

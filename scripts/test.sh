@@ -202,15 +202,9 @@ check_vim() {
     grep -Fq 'Open that filetype and run :LspInstallServer once.' "$TMP_ROOT/status-default.txt"
 
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \
-        -c 'if maparg("0", "n") !=# "" || maparg("0", "v") !=# "" || maparg("Y", "n") !=# "" || maparg("Q", "n") !=# "" || maparg("<Space>", "n") !=# "" | cquit | endif' \
-        -c 'if maparg("gV", "n") !=# "" | cquit | endif' \
-        -c 'if maparg(",v", "n") !=# nr2char(96) . "[v" . nr2char(96) . "]" | cquit | endif' \
-        -c 'if maparg("jk", "i") !=# "" | cquit | endif' \
-        -c 'if maparg("<C-s>", "n") !=# "" || maparg("<C-s>", "i") !=# "" | cquit | endif' \
-        -c 'if maparg("<C-h>", "n") !=# "" || maparg("<C-j>", "n") !=# "" || maparg("<C-k>", "n") !=# "" || maparg("<C-l>", "n") !=# "" | cquit | endif' \
-        -c 'if maparg("<C-p>", "n") !=# "" | cquit | endif' \
-        -c 'if maparg("<C-p>", "c") !=# "" || maparg("<C-n>", "c") !=# "" | cquit | endif' \
-        -c 'if maparg(",ff", "n") !~# "SmartFiles" | cquit | endif' \
+        -c 'let last_change_map = nr2char(96) . "[v" . nr2char(96) . "]"' \
+        -c 'if maparg("0", "n") !=# "" || maparg("0", "v") !=# "" || maparg("Y", "n") !=# "" || maparg("Q", "n") !=# "" || maparg("<Space>", "n") !=# "" || maparg("//", "v") !=# "" || maparg("gV", "n") !=# "" || maparg("jk", "i") !=# "" || maparg("<C-s>", "n") !=# "" || maparg("<C-s>", "i") !=# "" || maparg("<C-h>", "n") !=# "" || maparg("<C-j>", "n") !=# "" || maparg("<C-k>", "n") !=# "" || maparg("<C-l>", "n") !=# "" || maparg("<C-p>", "n") !=# "" || maparg("<C-p>", "c") !=# "" || maparg("<C-n>", "c") !=# "" | cquit | endif' \
+        -c 'if maparg(",/", "v") !~# "escape" || maparg(",v", "n") !=# last_change_map || maparg(",ff", "n") !~# "SmartFiles" | cquit | endif' \
         -c 'qa!' 2>&1
 
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u NONE -i NONE -es -N \

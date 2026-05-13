@@ -132,7 +132,7 @@ vnoremap > >gv
 nnoremap n nzzzv
 nnoremap N Nzzzv
 
-vnoremap // y/\V<C-r>=escape(@",'/\')<CR><CR>
+vnoremap <leader>/ y/\V<C-r>=escape(@",'/\')<CR><CR>
 
 if get(g:, 'chopsticks_enable_ctrl_s_save', 0)
     nnoremap <silent> <C-s> :w<CR>

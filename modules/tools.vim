@@ -343,16 +343,16 @@ function! s:CheatSheet() abort
 
     if l:has_lsp
         call extend(l:lines, [
-            \ '  gd        definition',
-            \ '  gy        type definition',
-            \ '  gi        implementation',
-            \ '  gr        references',
-            \ '  K         hover docs',
+            \ '  ,dd       definition',
+            \ '  ,dt       type definition',
+            \ '  ,di       implementation',
+            \ '  ,dr       references',
+            \ '  ,dk       hover docs',
             \ '  ,rn       rename',
             \ '  ,ca       code action',
             \ '  ,f        format',
             \ '  ,o        outline',
-            \ '  [g ]g     LSP diagnostics',
+            \ '  ,dp ,dn   LSP diagnostics',
             \ '  :LspInstallServer  setup LSP',
             \ '  :ChopsticksStatus   check LSP setup',
             \ ])

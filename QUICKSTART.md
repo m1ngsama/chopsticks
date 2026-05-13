@@ -57,8 +57,8 @@ Ctrl+p          fuzzy find file (git-aware)
 ## Write code
 
 ```
-gd              go to definition
-K               hover docs
+,dd             go to definition
+,dk             hover docs
 ,rn             rename symbol
 ,ca             code action
 ,f              format

@@ -47,7 +47,7 @@ function! s:SmartFiles() abort
 endfunction
 
 if exists('g:plugs["fzf.vim"]')
-    nnoremap <C-p>      :call <SID>SmartFiles()<CR>
+    nnoremap <leader>ff :call <SID>SmartFiles()<CR>
     nnoremap <leader>b  :Buffers<CR>
     nnoremap <leader>rg :Rg<CR>
     nnoremap <leader>rG :RgWord<CR>

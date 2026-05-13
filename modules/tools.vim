@@ -326,7 +326,7 @@ function! s:CheatSheet() abort
         \ '  ─────────────────────────────',
         \ '',
         \ '  ── files ──────────────────',
-        \ '  Ctrl+p    find file',
+        \ '  ,ff       files',
         \ '  ,b        buffers',
         \ '  ,rg       grep project',
         \ '  ,rG       grep word',

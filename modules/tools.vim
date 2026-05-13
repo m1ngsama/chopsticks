@@ -128,7 +128,9 @@ nnoremap <leader>cr :call <SID>RunFile()<CR>
 
 " ── Sudo Save ───────────────────────────────────────────────────────────────
 
-cnoremap w!! w !sudo tee > /dev/null %
+if get(g:, 'chopsticks_enable_sudo_save_bang', 0)
+    cnoremap w!! w !sudo tee > /dev/null %
+endif
 
 " ── QuickFix ────────────────────────────────────────────────────────────────
 
@@ -423,7 +425,6 @@ function! s:CheatSheet() abort
         \ '  ,q        quit',
         \ '  ,x        save + quit',
         \ '  Esc       exit insert',
-        \ '  :w!!      sudo save',
         \ '  ,ev       edit vimrc',
         \ '  ,sv       reload vimrc',
         \ '  :ChopsticksStatus  health',

@@ -83,6 +83,7 @@ let g:chopsticks_profile = 'engineer'  " default: LSP, ALE, syntax extras
 let g:chopsticks_profile = 'full'      " engineer + heavier Markdown feedback
 let g:chopsticks_enable_jk_escape = 1  " optional: insert-mode jk exits insert
 let g:chopsticks_enable_ctrl_s_save = 1 " optional: Ctrl-S saves
+let g:chopsticks_enable_sudo_save_bang = 1 " optional: :w!! sudo save
 ```
 
 `minimal` avoids LSP, ALE, completion plugins, extra language syntax plugins,

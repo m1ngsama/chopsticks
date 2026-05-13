@@ -127,8 +127,6 @@ nnoremap <silent> <F6> :set list!<CR>:echo 'List chars: ' . (&list ? 'ON' : 'OFF
 
 nnoremap <space> za
 
-nnoremap Q <nop>
-
 inoremap jk <Esc>
 
 vnoremap < <gv

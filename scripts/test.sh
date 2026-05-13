@@ -94,6 +94,22 @@ check_bootstrap() {
     grep -q 'Would clone' "$TMP_ROOT/get-dry-run.txt"
     test ! -e "$TMP_ROOT/bootstrap"
 
+    mkdir -p "$TMP_ROOT/no-git-bin"
+    printf '%s\n' \
+        '#!/usr/bin/env bash' \
+        "echo \"brew was called\" >> \"\$BREW_LOG\"" \
+        'exit 42' > "$TMP_ROOT/no-git-bin/brew"
+    chmod +x "$TMP_ROOT/no-git-bin/brew"
+    BREW_LOG="$TMP_ROOT/no-git-brew.log" \
+        PATH="$TMP_ROOT/no-git-bin" \
+        CHOPSTICKS_DEST="$TMP_ROOT/no-git-bootstrap" \
+        /bin/bash ./get.sh --dry-run --profile=full \
+        | tee "$TMP_ROOT/get-no-git-dry-run.txt"
+    grep -q 'Would require: git' "$TMP_ROOT/get-no-git-dry-run.txt"
+    grep -q 'Would clone' "$TMP_ROOT/get-no-git-dry-run.txt"
+    test ! -e "$TMP_ROOT/no-git-brew.log"
+    test ! -e "$TMP_ROOT/no-git-bootstrap"
+
     mkdir -p "$TMP_ROOT/not-chopsticks"
     git -c init.defaultBranch=main init "$TMP_ROOT/not-chopsticks" >/dev/null
     git -C "$TMP_ROOT/not-chopsticks" remote add origin https://github.com/example/not-chopsticks.git

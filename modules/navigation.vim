@@ -86,15 +86,6 @@ command! -bang -nargs=* RgWord
     \   .shellescape(expand('<cword>')), 1, s:Preview(), <bang>0)
 command! -bang -nargs=? GFiles call fzf#vim#gitfiles(<q-args>, s:Preview(), <bang>0)
 
-" ── Window Navigation ───────────────────────────────────────────────────────
-
-if empty($TMUX)
-    nnoremap <C-h> <C-w>h
-    nnoremap <C-j> <C-w>j
-    nnoremap <C-k> <C-w>k
-    nnoremap <C-l> <C-w>l
-endif
-
 " ── Window Maximize Toggle ──────────────────────────────────────────────────
 
 function! s:ToggleMaximize() abort

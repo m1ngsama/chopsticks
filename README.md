@@ -125,7 +125,7 @@ jk        exit insert mode         ,?    cheat sheet
 
 ### Windows
 
-`Ctrl+hjkl` navigate (+ tmux) | `,z` maximize | `,h` `,l` buffers | `,bd` close buffer | `,=` `,−` resize | `,tv` `,th` terminal | `Esc Esc` exit terminal
+`<C-w>hjkl` navigate | `,z` maximize | `,h` `,l` buffers | `,bd` close buffer | `,=` `,−` resize | `,tv` `,th` terminal | `Esc Esc` exit terminal
 
 ### Markdown
 

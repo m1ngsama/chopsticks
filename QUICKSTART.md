@@ -92,7 +92,7 @@ Alt+j / Alt+k   move line
 ## Navigate
 
 ```
-Ctrl+h/j/k/l   splits + tmux panes
+<C-w>h/j/k/l   splits
 ,h / ,l         prev / next buffer
 ,z              maximize window
 ,tv / ,th       terminal

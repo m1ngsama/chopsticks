@@ -402,7 +402,7 @@ function! s:CheatSheet() abort
         \ '  [x ]x     conflict markers',
         \ '',
         \ '  ── windows ───────────────',
-        \ '  Ctrl+hjkl navigate splits',
+        \ '  <C-w>hjkl navigate splits',
         \ '  ,h ,l     prev / next buf',
         \ '  ,bd       close buffer',
         \ '  ,z        maximize toggle',

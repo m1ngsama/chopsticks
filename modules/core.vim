@@ -125,7 +125,9 @@ nnoremap <silent> <F3> :set invnumber<CR>:echo 'Line numbers: ' . (&number ? 'ON
 nnoremap <silent> <F4> :set invrelativenumber<CR>:echo 'Relative numbers: ' . (&relativenumber ? 'ON' : 'OFF')<CR>
 nnoremap <silent> <F6> :set list!<CR>:echo 'List chars: ' . (&list ? 'ON' : 'OFF')<CR>
 
-inoremap jk <Esc>
+if get(g:, 'chopsticks_enable_jk_escape', 0)
+    inoremap jk <Esc>
+endif
 
 vnoremap < <gv
 vnoremap > >gv

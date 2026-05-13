@@ -423,7 +423,7 @@ function! s:CheatSheet() abort
         \ '  ,q        quit',
         \ '  ,x        save + quit',
         \ '  Ctrl+s    save (any mode)',
-        \ '  jk        exit insert',
+        \ '  Esc       exit insert',
         \ '  :w!!      sudo save',
         \ '  ,ev       edit vimrc',
         \ '  ,sv       reload vimrc',

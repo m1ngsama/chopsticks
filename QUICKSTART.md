@@ -29,13 +29,13 @@ cd ~/.vim && ./install.sh --configure-only --profile=full
 | Mode   | Enter           | Leave         |
 | ------ | --------------- | ------------- |
 | Normal | startup default | —             |
-| Insert | `i` / `a` / `o` | `Esc` or `jk` |
+| Insert | `i` / `a` / `o` | `Esc`         |
 | Visual | `v` / `V`       | `Esc`         |
 
 ## Survival
 
 ```
-Esc / jk        back to Normal
+Esc             back to Normal
 ,w              save
 ,x              save + quit
 :q!             force quit

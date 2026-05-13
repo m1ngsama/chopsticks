@@ -493,10 +493,21 @@ fi
 
 # vim
 [ -f "$SCRIPT_DIR/.vimrc" ] || die ".vimrc not found in $SCRIPT_DIR — is this the chopsticks repo?"
-if ! command -v vim >/dev/null 2>&1; then
+resolve_vim() {
+    if [[ $OS == "macos" ]]; then
+        for vim_path in /opt/homebrew/bin/vim /usr/local/bin/vim; do
+            [[ -x "$vim_path" ]] && { echo "$vim_path"; return; }
+        done
+    fi
+    command -v vim 2>/dev/null || true
+}
+
+VIM_BIN="$(resolve_vim)"
+if [[ -z "$VIM_BIN" ]]; then
     warn "vim not found — attempting to install"
     if pkg_install vim vim vim vim 2>/dev/null; then
         ok "vim installed"
+        VIM_BIN="$(resolve_vim)"
     else
         die "vim not found and could not be installed automatically.
   Ubuntu/Debian:  sudo apt install vim
@@ -505,8 +516,9 @@ if ! command -v vim >/dev/null 2>&1; then
   macOS:          brew install vim"
     fi
 fi
-ok "Found: $(vim --version | head -n1)"
-vim --version | grep -q 'Vi IMproved 8\|Vi IMproved 9' || \
+[[ -n "$VIM_BIN" ]] || die "vim installed but not found in PATH"
+ok "Found: $("$VIM_BIN" --version | head -n1) ($VIM_BIN)"
+"$VIM_BIN" --version | grep -q 'Vi IMproved 8\|Vi IMproved 9' || \
     warn "Vim 8.0+ recommended for full async/LSP support — some features may not work"
 
 # Node.js (optional — vim-lsp needs no Node.js; only npm formatters do)
@@ -596,14 +608,15 @@ fi
 step "Installing Vim plugins"
 
 _vim_run() {
-    if { true </dev/tty; } 2>/dev/null; then
+    local vim_cmd="$1" batch_script
+    if [[ -t 1 ]] && { true </dev/tty; } 2>/dev/null; then
         # Interactive terminal: vim uses alternate screen; user sees progress
-        vim "$@" </dev/tty
+        "$VIM_BIN" -u "$SCRIPT_DIR/.vimrc" +"$vim_cmd" +qall </dev/tty
     else
-        # No TTY (SSH batch, CI): do NOT redirect stdin (causes "Error reading input" exit)
-        # or stdout (breaks async job callbacks — partial install).
-        # Redirect only stderr; escape sequences appear on stdout but installation succeeds.
-        vim --not-a-term "$@" 2>/dev/null
+        # Batch/agent/CI: avoid vim-plug's screen UI, which may try to read input.
+        batch_script="$_TMPDIR/vim-run.vim"
+        printf '%s\nqa!\n' "$vim_cmd" > "$batch_script"
+        "$VIM_BIN" -u "$SCRIPT_DIR/.vimrc" -i NONE -n -es -N -S "$batch_script"
     fi
 }
 
@@ -628,7 +641,7 @@ qa!
 VIMEOF
 
     CHOPSTICKS_REQUIRED_PLUGINS="$required_file" \
-        vim -u "$SCRIPT_DIR/.vimrc" -i NONE -es -N -S "$verify_script" >/dev/null 2>&1 || return 1
+        "$VIM_BIN" -u "$SCRIPT_DIR/.vimrc" -i NONE -es -N -S "$verify_script" >/dev/null 2>&1 || return 1
 
     [[ -s "$required_file" ]] || return 1
     while IFS= read -r dir; do
@@ -646,8 +659,8 @@ VIMEOF
 if [[ -d "$HOME/.vim/plugged" ]] && [[ -n "$(find "$HOME/.vim/plugged" -mindepth 1 -maxdepth 1 2>/dev/null)" ]]; then
     warn "PlugClean: removing plugins not listed in .vimrc from ~/.vim/plugged"
 fi
-_vim_run +'PlugClean!' +qall || true  # remove plugins no longer in vimrc; ignore exit code (none expected)
-_vim_run +'PlugInstall --sync' +qall || true  # fzf post-install hook may exit non-zero; harmless
+_vim_run 'PlugClean!' || true  # remove plugins no longer in vimrc; ignore exit code (none expected)
+_vim_run 'PlugInstall --sync' || true  # fzf post-install hook may exit non-zero; harmless
 
 verify_plugins || die "Plugin installation failed — retry with a stable network connection."
 

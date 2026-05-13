@@ -79,16 +79,45 @@ echo "  Dest: $DEST"
 # ── git ───────────────────────────────────────────────────────────────────────
 step "Checking for git"
 
-if ! command -v git >/dev/null 2>&1; then
-    warn "git not found — attempting to install"
-    if   command -v apt-get >/dev/null 2>&1; then sudo apt-get install -y git >/dev/null 2>&1
-    elif command -v pacman  >/dev/null 2>&1; then sudo pacman -S --noconfirm git >/dev/null 2>&1
-    elif command -v dnf     >/dev/null 2>&1; then sudo dnf install -y git >/dev/null 2>&1
-    elif command -v brew    >/dev/null 2>&1; then brew install git >/dev/null 2>&1
-    else die "git is required. Install it manually then re-run."; fi
-    command -v git >/dev/null 2>&1 || die "git install failed. Try: sudo apt install git"
+HAS_GIT=0
+command -v git >/dev/null 2>&1 && HAS_GIT=1
+
+if [[ $HAS_GIT -eq 0 ]]; then
+    if [[ $DRY_RUN -eq 1 ]]; then
+        warn "git not found — would need to install git before a real install"
+    else
+        warn "git not found — attempting to install"
+        if   command -v apt-get >/dev/null 2>&1; then sudo apt-get install -y git >/dev/null 2>&1
+        elif command -v pacman  >/dev/null 2>&1; then sudo pacman -S --noconfirm git >/dev/null 2>&1
+        elif command -v dnf     >/dev/null 2>&1; then sudo dnf install -y git >/dev/null 2>&1
+        elif command -v brew    >/dev/null 2>&1; then brew install git >/dev/null 2>&1
+        else die "git is required. Install it manually then re-run."; fi
+        command -v git >/dev/null 2>&1 || die "git install failed. Try: sudo apt install git"
+        HAS_GIT=1
+    fi
 fi
-ok "git $(git --version | awk '{print $3}')"
+if [[ $HAS_GIT -eq 1 ]]; then
+    ok "git $(git --version | awk '{print $3}')"
+elif [[ $DRY_RUN -eq 1 ]]; then
+    info "Would require: git"
+else
+    die "git is required. Install it manually then re-run."
+fi
+
+if [[ $DRY_RUN -eq 1 && $HAS_GIT -eq 0 ]]; then
+    step "Setting up $DEST"
+    if [[ -d "$DEST/.git" ]]; then
+        info "Would inspect existing git repo at $DEST"
+        info "Would update it only if its origin is $REPO"
+    elif [[ -d "$DEST" ]]; then
+        die "$DEST exists but git is unavailable, so dry-run cannot verify whether it is chopsticks.
+  Install git and re-run dry-run for the full safety check."
+    else
+        info "Would clone $REPO to $DEST"
+    fi
+    info "Would run: bash install.sh ${INSTALLER_ARGS[*]:-(no installer options)}"
+    exit 0
+fi
 
 # ── Clone or update ───────────────────────────────────────────────────────────
 step "Setting up $DEST"

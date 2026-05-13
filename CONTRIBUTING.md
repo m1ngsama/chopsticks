@@ -5,16 +5,18 @@
 1. **No Node.js dependencies.** The LSP engine is pure VimScript. Some language servers need Node — that's fine. The config itself must not.
 2. **Startup matters.** Run `vim -u .vimrc -i NONE --startuptime /tmp/s.log -es -N -c qa!` before and after. If your change adds >1ms, it needs a good reason.
 3. **Works on TTY.** Test over SSH. If it breaks in a terminal without true color, fix it or gate it behind `g:is_tty`.
-4. **One module, one concern.** Don't put git config in lsp.vim.
+4. **Native-first keymaps.** Enhance Vim's native behavior instead of replacing it. Do not override built-in motions, operators, text objects, or help-oriented keys for discoverability alone; prefer leader-prefixed or otherwise non-conflicting ergonomic mappings.
+5. **One module, one concern.** Don't put git config in lsp.vim.
 
 ## Adding a plugin
 
 1. Add the `Plug` line to `modules/plugins.vim`
 2. If it's not needed at startup, lazy-load it: `Plug 'foo/bar', { 'on': 'FooCommand' }`
 3. Put config in the appropriate module
-4. Update the cheat sheet in `modules/tools.vim` if you add keybindings
-5. Run `scripts/test.sh vim` locally after installing plugins
-6. Test on both macOS and Linux when changing terminal or package-manager behavior
+4. Check new mappings against native Vim behavior before adding them
+5. Update the cheat sheet in `modules/tools.vim` if you add keybindings
+6. Run `scripts/test.sh vim` locally after installing plugins
+7. Test on both macOS and Linux when changing terminal or package-manager behavior
 
 ## Local tests
 

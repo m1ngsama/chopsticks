@@ -84,6 +84,7 @@ let g:chopsticks_profile = 'full'      " engineer + heavier Markdown feedback
 let g:chopsticks_enable_jk_escape = 1  " optional: insert-mode jk exits insert
 let g:chopsticks_enable_ctrl_s_save = 1 " optional: Ctrl-S saves
 let g:chopsticks_enable_sudo_save_bang = 1 " optional: :w!! sudo save
+let g:chopsticks_enable_completion_keymaps = 1 " optional: Tab/Enter completion
 ```
 
 `minimal` avoids LSP, ALE, completion plugins, extra language syntax plugins,

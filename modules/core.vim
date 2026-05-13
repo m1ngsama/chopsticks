@@ -137,8 +137,10 @@ nnoremap N Nzzzv
 
 vnoremap // y/\V<C-r>=escape(@",'/\')<CR><CR>
 
-nnoremap <silent> <C-s> :w<CR>
-inoremap <silent> <C-s> <C-o>:w<CR>
+if get(g:, 'chopsticks_enable_ctrl_s_save', 0)
+    nnoremap <silent> <C-s> :w<CR>
+    inoremap <silent> <C-s> <C-o>:w<CR>
+endif
 
 nnoremap <C-d> <C-d>zz
 vnoremap <C-d> <C-d>zz

@@ -204,6 +204,7 @@ check_vim() {
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \
         -c 'if maparg("0", "n") !=# "" || maparg("0", "v") !=# "" || maparg("Y", "n") !=# "" || maparg("Q", "n") !=# "" || maparg("<Space>", "n") !=# "" | cquit | endif' \
         -c 'if maparg("jk", "i") !=# "" | cquit | endif' \
+        -c 'if maparg("<C-s>", "n") !=# "" || maparg("<C-s>", "i") !=# "" | cquit | endif' \
         -c 'if maparg("<C-h>", "n") !=# "" || maparg("<C-j>", "n") !=# "" || maparg("<C-k>", "n") !=# "" || maparg("<C-l>", "n") !=# "" | cquit | endif' \
         -c 'if maparg("<C-p>", "n") !=# "" | cquit | endif' \
         -c 'if maparg(",ff", "n") !~# "SmartFiles" | cquit | endif' \
@@ -213,6 +214,13 @@ check_vim() {
         -c 'let g:chopsticks_enable_jk_escape = 1' \
         -c 'source .vimrc' \
         -c 'if maparg("jk", "i") !~# "<Esc>" | cquit | endif' \
+        -c 'qa!' 2>&1
+
+    XDG_CONFIG_HOME="$EMPTY_XDG" vim -u NONE -i NONE -es -N \
+        -c 'let g:chopsticks_enable_ctrl_s_save = 1' \
+        -c 'source .vimrc' \
+        -c 'if maparg("<C-s>", "n") !~# ":w" | cquit | endif' \
+        -c 'if maparg("<C-s>", "i") !~# ":w" | cquit | endif' \
         -c 'qa!' 2>&1
 
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \
@@ -275,7 +283,7 @@ check_vim() {
     grep -Fq ',dk       hover docs' "$TMP_ROOT/cheat-default.txt"
     grep -Fq ',dp ,dn   LSP diagnostics' "$TMP_ROOT/cheat-default.txt"
     grep -Fq '<C-w>hjkl navigate splits' "$TMP_ROOT/cheat-default.txt"
-    if grep -Eq 'Ctrl\\+p    find file|Ctrl\\+hjkl navigate splits|jk        exit insert|gd        definition|K         hover docs|\\[g \\]g     LSP diagnostics' "$TMP_ROOT/cheat-default.txt"; then
+    if grep -Eq 'Ctrl\\+p    find file|Ctrl\\+hjkl navigate splits|Ctrl\\+s    save|jk        exit insert|gd        definition|K         hover docs|\\[g \\]g     LSP diagnostics' "$TMP_ROOT/cheat-default.txt"; then
         cat "$TMP_ROOT/cheat-default.txt"
         exit 1
     fi

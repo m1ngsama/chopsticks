@@ -11,6 +11,8 @@ endif
 if exists('g:chopsticks_loaded') | finish | endif
 let g:chopsticks_loaded = 1
 
+let g:surround_no_insert_mappings = get(g:, 'surround_no_insert_mappings', 1)
+
 function! s:load(mod) abort
     execute 'source ' . fnameescape(g:chopsticks_dir . '/modules/' . a:mod . '.vim')
 endfunction

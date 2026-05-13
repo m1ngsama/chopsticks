@@ -82,6 +82,7 @@ let g:chopsticks_profile = 'minimal'   " core navigation/editing/git/markdown
 let g:chopsticks_profile = 'engineer'  " default: LSP, ALE, syntax extras
 let g:chopsticks_profile = 'full'      " engineer + heavier Markdown feedback
 let g:chopsticks_enable_jk_escape = 1  " optional: insert-mode jk exits insert
+let g:chopsticks_enable_ctrl_s_save = 1 " optional: Ctrl-S saves
 ```
 
 `minimal` avoids LSP, ALE, completion plugins, extra language syntax plugins,
@@ -217,7 +218,7 @@ Each module is self-contained. Comment out one line in `.vimrc` to disable it. A
 | Plugins not loading | `:PlugInstall` then `:PlugUpdate`             |
 | LSP not starting    | `:LspInstallServer` for current filetype      |
 | Colors wrong        | `export COLORTERM=truecolor` in shell rc      |
-| `Ctrl+s` freezes    | `stty -ixon` in shell rc                      |
+| Optional `Ctrl+s` freezes | `stty -ixon` in shell rc                |
 | Everything slow     | Large file? Auto-disabled >10MB               |
 | What's installed?   | `:ChopsticksStatus` shows tools, LSP, linters |
 

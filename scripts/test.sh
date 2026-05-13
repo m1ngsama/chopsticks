@@ -207,6 +207,40 @@ check_vim() {
         -c 'if &l:syntax !=# "" || &l:undolevels != -1 || &l:swapfile || get(b:, "ale_enabled", 1) != 0 | cquit | endif' \
         -c 'qa!' 2>&1
 
+    mkdir -p "$TMP_ROOT/fake-bin" "$TMP_ROOT/c runner"
+    cat > "$TMP_ROOT/fake-bin/gcc" <<'GCCEOF'
+#!/usr/bin/env bash
+set -eu
+printf '%s\n' "$@" > "$GCC_ARGS"
+out=""
+while [ "$#" -gt 0 ]; do
+    if [ "$1" = "-o" ]; then
+        shift
+        out="$1"
+    fi
+    shift || true
+done
+test -n "$out"
+printf '%s\n' '#!/usr/bin/env bash' 'exit 0' > "$out"
+chmod +x "$out"
+GCCEOF
+    chmod +x "$TMP_ROOT/fake-bin/gcc"
+    c_file="$TMP_ROOT/c runner/main.c"
+    c_file_real="$(cd "$TMP_ROOT/c runner" && pwd -P)/main.c"
+    printf '%s\n' 'int main(void) { return 0; }' > "$c_file"
+    GCC_ARGS="$TMP_ROOT/gcc-args.txt" \
+        PATH="$TMP_ROOT/fake-bin:$PATH" \
+        XDG_CONFIG_HOME="$EMPTY_XDG" \
+        vim -u .vimrc -i NONE -es -N "$c_file" \
+        -c 'set filetype=c' \
+        -c 'normal ,cr' \
+        -c 'qa!' 2>&1
+    c_out="$(sed -n '2p' "$TMP_ROOT/gcc-args.txt")"
+    test -n "$c_out"
+    test "$c_out" != "/tmp/a.out"
+    test ! -e "$c_out"
+    grep -Fxq "$c_file_real" "$TMP_ROOT/gcc-args.txt"
+
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE --startuptime "$TMP_ROOT/startup.log" \
         -es -N -c 'qa!' 2>/dev/null
     tail -1 "$TMP_ROOT/startup.log"

@@ -198,6 +198,8 @@ check_vim() {
     fi
     grep -Fq 'OK  vim-lsp stack  (installed)' "$TMP_ROOT/status-default.txt"
     grep -Fq 'python  (:LspInstallServer in a python file)' "$TMP_ROOT/status-default.txt"
+    grep -Fq 'LSP actions are buffer-local and start after a server attaches.' "$TMP_ROOT/status-default.txt"
+    grep -Fq 'Open that filetype and run :LspInstallServer once.' "$TMP_ROOT/status-default.txt"
 
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \
         -c 'silent! delcommand LspStatus' \
@@ -219,6 +221,10 @@ check_vim() {
         -c 'qa!' 2>&1
     grep -Fq 'off vim-lsp stack  (LSP disabled by profile)' "$TMP_ROOT/status-minimal.txt"
     grep -Fq 'off python  (LSP disabled by profile)' "$TMP_ROOT/status-minimal.txt"
+    if grep -Fq 'LSP actions are buffer-local' "$TMP_ROOT/status-minimal.txt"; then
+        cat "$TMP_ROOT/status-minimal.txt"
+        exit 1
+    fi
 
     mkdir -p "$TMP_ROOT/missing-home/.vim/autoload"
     cp "$HOME/.vim/autoload/plug.vim" "$TMP_ROOT/missing-home/.vim/autoload/plug.vim"
@@ -230,6 +236,14 @@ check_vim() {
         -c 'redir END' \
         -c 'qa!' 2>&1
     grep -Fq 'vim-lsp not installed; run :PlugInstall' "$TMP_ROOT/status-missing-plugin.txt"
+
+    XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \
+        -c 'normal ,?' \
+        -c "redir! > $TMP_ROOT/cheat-default.txt" \
+        -c 'silent %print' \
+        -c 'redir END' \
+        -c 'qa!' 2>&1
+    grep -Fq ':ChopsticksStatus   check LSP setup' "$TMP_ROOT/cheat-default.txt"
 
     vim -u NONE -i NONE -es -N \
         -c 'let g:chopsticks_profile = "minimal"' \

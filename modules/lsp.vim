@@ -51,9 +51,11 @@ let g:asyncomplete_auto_popup       = 1
 let g:asyncomplete_auto_completeopt = 0
 let g:asyncomplete_popup_delay      = 50
 
-inoremap <expr> <Tab>   pumvisible() ? "\<C-n>" : "\<Tab>"
-inoremap <expr> <S-Tab> pumvisible() ? "\<C-p>" : "\<S-Tab>"
-inoremap <expr> <CR>    pumvisible() ? asyncomplete#close_popup() : "\<CR>"
+if get(g:, 'chopsticks_enable_completion_keymaps', 0)
+    inoremap <expr> <Tab>   pumvisible() ? "\<C-n>" : "\<Tab>"
+    inoremap <expr> <S-Tab> pumvisible() ? "\<C-p>" : "\<S-Tab>"
+    inoremap <expr> <CR>    pumvisible() ? asyncomplete#close_popup() : "\<CR>"
+endif
 
 " ── Buffer Keymaps ──────────────────────────────────────────────────────────
 

@@ -18,10 +18,10 @@ jobs:
       - name: Install Vim
         timeout-minutes: 5
         run: |
-          if command -v vim >/dev/null 2>&1; then
-            vim --version | head -1
-          elif [ "$(uname)" = "Darwin" ]; then
+          if [ "$(uname)" = "Darwin" ]; then
             brew install vim
+          elif command -v vim >/dev/null 2>&1; then
+            vim --version | head -1
           else
             sudo apt-get update
             sudo apt-get install -y vim

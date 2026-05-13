@@ -209,6 +209,7 @@ check_vim() {
         -c 'if maparg("<C-s>", "n") !=# "" || maparg("<C-s>", "i") !=# "" | cquit | endif' \
         -c 'if maparg("<C-h>", "n") !=# "" || maparg("<C-j>", "n") !=# "" || maparg("<C-k>", "n") !=# "" || maparg("<C-l>", "n") !=# "" | cquit | endif' \
         -c 'if maparg("<C-p>", "n") !=# "" | cquit | endif' \
+        -c 'if maparg("<C-p>", "c") !=# "" || maparg("<C-n>", "c") !=# "" | cquit | endif' \
         -c 'if maparg(",ff", "n") !~# "SmartFiles" | cquit | endif' \
         -c 'qa!' 2>&1
 

@@ -110,9 +110,6 @@ nnoremap <leader>cd :lcd %:p:h<cr>:pwd<cr>
 
 nnoremap <leader>v `[v`]
 
-cnoremap <C-p> <Up>
-cnoremap <C-n> <Down>
-
 nnoremap <M-j> :m .+1<CR>==
 nnoremap <M-k> :m .-2<CR>==
 vnoremap <M-j> :m '>+1<CR>gv=gv

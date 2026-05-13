@@ -113,7 +113,11 @@ function! s:RunFile() abort
     elseif l:ft ==# 'go'         | execute '!go run '   . l:file
     elseif l:ft ==# 'rust'       | execute '!cargo run'
     elseif l:ft ==# 'sh'         | execute '!bash '     . l:file
-    elseif l:ft ==# 'c'          | execute '!gcc -o /tmp/a.out ' . l:file . ' && /tmp/a.out'
+    elseif l:ft ==# 'c'
+        let l:out_path = tempname()
+        let l:out = shellescape(l:out_path)
+        execute '!gcc -o ' . l:out . ' ' . l:file . ' && ' . l:out
+        call delete(l:out_path)
     elseif l:ft ==# 'lua'        | execute '!lua '      . l:file
     elseif l:ft ==# 'ruby'       | execute '!ruby '     . l:file
     elseif l:ft ==# 'perl'       | execute '!perl '     . l:file

@@ -39,7 +39,6 @@ Esc             back to Normal
 ,w              save
 ,x              save + quit
 :q!             force quit
-Ctrl+s          save from any mode
 ,?              cheat sheet (toggle sidebar)
 ```
 

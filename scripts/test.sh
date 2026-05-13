@@ -168,7 +168,7 @@ check_vim() {
     vim -u NONE -i NONE -es -N \
         -c 'let g:chopsticks_profile = "minimal"' \
         -c 'source .vimrc' \
-        -c 'if has_key(g:plugs, "ale") || has_key(g:plugs, "vim-lsp") || has_key(g:plugs, "vim-lsp-settings") || has_key(g:plugs, "asyncomplete.vim") | cquit | endif' \
+        -c 'if has_key(g:plugs, "ale") || has_key(g:plugs, "vim-lsp") || has_key(g:plugs, "vim-lsp-settings") || has_key(g:plugs, "asyncomplete.vim") || has_key(g:plugs, "auto-pairs") | cquit | endif' \
         -c 'qa!' 2>&1
 
     mkdir -p "$TMP_ROOT/local"
@@ -176,14 +176,14 @@ check_vim() {
     vim -u NONE -i NONE -es -N \
         -c "let g:chopsticks_local_config = '$TMP_ROOT/local/config.vim'" \
         -c 'source .vimrc' \
-        -c 'if g:chopsticks_profile !=# "minimal" || has_key(g:plugs, "ale") || has_key(g:plugs, "vim-lsp") | cquit | endif' \
+        -c 'if g:chopsticks_profile !=# "minimal" || has_key(g:plugs, "ale") || has_key(g:plugs, "vim-lsp") || has_key(g:plugs, "auto-pairs") | cquit | endif' \
         -c 'qa!' 2>&1
 
     mkdir -p "$TMP_ROOT/xdg"
     printf "%s\n" "let g:chopsticks_profile = 'minimal'" > "$TMP_ROOT/xdg/chopsticks.vim"
     XDG_CONFIG_HOME="$TMP_ROOT/xdg" vim -u NONE -i NONE -es -N \
         -c 'source .vimrc' \
-        -c 'if g:chopsticks_profile !=# "minimal" || has_key(g:plugs, "ale") || has_key(g:plugs, "vim-lsp") | cquit | endif' \
+        -c 'if g:chopsticks_profile !=# "minimal" || has_key(g:plugs, "ale") || has_key(g:plugs, "vim-lsp") || has_key(g:plugs, "auto-pairs") | cquit | endif' \
         -c 'qa!' 2>&1
 
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \
@@ -204,7 +204,7 @@ check_vim() {
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \
         -c 'let last_change_map = nr2char(96) . "[v" . nr2char(96) . "]"' \
         -c 'if maparg("0", "n") !=# "" || maparg("0", "v") !=# "" || maparg("Y", "n") !=# "" || maparg("Q", "n") !=# "" || maparg("<Space>", "n") !=# "" || maparg("//", "v") !=# "" || maparg("gV", "n") !=# "" || maparg("jk", "i") !=# "" || maparg("<C-s>", "n") !=# "" || maparg("<C-s>", "i") !=# "" || maparg("<C-h>", "n") !=# "" || maparg("<C-j>", "n") !=# "" || maparg("<C-k>", "n") !=# "" || maparg("<C-l>", "n") !=# "" || maparg("<C-p>", "n") !=# "" || maparg("<C-p>", "c") !=# "" || maparg("<C-n>", "c") !=# "" || maparg("w!!", "c") !=# "" | cquit | endif' \
-        -c 'if maparg("<Tab>", "i") =~# "pumvisible" || maparg("<S-Tab>", "i") =~# "pumvisible" || maparg("<CR>", "i") =~# "asyncomplete#close_popup" | cquit | endif' \
+        -c 'if has_key(g:plugs, "auto-pairs") || maparg("<Tab>", "i") =~# "pumvisible" || maparg("<S-Tab>", "i") =~# "pumvisible" || maparg("<CR>", "i") =~# "asyncomplete#close_popup" || maparg("<CR>", "i") =~# "AutoPairs" | cquit | endif' \
         -c 'if maparg(",/", "v") !~# "escape" || maparg(",v", "n") !=# last_change_map || maparg(",ff", "n") !~# "SmartFiles" | cquit | endif' \
         -c 'qa!' 2>&1
 
@@ -221,6 +221,12 @@ check_vim() {
         -c 'source .vimrc' \
         -c 'if maparg("<C-s>", "n") !~# ":w" || maparg("<C-s>", "i") !~# ":w" || maparg("w!!", "c") !~# "sudo tee" | cquit | endif' \
         -c 'if maparg("<Tab>", "i") !~# "pumvisible" || maparg("<S-Tab>", "i") !~# "pumvisible" || maparg("<CR>", "i") !~# "asyncomplete#close_popup" | cquit | endif' \
+        -c 'qa!' 2>&1
+
+    XDG_CONFIG_HOME="$EMPTY_XDG" vim -u NONE -i NONE -es -N \
+        -c 'let g:chopsticks_enable_auto_pairs = 1' \
+        -c 'source .vimrc' \
+        -c 'if !has_key(g:plugs, "auto-pairs") | cquit | endif' \
         -c 'qa!' 2>&1
 
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \

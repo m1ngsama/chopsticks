@@ -24,6 +24,8 @@ let g:chopsticks_enable_ui_extras = get(g:, 'chopsticks_enable_ui_extras',
     \ !s:profile_minimal)
 let g:chopsticks_enable_markdown_preview = get(g:,
     \ 'chopsticks_enable_markdown_preview', !s:profile_minimal)
+let g:chopsticks_enable_auto_pairs = get(g:,
+    \ 'chopsticks_enable_auto_pairs', 0)
 
 let g:chopsticks_markdown_lint = get(g:, 'chopsticks_markdown_lint',
     \ s:profile_full)

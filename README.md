@@ -96,8 +96,8 @@ active profile and only shows keys for enabled features.
 Leader: `,`
 
 ```
-Ctrl+p    fuzzy find file          gd    go to definition
-,rg       ripgrep project          K     hover docs
+Ctrl+p    fuzzy find file          ,dd   go to definition
+,rg       ripgrep project          ,dk   hover docs
 ,e        toggle file sidebar      ,cr   run current file
 ,gs       git status               ,f    format
 ,w        save                     ,q    quit
@@ -113,7 +113,7 @@ jk        exit insert mode         ,?    cheat sheet
 
 ### Code
 
-`gd` def | `gy` type | `gi` impl | `gr` refs | `K` docs | `[g` `]g` diagnostics | `[e` `]e` ALE errors | `,rn` rename | `,ca` action | `,o` outline | `,cr` run
+`,dd` def | `,dt` type | `,di` impl | `,dr` refs | `,dk` docs | `,dp` `,dn` diagnostics | `[e` `]e` ALE errors | `,rn` rename | `,ca` action | `,o` outline | `,cr` run
 
 ### Edit
 

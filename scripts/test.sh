@@ -238,12 +238,31 @@ check_vim() {
     grep -Fq 'vim-lsp not installed; run :PlugInstall' "$TMP_ROOT/status-missing-plugin.txt"
 
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \
+        -c 'doautocmd User lsp_buffer_enabled' \
+        -c 'if maparg("gd", "n") !=# "" || maparg("K", "n") !=# "" || maparg("gi", "n") !=# "" || maparg("gr", "n") !=# "" | cquit | endif' \
+        -c 'if maparg(",dd", "n") !~# "lsp-definition" | cquit | endif' \
+        -c 'if maparg(",dt", "n") !~# "lsp-type-definition" | cquit | endif' \
+        -c 'if maparg(",di", "n") !~# "lsp-implementation" | cquit | endif' \
+        -c 'if maparg(",dr", "n") !~# "lsp-references" | cquit | endif' \
+        -c 'if maparg(",dk", "n") !~# "lsp-hover" | cquit | endif' \
+        -c 'if maparg(",dp", "n") !~# "lsp-previous-diagnostic" | cquit | endif' \
+        -c 'if maparg(",dn", "n") !~# "lsp-next-diagnostic" | cquit | endif' \
+        -c 'qa!' 2>&1
+
+    XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \
         -c 'normal ,?' \
         -c "redir! > $TMP_ROOT/cheat-default.txt" \
         -c 'silent %print' \
         -c 'redir END' \
         -c 'qa!' 2>&1
     grep -Fq ':ChopsticksStatus   check LSP setup' "$TMP_ROOT/cheat-default.txt"
+    grep -Fq ',dd       definition' "$TMP_ROOT/cheat-default.txt"
+    grep -Fq ',dk       hover docs' "$TMP_ROOT/cheat-default.txt"
+    grep -Fq ',dp ,dn   LSP diagnostics' "$TMP_ROOT/cheat-default.txt"
+    if grep -Eq 'gd        definition|K         hover docs|\\[g \\]g     LSP diagnostics' "$TMP_ROOT/cheat-default.txt"; then
+        cat "$TMP_ROOT/cheat-default.txt"
+        exit 1
+    fi
 
     vim -u NONE -i NONE -es -N \
         -c 'let g:chopsticks_profile = "minimal"' \

@@ -203,6 +203,8 @@ check_vim() {
 
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \
         -c 'if maparg("0", "n") !=# "" || maparg("0", "v") !=# "" || maparg("Y", "n") !=# "" || maparg("Q", "n") !=# "" || maparg("<Space>", "n") !=# "" | cquit | endif' \
+        -c 'if maparg("gV", "n") !=# "" | cquit | endif' \
+        -c 'if maparg(",v", "n") !=# nr2char(96) . "[v" . nr2char(96) . "]" | cquit | endif' \
         -c 'if maparg("jk", "i") !=# "" | cquit | endif' \
         -c 'if maparg("<C-s>", "n") !=# "" || maparg("<C-s>", "i") !=# "" | cquit | endif' \
         -c 'if maparg("<C-h>", "n") !=# "" || maparg("<C-j>", "n") !=# "" || maparg("<C-k>", "n") !=# "" || maparg("<C-l>", "n") !=# "" | cquit | endif' \

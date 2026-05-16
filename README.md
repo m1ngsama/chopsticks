@@ -230,7 +230,7 @@ More in the [wiki](https://github.com/m1ngsama/chopsticks/wiki).
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). The two rules that matter: no Node.js dependencies, and don't regress startup time.
+See [CONTRIBUTING.md](CONTRIBUTING.md). The two rules that matter: no Node.js in the Vim runtime, and don't regress startup time.
 
 ## License
 

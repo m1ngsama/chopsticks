@@ -247,6 +247,17 @@ check_vim() {
         -c 'qa!' 2>&1
 
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \
+        -c 'if maparg(",F", "n") !=# "" | cquit | endif' \
+        -c 'if maparg(",F", "v") !~# "=" | cquit | endif' \
+        -c 'qa!' 2>&1
+
+    XDG_CONFIG_HOME="$EMPTY_XDG" vim -u NONE -i NONE -es -N \
+        -c 'let g:chopsticks_enable_reindent_file = 1' \
+        -c 'source .vimrc' \
+        -c 'if maparg(",F", "n") !~# "gg=G" | cquit | endif' \
+        -c 'qa!' 2>&1
+
+    XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \
         -c 'silent! delcommand LspStatus' \
         -c 'silent! delcommand LspInstallServer' \
         -c 'ChopsticksStatus' \

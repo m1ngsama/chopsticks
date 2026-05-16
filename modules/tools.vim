@@ -21,7 +21,9 @@ endfunction
 
 " ── Utilities ──────────────────────────────────────────────────────────────
 
-nnoremap <leader>F gg=G``
+if get(g:, 'chopsticks_enable_reindent_file', 0)
+    nnoremap <leader>F gg=G``
+endif
 vnoremap <leader>F =
 nnoremap <leader>wa :wa<CR>
 

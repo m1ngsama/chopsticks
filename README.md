@@ -88,6 +88,7 @@ let g:chopsticks_enable_completion_keymaps = 1 " optional: Tab/Enter completion
 let g:chopsticks_enable_auto_pairs = 1 " optional: automatic pair insertion
 let g:chopsticks_enable_terminal_keymaps = 1 " optional: terminal Esc/Ctrl navigation
 let g:chopsticks_enable_exrc = 1 " optional: source project-local .vimrc/.exrc from CWD
+let g:chopsticks_enable_reindent_file = 1 " optional: ,F reindents the entire file
 ```
 
 `minimal` avoids LSP, ALE, completion plugins, extra language syntax plugins,
@@ -124,7 +125,7 @@ Esc       exit insert mode         ,?    cheat sheet
 
 ### Edit
 
-`,S`+2ch jump | `gc` comment | `cs"'` surround | `Alt+j/k` move line | `,u` undo tree | `,y` clipboard | `,*` replace word | `,F` re-indent | `,W` strip whitespace | `[<Space>` `]<Space>` blank lines
+`,S`+2ch jump | `gc` comment | `cs"'` surround | `Alt+j/k` move line | `,u` undo tree | `,y` clipboard | `,*` replace word | `,F` re-indent (v) | `,W` strip whitespace | `[<Space>` `]<Space>` blank lines
 
 ### Git
 

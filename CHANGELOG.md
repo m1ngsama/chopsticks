@@ -26,6 +26,10 @@
 - `install.sh` no longer silently `PlugClean!`s user-added plugins from
   `~/.vim/plugged`; it now lists undeclared plugin directories first and
   asks before removing them (`--yes` skips the removal entirely)
+- `install.sh` Python tools now prefer `pipx` and `pip3 --user` over
+  `pip3 install --break-system-packages`; the break-system path is gated
+  behind `CHOPSTICKS_ALLOW_BREAK_SYSTEM=1` so PEP 668 distros are no
+  longer silently polluted
 - `g:loaded_logipat` typo → `g:loaded_logiPat` — logiPat was loading fully (0.478ms wasted)
 - `get.sh` now refuses to update an existing `~/.vim` git repo unless its
   origin is chopsticks

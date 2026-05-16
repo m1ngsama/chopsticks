@@ -183,8 +183,10 @@ endif
 
 " ── Project-Local Config ────────────────────────────────────────────────────
 
-set exrc
-set secure
+if get(g:, 'chopsticks_enable_exrc', 0)
+    set exrc
+    set secure
+endif
 set sessionoptions=blank,buffers,curdir,folds,help,tabpages,winsize,winpos,terminal
 
 if has("patch-8.1.0360")

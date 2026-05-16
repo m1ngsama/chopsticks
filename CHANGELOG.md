@@ -33,6 +33,9 @@
 
 ### Changed
 
+- `set exrc`/`set secure` are now opt-in via `g:chopsticks_enable_exrc = 1`;
+  Vim no longer sources project-local `.vimrc`/`.exrc` from the working
+  directory by default
 - `,?` cheat sheet is now profile-aware and hides LSP/ALE/preview/UndoTree keys
   when those features are disabled
 - Module reload/source paths now use `fnameescape()` so installs in paths with

@@ -237,6 +237,16 @@ check_vim() {
         -c 'qa!' 2>&1
 
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \
+        -c 'if &exrc || &secure | cquit | endif' \
+        -c 'qa!' 2>&1
+
+    XDG_CONFIG_HOME="$EMPTY_XDG" vim -u NONE -i NONE -es -N \
+        -c 'let g:chopsticks_enable_exrc = 1' \
+        -c 'source .vimrc' \
+        -c 'if !&exrc || !&secure | cquit | endif' \
+        -c 'qa!' 2>&1
+
+    XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \
         -c 'silent! delcommand LspStatus' \
         -c 'silent! delcommand LspInstallServer' \
         -c 'ChopsticksStatus' \

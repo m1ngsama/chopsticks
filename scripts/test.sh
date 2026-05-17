@@ -165,7 +165,7 @@ check_vim() {
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u "$TMP_ROOT/chopsticks path/.vimrc" \
         -i NONE -es -N -c 'qa!' 2>&1
 
-    vim -u NONE -i NONE -es -N \
+    XDG_CONFIG_HOME="$EMPTY_XDG" vim -u NONE -i NONE -es -N \
         -c 'let g:chopsticks_profile = "minimal"' \
         -c 'source .vimrc' \
         -c 'if has_key(g:plugs, "ale") || has_key(g:plugs, "vim-lsp") || has_key(g:plugs, "vim-lsp-settings") || has_key(g:plugs, "asyncomplete.vim") || has_key(g:plugs, "auto-pairs") | cquit | endif' \
@@ -267,7 +267,7 @@ check_vim() {
         -c 'qa!' 2>&1
     grep -Fq 'OK  vim-lsp stack  (installed; not loaded yet)' "$TMP_ROOT/status-lsp-not-loaded.txt"
 
-    vim -u NONE -i NONE -es -N \
+    XDG_CONFIG_HOME="$EMPTY_XDG" vim -u NONE -i NONE -es -N \
         -c 'let g:chopsticks_profile = "minimal"' \
         -c 'source .vimrc' \
         -c 'ChopsticksStatus' \
@@ -322,7 +322,7 @@ check_vim() {
         exit 1
     fi
 
-    vim -u NONE -i NONE -es -N \
+    XDG_CONFIG_HOME="$EMPTY_XDG" vim -u NONE -i NONE -es -N \
         -c 'let g:chopsticks_profile = "minimal"' \
         -c 'source .vimrc' \
         -c 'normal ,?' \
@@ -347,7 +347,7 @@ check_vim() {
         -c 'if !&swapfile || !&writebackup || &directory !~# "\.vim/.swap" | cquit | endif' \
         -c 'qa!' 2>&1
 
-    vim -u NONE -i NONE -es -N \
+    XDG_CONFIG_HOME="$EMPTY_XDG" vim -u NONE -i NONE -es -N \
         -c 'let g:ale_fix_on_save = 0' \
         -c 'source .vimrc' \
         -c 'if g:ale_fix_on_save != 0 | cquit | endif' \

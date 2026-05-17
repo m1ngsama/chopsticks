@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 2.2.0 — 2026-05-17
+
 ### Added
 
 - `~/.config/chopsticks.vim` local pre-load config for profile and user choices

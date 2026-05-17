@@ -258,6 +258,14 @@ check_vim() {
         -c 'qa!' 2>&1
 
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \
+        -c 'if &ttimeoutlen != 10 | cquit | endif' \
+        -c 'qa!' 2>&1
+
+    TERM=linux XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \
+        -c 'if !g:is_tty || &ttimeoutlen != 50 | cquit | endif' \
+        -c 'qa!' 2>&1
+
+    XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \
         -c 'silent! delcommand LspStatus' \
         -c 'silent! delcommand LspInstallServer' \
         -c 'ChopsticksStatus' \

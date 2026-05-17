@@ -26,6 +26,10 @@
 - README badge and `install.sh` recommend Vim 8.1+ instead of 8.0+ —
   the runtime conditionally relies on patches `8.1.0360` (diffopt) and
   `8.1.1517` (completeopt+=popup), so 8.0 users hit option errors
+- `ttimeoutlen` is now 50ms when `g:is_tty` (was 10ms unconditionally);
+  fixes F-keys, arrow keys, and Alt-prefixes fragmenting on SSH where
+  one-way latency exceeds 10ms. Local terminals keep the 10ms snappy
+  default
 - `install.sh` no longer silently `PlugClean!`s user-added plugins from
   `~/.vim/plugged`; it now lists undeclared plugin directories first and
   asks before removing them (`--yes` skips the removal entirely)

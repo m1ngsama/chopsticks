@@ -257,8 +257,8 @@ check_vim() {
         -c 'if maparg(",F", "n") !~# "gg=G" | cquit | endif' \
         -c 'qa!' 2>&1
 
-    XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \
-        -c 'if &ttimeoutlen != 10 | cquit | endif' \
+    TERM=xterm-256color XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \
+        -c 'if g:is_tty || &ttimeoutlen != 10 | cquit | endif' \
         -c 'qa!' 2>&1
 
     TERM=linux XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \

@@ -23,6 +23,9 @@
 
 ### Fixed
 
+- README badge and `install.sh` recommend Vim 8.1+ instead of 8.0+ —
+  the runtime conditionally relies on patches `8.1.0360` (diffopt) and
+  `8.1.1517` (completeopt+=popup), so 8.0 users hit option errors
 - `install.sh` no longer silently `PlugClean!`s user-added plugins from
   `~/.vim/plugged`; it now lists undeclared plugin directories first and
   asks before removing them (`--yes` skips the removal entirely)
@@ -40,6 +43,9 @@
 
 ### Changed
 
+- `install.sh` "First steps inside Vim" block now leads with `,?`
+  (cheat sheet) — the single best onboarding asset is now the first
+  thing a new user sees after install, not the fourth
 - `set exrc`/`set secure` are now opt-in via `g:chopsticks_enable_exrc = 1`;
   Vim no longer sources project-local `.vimrc`/`.exrc` from the working
   directory by default

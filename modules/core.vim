@@ -42,7 +42,10 @@ set noerrorbells
 set novisualbell
 set t_vb=
 set ttimeout
-set ttimeoutlen=10
+" Wait long enough on SSH/TTY for multi-byte key codes to arrive intact —
+" 10ms fragments F-keys, arrows, and Alt-prefixes when one-way latency > 10ms.
+" 50ms is well under perceptible <Esc>→Normal delay locally.
+let &ttimeoutlen = g:is_tty ? 50 : 10
 
 if $COLORTERM ==# 'gnome-terminal'
     set t_Co=256

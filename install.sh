@@ -748,11 +748,11 @@ fi
 # ── System tools ─────────────────────────────────────────────────────────────
 if [[ $HAS_PKG_MGR -eq 1 ]]; then
     _I_RIPGREP=$_idx
-    _ITEMS+=("ripgrep|,rg / ,rG project-wide search · powers Ctrl+p preview|1")
+    _ITEMS+=("ripgrep|,rg / ,rG project-wide search · powers FZF preview|1")
     : $(( _idx++ ))
 
     _I_FZF=$_idx
-    _ITEMS+=("fzf|Ctrl+p fuzzy file search · ,b buffers · ,rt tag search|1")
+    _ITEMS+=("fzf|,ff fuzzy file search · ,b buffers · ,rt tag search|1")
     : $(( _idx++ ))
 
     _I_CTAGS=$_idx

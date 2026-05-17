@@ -45,7 +45,7 @@ Esc             back to Normal
 ## Find things
 
 ```
-Ctrl+p          fuzzy find file (git-aware)
+,ff             fuzzy find file (git-aware)
 ,rg             ripgrep project
 ,b              search buffers
 ,fh             recent files

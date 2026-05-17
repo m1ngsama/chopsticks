@@ -266,6 +266,10 @@ check_vim() {
         -c 'qa!' 2>&1
 
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \
+        -c 'if !exists("loaded_gzip") || !exists("loaded_logiPat") || !exists("loaded_rrhelper") || !exists("loaded_spellfile_plugin") | cquit | endif' \
+        -c 'qa!' 2>&1
+
+    XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \
         -c 'silent! delcommand LspStatus' \
         -c 'silent! delcommand LspInstallServer' \
         -c 'ChopsticksStatus' \

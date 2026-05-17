@@ -1015,19 +1015,45 @@ elif [[ $_I_PYTHON -lt 0 ]] || ! _selected "$_I_PYTHON"; then
     skip "Python tool suite (skipped by user)"
     SKIPPED+=("black" "isort" "flake8" "pylint" "yamllint" "sqlfluff")
 else
+    # Prefer pipx (isolated per-tool venvs, the recommended path on PEP 668
+    # distros like Debian 12+/Ubuntu 23.04+). Bootstrap pipx via the system
+    # package manager if missing. Only fall back to --break-system-packages
+    # if the user explicitly opts in.
+    if ! command -v pipx >/dev/null 2>&1; then
+        if pkg_install pipx pipx python-pipx pipx 2>/dev/null; then
+            ok "pipx (recommended Python CLI installer)"
+        else
+            warn "pipx not available — falling back to pip3 --user"
+        fi
+    fi
+
+    case ":$PATH:" in
+        *":$HOME/.local/bin:"*) ;;
+        *) warn "\$HOME/.local/bin is not on PATH — pipx/pip --user tools will not be found"
+           info "Add to your shell rc: export PATH=\"\$HOME/.local/bin:\$PATH\"" ;;
+    esac
+
     pip_install() {
         local pkg="$1" check="${2:-$1}"
         if command -v "$check" >/dev/null 2>&1; then
             ok "$pkg (already installed)"; return
         fi
-        if pip3 install --quiet "$pkg" 2>/dev/null; then
-            ok "$pkg"; INSTALLED+=("$pkg")
-        elif pip3 install --quiet --break-system-packages "$pkg" 2>/dev/null; then
-            warn "$pkg installed with --break-system-packages (consider using a virtualenv)"
-            ok "$pkg"; INSTALLED+=("$pkg")
-        else
-            fail "$pkg"; FAILED+=("$pkg")
+        if command -v pipx >/dev/null 2>&1 && pipx install --quiet "$pkg" 2>/dev/null; then
+            ok "$pkg (via pipx)"; INSTALLED+=("$pkg")
+            return
         fi
+        if pip3 install --quiet --user "$pkg" 2>/dev/null; then
+            ok "$pkg (via pip --user)"; INSTALLED+=("$pkg")
+            return
+        fi
+        if [[ "${CHOPSTICKS_ALLOW_BREAK_SYSTEM:-0}" == "1" ]] && \
+           pip3 install --quiet --break-system-packages "$pkg" 2>/dev/null; then
+            warn "$pkg installed with --break-system-packages (CHOPSTICKS_ALLOW_BREAK_SYSTEM=1)"
+            INSTALLED+=("$pkg")
+            return
+        fi
+        fail "$pkg — install pipx, or set CHOPSTICKS_ALLOW_BREAK_SYSTEM=1 to bypass PEP 668"
+        FAILED+=("$pkg")
     }
     pip_install black
     pip_install isort

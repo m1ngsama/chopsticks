@@ -23,6 +23,11 @@
 
 ### Fixed
 
+- Built-in plugin guards for `gzip`, `logiPat`, `rrhelper`, and
+  `spellfile_plugin` are now set in both `g:`-prefixed and unscoped
+  forms — those four old-style runtime plugins check `loaded_X` (no
+  `g:`), so the previous `g:loaded_X` lines did nothing. Saves ~270μs
+  total at startup, mostly from gzip
 - `install.sh` interactive menu and QUICKSTART now show `,ff` (current
   fuzzy-find binding) instead of the stale `Ctrl+p` left over from the
   native-first cleanup; `.github/demo.tape` updated to match (the

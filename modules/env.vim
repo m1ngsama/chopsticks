@@ -42,16 +42,18 @@ let g:chopsticks_markdown_conceal = get(g:, 'chopsticks_markdown_conceal',
 let g:chopsticks_lsp_virtual_text = get(g:, 'chopsticks_lsp_virtual_text',
     \ s:profile_full && !g:is_tty)
 
-" Skip built-in plugins we never use
+" Skip built-in plugins we never use.
+" Modern plugins check g:loaded_X; older ones (gzip, logiPat, rrhelper,
+" spellfile) check the unscoped loaded_X form, so we set both.
 let g:loaded_2html_plugin      = 1
 let g:loaded_getscriptPlugin   = 1
-let g:loaded_gzip              = 1
-let g:loaded_logiPat           = 1
-let g:loaded_rrhelper          = 1
+let g:loaded_gzip              = 1 | let loaded_gzip              = 1
+let g:loaded_logiPat           = 1 | let loaded_logiPat           = 1
+let g:loaded_rrhelper          = 1 | let loaded_rrhelper          = 1
 let g:loaded_tarPlugin         = 1
 let g:loaded_vimballPlugin     = 1
 let g:loaded_zipPlugin         = 1
 let g:loaded_tutor_mode_plugin = 1
-let g:loaded_spellfile_plugin  = 1
+let g:loaded_spellfile_plugin  = 1 | let loaded_spellfile_plugin  = 1
 let g:loaded_openPlugin        = 1
 let g:loaded_manpager_plugin   = 1

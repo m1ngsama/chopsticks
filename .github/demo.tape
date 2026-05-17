@@ -24,8 +24,8 @@ Type "vim server.py"
 Enter
 Sleep 3.5s
 
-# ── 2. Fuzzy find files (Ctrl+p → type → select) ──────────────────────────
-Ctrl+p
+# ── 2. Fuzzy find files (,ff → type → select) ────────────────────────────
+Type ",ff"
 Sleep 1.5s
 Type "route"
 Sleep 2.5s

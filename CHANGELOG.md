@@ -23,6 +23,11 @@
 
 ### Fixed
 
+- `install.sh` interactive menu and QUICKSTART now show `,ff` (current
+  fuzzy-find binding) instead of the stale `Ctrl+p` left over from the
+  native-first cleanup; `.github/demo.tape` updated to match (the
+  binary GIF still shows `Ctrl+p` until someone regenerates it from a
+  fresh fixture)
 - README badge and `install.sh` recommend Vim 8.1+ instead of 8.0+ —
   the runtime conditionally relies on patches `8.1.0360` (diffopt) and
   `8.1.1517` (completeopt+=popup), so 8.0 users hit option errors

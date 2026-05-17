@@ -23,6 +23,9 @@
 
 ### Fixed
 
+- `install.sh` no longer silently `PlugClean!`s user-added plugins from
+  `~/.vim/plugged`; it now lists undeclared plugin directories first and
+  asks before removing them (`--yes` skips the removal entirely)
 - `g:loaded_logipat` typo → `g:loaded_logiPat` — logiPat was loading fully (0.478ms wasted)
 - `get.sh` now refuses to update an existing `~/.vim` git repo unless its
   origin is chopsticks

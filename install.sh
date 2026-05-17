@@ -656,10 +656,59 @@ VIMEOF
     fi
 }
 
-if [[ -d "$HOME/.vim/plugged" ]] && [[ -n "$(find "$HOME/.vim/plugged" -mindepth 1 -maxdepth 1 2>/dev/null)" ]]; then
-    warn "PlugClean: removing plugins not listed in .vimrc from ~/.vim/plugged"
+# Echoes one name per line for each directory under ~/.vim/plugged that no
+# chopsticks profile/flag combination would declare. The detection script
+# bypasses local config and forces every opt-in on, so a plugin that's only
+# loaded inside tmux or behind a flag does NOT show up as "extra". Empty
+# output means PlugClean would be a no-op for the user's tree.
+list_extra_plugins() {
+    local declared_file="$_TMPDIR/declared-plugins.txt"
+    local declare_script="$_TMPDIR/declared-plugins.vim"
+    local plugged="$HOME/.vim/plugged"
+    [[ -d "$plugged" ]] || return 0
+
+    cat > "$declare_script" <<'VIMEOF'
+let g:chopsticks_local_config = '/dev/null'
+let $TMUX = '1'
+let g:chopsticks_profile = 'full'
+let g:chopsticks_enable_auto_pairs = 1
+let g:chopsticks_enable_terminal_keymaps = 1
+execute 'source ' . fnameescape($CHOPSTICKS_VIMRC)
+if !exists('g:plugs')
+    cquit
+endif
+call writefile(sort(keys(g:plugs)), $CHOPSTICKS_DECLARED_PLUGINS)
+qa!
+VIMEOF
+    CHOPSTICKS_VIMRC="$SCRIPT_DIR/.vimrc" \
+        CHOPSTICKS_DECLARED_PLUGINS="$declared_file" \
+        "$VIM_BIN" -u NONE -i NONE -es -N -S "$declare_script" >/dev/null 2>&1 || return 1
+    [[ -e "$declared_file" ]] || return 0
+
+    local plugin name
+    while IFS= read -r plugin; do
+        [[ -d "$plugin" ]] || continue
+        name="$(basename "$plugin")"
+        if ! grep -Fxq "$name" "$declared_file"; then
+            printf '%s\n' "$name"
+        fi
+    done < <(find "$plugged" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort)
+}
+
+extras="$(list_extra_plugins || true)"
+if [[ -n "$extras" ]]; then
+    warn "Plugins under ~/.vim/plugged that the active profile does not declare:"
+    while IFS= read -r ex; do
+        [[ -n "$ex" ]] && echo "  - $ex"
+    done <<< "$extras"
+    if [[ $AUTO_YES -eq 1 ]]; then
+        info "Leaving them in place (--yes mode). Run :PlugClean inside Vim to remove."
+    elif ask "Remove these directories with PlugClean!?"; then
+        _vim_run 'PlugClean!' || true  # plug.vim may exit non-zero after removal; harmless
+    else
+        info "Leaving them in place. Run :PlugClean inside Vim if you change your mind."
+    fi
 fi
-_vim_run 'PlugClean!' || true  # remove plugins no longer in vimrc; ignore exit code (none expected)
 _vim_run 'PlugInstall --sync' || true  # fzf post-install hook may exit non-zero; harmless
 
 verify_plugins || die "Plugin installation failed — retry with a stable network connection."

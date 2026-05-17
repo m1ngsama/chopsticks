@@ -10,7 +10,7 @@
 
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square" alt="MIT License"></a>
-  <a href="https://www.vim.org/"><img src="https://img.shields.io/badge/Vim-8.0%2B-brightgreen?style=flat-square" alt="Vim 8.0+"></a>
+  <a href="https://www.vim.org/"><img src="https://img.shields.io/badge/Vim-8.1%2B-brightgreen?style=flat-square" alt="Vim 8.1+"></a>
   <a href="#install"><img src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux-lightgrey?style=flat-square" alt="Platform"></a>
   <a href="https://github.com/m1ngsama/chopsticks/actions"><img src="https://img.shields.io/github/actions/workflow/status/m1ngsama/chopsticks/test.yml?style=flat-square&label=tests" alt="Tests"></a>
   <a href="https://github.com/m1ngsama/chopsticks/releases"><img src="https://img.shields.io/github/v/release/m1ngsama/chopsticks?style=flat-square&color=orange" alt="Release"></a>

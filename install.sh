@@ -519,7 +519,7 @@ fi
 [[ -n "$VIM_BIN" ]] || die "vim installed but not found in PATH"
 ok "Found: $("$VIM_BIN" --version | head -n1) ($VIM_BIN)"
 "$VIM_BIN" --version | grep -q 'Vi IMproved 8\|Vi IMproved 9' || \
-    warn "Vim 8.0+ recommended for full async/LSP support — some features may not work"
+    warn "Vim 8.1+ recommended for full async/LSP support — some features may not work"
 
 # Node.js (optional — vim-lsp needs no Node.js; only npm formatters do)
 HAS_NODE=0; command -v node >/dev/null 2>&1 && HAS_NODE=1
@@ -1201,10 +1201,10 @@ echo -e "  ${CYAN}vim .${NC}          Open dashboard in current directory"
 echo -e "  ${CYAN}vim myfile${NC}     Edit a specific file"
 echo ""
 echo -e "${BOLD}  First steps inside Vim${NC}"
+echo -e "  ${CYAN},?${NC}            Open cheat sheet — your map of every keybinding"
 echo -e "  ${CYAN}Esc${NC}          Exit insert mode → back to Normal"
-echo -e "  ${CYAN}:q!${NC} + Enter   Emergency quit without saving"
 echo -e "  ${CYAN},x${NC}            Save and quit"
-echo -e "  ${CYAN},?${NC}            Open cheat sheet"
+echo -e "  ${CYAN}:q!${NC} + Enter   Emergency quit without saving"
 if [[ $CONFIG_PROFILE != "minimal" ]]; then
     echo -e "  ${CYAN}:LspInstallServer${NC}  Install LSP for current filetype"
 fi

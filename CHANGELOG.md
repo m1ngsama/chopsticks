@@ -2,57 +2,6 @@
 
 ## Unreleased
 
-## 3.0.0 — 2026-05-21
-
-### Breaking
-
-- Default keymap style is now `space`: `SPC` is the command leader and `,`
-  is reserved for filetype-local actions. Set
-  `let g:chopsticks_keymap_style = 'classic'` in
-  `${XDG_CONFIG_HOME:-~/.config}/chopsticks.vim` to keep the old comma layout
-- In the default Space layout, Normal-mode `s` is now the fastest
-  EasyMotion over-window two-character jump. Use `cl` for native `s`
-  substitute and `cc` for native `S` substitute
-- Git push and pull hotkeys are removed from both Space and classic layouts;
-  use `:Git push` / `:Git pull` explicitly for irreversible remote operations
-
-### Added
-
-- Canonical QWERTY/CapsLock-friendly Space leader layout:
-  `SPC SPC`, `SPC /`, `SPC ,`, `SPC w`, `SPC qx`, `SPC rr`,
-  `SPC gs`, `SPC gl`, `SPC ca`, `SPC cr`, `SPC cf`, and `SPC ?`
-- Native LSP motions in the default layout: `gd`, `gr`, `gI`, `gy`, `K`,
-  `[d`, and `]d`
-- `:ChopsticksTutor` guided practice buffer for learning the final keymap
-- `:ChopsticksCheatSheet` command, with `SPC ?` as the discoverable default
-- Dedicated modules for buffers, utilities, files, runner, quickfix, status,
-  cheat sheet, and tutor
-- Split test runner: `scripts/test.sh` now dispatches to
-  `scripts/test-quick.sh` and `scripts/test-vim.sh`
-
-### Changed
-
-- README, QUICKSTART, installer onboarding text, PR template, and demo tape now
-  teach the Space layout first while keeping the legacy classic layout documented
-- `SPC ?` / `,?` cheat sheet output is generated from the active keymap style
-  and profile, so minimal installs no longer display disabled features
-- Markdown actions now use localleader maps in the Space layout:
-  `,mp` preview and `,mt` table of contents
-- `SPC U` opens UndoTree, `SPC z` toggles maximize, `SPC bp` / `SPC bn`
-  move between buffers, and quickfix/location-list actions live under `SPC x`
-- `tools.vim` is now a compatibility placeholder; runtime behavior lives in
-  smaller focused modules
-- CI/local smoke coverage now asserts Space defaults, classic compatibility,
-  missing push/pull hotkeys, tutor and cheat-sheet content, runner behavior,
-  large-file protection, and startup budget
-
-### Fixed
-
-- `diffopt` enhancements now degrade safely on macOS system Vim builds that
-  report the required patch level but reject individual diff options
-- Installer system-tool reporting now still detects already-installed tools on
-  Linux hosts where sudo is unavailable in non-interactive mode
-
 ## 2.2.0 — 2026-05-17
 
 ### Added

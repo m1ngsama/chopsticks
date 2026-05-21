@@ -11,12 +11,6 @@ if index(['minimal', 'engineer', 'full'], g:chopsticks_profile) < 0
     let g:chopsticks_profile = 'engineer'
 endif
 
-let g:chopsticks_keymap_style = get(g:, 'chopsticks_keymap_style', 'space')
-if index(['classic', 'space'], g:chopsticks_keymap_style) < 0
-    let g:chopsticks_keymap_style = 'space'
-endif
-let g:chopsticks_space_keymaps = g:chopsticks_keymap_style ==# 'space'
-
 let s:profile_full = g:chopsticks_profile ==# 'full'
 let s:profile_minimal = g:chopsticks_profile ==# 'minimal'
 

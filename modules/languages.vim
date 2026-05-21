@@ -14,16 +14,7 @@ let g:vim_markdown_follow_anchor      = 1
 let g:vim_markdown_new_list_item_indent = 2
 let g:vim_markdown_strikethrough      = 1
 
-function! s:MarkdownKeymaps() abort
-    if exists('g:plugs["vim-markdown"]')
-        nnoremap <buffer> <localleader>mt :Toc<CR>
-    endif
-    if exists('g:plugs["previm"]')
-        nnoremap <buffer> <localleader>mp :PrevimOpen<CR>
-    endif
-endfunction
-
-if exists('g:plugs["vim-markdown"]') && !g:chopsticks_space_keymaps
+if exists('g:plugs["vim-markdown"]')
     nnoremap <leader>mt :Toc<CR>
 endif
 
@@ -33,7 +24,7 @@ elseif executable('xdg-open')
     let g:previm_open_cmd = 'xdg-open'
 endif
 let g:previm_enable_realtime = get(g:, 'previm_enable_realtime', 0)
-if exists('g:plugs["previm"]') && !g:chopsticks_space_keymaps
+if exists('g:plugs["previm"]')
     nnoremap <leader>mp :PrevimOpen<CR>
 endif
 
@@ -87,7 +78,6 @@ augroup ChopstickFiletype
     autocmd FileType yaml
         \ setlocal expandtab shiftwidth=2 tabstop=2
     autocmd FileType markdown call s:MarkdownDefaults()
-    autocmd FileType markdown if g:chopsticks_space_keymaps | call s:MarkdownKeymaps() | endif
     autocmd FileType sh
         \ setlocal expandtab shiftwidth=2 tabstop=2 textwidth=80
     autocmd FileType make

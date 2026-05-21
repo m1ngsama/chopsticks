@@ -741,22 +741,22 @@ _I_NPM=-1; _I_PYTHON=-1; _I_GO=-1; _I_TMUX=-1
 # Is any package manager available?
 HAS_PKG_MGR=0
 if [[ $HAS_BREW -eq 1 ]] || \
-   [[ $HAS_APT -eq 1 || $HAS_PACMAN -eq 1 || $HAS_DNF -eq 1 ]]; then
+   { [[ $HAS_APT -eq 1 || $HAS_PACMAN -eq 1 || $HAS_DNF -eq 1 ]] && [[ $HAS_SUDO -eq 1 ]]; }; then
     HAS_PKG_MGR=1
 fi
 
 # ── System tools ─────────────────────────────────────────────────────────────
 if [[ $HAS_PKG_MGR -eq 1 ]]; then
     _I_RIPGREP=$_idx
-    _ITEMS+=("ripgrep|SPC / project search · SPC sw word search · powers FZF preview|1")
+    _ITEMS+=("ripgrep|,rg / ,rG project-wide search · powers FZF preview|1")
     : $(( _idx++ ))
 
     _I_FZF=$_idx
-    _ITEMS+=("fzf|SPC SPC files · SPC , buffers · SPC st tag search|1")
+    _ITEMS+=("fzf|,ff fuzzy file search · ,b buffers · ,rt tag search|1")
     : $(( _idx++ ))
 
     _I_CTAGS=$_idx
-    _ITEMS+=("universal-ctags|Optional symbol index for SPC st tag jumps|0")
+    _ITEMS+=("universal-ctags|Optional symbol index for ,rt tag jumps|0")
     : $(( _idx++ ))
 
     if [[ $_PROFILE_TOOLING -eq 1 ]]; then
@@ -847,11 +847,6 @@ _do_sys() {
     fi
     if command -v "$check" >/dev/null 2>&1; then
         ok "$name (already installed)"; return
-    fi
-    if [[ $OS != "macos" && $HAS_SUDO -ne 1 ]]; then
-        skip "$name — sudo not available, install manually"
-        SKIPPED+=("$name")
-        return
     fi
     if pkg_install "$brew_p" "$apt_p" "$pac_p" "$dnf_p"; then
         ok "$name"; INSTALLED+=("$name")
@@ -1206,9 +1201,9 @@ echo -e "  ${CYAN}vim .${NC}          Open dashboard in current directory"
 echo -e "  ${CYAN}vim myfile${NC}     Edit a specific file"
 echo ""
 echo -e "${BOLD}  First steps inside Vim${NC}"
-echo -e "  ${CYAN}SPC ?${NC}         Open cheat sheet — your map of every keybinding"
+echo -e "  ${CYAN},?${NC}            Open cheat sheet — your map of every keybinding"
 echo -e "  ${CYAN}Esc${NC}          Exit insert mode → back to Normal"
-echo -e "  ${CYAN}SPC qx${NC}        Save and quit"
+echo -e "  ${CYAN},x${NC}            Save and quit"
 echo -e "  ${CYAN}:q!${NC} + Enter   Emergency quit without saving"
 if [[ $CONFIG_PROFILE != "minimal" ]]; then
     echo -e "  ${CYAN}:LspInstallServer${NC}  Install LSP for current filetype"

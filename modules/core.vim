@@ -94,22 +94,44 @@ set smartindent
 
 " ── Leader ──────────────────────────────────────────────────────────────────
 
-let mapleader = ","
+if g:chopsticks_space_keymaps
+    let mapleader = "\<Space>"
+    let maplocalleader = ","
+else
+    let mapleader = ","
+endif
 
 " ── Basic Keymaps ───────────────────────────────────────────────────────────
 
-nnoremap <leader>w :w<cr>
-nnoremap <leader>q :q<cr>
-nnoremap <leader>x :x<cr>
+if g:chopsticks_space_keymaps
+    nnoremap <leader>w :w<cr>
+    nnoremap <leader>W :wa<cr>
+    nnoremap <leader>qq :q<cr>
+    nnoremap <leader>qx :x<cr>
 
-nnoremap <silent> <leader><cr> :noh<cr>
+    nnoremap <silent> <leader>uh :noh<cr>
 
-nnoremap <leader>bd :Bclose<cr>
-nnoremap <leader>ba :bufdo bd<cr>
-nnoremap <leader>l  :bnext<cr>
-nnoremap <leader>h  :bprevious<cr>
+    nnoremap <leader>bd :Bclose<cr>
+    nnoremap <leader>ba :bufdo bd<cr>
+    nnoremap <leader>bo :%bd<bar>e#<bar>bd#<cr>
+    nnoremap <leader>bn :bnext<cr>
+    nnoremap <leader>bp :bprevious<cr>
 
-nnoremap <leader>cd :lcd %:p:h<cr>:pwd<cr>
+    nnoremap <leader>fd :lcd %:p:h<cr>:pwd<cr>
+else
+    nnoremap <leader>w :w<cr>
+    nnoremap <leader>q :q<cr>
+    nnoremap <leader>x :x<cr>
+
+    nnoremap <silent> <leader><cr> :noh<cr>
+
+    nnoremap <leader>bd :Bclose<cr>
+    nnoremap <leader>ba :bufdo bd<cr>
+    nnoremap <leader>l  :bnext<cr>
+    nnoremap <leader>h  :bprevious<cr>
+
+    nnoremap <leader>cd :lcd %:p:h<cr>:pwd<cr>
+endif
 
 nnoremap <leader>v `[v`]
 
@@ -118,7 +140,11 @@ nnoremap <M-k> :m .-2<CR>==
 vnoremap <M-j> :m '>+1<CR>gv=gv
 vnoremap <M-k> :m '<-2<CR>gv=gv
 
-nnoremap <silent> <leader>ss :setlocal spell!<CR>:echo 'Spell: ' . (&spell ? 'ON' : 'OFF')<CR>
+if g:chopsticks_space_keymaps
+    nnoremap <silent> <leader>us :setlocal spell!<CR>:echo 'Spell: ' . (&spell ? 'ON' : 'OFF')<CR>
+else
+    nnoremap <silent> <leader>ss :setlocal spell!<CR>:echo 'Spell: ' . (&spell ? 'ON' : 'OFF')<CR>
+endif
 
 nnoremap <silent> <F2> :set paste!<CR>:echo 'Paste: ' . (&paste ? 'ON' : 'OFF')<CR>
 nnoremap <silent> <F3> :set invnumber<CR>:echo 'Line numbers: ' . (&number ? 'ON' : 'OFF')<CR>
@@ -157,8 +183,15 @@ if has('clipboard')
     vnoremap <leader>P "+P
 endif
 
-nnoremap <leader>qo :copen<CR>
-nnoremap <leader>qc :cclose<CR>
+if g:chopsticks_space_keymaps
+    nnoremap <leader>xq :copen<CR>
+    nnoremap <leader>xQ :cclose<CR>
+    nnoremap <leader>xl :lopen<CR>
+    nnoremap <leader>xL :lclose<CR>
+else
+    nnoremap <leader>qo :copen<CR>
+    nnoremap <leader>qc :cclose<CR>
+endif
 
 augroup ChopstickResize
     autocmd!
@@ -193,7 +226,10 @@ endif
 set sessionoptions=blank,buffers,curdir,folds,help,tabpages,winsize,winpos,terminal
 
 if has("patch-8.1.0360")
-    set diffopt=filler,internal,context:3,algorithm:histogram,indent-heuristic
+    silent! set diffopt+=internal
+    silent! set diffopt+=context:3
+    silent! set diffopt+=algorithm:histogram
+    silent! set diffopt+=indent-heuristic
 endif
 
 " ── Format Options ──────────────────────────────────────────────────────────

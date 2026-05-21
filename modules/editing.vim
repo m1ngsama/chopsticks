@@ -6,16 +6,27 @@ let g:EasyMotion_do_mapping = 0
 let g:EasyMotion_smartcase  = 1
 
 if exists('g:plugs["vim-easymotion"]')
-    nmap <Leader>S <Plug>(easymotion-overwin-f2)
-    nmap <Leader>j <Plug>(easymotion-j)
-    nmap <Leader>k <Plug>(easymotion-k)
+    if g:chopsticks_space_keymaps
+        " In the canonical layout, cl/cc cover native s/S substitute behavior;
+        " s becomes the fastest screen-local jump entry.
+        nmap s <Plug>(easymotion-overwin-f2)
+        nmap <Leader>S <Plug>(easymotion-overwin-f2)
+    else
+        nmap <Leader>S <Plug>(easymotion-overwin-f2)
+        nmap <Leader>j <Plug>(easymotion-j)
+        nmap <Leader>k <Plug>(easymotion-k)
+    endif
 endif
 
 " ── UndoTree ────────────────────────────────────────────────────────────────
 
 if exists('g:plugs["undotree"]')
     nnoremap <F5>       :UndotreeToggle<CR>
-    nnoremap <leader>u  :UndotreeToggle<CR>
+    if g:chopsticks_space_keymaps
+        nnoremap <leader>U  :UndotreeToggle<CR>
+    else
+        nnoremap <leader>u  :UndotreeToggle<CR>
+    endif
 endif
 
 " ── Yank Highlight ──────────────────────────────────────────────────────────

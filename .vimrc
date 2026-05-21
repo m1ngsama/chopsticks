@@ -1,3 +1,5 @@
+set nocompatible
+
 let g:chopsticks_dir = fnamemodify(resolve(expand('<sfile>')), ':h')
 let s:xdg_config_home = !empty($XDG_CONFIG_HOME) && $XDG_CONFIG_HOME =~# '^/'
     \ ? $XDG_CONFIG_HOME
@@ -27,4 +29,12 @@ call s:load('lsp')
 call s:load('lint')
 call s:load('git')
 call s:load('languages')
+call s:load('buffers')
+call s:load('utilities')
+call s:load('files')
+call s:load('runner')
+call s:load('quickfix')
+call s:load('status')
+call s:load('cheatsheet')
+call s:load('tutor')
 call s:load('tools')

@@ -1,6 +1,7 @@
 *.swp
 *.swo
 .DS_Store
+__pycache__/
 Session.vim
 autoload/
 plugged/

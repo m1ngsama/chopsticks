@@ -65,23 +65,42 @@ function! s:on_lsp_buffer_enabled() abort
         setlocal signcolumn=yes
     endif
 
-    nmap <buffer> <leader>dd  <plug>(lsp-definition)
-    nmap <buffer> <leader>dt  <plug>(lsp-type-definition)
-    nmap <buffer> <leader>di  <plug>(lsp-implementation)
-    nmap <buffer> <leader>dr  <plug>(lsp-references)
-    nmap <buffer> <leader>dp  <plug>(lsp-previous-diagnostic)
-    nmap <buffer> <leader>dn  <plug>(lsp-next-diagnostic)
+    if g:chopsticks_space_keymaps
+        nmap <buffer> gd          <plug>(lsp-definition)
+        nmap <buffer> gr          <plug>(lsp-references)
+        nmap <buffer> gI          <plug>(lsp-implementation)
+        nmap <buffer> gy          <plug>(lsp-type-definition)
+        nmap <buffer> K           <plug>(lsp-hover)
+        nmap <buffer> [d          <plug>(lsp-previous-diagnostic)
+        nmap <buffer> ]d          <plug>(lsp-next-diagnostic)
 
-    nmap <buffer> <leader>dk  <plug>(lsp-hover)
+        nmap <buffer> <leader>ca  <plug>(lsp-code-action)
+        nmap <buffer> <leader>cr  <plug>(lsp-rename)
+        nmap <buffer> <leader>cf  <plug>(lsp-document-format)
+        xmap <buffer> <leader>cf  <plug>(lsp-document-range-format)
 
-    nmap <buffer> <leader>rn  <plug>(lsp-rename)
-    nmap <buffer> <leader>ca  <plug>(lsp-code-action)
-    nmap <buffer> <leader>f   <plug>(lsp-document-format)
-    xmap <buffer> <leader>f   <plug>(lsp-document-range-format)
+        nnoremap <buffer> <leader>ci :LspStatus<CR>
+        nmap <buffer> <leader>co  <plug>(lsp-document-symbol-search)
+        nmap <buffer> <leader>cS  <plug>(lsp-workspace-symbol-search)
+    else
+        nmap <buffer> <leader>dd  <plug>(lsp-definition)
+        nmap <buffer> <leader>dt  <plug>(lsp-type-definition)
+        nmap <buffer> <leader>di  <plug>(lsp-implementation)
+        nmap <buffer> <leader>dr  <plug>(lsp-references)
+        nmap <buffer> <leader>dp  <plug>(lsp-previous-diagnostic)
+        nmap <buffer> <leader>dn  <plug>(lsp-next-diagnostic)
 
-    nmap <buffer> <leader>o   <plug>(lsp-document-symbol-search)
-    nmap <buffer> <leader>ws  <plug>(lsp-workspace-symbol-search)
-    nmap <buffer> <leader>cD  <plug>(lsp-document-diagnostics)
+        nmap <buffer> <leader>dk  <plug>(lsp-hover)
+
+        nmap <buffer> <leader>rn  <plug>(lsp-rename)
+        nmap <buffer> <leader>ca  <plug>(lsp-code-action)
+        nmap <buffer> <leader>f   <plug>(lsp-document-format)
+        xmap <buffer> <leader>f   <plug>(lsp-document-range-format)
+
+        nmap <buffer> <leader>o   <plug>(lsp-document-symbol-search)
+        nmap <buffer> <leader>ws  <plug>(lsp-workspace-symbol-search)
+        nmap <buffer> <leader>cD  <plug>(lsp-document-diagnostics)
+    endif
 endfunction
 
 augroup lsp_install

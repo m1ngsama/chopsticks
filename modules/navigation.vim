@@ -47,21 +47,42 @@ function! s:SmartFiles() abort
 endfunction
 
 if exists('g:plugs["fzf.vim"]')
-    nnoremap <leader>ff :call <SID>SmartFiles()<CR>
-    nnoremap <leader>b  :Buffers<CR>
-    nnoremap <leader>rg :Rg<CR>
-    nnoremap <leader>rG :RgWord<CR>
-    nnoremap <leader>rt :Tags<CR>
-    nnoremap <leader>gF :GFiles<CR>
-    nnoremap <leader>fh :History<CR>
-    nnoremap <leader>fc :Commands<CR>
-    nnoremap <leader>fm :Marks<CR>
-    nnoremap <leader>fl :BLines<CR>
-    nnoremap <leader>fL :Lines<CR>
-    nnoremap <leader>f/ :History/<CR>
-    nnoremap <leader>f: :History:<CR>
-    nnoremap <leader>gC :Commits<CR>
-    nnoremap <leader>gB :BCommits<CR>
+    if g:chopsticks_space_keymaps
+        nnoremap <leader><Space> :call <SID>SmartFiles()<CR>
+        nnoremap <leader>, :Buffers<CR>
+        nnoremap <leader>/ :Rg<CR>
+        nnoremap <leader>ff :call <SID>SmartFiles()<CR>
+        nnoremap <leader>fb :Buffers<CR>
+        nnoremap <leader>fg :GFiles<CR>
+        nnoremap <leader>fr :History<CR>
+        nnoremap <leader>fl :BLines<CR>
+        nnoremap <leader>fL :Lines<CR>
+        nnoremap <leader>s/ :History/<CR>
+        nnoremap <leader>s: :History:<CR>
+        nnoremap <leader>sc :Commands<CR>
+        nnoremap <leader>sm :Marks<CR>
+        nnoremap <leader>sg :Rg<CR>
+        nnoremap <leader>sw :RgWord<CR>
+        nnoremap <leader>st :Tags<CR>
+        nnoremap <leader>gC :Commits<CR>
+        nnoremap <leader>gB :BCommits<CR>
+    else
+        nnoremap <leader>ff :call <SID>SmartFiles()<CR>
+        nnoremap <leader>b  :Buffers<CR>
+        nnoremap <leader>rg :Rg<CR>
+        nnoremap <leader>rG :RgWord<CR>
+        nnoremap <leader>rt :Tags<CR>
+        nnoremap <leader>gF :GFiles<CR>
+        nnoremap <leader>fh :History<CR>
+        nnoremap <leader>fc :Commands<CR>
+        nnoremap <leader>fm :Marks<CR>
+        nnoremap <leader>fl :BLines<CR>
+        nnoremap <leader>fL :Lines<CR>
+        nnoremap <leader>f/ :History/<CR>
+        nnoremap <leader>f: :History:<CR>
+        nnoremap <leader>gC :Commits<CR>
+        nnoremap <leader>gB :BCommits<CR>
+    endif
 endif
 
 let g:fzf_layout = { 'down': '40%' }
@@ -99,13 +120,22 @@ function! s:ToggleMaximize() abort
         echo 'Window: MAXIMIZED'
     endif
 endfunction
-nnoremap <silent> <leader>z :call <SID>ToggleMaximize()<CR>
+if g:chopsticks_space_keymaps
+    nnoremap <silent> <leader>z :call <SID>ToggleMaximize()<CR>
+else
+    nnoremap <silent> <leader>z :call <SID>ToggleMaximize()<CR>
+endif
 
 " ── Terminal ────────────────────────────────────────────────────────────────
 
 if has('terminal')
-    nnoremap <leader>tv :terminal<CR>
-    nnoremap <leader>th :terminal ++rows=10<CR>
+    if g:chopsticks_space_keymaps
+        nnoremap <leader>tt :terminal<CR>
+        nnoremap <leader>th :terminal ++rows=10<CR>
+    else
+        nnoremap <leader>tv :terminal<CR>
+        nnoremap <leader>th :terminal ++rows=10<CR>
+    endif
     if g:chopsticks_enable_terminal_keymaps
         tnoremap <Esc><Esc> <C-\><C-n>
         tnoremap <C-h> <C-\><C-n><C-w>h

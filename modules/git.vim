@@ -14,11 +14,13 @@ let g:gitgutter_sign_modified_removed = '~'
 if exists('g:plugs["vim-fugitive"]')
     nnoremap <leader>gs :Git status<CR>
     nnoremap <leader>gc :Git commit<CR>
-    nnoremap <leader>gp :Git push<CR>
-    nnoremap <leader>gl :Git pull<CR>
     nnoremap <leader>gd :Gdiffsplit<CR>
     nnoremap <leader>gb :Git blame<CR>
-    nnoremap <leader>gL :Git log --oneline --graph -20<CR>
+    if g:chopsticks_space_keymaps
+        nnoremap <leader>gl :Git log --oneline --graph -20<CR>
+    else
+        nnoremap <leader>gL :Git log --oneline --graph -20<CR>
+    endif
 endif
 
 " ── Conflict Navigation ────────────────────────────────────────────────────

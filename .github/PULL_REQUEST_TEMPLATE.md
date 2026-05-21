@@ -10,4 +10,4 @@
 
 - [ ] `vim --startuptime` shows no regression
 - [ ] Tested on macOS / Linux
-- [ ] `,?` cheat sheet still accurate
+- [ ] `SPC ?` cheat sheet still accurate

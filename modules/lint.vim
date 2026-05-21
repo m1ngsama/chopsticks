@@ -64,7 +64,13 @@ let g:ale_virtualtext_cursor   = get(g:, 'ale_virtualtext_cursor', 'disabled')
 if exists('g:plugs["ale"]')
     nnoremap <silent> [e :ALEPrevious<cr>
     nnoremap <silent> ]e :ALENext<cr>
-    nnoremap <silent> <leader>aD :ALEDetail<cr>
-    nnoremap <silent> <leader>af :let g:ale_fix_on_save = !g:ale_fix_on_save
-        \ <bar> echo 'Format on save: ' . (g:ale_fix_on_save ? 'ON' : 'OFF')<cr>
+    if g:chopsticks_space_keymaps
+        nnoremap <silent> <leader>xd :ALEDetail<cr>
+        nnoremap <silent> <leader>uf :let g:ale_fix_on_save = !g:ale_fix_on_save
+            \ <bar> echo 'Format on save: ' . (g:ale_fix_on_save ? 'ON' : 'OFF')<cr>
+    else
+        nnoremap <silent> <leader>aD :ALEDetail<cr>
+        nnoremap <silent> <leader>af :let g:ale_fix_on_save = !g:ale_fix_on_save
+            \ <bar> echo 'Format on save: ' . (g:ale_fix_on_save ? 'ON' : 'OFF')<cr>
+    endif
 endif

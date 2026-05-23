@@ -28,6 +28,18 @@ check_docs() {
     need markdownlint
     markdownlint README.md QUICKSTART.md CONTRIBUTING.md CHANGELOG.md BETA.md
 
+    step "Documentation consistency"
+    for command in ChopsticksBeta ChopsticksBetaLog ChopsticksBetaSession; do
+        for file in README.md BETA.md modules/beta.vim modules/cheatsheet.vim \
+            modules/tutor.vim modules/status.vim
+        do
+            grep -Fq "$command" "$file" || {
+                echo "Missing $command in $file" >&2
+                exit 1
+            }
+        done
+    done
+
     if command -v vhs >/dev/null 2>&1; then
         vhs validate .github/demo.tape
     else

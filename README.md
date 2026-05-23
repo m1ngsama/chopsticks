@@ -145,8 +145,9 @@ for native `S`.
 For onboarding, use `:ChopsticksTutor` for a guided practice page, `SPC ?` for
 the active keymap, and `:ChopsticksStatus` for tool/LSP health.
 `QUICKSTART.md` is the 5-minute path; this README is the full reference.
-During the beta, `:ChopsticksBeta` opens the in-editor test checklist and
-`:ChopsticksBetaLog` opens editable local notes.
+During the beta, `:ChopsticksBeta` opens the in-editor test checklist,
+`:ChopsticksBetaLog` opens editable local notes, and `:ChopsticksBetaSession`
+appends a timestamped session block.
 
 ```
 SPC SPC   fuzzy find file          gd       go to definition

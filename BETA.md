@@ -5,7 +5,8 @@ until the checklist below is closed.
 
 Inside Vim, run `:ChopsticksBeta` for the compact checklist,
 `:ChopsticksBetaLog` for editable local notes, and `:ChopsticksBetaSession`
-to append a new session block.
+to append a new session block. Run `:ChopsticksHelp` or `:help chopsticks`
+for the native Vim reference.
 
 ## Install the beta
 
@@ -67,7 +68,8 @@ file, edit Markdown, and use a machine with missing optional tools.
 - `s` as the default visible jump still feels worth the native override after
   real editing.
 - No high-frequency action requires remembering an undocumented key.
-- README, QUICKSTART, `SPC ?`, and `:ChopsticksTutor` teach the same layout.
+- README, QUICKSTART, `:help chopsticks`, `SPC ?`, and `:ChopsticksTutor`
+  teach the same layout.
 - `scripts/test.sh quick` and `scripts/test.sh vim` pass locally.
 - The README GIF has been regenerated from `.github/demo.tape` after any public
   key change.

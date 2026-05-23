@@ -1,6 +1,9 @@
 set nocompatible
 
 let g:chopsticks_dir = fnamemodify(resolve(expand('<sfile>')), ':h')
+if index(split(&runtimepath, ','), g:chopsticks_dir) < 0
+    let &runtimepath = g:chopsticks_dir . ',' . &runtimepath
+endif
 let s:xdg_config_home = !empty($XDG_CONFIG_HOME) && $XDG_CONFIG_HOME =~# '^/'
     \ ? $XDG_CONFIG_HOME
     \ : '~/.config'
@@ -38,4 +41,5 @@ call s:load('status')
 call s:load('cheatsheet')
 call s:load('tutor')
 call s:load('beta')
+call s:load('help')
 call s:load('tools')

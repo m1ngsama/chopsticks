@@ -719,6 +719,21 @@ if [[ $_plug_count -eq 0 ]]; then
 fi
 ok "Plugins installed ($_plug_count)"
 
+step "Installing Vim help"
+if [[ -d "$SCRIPT_DIR/doc" ]]; then
+    # shellcheck disable=SC2016 # $CHOPSTICKS_HELP_DIR is expanded by Vim.
+    if CHOPSTICKS_HELP_DIR="$SCRIPT_DIR/doc" \
+        "$VIM_BIN" -Nu NONE -i NONE -n -es -N \
+            -c 'execute "silent! helptags " . fnameescape($CHOPSTICKS_HELP_DIR)' \
+            -c 'qa!' >/dev/null 2>&1; then
+        ok ":help chopsticks"
+    else
+        warn "Could not generate Vim help tags. Inside Vim, run: :ChopsticksHelp"
+    fi
+else
+    skip "Vim help docs not found"
+fi
+
 # ============================================================================
 # 4. Module Selection
 # ============================================================================

@@ -51,6 +51,7 @@ SPC w           save
 SPC qx          save + quit
 :q!             force quit
 SPC ?           cheat sheet (toggle sidebar)
+:ChopsticksHelp  full native help
 ```
 
 Classic layout equivalents:
@@ -61,6 +62,7 @@ Esc             back to Normal
 ,x              save + quit
 :q!             force quit
 ,?              cheat sheet (toggle sidebar)
+:ChopsticksHelp  full native help
 ```
 
 ## Find things
@@ -137,6 +139,7 @@ syntax. Enable the heavier Markdown tools only when you want them.
 ## Health check
 
 ```
+:ChopsticksHelp        full native Vim help
 :ChopsticksTutor       guided practice for the final keymap
 :ChopsticksStatus       see what's installed and what's missing
 ```
@@ -144,5 +147,6 @@ syntax. Enable the heavier Markdown tools only when you want them.
 The `SPC ?` cheat sheet follows your active profile, so `minimal` users only see
 keys for features that are actually loaded.
 
-See [README](README.md) for the full reference. For beta testing and rollback,
-see [BETA.md](BETA.md).
+Inside Vim, `:help chopsticks` opens the same reference after helptags are
+available. See [README](README.md) for the full reference. For beta testing and
+rollback, see [BETA.md](BETA.md).

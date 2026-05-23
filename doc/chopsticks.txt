@@ -1,0 +1,162 @@
+*chopsticks.txt* *chopsticks*        A project-work Vim setup
+
+==============================================================================
+CONTENTS                                                    *chopsticks-contents*
+
+  1. What chopsticks solves...............|chopsticks-why|
+  2. First five minutes...................|chopsticks-start|
+  3. Canonical Space layout...............|chopsticks-v3-space|
+  4. Commands.............................|chopsticks-commands|
+  5. Profiles and local config............|chopsticks-profiles|
+  6. Beta testing.........................|chopsticks-beta|
+  7. Troubleshooting......................|chopsticks-troubleshooting|
+
+==============================================================================
+WHAT CHOPSTICKS SOLVES                                         *chopsticks-why*
+
+Chopsticks is a complete Vim project loop for people who edit locally and over
+SSH. It connects fuzzy find, project grep, git, LSP, linting, formatting,
+runners, quickfix navigation, and self-documenting keys.
+
+It is meant to supplement stock Vim, not replace Vim muscle memory. Native
+motions and well-known conventions stay where they are useful: gd, gr, K,
+<C-w>hjkl, cl, cc, quickfix, and normal Vim commands.
+
+==============================================================================
+FIRST FIVE MINUTES                                             *chopsticks-start*
+
+Inside Vim:
+>
+  :ChopsticksTutor     guided practice page
+  SPC ?                active keymap cheat sheet
+  :ChopsticksStatus    tool, plugin, and LSP diagnostics
+  :ChopsticksHelp      this help page
+<
+
+Daily loop:
+>
+  SPC SPC   find file              SPC /     grep project
+  s + 2ch   jump on screen         gd / gr   definition / references
+  K         hover docs             SPC rr    run current file
+  SPC gs    git status             SPC cf    format
+  SPC w     save                   SPC qq    quit
+<
+
+==============================================================================
+CANONICAL SPACE LAYOUT                                      *chopsticks-v3-space*
+
+Default layout: Space leader, comma localleader.
+
+This layout assumes a QWERTY keyboard and CapsLock mapped at the system layer
+to tap-Esc / hold-Ctrl. Vim keeps <C-w>hjkl for windows and standard LSP
+motions for code.
+
+Normal-mode s is a visible EasyMotion jump. This is intentionally different
+from stock Vim because screen-local jumping is higher value in project editing.
+Use cl for native s substitute and cc for native S substitute.
+
+High-frequency keys:
+>
+  SPC SPC   files                  SPC ,     buffers
+  SPC /     grep project           SPC Tab   alternate file
+  SPC e/E   file sidebar           SPC rr    run file
+  SPC gs    git status             SPC gl    git log graph
+  SPC ca    code action            SPC cr    rename
+  SPC cf    format                 SPC ?     cheat sheet
+<
+
+Classic comma mappings remain available:
+>
+  let g:chopsticks_keymap_style = 'classic'
+<
+
+==============================================================================
+COMMANDS                                                    *chopsticks-commands*
+
+User-facing commands:
+>
+  :ChopsticksHelp         open this help
+  :ChopsticksTutor        guided practice
+  :ChopsticksCheatSheet   active keymap reference
+  :ChopsticksStatus       health diagnostics
+  :ChopsticksBeta         beta checklist
+  :ChopsticksBetaLog      editable beta notes
+  :ChopsticksBetaSession  append a timestamped beta note block
+<
+
+LSP commands come from vim-lsp:
+>
+  :LspInstallServer       install a server for the current filetype
+  :LspStatus              inspect attached servers
+<
+
+==============================================================================
+PROFILES AND LOCAL CONFIG                                   *chopsticks-profiles*
+
+Keep personal choices outside the managed .vimrc:
+>
+  " ${XDG_CONFIG_HOME:-~/.config}/chopsticks.vim
+  let g:chopsticks_profile = 'engineer'
+  let g:chopsticks_keymap_style = 'space'
+<
+
+Profiles:
+
+  minimal   Core navigation, editing, git, Markdown. No LSP/ALE/completion.
+  engineer  Default. LSP, ALE, completion, syntax extras.
+  full      Engineer plus heavier Markdown feedback.
+
+Optional habits:
+>
+  let g:chopsticks_enable_jk_escape = 1
+  let g:chopsticks_enable_ctrl_s_save = 1
+  let g:chopsticks_enable_auto_pairs = 1
+  let g:chopsticks_enable_terminal_keymaps = 1
+<
+
+==============================================================================
+BETA TESTING                                                  *chopsticks-beta*
+
+For the v3 beta candidate, record real editing friction instead of abstract
+opinions:
+>
+  :ChopsticksBeta         compact beta checklist
+  :ChopsticksBetaLog      open editable local notes
+  :ChopsticksBetaSession  append a new session block
+<
+
+Default beta log:
+>
+  ${XDG_CONFIG_HOME:-~/.config}/chopsticks-beta.md
+<
+
+Exit criteria before a stable release:
+
+  - s as jump still feels worth the native override.
+  - No high-frequency action needs an undocumented key.
+  - README, QUICKSTART, :help chopsticks, SPC ?, and :ChopsticksTutor agree.
+  - quick and Vim smoke tests pass locally and over SSH.
+  - The README GIF matches the public keymap.
+
+==============================================================================
+TROUBLESHOOTING                                      *chopsticks-troubleshooting*
+
+Start with:
+>
+  :ChopsticksStatus
+  SPC ?
+  :ChopsticksTutor
+  :ChopsticksHelp
+<
+
+Common fixes:
+
+  Plugins missing        :PlugInstall
+  LSP missing            Open that filetype, then :LspInstallServer
+  Need active keys       SPC ?
+  Need full docs         :help chopsticks
+  Need beta notes        :ChopsticksBetaSession
+  Slow large file        Syntax, undo, swap, and ALE are auto-reduced
+
+==============================================================================
+ vim:tw=78:ts=8:ft=help:norl:

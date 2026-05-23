@@ -48,9 +48,9 @@ That assembly work is the pain chopsticks removes:
   `gd`, `gr`, `K`, `<C-w>hjkl`, `cl`, `cc`.
 - **Remote editing is fragile.** It is built to degrade on TTY, slow SSH, and
   headless machines instead of assuming a GUI desktop.
-- **Custom configs are hard to onboard.** `SPC ?`, `:ChopsticksTutor`, and
-  `:ChopsticksStatus` make the active keymap and missing tools visible inside
-  Vim.
+- **Custom configs are hard to onboard.** `:ChopsticksHelp`, `SPC ?`,
+  `:ChopsticksTutor`, and `:ChopsticksStatus` make the active keymap, full
+  help, and missing tools visible inside Vim.
 
 You SSH into a server. You need to edit code. You want LSP, fuzzy find, git
 integration, format-on-save — not a 20-minute setup.
@@ -142,8 +142,9 @@ Git push/pull are intentionally not bound to default hotkeys. Normal-mode `s`
 is a screen-local EasyMotion jump; use `cl` for native `s` substitute and `cc`
 for native `S`.
 
-For onboarding, use `:ChopsticksTutor` for a guided practice page, `SPC ?` for
-the active keymap, and `:ChopsticksStatus` for tool/LSP health.
+For onboarding, use `:ChopsticksHelp` / `:help chopsticks` for full native Vim
+help, `:ChopsticksTutor` for a guided practice page, `SPC ?` for the active
+keymap, and `:ChopsticksStatus` for tool/LSP health.
 `QUICKSTART.md` is the 5-minute path; this README is the full reference.
 During the beta, `:ChopsticksBeta` opens the in-editor test checklist,
 `:ChopsticksBetaLog` opens editable local notes, and `:ChopsticksBetaSession`
@@ -199,7 +200,7 @@ Esc       exit insert mode         SPC ?    cheat sheet
 
 ### Survival
 
-`SPC w` save | `SPC W` save all | `SPC qq` quit | `SPC qx` save and quit | `SPC ?` cheat sheet | `:ChopsticksTutor` practice | `:ChopsticksStatus` diagnostics
+`SPC w` save | `SPC W` save all | `SPC qq` quit | `SPC qx` save and quit | `SPC ?` cheat sheet | `:ChopsticksHelp` full help | `:ChopsticksTutor` practice | `:ChopsticksStatus` diagnostics
 
 </details>
 
@@ -283,27 +284,30 @@ For Markdown LSP, install or select `marksman` first.
 ```
 ~/.vim/
 ├── .vimrc              thin loader
-├── modules/
-│   ├── env.vim         TTY detection, truecolor, skip built-in plugins
-│   ├── plugins.vim     vim-plug + 23–25 plugins
-│   ├── core.vim        settings, keymaps, performance
-│   ├── ui.vim          solarized, statusline, startify
-│   ├── editing.vim     easymotion, yank highlight, blank lines
-│   ├── navigation.vim  fzf, netrw sidebar, windows, terminal
-│   ├── lsp.vim         vim-lsp, asyncomplete
-│   ├── lint.vim        ale, format-on-save
-│   ├── git.vim         fugitive, gitgutter, conflict nav
-│   ├── languages.vim   vim-go, markdown, filetype settings
-│   ├── buffers.vim     buffer commands
-│   ├── utilities.vim   reindent, trim, clipboard, vimrc helpers
-│   ├── files.vim       auto mkdir, large-file protection
-│   ├── runner.vim      run current file
-│   ├── quickfix.vim    quickfix and location-list helpers
-│   ├── status.vim      :ChopsticksStatus diagnostics
-│   ├── cheatsheet.vim  SPC ? and :ChopsticksCheatSheet
-│   ├── tutor.vim       :ChopsticksTutor guided practice
-│   ├── beta.vim        :ChopsticksBeta test guide
-│   └── tools.vim       compatibility placeholder
+├── doc/
+│   └── chopsticks.txt  :help chopsticks
+└── modules/
+    ├── env.vim         TTY detection, truecolor, skip built-in plugins
+    ├── plugins.vim     vim-plug + 23–25 plugins
+    ├── core.vim        settings, keymaps, performance
+    ├── ui.vim          solarized, statusline, startify
+    ├── editing.vim     easymotion, yank highlight, blank lines
+    ├── navigation.vim  fzf, netrw sidebar, windows, terminal
+    ├── lsp.vim         vim-lsp, asyncomplete
+    ├── lint.vim        ale, format-on-save
+    ├── git.vim         fugitive, gitgutter, conflict nav
+    ├── languages.vim   vim-go, markdown, filetype settings
+    ├── buffers.vim     buffer commands
+    ├── utilities.vim   reindent, trim, clipboard, vimrc helpers
+    ├── files.vim       auto mkdir, large-file protection
+    ├── runner.vim      run current file
+    ├── quickfix.vim    quickfix and location-list helpers
+    ├── status.vim      :ChopsticksStatus diagnostics
+    ├── cheatsheet.vim  SPC ? and :ChopsticksCheatSheet
+    ├── tutor.vim       :ChopsticksTutor guided practice
+    ├── beta.vim        :ChopsticksBeta test guide
+    ├── help.vim        :ChopsticksHelp native Vim help
+    └── tools.vim       compatibility placeholder
 ```
 
 Each module is self-contained. Comment out one line in `.vimrc` to disable it. Add your own with `call s:load('mine')`.
@@ -329,7 +333,7 @@ Each module is self-contained. Comment out one line in `.vimrc` to disable it. A
 | What's installed?   | `:ChopsticksStatus` shows tools, LSP, linters |
 
 For deeper checks, start with `:ChopsticksStatus`, `SPC ?`,
-`:ChopsticksTutor`, and [QUICKSTART.md](QUICKSTART.md).
+`:ChopsticksTutor`, `:ChopsticksHelp`, and [QUICKSTART.md](QUICKSTART.md).
 
 ## Contributing
 

@@ -42,10 +42,19 @@ check_vim() {
     fi
 
     mkdir -p "$TMP_ROOT/chopsticks path/modules"
+    mkdir -p "$TMP_ROOT/chopsticks path/doc"
     cp .vimrc "$TMP_ROOT/chopsticks path/.vimrc"
     cp modules/*.vim "$TMP_ROOT/chopsticks path/modules/"
+    cp doc/*.txt "$TMP_ROOT/chopsticks path/doc/"
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u "$TMP_ROOT/chopsticks path/.vimrc" \
         -i NONE -es -N -c 'qa!' 2>&1
+
+    XDG_CONFIG_HOME="$EMPTY_XDG" \
+        vim -u "$TMP_ROOT/chopsticks path/.vimrc" -i NONE -es -N \
+        -c 'ChopsticksHelp' \
+        -c 'if expand("%:t") !=# "chopsticks.txt" | cquit | endif' \
+        -c 'if search("chopsticks-v3-space", "n") == 0 | cquit | endif' \
+        -c 'qa!' 2>&1
 
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u NONE -i NONE -es -N \
         -c 'let g:chopsticks_profile = "minimal"' \
@@ -79,6 +88,7 @@ check_vim() {
         exit 1
     fi
     grep -Fq 'OK  vim-lsp stack  (installed)' "$TMP_ROOT/status-default.txt"
+    grep -Fq 'help       :ChopsticksHelp  :ChopsticksTutor  SPC ?' "$TMP_ROOT/status-default.txt"
     grep -Fq 'candidate  3.0.0-beta.1' "$TMP_ROOT/status-default.txt"
     grep -Fq 'keymap     space' "$TMP_ROOT/status-default.txt"
     grep -Fq 'commands   :ChopsticksBeta  :ChopsticksBetaLog' "$TMP_ROOT/status-default.txt"
@@ -258,6 +268,7 @@ check_vim() {
     grep -Fq 'SPC w     save' "$TMP_ROOT/cheat-default.txt"
     grep -Fq 's+2ch     easymotion jump' "$TMP_ROOT/cheat-default.txt"
     grep -Fq 'cl / cc   native s / S substitute' "$TMP_ROOT/cheat-default.txt"
+    grep -Fq ':ChopsticksHelp    full help' "$TMP_ROOT/cheat-default.txt"
     grep -Fq ':ChopsticksTutor   practice' "$TMP_ROOT/cheat-default.txt"
     grep -Fq ':ChopsticksBeta    beta test guide' "$TMP_ROOT/cheat-default.txt"
     grep -Fq ':ChopsticksBetaLog beta notes' "$TMP_ROOT/cheat-default.txt"
@@ -332,6 +343,7 @@ check_vim() {
         -c 'qa!' 2>&1
     grep -Fq 'chopsticks tutor' "$TMP_ROOT/tutor-default.txt"
     grep -Fq 'SPC ?      active cheat sheet' "$TMP_ROOT/tutor-default.txt"
+    grep -Fq ':ChopsticksHelp    full help' "$TMP_ROOT/tutor-default.txt"
     grep -Fq 's + 2 chars  visible jump' "$TMP_ROOT/tutor-default.txt"
     grep -Fq 'cl / cc      native s / S substitute' "$TMP_ROOT/tutor-default.txt"
     grep -Fq 'gd / gr / K  definition / refs / docs' "$TMP_ROOT/tutor-default.txt"

@@ -23,8 +23,12 @@
   `[d`, and `]d`
 - `:ChopsticksTutor` guided practice buffer for learning the final keymap
 - `:ChopsticksCheatSheet` command, with `SPC ?` as the discoverable default
+- `:ChopsticksHelp` and native `:help chopsticks` documentation for in-editor
+  support without a separate wiki
+- `:ChopsticksBeta`, `:ChopsticksBetaLog`, and `:ChopsticksBetaSession` for
+  guided beta testing and local session notes
 - Dedicated modules for buffers, utilities, files, runner, quickfix, status,
-  cheat sheet, and tutor
+  cheat sheet, tutor, beta testing, and help
 - Split test runner: `scripts/test.sh` now dispatches to
   `scripts/test-quick.sh` and `scripts/test-vim.sh`
 

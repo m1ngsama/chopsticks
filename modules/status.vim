@@ -85,6 +85,8 @@ function! s:ChopsticksStatus() abort
     call add(l:lines, 'chopsticks status')
     call add(l:lines, repeat('─', 50))
     call add(l:lines, '')
+    call add(l:lines, '  help       :ChopsticksHelp  :ChopsticksTutor  SPC ?')
+    call add(l:lines, '')
 
     if !empty(get(g:, 'chopsticks_beta_label', ''))
         call add(l:lines, '── beta ──')

@@ -9,6 +9,7 @@ let s:xdg_config_home = !empty($XDG_CONFIG_HOME) && $XDG_CONFIG_HOME =~# '^/'
     \ : '~/.config'
 let s:local_config = expand(get(g:, 'chopsticks_local_config',
     \ s:xdg_config_home . '/chopsticks.vim'))
+let g:chopsticks_resolved_local_config = s:local_config
 if filereadable(s:local_config)
     execute 'source ' . fnameescape(s:local_config)
 endif

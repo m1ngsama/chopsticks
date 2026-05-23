@@ -1,5 +1,47 @@
 " utilities.vim — small editing and config helpers
 
+function! s:LocalConfigPath() abort
+    let l:xdg = !empty($XDG_CONFIG_HOME) && $XDG_CONFIG_HOME =~# '^/'
+        \ ? $XDG_CONFIG_HOME
+        \ : '~/.config'
+    return expand(get(g:, 'chopsticks_resolved_local_config',
+        \ get(g:, 'chopsticks_local_config', l:xdg . '/chopsticks.vim')))
+endfunction
+
+function! s:EditLocalConfig() abort
+    let l:path = s:LocalConfigPath()
+    let l:new_file = !filereadable(l:path)
+    let l:dir = fnamemodify(l:path, ':h')
+    if !isdirectory(l:dir)
+        call mkdir(l:dir, 'p')
+    endif
+
+    execute 'edit ' . fnameescape(l:path)
+    setlocal filetype=vim
+    if l:new_file && line('$') == 1 && getline(1) ==# ''
+        call setline(1, [
+            \ '" chopsticks local preferences',
+            \ "let g:chopsticks_profile = 'engineer'",
+            \ "let g:chopsticks_keymap_style = 'space'",
+            \ '',
+            \ '" Optional habits:',
+            \ '" let g:chopsticks_enable_jk_escape = 1',
+            \ '" let g:chopsticks_enable_ctrl_s_save = 1',
+            \ '" let g:chopsticks_enable_auto_pairs = 1',
+            \ ])
+        setlocal nomodified
+    endif
+endfunction
+
+function! s:ReloadChopsticks() abort
+    unlet! g:chopsticks_loaded
+    execute 'source ' . fnameescape($MYVIMRC)
+    echo 'chopsticks reloaded'
+endfunction
+
+command! ChopsticksConfig call s:EditLocalConfig()
+command! ChopsticksReload call s:ReloadChopsticks()
+
 if get(g:, 'chopsticks_enable_reindent_file', 0)
     if g:chopsticks_space_keymaps
         nnoremap <leader>c= gg=G``
@@ -34,11 +76,13 @@ else
 endif
 
 if g:chopsticks_space_keymaps
+    nnoremap <leader>fc :ChopsticksConfig<CR>
     nnoremap <leader>fv :edit $MYVIMRC<CR>
-    nnoremap <leader>fV :unlet! g:chopsticks_loaded<CR>:execute 'source ' . fnameescape($MYVIMRC)<CR>:echo "vimrc reloaded"<CR>
+    nnoremap <leader>fV :ChopsticksReload<CR>
 else
+    nnoremap <leader>ec :ChopsticksConfig<CR>
     nnoremap <leader>ev :edit $MYVIMRC<CR>
-    nnoremap <leader>sv :unlet! g:chopsticks_loaded<CR>:execute 'source ' . fnameescape($MYVIMRC)<CR>:echo "vimrc reloaded"<CR>
+    nnoremap <leader>sv :ChopsticksReload<CR>
 endif
 
 if g:chopsticks_space_keymaps

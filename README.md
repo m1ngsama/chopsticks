@@ -49,8 +49,9 @@ That assembly work is the pain chopsticks removes:
 - **Remote editing is fragile.** It is built to degrade on TTY, slow SSH, and
   headless machines instead of assuming a GUI desktop.
 - **Custom configs are hard to onboard.** `:ChopsticksHelp`, `SPC ?`,
-  `:ChopsticksTutor`, and `:ChopsticksStatus` make the active keymap, full
-  help, and missing tools visible inside Vim.
+  `:ChopsticksTutor`, `:ChopsticksConfig`, and `:ChopsticksStatus` make the
+  active keymap, full help, local preferences, and missing tools visible inside
+  Vim.
 
 You SSH into a server. You need to edit code. You want LSP, fuzzy find, git
 integration, format-on-save — not a 20-minute setup.
@@ -129,7 +130,9 @@ into Markdown lint, format, spell, conceal, Marksman, and LSP virtual text.
 
 Project updates leave `~/.config/chopsticks.vim` alone, so put local choices
 there instead of editing the managed `.vimrc`. The `SPC ?` cheat sheet follows
-the active profile and only shows keys for enabled features.
+the active profile and only shows keys for enabled features. Inside Vim, use
+`:ChopsticksConfig` to edit that local file and `:ChopsticksReload` after
+saving it.
 
 ## Keys
 
@@ -144,7 +147,8 @@ for native `S`.
 
 For onboarding, use `:ChopsticksHelp` / `:help chopsticks` for full native Vim
 help, `:ChopsticksTutor` for a guided practice page, `SPC ?` for the active
-keymap, and `:ChopsticksStatus` for tool/LSP health.
+keymap, `:ChopsticksConfig` for local preferences, and `:ChopsticksStatus` for
+tool/LSP health.
 `QUICKSTART.md` is the 5-minute path; this README is the full reference.
 During the beta, `:ChopsticksBeta` opens the in-editor test checklist,
 `:ChopsticksBetaLog` opens editable local notes, and `:ChopsticksBetaSession`
@@ -157,6 +161,7 @@ SPC e     toggle file sidebar      SPC rr   run current file
 SPC gs    git status               SPC cf   format
 SPC w     save                     SPC qq   quit
 Esc       exit insert mode         SPC ?    cheat sheet
+:ChopsticksConfig local prefs       :ChopsticksReload reload
 ```
 
 <details>
@@ -168,7 +173,7 @@ Esc       exit insert mode         SPC ?    cheat sheet
 
 ### Files
 
-`SPC ff` files | `SPC fb` buffers | `SPC fg` git files | `SPC fr` recent | `SPC fl` buffer lines | `SPC fL` all lines | `SPC fv` edit vimrc | `SPC fV` reload vimrc
+`SPC ff` files | `SPC fb` buffers | `SPC fg` git files | `SPC fr` recent | `SPC fl` buffer lines | `SPC fL` all lines | `SPC fc` local config | `SPC fv` edit vimrc | `SPC fV` reload
 
 ### Search
 
@@ -200,7 +205,7 @@ Esc       exit insert mode         SPC ?    cheat sheet
 
 ### Survival
 
-`SPC w` save | `SPC W` save all | `SPC qq` quit | `SPC qx` save and quit | `SPC ?` cheat sheet | `:ChopsticksHelp` full help | `:ChopsticksTutor` practice | `:ChopsticksStatus` diagnostics
+`SPC w` save | `SPC W` save all | `SPC qq` quit | `SPC qx` save and quit | `SPC fc` local config | `SPC fV` reload | `SPC ?` cheat sheet | `:ChopsticksHelp` full help | `:ChopsticksTutor` practice | `:ChopsticksStatus` diagnostics
 
 </details>
 
@@ -237,7 +242,7 @@ Esc       exit insert mode         SPC ?    cheat sheet
 
 ### Utilities
 
-`,cp` copy full path | `,cf` copy filename | `,ev` edit vimrc | `,sv` reload vimrc | `,wa` save all | `:ChopsticksStatus` diagnostics
+`,cp` copy full path | `,cf` copy filename | `,ec` local config | `,ev` edit vimrc | `,sv` reload | `,wa` save all | `:ChopsticksStatus` diagnostics
 
 </details>
 
@@ -298,7 +303,7 @@ For Markdown LSP, install or select `marksman` first.
     ├── git.vim         fugitive, gitgutter, conflict nav
     ├── languages.vim   vim-go, markdown, filetype settings
     ├── buffers.vim     buffer commands
-    ├── utilities.vim   reindent, trim, clipboard, vimrc helpers
+    ├── utilities.vim   config, reload, trim, clipboard helpers
     ├── files.vim       auto mkdir, large-file protection
     ├── runner.vim      run current file
     ├── quickfix.vim    quickfix and location-list helpers
@@ -333,7 +338,8 @@ Each module is self-contained. Comment out one line in `.vimrc` to disable it. A
 | What's installed?   | `:ChopsticksStatus` shows tools, LSP, linters |
 
 For deeper checks, start with `:ChopsticksStatus`, `SPC ?`,
-`:ChopsticksTutor`, `:ChopsticksHelp`, and [QUICKSTART.md](QUICKSTART.md).
+`:ChopsticksTutor`, `:ChopsticksHelp`, `:ChopsticksConfig`, and
+[QUICKSTART.md](QUICKSTART.md).
 
 ## Contributing
 

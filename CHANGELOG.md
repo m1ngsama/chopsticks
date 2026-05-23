@@ -25,6 +25,8 @@
 - `:ChopsticksCheatSheet` command, with `SPC ?` as the discoverable default
 - `:ChopsticksHelp` and native `:help chopsticks` documentation for in-editor
   support without a separate wiki
+- `:ChopsticksConfig` and `:ChopsticksReload` for editing local preferences
+  without touching the managed `.vimrc`
 - `:ChopsticksBeta`, `:ChopsticksBetaLog`, and `:ChopsticksBetaSession` for
   guided beta testing and local session notes
 - Dedicated modules for buffers, utilities, files, runner, quickfix, status,

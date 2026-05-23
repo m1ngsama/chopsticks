@@ -35,6 +35,9 @@ let g:chopsticks_profile = 'engineer'
 let g:chopsticks_keymap_style = 'space'
 ```
 
+Inside Vim, `:ChopsticksConfig` opens that file and `:ChopsticksReload`
+reloads chopsticks after saving it.
+
 ## Daily test loop
 
 Use the beta for real editing, not only demos. For each session, record:
@@ -57,7 +60,8 @@ SPC SPC   find file              SPC /     grep project
 s + 2ch   jump on screen         gd / gr   definition / references
 SPC rr    run current file       SPC gs    git status
 SPC cf    format                 SPC ca    code action
-SPC ?     active cheat sheet     :ChopsticksStatus health
+SPC fc    local config           SPC ?     active cheat sheet
+:ChopsticksStatus health         :ChopsticksConfig preferences
 ```
 
 Also test the boring path: save, quit, reopen Vim, edit over SSH, open a large

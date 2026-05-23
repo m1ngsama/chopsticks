@@ -31,6 +31,7 @@ Inside Vim:
   SPC ?                active keymap cheat sheet
   :ChopsticksStatus    tool, plugin, and LSP diagnostics
   :ChopsticksHelp      this help page
+  :ChopsticksConfig    edit local preferences
 <
 
 Daily loop:
@@ -62,7 +63,8 @@ High-frequency keys:
   SPC e/E   file sidebar           SPC rr    run file
   SPC gs    git status             SPC gl    git log graph
   SPC ca    code action            SPC cr    rename
-  SPC cf    format                 SPC ?     cheat sheet
+  SPC cf    format                 SPC fc    edit local config
+  SPC fV    reload config          SPC ?     cheat sheet
 <
 
 Classic comma mappings remain available:
@@ -76,6 +78,8 @@ COMMANDS                                                    *chopsticks-commands
 User-facing commands:
 >
   :ChopsticksHelp         open this help
+  :ChopsticksConfig       edit local preferences
+  :ChopsticksReload       reload chopsticks after config changes
   :ChopsticksTutor        guided practice
   :ChopsticksCheatSheet   active keymap reference
   :ChopsticksStatus       health diagnostics
@@ -98,6 +102,16 @@ Keep personal choices outside the managed .vimrc:
   " ${XDG_CONFIG_HOME:-~/.config}/chopsticks.vim
   let g:chopsticks_profile = 'engineer'
   let g:chopsticks_keymap_style = 'space'
+<
+
+Open that file from inside Vim:
+>
+  :ChopsticksConfig
+<
+
+Reload after saving it:
+>
+  :ChopsticksReload
 <
 
 Profiles:
@@ -147,6 +161,7 @@ Start with:
   SPC ?
   :ChopsticksTutor
   :ChopsticksHelp
+  :ChopsticksConfig
 <
 
 Common fixes:
@@ -155,6 +170,8 @@ Common fixes:
   LSP missing            Open that filetype, then :LspInstallServer
   Need active keys       SPC ?
   Need full docs         :help chopsticks
+  Need local config      :ChopsticksConfig
+  Changed local config   :ChopsticksReload
   Need beta notes        :ChopsticksBetaSession
   Slow large file        Syntax, undo, swap, and ALE are auto-reduced
 

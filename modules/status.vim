@@ -80,12 +80,22 @@ function! s:BetaLogPath() abort
     return expand(l:xdg . '/chopsticks-beta.md')
 endfunction
 
+function! s:LocalConfigPath() abort
+    let l:xdg = !empty($XDG_CONFIG_HOME) && $XDG_CONFIG_HOME =~# '^/'
+        \ ? $XDG_CONFIG_HOME
+        \ : '~/.config'
+    return expand(get(g:, 'chopsticks_resolved_local_config',
+        \ get(g:, 'chopsticks_local_config', l:xdg . '/chopsticks.vim')))
+endfunction
+
 function! s:ChopsticksStatus() abort
     let l:lines = []
     call add(l:lines, 'chopsticks status')
     call add(l:lines, repeat('─', 50))
     call add(l:lines, '')
     call add(l:lines, '  help       :ChopsticksHelp  :ChopsticksTutor  SPC ?')
+    call add(l:lines, '  config     ' . s:LocalConfigPath())
+    call add(l:lines, '  commands   :ChopsticksConfig  :ChopsticksReload')
     call add(l:lines, '')
 
     if !empty(get(g:, 'chopsticks_beta_label', ''))

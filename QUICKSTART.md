@@ -51,6 +51,7 @@ SPC w           save
 SPC qx          save + quit
 :q!             force quit
 SPC ?           cheat sheet (toggle sidebar)
+SPC fc          edit local preferences
 :ChopsticksHelp  full native help
 ```
 
@@ -62,6 +63,7 @@ Esc             back to Normal
 ,x              save + quit
 :q!             force quit
 ,?              cheat sheet (toggle sidebar)
+,ec             edit local preferences
 :ChopsticksHelp  full native help
 ```
 
@@ -140,6 +142,8 @@ syntax. Enable the heavier Markdown tools only when you want them.
 
 ```
 :ChopsticksHelp        full native Vim help
+:ChopsticksConfig      edit local preferences
+:ChopsticksReload      reload after saving local preferences
 :ChopsticksTutor       guided practice for the final keymap
 :ChopsticksStatus       see what's installed and what's missing
 ```

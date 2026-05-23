@@ -67,15 +67,26 @@ check_vim() {
     vim -u NONE -i NONE -es -N \
         -c "let g:chopsticks_local_config = '$TMP_ROOT/local/config.vim'" \
         -c 'source .vimrc' \
-        -c 'if g:chopsticks_profile !=# "minimal" || has_key(g:plugs, "ale") || has_key(g:plugs, "vim-lsp") || has_key(g:plugs, "auto-pairs") | cquit | endif' \
+        -c 'if g:chopsticks_resolved_local_config !~# "config.vim$" || g:chopsticks_profile !=# "minimal" || has_key(g:plugs, "ale") || has_key(g:plugs, "vim-lsp") || has_key(g:plugs, "auto-pairs") | cquit | endif' \
         -c 'qa!' 2>&1
 
     mkdir -p "$TMP_ROOT/xdg"
     printf "%s\n" "let g:chopsticks_profile = 'minimal'" > "$TMP_ROOT/xdg/chopsticks.vim"
     XDG_CONFIG_HOME="$TMP_ROOT/xdg" vim -u NONE -i NONE -es -N \
         -c 'source .vimrc' \
-        -c 'if g:chopsticks_profile !=# "minimal" || has_key(g:plugs, "ale") || has_key(g:plugs, "vim-lsp") || has_key(g:plugs, "auto-pairs") | cquit | endif' \
+        -c 'if g:chopsticks_resolved_local_config !~# "chopsticks.vim$" || g:chopsticks_profile !=# "minimal" || has_key(g:plugs, "ale") || has_key(g:plugs, "vim-lsp") || has_key(g:plugs, "auto-pairs") | cquit | endif' \
         -c 'qa!' 2>&1
+
+    local_config_cmd="$TMP_ROOT/config command/chopsticks.vim"
+    vim -u NONE -i NONE -es -N \
+        -c "let g:chopsticks_local_config = '$local_config_cmd'" \
+        -c 'source .vimrc' \
+        -c 'ChopsticksConfig' \
+        -c 'if expand("%:p") !=# g:chopsticks_resolved_local_config || &l:filetype !=# "vim" | cquit | endif' \
+        -c 'if getline(1) !~# "chopsticks local preferences" || &modified | cquit | endif' \
+        -c 'qa!' 2>&1
+    test -d "$(dirname "$local_config_cmd")"
+    test ! -e "$local_config_cmd"
 
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \
         -c 'ChopsticksStatus' \
@@ -89,6 +100,7 @@ check_vim() {
     fi
     grep -Fq 'OK  vim-lsp stack  (installed)' "$TMP_ROOT/status-default.txt"
     grep -Fq 'help       :ChopsticksHelp  :ChopsticksTutor  SPC ?' "$TMP_ROOT/status-default.txt"
+    grep -Fq 'commands   :ChopsticksConfig  :ChopsticksReload' "$TMP_ROOT/status-default.txt"
     grep -Fq 'candidate  3.0.0-beta.1' "$TMP_ROOT/status-default.txt"
     grep -Fq 'keymap     space' "$TMP_ROOT/status-default.txt"
     grep -Fq 'commands   :ChopsticksBeta  :ChopsticksBetaLog' "$TMP_ROOT/status-default.txt"
@@ -113,6 +125,7 @@ check_vim() {
         -c 'source .vimrc' \
         -c 'let last_change_map = nr2char(96) . "[v" . nr2char(96) . "]"' \
         -c 'if mapleader !=# "," || maparg("s", "n") !=# "" || maparg(",/", "v") !~# "escape" || maparg(",v", "n") !=# last_change_map || maparg(",ff", "n") !~# "SmartFiles" | cquit | endif' \
+        -c 'if maparg(",ec", "n") !~# "ChopsticksConfig" || maparg(",sv", "n") !~# "ChopsticksReload" | cquit | endif' \
         -c 'if maparg(",gp", "n") !=# "" || maparg(",gl", "n") !=# "" | cquit | endif' \
         -c 'qa!' 2>&1
 
@@ -238,7 +251,7 @@ check_vim() {
         -c 'if maparg(",ff", "n") !=# "" || maparg(",w", "n") !=# "" || maparg(",mt", "n") !=# "" || maparg(",gp", "n") !=# "" || maparg("<Space>gp", "n") !=# "" | cquit | endif' \
         -c 'if maparg("<Space>f", "n") !=# "" || maparg("<Space>q", "n") !=# "" || maparg("<Space>u", "n") !=# "" || maparg("<Space>c", "n") !=# "" || maparg("<Space>x", "n") !=# "" || maparg("<Space>wm", "n") !=# "" || maparg("<Space>w+", "n") !=# "" || maparg("<Space>w-", "n") !=# "" | cquit | endif' \
         -c 'if maparg("<Space><Space>", "n") !~# "SmartFiles" || maparg("<Space>ff", "n") !~# "SmartFiles" || maparg("<Space>,", "n") !~# "Buffers" || maparg("<Space>bd", "n") !~# "Bclose" | cquit | endif' \
-        -c 'if maparg("<Space>w", "n") !~# ":w" || maparg("<Space>W", "n") !~# ":wa" || maparg("<Space>qq", "n") !~# ":q" || maparg("<Space>qx", "n") !~# ":x" || maparg("<Space>U", "n") !~# "UndotreeToggle" || maparg("<Space>fs", "n") !=# "" || maparg("<Space>bu", "n") !=# "" | cquit | endif' \
+        -c 'if maparg("<Space>w", "n") !~# ":w" || maparg("<Space>W", "n") !~# ":wa" || maparg("<Space>qq", "n") !~# ":q" || maparg("<Space>qx", "n") !~# ":x" || maparg("<Space>fc", "n") !~# "ChopsticksConfig" || maparg("<Space>fV", "n") !~# "ChopsticksReload" || maparg("<Space>U", "n") !~# "UndotreeToggle" || maparg("<Space>fs", "n") !=# "" || maparg("<Space>bu", "n") !=# "" | cquit | endif' \
         -c 'if maparg("<Space>gl", "n") !~# "Git log" || maparg("<Space>gC", "n") !~# "Commits" | cquit | endif' \
         -c 'qa!' 2>&1
 
@@ -266,9 +279,12 @@ check_vim() {
     grep -Fq '[d ]d     LSP diagnostics' "$TMP_ROOT/cheat-default.txt"
     grep -Fq '<C-w>hjkl navigate splits' "$TMP_ROOT/cheat-default.txt"
     grep -Fq 'SPC w     save' "$TMP_ROOT/cheat-default.txt"
+    grep -Fq 'SPC fc    edit local config' "$TMP_ROOT/cheat-default.txt"
     grep -Fq 's+2ch     easymotion jump' "$TMP_ROOT/cheat-default.txt"
     grep -Fq 'cl / cc   native s / S substitute' "$TMP_ROOT/cheat-default.txt"
     grep -Fq ':ChopsticksHelp    full help' "$TMP_ROOT/cheat-default.txt"
+    grep -Fq ':ChopsticksConfig  local config' "$TMP_ROOT/cheat-default.txt"
+    grep -Fq ':ChopsticksReload  reload config' "$TMP_ROOT/cheat-default.txt"
     grep -Fq ':ChopsticksTutor   practice' "$TMP_ROOT/cheat-default.txt"
     grep -Fq ':ChopsticksBeta    beta test guide' "$TMP_ROOT/cheat-default.txt"
     grep -Fq ':ChopsticksBetaLog beta notes' "$TMP_ROOT/cheat-default.txt"
@@ -299,6 +315,8 @@ check_vim() {
     grep -Fq ',dd       definition' "$TMP_ROOT/cheat-classic.txt"
     grep -Fq ',dk       hover docs' "$TMP_ROOT/cheat-classic.txt"
     grep -Fq ',dp ,dn   LSP diagnostics' "$TMP_ROOT/cheat-classic.txt"
+    grep -Fq ',ec       edit local config' "$TMP_ROOT/cheat-classic.txt"
+    grep -Fq ':ChopsticksConfig  local config' "$TMP_ROOT/cheat-classic.txt"
     if grep -Eq ',gp       push|,gl       pull' "$TMP_ROOT/cheat-classic.txt"; then
         cat "$TMP_ROOT/cheat-classic.txt"
         exit 1
@@ -329,6 +347,7 @@ check_vim() {
     grep -Fq 'SPC w     save' "$TMP_ROOT/cheat-space.txt"
     grep -Fq 'gd        definition' "$TMP_ROOT/cheat-space.txt"
     grep -Fq 'SPC gl    log graph' "$TMP_ROOT/cheat-space.txt"
+    grep -Fq 'SPC fc    edit local config' "$TMP_ROOT/cheat-space.txt"
     grep -Fq 's+2ch     easymotion jump' "$TMP_ROOT/cheat-space.txt"
     if grep -Eq ',w        save|,gp       push|SPC gp    push|SPC gl    pull|SPC fs    save|SPC cd    definition|SPC f     format' "$TMP_ROOT/cheat-space.txt"; then
         cat "$TMP_ROOT/cheat-space.txt"
@@ -343,7 +362,9 @@ check_vim() {
         -c 'qa!' 2>&1
     grep -Fq 'chopsticks tutor' "$TMP_ROOT/tutor-default.txt"
     grep -Fq 'SPC ?      active cheat sheet' "$TMP_ROOT/tutor-default.txt"
+    grep -Fq 'SPC fc     edit local config' "$TMP_ROOT/tutor-default.txt"
     grep -Fq ':ChopsticksHelp    full help' "$TMP_ROOT/tutor-default.txt"
+    grep -Fq ':ChopsticksConfig  local config' "$TMP_ROOT/tutor-default.txt"
     grep -Fq 's + 2 chars  visible jump' "$TMP_ROOT/tutor-default.txt"
     grep -Fq 'cl / cc      native s / S substitute' "$TMP_ROOT/tutor-default.txt"
     grep -Fq 'gd / gr / K  definition / refs / docs' "$TMP_ROOT/tutor-default.txt"
@@ -358,6 +379,7 @@ check_vim() {
         -c 'qa!' 2>&1
     grep -Fq 'classic layout' "$TMP_ROOT/tutor-classic.txt"
     grep -Fq ',?         active cheat sheet' "$TMP_ROOT/tutor-classic.txt"
+    grep -Fq ',ec       edit local config' "$TMP_ROOT/tutor-classic.txt"
     grep -Fq ',S + 2 chars  EasyMotion jump' "$TMP_ROOT/tutor-classic.txt"
 
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \

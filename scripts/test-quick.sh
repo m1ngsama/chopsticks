@@ -29,8 +29,8 @@ check_docs() {
     markdownlint README.md QUICKSTART.md CONTRIBUTING.md CHANGELOG.md BETA.md
 
     step "Documentation consistency"
-    for command in ChopsticksHelp ChopsticksBeta ChopsticksBetaLog \
-        ChopsticksBetaSession
+    for command in ChopsticksHelp ChopsticksConfig ChopsticksReload \
+        ChopsticksBeta ChopsticksBetaLog ChopsticksBetaSession
     do
         for file in README.md BETA.md doc/chopsticks.txt modules/cheatsheet.vim \
             modules/tutor.vim modules/status.vim
@@ -44,6 +44,8 @@ check_docs() {
     grep -Fq '*chopsticks.txt*' doc/chopsticks.txt
     grep -Fq '*chopsticks-v3-space*' doc/chopsticks.txt
     grep -Fq 'command! ChopsticksHelp' modules/help.vim
+    grep -Fq 'command! ChopsticksConfig' modules/utilities.vim
+    grep -Fq 'command! ChopsticksReload' modules/utilities.vim
     for command in ChopsticksBeta ChopsticksBetaLog ChopsticksBetaSession; do
         grep -Fq "command! $command" modules/beta.vim || {
             echo "Missing $command definition in modules/beta.vim" >&2

@@ -268,11 +268,15 @@ check_vim() {
 
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \
         -c 'call feedkeys("\<Space>?", "xt")' \
+        -c 'if max(map(getline(1, "$"), "strdisplaywidth(v:val)")) > 42 | cquit | endif' \
         -c "redir! > $TMP_ROOT/cheat-default.txt" \
         -c 'silent %print' \
         -c 'redir END' \
         -c 'qa!' 2>&1
     grep -Fq ':ChopsticksStatus   check LSP setup' "$TMP_ROOT/cheat-default.txt"
+    grep -Fq 'trained loop:' "$TMP_ROOT/cheat-default.txt"
+    grep -Fq 'files → s jump → gd/K' "$TMP_ROOT/cheat-default.txt"
+    grep -Fq 'run → grep → git' "$TMP_ROOT/cheat-default.txt"
     grep -Fq 'SPC SPC   files' "$TMP_ROOT/cheat-default.txt"
     grep -Fq 'gd        definition' "$TMP_ROOT/cheat-default.txt"
     grep -Fq 'K         hover docs' "$TMP_ROOT/cheat-default.txt"
@@ -296,6 +300,7 @@ check_vim() {
 
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \
         -c 'ChopsticksCheatSheet' \
+        -c 'if max(map(getline(1, "$"), "strdisplaywidth(v:val)")) > 42 | cquit | endif' \
         -c "redir! > $TMP_ROOT/cheat-command.txt" \
         -c 'silent %print' \
         -c 'redir END' \
@@ -307,11 +312,15 @@ check_vim() {
         -c 'let g:chopsticks_keymap_style = "classic"' \
         -c 'source .vimrc' \
         -c 'normal ,?' \
+        -c 'if max(map(getline(1, "$"), "strdisplaywidth(v:val)")) > 42 | cquit | endif' \
         -c "redir! > $TMP_ROOT/cheat-classic.txt" \
         -c 'silent %print' \
         -c 'redir END' \
         -c 'qa!' 2>&1
     grep -Fq ',ff       files' "$TMP_ROOT/cheat-classic.txt"
+    grep -Fq 'trained loop:' "$TMP_ROOT/cheat-classic.txt"
+    grep -Fq 'files → jump → inspect' "$TMP_ROOT/cheat-classic.txt"
+    grep -Fq 'run → grep → git' "$TMP_ROOT/cheat-classic.txt"
     grep -Fq ',dd       definition' "$TMP_ROOT/cheat-classic.txt"
     grep -Fq ',dk       hover docs' "$TMP_ROOT/cheat-classic.txt"
     grep -Fq ',dp ,dn   LSP diagnostics' "$TMP_ROOT/cheat-classic.txt"
@@ -326,6 +335,7 @@ check_vim() {
         -c 'let g:chopsticks_profile = "minimal"' \
         -c 'source .vimrc' \
         -c 'call feedkeys("\<Space>?", "xt")' \
+        -c 'if max(map(getline(1, "$"), "strdisplaywidth(v:val)")) > 42 | cquit | endif' \
         -c "redir! > $TMP_ROOT/cheat.txt" \
         -c 'silent %print' \
         -c 'redir END' \
@@ -340,6 +350,7 @@ check_vim() {
         -c 'let g:chopsticks_keymap_style = "space"' \
         -c 'source .vimrc' \
         -c 'call feedkeys("\<Space>?", "xt")' \
+        -c 'if max(map(getline(1, "$"), "strdisplaywidth(v:val)")) > 42 | cquit | endif' \
         -c "redir! > $TMP_ROOT/cheat-space.txt" \
         -c 'silent %print' \
         -c 'redir END' \
@@ -356,11 +367,14 @@ check_vim() {
 
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \
         -c 'ChopsticksTutor' \
+        -c 'if max(map(getline(1, "$"), "strdisplaywidth(v:val)")) > 78 | cquit | endif' \
         -c "redir! > $TMP_ROOT/tutor-default.txt" \
         -c 'silent %print' \
         -c 'redir END' \
         -c 'qa!' 2>&1
     grep -Fq 'chopsticks tutor' "$TMP_ROOT/tutor-default.txt"
+    grep -Fq 'Goal: train one long-term project loop around Vim.' "$TMP_ROOT/tutor-default.txt"
+    grep -Fq '1. trained loop' "$TMP_ROOT/tutor-default.txt"
     grep -Fq 'SPC ?      active cheat sheet' "$TMP_ROOT/tutor-default.txt"
     grep -Fq 'SPC fc     edit local config' "$TMP_ROOT/tutor-default.txt"
     grep -Fq ':ChopsticksHelp    full help' "$TMP_ROOT/tutor-default.txt"
@@ -373,23 +387,28 @@ check_vim() {
         -c 'let g:chopsticks_keymap_style = "classic"' \
         -c 'source .vimrc' \
         -c 'ChopsticksTutor' \
+        -c 'if max(map(getline(1, "$"), "strdisplaywidth(v:val)")) > 78 | cquit | endif' \
         -c "redir! > $TMP_ROOT/tutor-classic.txt" \
         -c 'silent %print' \
         -c 'redir END' \
         -c 'qa!' 2>&1
     grep -Fq 'classic layout' "$TMP_ROOT/tutor-classic.txt"
+    grep -Fq 'Goal: train one long-term project loop around Vim.' "$TMP_ROOT/tutor-classic.txt"
     grep -Fq ',?         active cheat sheet' "$TMP_ROOT/tutor-classic.txt"
     grep -Fq ',ec       edit local config' "$TMP_ROOT/tutor-classic.txt"
     grep -Fq ',S + 2 chars  EasyMotion jump' "$TMP_ROOT/tutor-classic.txt"
 
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \
         -c 'ChopsticksBeta' \
+        -c 'if max(map(getline(1, "$"), "strdisplaywidth(v:val)")) > 78 | cquit | endif' \
         -c "redir! > $TMP_ROOT/beta-guide.txt" \
         -c 'silent %print' \
         -c 'redir END' \
         -c 'qa!' 2>&1
     grep -Fq 'chopsticks beta' "$TMP_ROOT/beta-guide.txt"
-    grep -Fq 'Prove the v3 Space layout in real editing before release.' "$TMP_ROOT/beta-guide.txt"
+    grep -Fq 'Prove this can be a long-term project loop.' "$TMP_ROOT/beta-guide.txt"
+    grep -Fq 'Record real editing friction, not abstract taste.' "$TMP_ROOT/beta-guide.txt"
+    grep -Fq 'no private wiki is needed to remember the daily loop' "$TMP_ROOT/beta-guide.txt"
     grep -Fq 'SPC ?     active cheat sheet' "$TMP_ROOT/beta-guide.txt"
     grep -Fq 'BETA.md        full beta checklist and rollback' "$TMP_ROOT/beta-guide.txt"
     grep -Fq ':ChopsticksBetaLog      editable local beta notes' "$TMP_ROOT/beta-guide.txt"

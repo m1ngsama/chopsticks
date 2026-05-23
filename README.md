@@ -1,13 +1,13 @@
 <p align="center">
   <img src=".github/demo.gif" alt="chopsticks demo" width="720">
   <br>
-  <sub>One project loop: jump on screen, find a file, run it, grep the codebase, then ask Vim what keys are active.</sub>
+  <sub>For Vim users who already know how to edit: one trained project loop for jump, files, run, grep, git, and active key help.</sub>
 </p>
 
 <h1 align="center">chopsticks</h1>
 
 <p align="center">
-  <strong>A project-work Vim setup: find, jump, run, grep, git, LSP, and self-documenting keys over SSH.</strong>
+  <strong>A long-term Vim efficiency kit: find, jump, run, grep, git, LSP, and self-documenting keys over SSH.</strong>
 </p>
 
 <p align="center">
@@ -34,7 +34,11 @@ keymap before promotion.
 
 ## Why
 
-Stock Vim is a great editor core, but it does not ship a complete project
+chopsticks is for experienced Vim users who want one stable, ergonomic working
+set they can train once and keep for years. It does not replace Vim's editing
+language; it standardizes the project loop around it.
+
+Stock Vim is a great editor core, but it does not ship that complete project
 workflow. You still have to assemble fuzzy finding, project grep, git, LSP,
 diagnostics, formatters, runners, terminal behavior, and a keymap that will not
 collapse over SSH.
@@ -145,10 +149,10 @@ Git push/pull are intentionally not bound to default hotkeys. Normal-mode `s`
 is a screen-local EasyMotion jump; use `cl` for native `s` substitute and `cc`
 for native `S`.
 
-For onboarding, use `:ChopsticksHelp` / `:help chopsticks` for full native Vim
-help, `:ChopsticksTutor` for a guided practice page, `SPC ?` for the active
-keymap, `:ChopsticksConfig` for local preferences, and `:ChopsticksStatus` for
-tool/LSP health.
+For learning the kit, use `:ChopsticksTutor` to train the core loop, `SPC ?`
+for the active keymap, `:ChopsticksHelp` / `:help chopsticks` for full native
+Vim help, `:ChopsticksConfig` for local preferences, and `:ChopsticksStatus`
+for tool/LSP health.
 `QUICKSTART.md` is the 5-minute path; this README is the full reference.
 During the beta, `:ChopsticksBeta` opens the in-editor test checklist,
 `:ChopsticksBetaLog` opens editable local notes, and `:ChopsticksBetaSession`

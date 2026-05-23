@@ -1,6 +1,11 @@
 # Quick Start
 
-Five minutes from zero to a working Vim setup.
+Five minutes to understand the chopsticks project loop.
+
+This guide assumes you already know Vim's editing language. chopsticks keeps
+that language intact and gives you one stable layer for the work around it:
+jump on the visible screen, switch project files, grep, run, inspect code,
+check git, and ask Vim which keys are active.
 
 ## Install
 
@@ -35,13 +40,20 @@ To switch later without reinstalling anything:
 cd ~/.vim && ./install.sh --configure-only --profile=full
 ```
 
-## Modes
+## Daily loop
 
-| Mode   | Enter           | Leave         |
-| ------ | --------------- | ------------- |
-| Normal | startup default | —             |
-| Insert | `i` / `a` / `o` | `Esc`         |
-| Visual | `v` / `V`       | `Esc`         |
+Train this first. It is the core reason to use chopsticks instead of assembling
+the same pieces yourself:
+
+```
+SPC SPC         open a project file
+s + 2 chars     jump to visible text
+gd / gr / K     inspect definition, references, docs
+SPC rr          run the current file
+SPC /           grep the project
+SPC gs          check git status
+SPC ?           show the active keymap
+```
 
 ## Survival
 

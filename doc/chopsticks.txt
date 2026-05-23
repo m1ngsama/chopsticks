@@ -1,4 +1,4 @@
-*chopsticks.txt* *chopsticks*        A project-work Vim setup
+*chopsticks.txt* *chopsticks*        A long-term Vim efficiency kit
 
 ==============================================================================
 CONTENTS                                                    *chopsticks-contents*
@@ -14,9 +14,10 @@ CONTENTS                                                    *chopsticks-contents
 ==============================================================================
 WHAT CHOPSTICKS SOLVES                                         *chopsticks-why*
 
-Chopsticks is a complete Vim project loop for people who edit locally and over
-SSH. It connects fuzzy find, project grep, git, LSP, linting, formatting,
-runners, quickfix navigation, and self-documenting keys.
+Chopsticks is for experienced Vim users who want one stable, ergonomic working
+set they can train once and keep for years. It connects fuzzy find, project
+grep, git, LSP, linting, formatting, runners, quickfix navigation, and
+self-documenting keys for people who edit locally and over SSH.
 
 It is meant to supplement stock Vim, not replace Vim muscle memory. Native
 motions and well-known conventions stay where they are useful: gd, gr, K,

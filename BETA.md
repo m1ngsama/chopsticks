@@ -1,6 +1,8 @@
 # Beta Testing
 
-This branch is the v3 beta candidate. Do not tag or publish it as `v3.0.0`
+This branch is the v3 beta candidate. The goal is to prove that the Space
+layout can serve as a long-term project loop for experienced Vim users, not
+just that the mappings work in isolation. Do not tag or publish it as `v3.0.0`
 until the checklist below is closed.
 
 Inside Vim, run `:ChopsticksBeta` for the compact checklist,
@@ -40,7 +42,9 @@ reloads chopsticks after saving it.
 
 ## Daily test loop
 
-Use the beta for real editing, not only demos. For each session, record:
+Use the beta for real editing, not only demos. A session should exercise the
+trained loop until it either feels automatic or exposes friction. For each
+session, record:
 
 - The task: project navigation, code edit, grep, git, LSP, Markdown, SSH.
 - The first key you tried when you got stuck.
@@ -74,6 +78,7 @@ file, edit Markdown, and use a machine with missing optional tools.
 - No high-frequency action requires remembering an undocumented key.
 - README, QUICKSTART, `:help chopsticks`, `SPC ?`, and `:ChopsticksTutor`
   teach the same layout.
+- No private wiki or external note is needed to remember the daily loop.
 - `scripts/test.sh quick` and `scripts/test.sh vim` pass locally.
 - The README GIF has been regenerated from `.github/demo.tape` after any public
   key change.

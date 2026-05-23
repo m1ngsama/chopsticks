@@ -75,7 +75,7 @@ function! s:CheatSheet() abort
 
         call extend(l:lines, [
             \ '  SPC rr    run file',
-            \ '  SPC cW    strip trailing  (v)',
+            \ '  SPC cW    strip trailing',
             \ '  SPC c=    re-indent file  (opt-in)',
             \ '  SPC =     re-indent       (v)',
             \ ])
@@ -222,7 +222,7 @@ function! s:CheatSheet() abort
         \ '  Alt+j/k   move line      (v)',
         \ '  ,*        replace word    (v)',
         \ '  ,F        re-indent       (v)',
-        \ '  ,W        strip trailing  (v)',
+        \ '  ,W        strip trailing',
         \ '',
         \ '  ── git ───────────────────',
         \ '  ,gs       status',

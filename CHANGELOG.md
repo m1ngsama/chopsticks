@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.0.0-beta.1 — 2026-05-23
 
 ### Breaking
 

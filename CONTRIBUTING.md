@@ -5,7 +5,7 @@
 1. **No Node.js in the Vim runtime.** Plugins must work with pure VimScript — no coc.nvim or other Node-backed completion engines. External CLIs (prettier, eslint, markdownlint, stylelint, tsc) installed via npm are fine; ALE shells out to them as optional system tools, not as part of the Vim runtime.
 2. **Startup matters.** Run `vim -u .vimrc -i NONE --startuptime /tmp/s.log -es -N -c qa!` before and after. If your change adds >1ms, it needs a good reason.
 3. **Works on TTY.** Test over SSH. If it breaks in a terminal without true color, fix it or gate it behind `g:is_tty`.
-4. **Native-first keymaps.** Enhance Vim's native behavior instead of replacing it. Do not override built-in motions, operators, text objects, or help-oriented keys for discoverability alone; prefer leader-prefixed or otherwise non-conflicting ergonomic mappings.
+4. **Native-first keymaps.** Enhance Vim's native behavior instead of replacing it. Do not override built-in motions, operators, text objects, or help-oriented keys for discoverability alone. Rare exceptions, such as the default Space-layout `s` jump, must have a documented native replacement, cheat-sheet coverage, and a classic-layout fallback.
 5. **One module, one concern.** Don't put git config in lsp.vim.
 
 ## Adding a plugin
@@ -14,7 +14,7 @@
 2. If it's not needed at startup, lazy-load it: `Plug 'foo/bar', { 'on': 'FooCommand' }`
 3. Put config in the appropriate module
 4. Check new mappings against native Vim behavior before adding them
-5. Update the cheat sheet in `modules/tools.vim` if you add keybindings
+5. Update the cheat sheet definitions in `modules/cheatsheet.vim` if you add keybindings
 6. Run `scripts/test.sh vim` locally after installing plugins
 7. Test on both macOS and Linux when changing terminal or package-manager behavior
 

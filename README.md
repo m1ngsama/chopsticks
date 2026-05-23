@@ -24,6 +24,9 @@
 curl -fsSL https://raw.githubusercontent.com/m1ngsama/chopsticks/main/get.sh | bash
 ```
 
+This branch is a v3 beta candidate, not a tagged stable release. Use
+[BETA.md](BETA.md) when testing the Space keymap before promotion.
+
 ---
 
 ## Why
@@ -315,7 +318,8 @@ Each module is self-contained. Comment out one line in `.vimrc` to disable it. A
 | Everything slow     | Large file? Auto-disabled >10MB               |
 | What's installed?   | `:ChopsticksStatus` shows tools, LSP, linters |
 
-More in the [wiki](https://github.com/m1ngsama/chopsticks/wiki).
+For deeper checks, start with `:ChopsticksStatus`, `SPC ?`,
+`:ChopsticksTutor`, and [QUICKSTART.md](QUICKSTART.md).
 
 ## Contributing
 

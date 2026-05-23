@@ -26,7 +26,7 @@ check_shell() {
 check_docs() {
     step "Markdown lint"
     need markdownlint
-    markdownlint README.md QUICKSTART.md CONTRIBUTING.md CHANGELOG.md
+    markdownlint README.md QUICKSTART.md CONTRIBUTING.md CHANGELOG.md BETA.md
 
     if command -v vhs >/dev/null 2>&1; then
         vhs validate .github/demo.tape

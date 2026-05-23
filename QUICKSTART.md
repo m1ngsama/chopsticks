@@ -141,4 +141,5 @@ syntax. Enable the heavier Markdown tools only when you want them.
 The `SPC ?` cheat sheet follows your active profile, so `minimal` users only see
 keys for features that are actually loaded.
 
-See [README](README.md) for the full reference. See the [wiki](https://github.com/m1ngsama/chopsticks/wiki) for deep dives.
+See [README](README.md) for the full reference. For beta testing and rollback,
+see [BETA.md](BETA.md).

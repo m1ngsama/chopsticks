@@ -52,6 +52,8 @@
 
 ### Fixed
 
+- GitHub Actions now uses `actions/checkout@v5`, avoiding the Node.js 20
+  deprecation warning on PR checks
 - `diffopt` enhancements now degrade safely on macOS system Vim builds that
   report the required patch level but reject individual diff options
 - Installer system-tool reporting now still detects already-installed tools on

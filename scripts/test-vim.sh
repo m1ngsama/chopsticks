@@ -79,6 +79,11 @@ check_vim() {
         exit 1
     fi
     grep -Fq 'OK  vim-lsp stack  (installed)' "$TMP_ROOT/status-default.txt"
+    grep -Fq 'candidate  3.0.0-beta.1' "$TMP_ROOT/status-default.txt"
+    grep -Fq 'keymap     space' "$TMP_ROOT/status-default.txt"
+    grep -Fq 'commands   :ChopsticksBeta  :ChopsticksBetaLog' "$TMP_ROOT/status-default.txt"
+    grep -Fq ':ChopsticksBetaSession' "$TMP_ROOT/status-default.txt"
+    grep -Fq 'chopsticks-beta.md' "$TMP_ROOT/status-default.txt"
     grep -Fq 'python  (:LspInstallServer in a python file)' "$TMP_ROOT/status-default.txt"
     grep -Fq 'LSP actions are buffer-local and start after a server attaches.' "$TMP_ROOT/status-default.txt"
     grep -Fq 'Open that filetype and run :LspInstallServer once.' "$TMP_ROOT/status-default.txt"
@@ -254,6 +259,9 @@ check_vim() {
     grep -Fq 's+2ch     easymotion jump' "$TMP_ROOT/cheat-default.txt"
     grep -Fq 'cl / cc   native s / S substitute' "$TMP_ROOT/cheat-default.txt"
     grep -Fq ':ChopsticksTutor   practice' "$TMP_ROOT/cheat-default.txt"
+    grep -Fq ':ChopsticksBeta    beta test guide' "$TMP_ROOT/cheat-default.txt"
+    grep -Fq ':ChopsticksBetaLog beta notes' "$TMP_ROOT/cheat-default.txt"
+    grep -Fq ':ChopsticksBetaSession new beta note' "$TMP_ROOT/cheat-default.txt"
     if grep -Eq 'Ctrl\\+p    find file|Ctrl\\+hjkl navigate splits|Ctrl\\+s    save|jk        exit insert|SPC fs    save|SPC cd    definition|SPC ck    hover|SPC wm|SPC w\\+/-|\\[g \\]g     LSP diagnostics' "$TMP_ROOT/cheat-default.txt"; then
         cat "$TMP_ROOT/cheat-default.txt"
         exit 1
@@ -339,6 +347,45 @@ check_vim() {
     grep -Fq 'classic layout' "$TMP_ROOT/tutor-classic.txt"
     grep -Fq ',?         active cheat sheet' "$TMP_ROOT/tutor-classic.txt"
     grep -Fq ',S + 2 chars  EasyMotion jump' "$TMP_ROOT/tutor-classic.txt"
+
+    XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \
+        -c 'ChopsticksBeta' \
+        -c "redir! > $TMP_ROOT/beta-guide.txt" \
+        -c 'silent %print' \
+        -c 'redir END' \
+        -c 'qa!' 2>&1
+    grep -Fq 'chopsticks beta' "$TMP_ROOT/beta-guide.txt"
+    grep -Fq 'Prove the v3 Space layout in real editing before release.' "$TMP_ROOT/beta-guide.txt"
+    grep -Fq 'SPC ?     active cheat sheet' "$TMP_ROOT/beta-guide.txt"
+    grep -Fq 'BETA.md        full beta checklist and rollback' "$TMP_ROOT/beta-guide.txt"
+    grep -Fq ':ChopsticksBetaLog      editable local beta notes' "$TMP_ROOT/beta-guide.txt"
+    grep -Fq ':ChopsticksBetaSession  append a new session block' "$TMP_ROOT/beta-guide.txt"
+
+    beta_log="$TMP_ROOT/beta log/chopsticks-beta.md"
+    XDG_CONFIG_HOME="$EMPTY_XDG" vim -u NONE -i NONE -es -N \
+        -c "let g:chopsticks_beta_log = '$beta_log'" \
+        -c 'source .vimrc' \
+        -c 'ChopsticksBetaLog' \
+        -c 'if expand("%:p") !~# "chopsticks-beta.md" || &l:filetype !=# "markdown" | cquit | endif' \
+        -c 'qa!' 2>&1
+    grep -Fq '# chopsticks beta log' "$beta_log"
+    grep -Fq 'First key tried when stuck:' "$beta_log"
+    printf '%s\n' '- keep-existing-note' >> "$beta_log"
+    XDG_CONFIG_HOME="$EMPTY_XDG" vim -u NONE -i NONE -es -N \
+        -c "let g:chopsticks_beta_log = '$beta_log'" \
+        -c 'source .vimrc' \
+        -c 'ChopsticksBetaLog' \
+        -c 'qa!' 2>&1
+    grep -Fq -- '- keep-existing-note' "$beta_log"
+    before_sessions="$(grep -c '^## ' "$beta_log")"
+    XDG_CONFIG_HOME="$EMPTY_XDG" vim -u NONE -i NONE -es -N \
+        -c "let g:chopsticks_beta_log = '$beta_log'" \
+        -c 'source .vimrc' \
+        -c 'ChopsticksBetaSession' \
+        -c 'qa!' 2>&1
+    after_sessions="$(grep -c '^## ' "$beta_log")"
+    test "$after_sessions" -eq $((before_sessions + 1))
+    grep -Fq -- '- keep-existing-note' "$beta_log"
 
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u NONE -i NONE -es -N README.md \
         -c 'let g:chopsticks_keymap_style = "space"' \

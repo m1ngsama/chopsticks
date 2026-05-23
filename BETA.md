@@ -3,6 +3,10 @@
 This branch is the v3 beta candidate. Do not tag or publish it as `v3.0.0`
 until the checklist below is closed.
 
+Inside Vim, run `:ChopsticksBeta` for the compact checklist,
+`:ChopsticksBetaLog` for editable local notes, and `:ChopsticksBetaSession`
+to append a new session block.
+
 ## Install the beta
 
 Existing checkout:
@@ -39,6 +43,11 @@ Use the beta for real editing, not only demos. For each session, record:
 - Whether `SPC ?`, `:ChopsticksTutor`, or `:ChopsticksStatus` answered it.
 - Any mapping that felt slow, awkward, surprising, or too easy to mistype.
 - Any documentation line that was wrong, missing, or redundant.
+
+`:ChopsticksBetaLog` opens `${XDG_CONFIG_HOME:-~/.config}/chopsticks-beta.md`
+by default. Set `g:chopsticks_beta_log` before loading chopsticks to use a
+different path. Use `:ChopsticksBetaSession` at the start of each real editing
+session so every test has a timestamped block.
 
 ## Workflows to exercise
 

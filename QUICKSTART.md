@@ -4,6 +4,9 @@ Five minutes from zero to a working Vim setup.
 
 ## Install
 
+These commands install the stable `main` branch. For beta testing this branch,
+use [BETA.md](BETA.md).
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/m1ngsama/chopsticks/main/get.sh | bash
 curl -fsSL https://raw.githubusercontent.com/m1ngsama/chopsticks/main/get.sh | bash -s -- --profile=minimal

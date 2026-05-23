@@ -68,11 +68,33 @@ function! s:LspCheck(ft, server) abort
     return '  --  ' . a:ft . '  (:LspInstallServer in a ' . a:ft . ' file)'
 endfunction
 
+function! s:BetaLogPath() abort
+    let l:configured = get(g:, 'chopsticks_beta_log', '')
+    if !empty(l:configured)
+        return expand(l:configured)
+    endif
+
+    let l:xdg = !empty($XDG_CONFIG_HOME) && $XDG_CONFIG_HOME =~# '^/'
+        \ ? $XDG_CONFIG_HOME
+        \ : '~/.config'
+    return expand(l:xdg . '/chopsticks-beta.md')
+endfunction
+
 function! s:ChopsticksStatus() abort
     let l:lines = []
     call add(l:lines, 'chopsticks status')
     call add(l:lines, repeat('─', 50))
     call add(l:lines, '')
+
+    if !empty(get(g:, 'chopsticks_beta_label', ''))
+        call add(l:lines, '── beta ──')
+        call add(l:lines, '  candidate  ' . g:chopsticks_beta_label)
+        call add(l:lines, '  keymap     ' . (get(g:, 'chopsticks_space_keymaps', 0) ? 'space' : 'classic'))
+        call add(l:lines, '  log        ' . s:BetaLogPath())
+        call add(l:lines, '  commands   :ChopsticksBeta  :ChopsticksBetaLog')
+        call add(l:lines, '             :ChopsticksBetaSession')
+        call add(l:lines, '')
+    endif
 
     call add(l:lines, '── system tools ──')
     call add(l:lines, s:Check('fzf', 'fzf'))

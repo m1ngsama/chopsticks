@@ -20,12 +20,15 @@
 
 ---
 
+Stable install from `main`:
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/m1ngsama/chopsticks/main/get.sh | bash
 ```
 
 This branch is a v3 beta candidate, not a tagged stable release. Use
-[BETA.md](BETA.md) when testing the Space keymap before promotion.
+[BETA.md](BETA.md) instead of the stable install command when testing the Space
+keymap before promotion.
 
 ---
 
@@ -70,6 +73,9 @@ chopsticks gives you a production-ready Vim config in one command. Pure VimScrip
 | **TTY-aware**     | degrades gracefully on SSH, console, slow links — never breaks                                                                                                 |
 
 ## Install
+
+These commands install the stable `main` branch. For beta testing this branch,
+use [BETA.md](BETA.md).
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/m1ngsama/chopsticks/main/get.sh | bash
@@ -139,6 +145,8 @@ for native `S`.
 For onboarding, use `:ChopsticksTutor` for a guided practice page, `SPC ?` for
 the active keymap, and `:ChopsticksStatus` for tool/LSP health.
 `QUICKSTART.md` is the 5-minute path; this README is the full reference.
+During the beta, `:ChopsticksBeta` opens the in-editor test checklist and
+`:ChopsticksBetaLog` opens editable local notes.
 
 ```
 SPC SPC   fuzzy find file          gd       go to definition
@@ -293,6 +301,7 @@ For Markdown LSP, install or select `marksman` first.
 │   ├── status.vim      :ChopsticksStatus diagnostics
 │   ├── cheatsheet.vim  SPC ? and :ChopsticksCheatSheet
 │   ├── tutor.vim       :ChopsticksTutor guided practice
+│   ├── beta.vim        :ChopsticksBeta test guide
 │   └── tools.vim       compatibility placeholder
 ```
 

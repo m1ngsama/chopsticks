@@ -149,6 +149,9 @@ function! s:CheatSheet() abort
             \ '  SPC fV    reload vimrc',
             \ '  :ChopsticksTutor   practice',
             \ '  :ChopsticksStatus  health',
+            \ '  :ChopsticksBeta    beta test guide',
+            \ '  :ChopsticksBetaLog beta notes',
+            \ '  :ChopsticksBetaSession new beta note',
             \ ])
 
         call s:OpenCheatSheet(l:lines)
@@ -259,6 +262,9 @@ function! s:CheatSheet() abort
         \ '  ,sv       reload vimrc',
         \ '  :ChopsticksTutor   practice',
         \ '  :ChopsticksStatus  health',
+        \ '  :ChopsticksBeta    beta test guide',
+        \ '  :ChopsticksBetaLog beta notes',
+        \ '  :ChopsticksBetaSession new beta note',
         \ ])
 
     call s:OpenCheatSheet(l:lines)

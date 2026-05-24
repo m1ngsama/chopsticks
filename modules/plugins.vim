@@ -62,7 +62,7 @@ if g:chopsticks_enable_ui_extras
     Plug 'mhinz/vim-startify'
 endif
 Plug 'lifepillar/vim-solarized8'
-if !empty($TMUX)
+if g:chopsticks_enable_tmux_navigator && !empty($TMUX)
     Plug 'christoomey/vim-tmux-navigator'
 endif
 

@@ -28,12 +28,29 @@ function! s:ToggleSidebar(...) abort
     wincmd p
 endfunction
 
+function! s:NavigateWindow(direction) abort
+    execute 'wincmd ' . a:direction
+endfunction
+
+nnoremap <silent> <C-h> :<C-U>call <SID>NavigateWindow('h')<CR>
+nnoremap <silent> <C-j> :<C-U>call <SID>NavigateWindow('j')<CR>
+nnoremap <silent> <C-k> :<C-U>call <SID>NavigateWindow('k')<CR>
+nnoremap <silent> <C-l> :<C-U>call <SID>NavigateWindow('l')<CR>
+
 nnoremap <silent> <leader>e :call <SID>ToggleSidebar()<CR>
 nnoremap <silent> <leader>E :call <SID>ToggleSidebar(expand('%:p:h'))<CR>
 
+function! s:NetrwKeymaps() abort
+    setlocal bufhidden=wipe
+    nnoremap <buffer> <silent> <C-h> :<C-U>call <SID>NavigateWindow('h')<CR>
+    nnoremap <buffer> <silent> <C-j> :<C-U>call <SID>NavigateWindow('j')<CR>
+    nnoremap <buffer> <silent> <C-k> :<C-U>call <SID>NavigateWindow('k')<CR>
+    nnoremap <buffer> <silent> <C-l> :<C-U>call <SID>NavigateWindow('l')<CR>
+endfunction
+
 augroup ChopstickNetrw
     autocmd!
-    autocmd FileType netrw setlocal bufhidden=wipe
+    autocmd FileType netrw call s:NetrwKeymaps()
 augroup END
 
 " ── FZF ─────────────────────────────────────────────────────────────────────
@@ -138,9 +155,9 @@ if has('terminal')
     endif
     if g:chopsticks_enable_terminal_keymaps
         tnoremap <Esc><Esc> <C-\><C-n>
-        tnoremap <C-h> <C-\><C-n><C-w>h
-        tnoremap <C-j> <C-\><C-n><C-w>j
-        tnoremap <C-k> <C-\><C-n><C-w>k
-        tnoremap <C-l> <C-\><C-n><C-w>l
+        tnoremap <C-h> <C-\><C-n>:<C-U>call <SID>NavigateWindow('h')<CR>
+        tnoremap <C-j> <C-\><C-n>:<C-U>call <SID>NavigateWindow('j')<CR>
+        tnoremap <C-k> <C-\><C-n>:<C-U>call <SID>NavigateWindow('k')<CR>
+        tnoremap <C-l> <C-\><C-n>:<C-U>call <SID>NavigateWindow('l')<CR>
     endif
 endif

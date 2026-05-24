@@ -65,6 +65,7 @@ s + 2ch   jump on screen         gd / gr   definition / references
 SPC rr    run current file       SPC gs    git status
 SPC cf    format                 SPC ca    code action
 SPC fc    local config           SPC ?     active cheat sheet
+Ctrl-hjkl windows                SPC e     sidebar
 :ChopsticksStatus health         :ChopsticksConfig preferences
 ```
 
@@ -76,6 +77,7 @@ file, edit Markdown, and use a machine with missing optional tools.
 - `s` as the default visible jump still feels worth the native override after
   real editing.
 - No high-frequency action requires remembering an undocumented key.
+- Window/sidebar navigation feels faster than native `<C-w>` only.
 - README, QUICKSTART, `:help chopsticks`, `SPC ?`, and `:ChopsticksTutor`
   teach the same layout.
 - No private wiki or external note is needed to remember the daily loop.

@@ -49,7 +49,7 @@ That assembly work is the pain chopsticks removes:
   diagnostics live behind unrelated commands unless you design a system.
 - **Plugin defaults fight muscle memory.** chopsticks gives QWERTY users one
   canonical Space layout and keeps native Vim/LSP habits where they matter:
-  `gd`, `gr`, `K`, `<C-w>hjkl`, `cl`, `cc`.
+  `gd`, `gr`, `K`, `Ctrl-h/j/k/l`, `<C-w>hjkl`, `cl`, `cc`.
 - **Remote editing is fragile.** It is built to degrade on TTY, slow SSH, and
   headless machines instead of assuming a GUI desktop.
 - **Custom configs are hard to onboard.** `:ChopsticksHelp`, `SPC ?`,
@@ -62,7 +62,7 @@ integration, format-on-save — not a 20-minute setup.
 
 chopsticks gives you a production-ready Vim config in one command. Pure VimScript — no Node.js for the core. Degrades gracefully on TTY. Works the same on your MacBook and your headless Arch box.
 
-**23–25 plugins** (tmux-navigator loads only inside tmux; auto-pairs is opt-in), LSP, linting, and a hand-built statusline. No bloat, no decorations, just tools.
+**23+ plugins** depending on profile and opt-ins, LSP, linting, and a hand-built statusline. No bloat, no decorations, just tools.
 
 ## What's in the box
 
@@ -124,6 +124,7 @@ let g:chopsticks_enable_sudo_save_bang = 1 " optional: :w!! sudo save
 let g:chopsticks_enable_completion_keymaps = 1 " optional: Tab/Enter completion
 let g:chopsticks_enable_auto_pairs = 1 " optional: automatic pair insertion
 let g:chopsticks_enable_terminal_keymaps = 1 " optional: terminal Esc/Ctrl navigation
+let g:chopsticks_enable_tmux_navigator = 1 " optional: vim-tmux-navigator integration
 let g:chopsticks_enable_exrc = 1 " optional: source project-local .vimrc/.exrc from CWD
 let g:chopsticks_enable_reindent_file = 1 " optional: full-file reindent map
 ```
@@ -144,7 +145,8 @@ Default layout: `space`, leader `SPC`, localleader `,`.
 
 This is the canonical layout for QWERTY keyboards with CapsLock mapped to
 tap-Esc / hold-Ctrl. Escape and Ctrl stay at the system layer; Vim keeps the
-native `<C-w>` window model and standard LSP motions (`gd`, `gr`, `K`).
+native `<C-w>` window model as a fallback and standard LSP motions (`gd`,
+`gr`, `K`).
 Git push/pull are intentionally not bound to default hotkeys. Normal-mode `s`
 is a screen-local EasyMotion jump; use `cl` for native `s` substitute and `cc`
 for native `S`.
@@ -162,6 +164,7 @@ appends a timestamped session block.
 SPC SPC   fuzzy find file          gd       go to definition
 SPC /     ripgrep project          K        hover docs
 SPC e     toggle file sidebar      SPC rr   run current file
+Ctrl-h/l  enter/leave sidebar      Ctrl-hjkl windows
 SPC gs    git status               SPC cf   format
 SPC w     save                     SPC qq   quit
 Esc       exit insert mode         SPC ?    cheat sheet
@@ -197,7 +200,7 @@ Esc       exit insert mode         SPC ?    cheat sheet
 
 ### Windows
 
-`<C-w>hjkl` navigate | `SPC z` maximize | `SPC bp` `SPC bn` buffers | `SPC bd` close buffer | `SPC bo` close other buffers | `SPC tt` `SPC th` terminal | `]q` `[q` quickfix | `SPC xq` `SPC xQ` open/close quickfix | `SPC xl` `SPC xL` open/close loclist
+`Ctrl-h/j/k/l` windows | `<C-w>h/j/k/l` native fallback | `SPC z` maximize | `SPC bp` `SPC bn` buffers | `SPC bd` close buffer | `SPC bo` close other buffers | `SPC tt` `SPC th` terminal | `]q` `[q` quickfix | `SPC xq` `SPC xQ` open/close quickfix | `SPC xl` `SPC xL` open/close loclist
 
 ### Markdown
 
@@ -234,7 +237,7 @@ Esc       exit insert mode         SPC ?    cheat sheet
 
 ### Classic Windows
 
-`<C-w>hjkl` navigate | `,z` maximize | `,h` `,l` buffers | `,bd` close buffer | `,=` `,-` resize | `,tv` `,th` terminal
+`Ctrl-h/j/k/l` windows | `<C-w>h/j/k/l` native fallback | `,z` maximize | `,h` `,l` buffers | `,bd` close buffer | `,=` `,-` resize | `,tv` `,th` terminal
 
 ### Classic Markdown
 
@@ -297,7 +300,7 @@ For Markdown LSP, install or select `marksman` first.
 │   └── chopsticks.txt  :help chopsticks
 └── modules/
     ├── env.vim         TTY detection, truecolor, skip built-in plugins
-    ├── plugins.vim     vim-plug + 23–25 plugins
+    ├── plugins.vim     vim-plug + profile/option-driven plugins
     ├── core.vim        settings, keymaps, performance
     ├── ui.vim          solarized, statusline, startify
     ├── editing.vim     easymotion, yank highlight, blank lines

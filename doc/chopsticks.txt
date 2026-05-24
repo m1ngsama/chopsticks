@@ -21,7 +21,7 @@ self-documenting keys for people who edit locally and over SSH.
 
 It is meant to supplement stock Vim, not replace Vim muscle memory. Native
 motions and well-known conventions stay where they are useful: gd, gr, K,
-<C-w>hjkl, cl, cc, quickfix, and normal Vim commands.
+Ctrl-h/j/k/l, <C-w>hjkl, cl, cc, quickfix, and normal Vim commands.
 
 ==============================================================================
 FIRST FIVE MINUTES                                             *chopsticks-start*
@@ -50,8 +50,8 @@ CANONICAL SPACE LAYOUT                                      *chopsticks-v3-space
 Default layout: Space leader, comma localleader.
 
 This layout assumes a QWERTY keyboard and CapsLock mapped at the system layer
-to tap-Esc / hold-Ctrl. Vim keeps <C-w>hjkl for windows and standard LSP
-motions for code.
+to tap-Esc / hold-Ctrl. Ctrl-h/j/k/l is the fast path for Vim windows;
+<C-w>hjkl remains the native fallback. Standard LSP motions stay on code.
 
 Normal-mode s is a visible EasyMotion jump. This is intentionally different
 from stock Vim because screen-local jumping is higher value in project editing.
@@ -62,6 +62,7 @@ High-frequency keys:
   SPC SPC   files                  SPC ,     buffers
   SPC /     grep project           SPC Tab   alternate file
   SPC e/E   file sidebar           SPC rr    run file
+  Ctrl-hjkl windows                Ctrl-h/l  enter/leave sidebar
   SPC gs    git status             SPC gl    git log graph
   SPC ca    code action            SPC cr    rename
   SPC cf    format                 SPC fc    edit local config

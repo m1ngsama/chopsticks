@@ -112,7 +112,8 @@ check_vim() {
 
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \
         -c 'let last_change_map = nr2char(96) . "[v" . nr2char(96) . "]"' \
-        -c 'if maparg("0", "n") !=# "" || maparg("0", "v") !=# "" || maparg("Y", "n") !=# "" || maparg("Q", "n") !=# "" || maparg("<Space>", "n") !=# "" || maparg("//", "v") !=# "" || maparg("gV", "n") !=# "" || maparg("jk", "i") !=# "" || maparg("<C-s>", "n") !=# "" || maparg("<C-s>", "i") !=# "" || maparg("<C-h>", "n") !=# "" || maparg("<C-j>", "n") !=# "" || maparg("<C-k>", "n") !=# "" || maparg("<C-l>", "n") !=# "" || maparg("<C-p>", "n") !=# "" || maparg("<C-p>", "c") !=# "" || maparg("<C-n>", "c") !=# "" || maparg("w!!", "c") !=# "" | cquit | endif' \
+        -c 'if maparg("0", "n") !=# "" || maparg("0", "v") !=# "" || maparg("Y", "n") !=# "" || maparg("Q", "n") !=# "" || maparg("<Space>", "n") !=# "" || maparg("//", "v") !=# "" || maparg("gV", "n") !=# "" || maparg("jk", "i") !=# "" || maparg("<C-s>", "n") !=# "" || maparg("<C-s>", "i") !=# "" || maparg("<C-p>", "n") !=# "" || maparg("<C-p>", "c") !=# "" || maparg("<C-n>", "c") !=# "" || maparg("w!!", "c") !=# "" | cquit | endif' \
+        -c 'if maparg("<C-h>", "n") !~# "NavigateWindow" || maparg("<C-j>", "n") !~# "NavigateWindow" || maparg("<C-k>", "n") !~# "NavigateWindow" || maparg("<C-l>", "n") !~# "NavigateWindow" | cquit | endif' \
         -c 'if has_key(g:plugs, "auto-pairs") || maparg("<Tab>", "i") =~# "pumvisible" || maparg("<S-Tab>", "i") =~# "pumvisible" || maparg("<CR>", "i") =~# "asyncomplete#close_popup" || maparg("<CR>", "i") =~# "AutoPairs" | cquit | endif' \
         -c 'if maparg("<Esc><Esc>", "t") !=# "" || maparg("<C-h>", "t") !=# "" || maparg("<C-j>", "t") !=# "" || maparg("<C-k>", "t") !=# "" || maparg("<C-l>", "t") !=# "" | cquit | endif' \
         -c 'if maparg("s", "n") !~# "easymotion-overwin-f2" | cquit | endif' \
@@ -125,6 +126,7 @@ check_vim() {
         -c 'source .vimrc' \
         -c 'let last_change_map = nr2char(96) . "[v" . nr2char(96) . "]"' \
         -c 'if mapleader !=# "," || maparg("s", "n") !=# "" || maparg(",/", "v") !~# "escape" || maparg(",v", "n") !=# last_change_map || maparg(",ff", "n") !~# "SmartFiles" | cquit | endif' \
+        -c 'if maparg("<C-h>", "n") !~# "NavigateWindow" || maparg("<C-j>", "n") !~# "NavigateWindow" || maparg("<C-k>", "n") !~# "NavigateWindow" || maparg("<C-l>", "n") !~# "NavigateWindow" | cquit | endif' \
         -c 'if maparg(",ec", "n") !~# "ChopsticksConfig" || maparg(",sv", "n") !~# "ChopsticksReload" | cquit | endif' \
         -c 'if maparg(",gp", "n") !=# "" || maparg(",gl", "n") !=# "" | cquit | endif' \
         -c 'qa!' 2>&1
@@ -153,7 +155,24 @@ check_vim() {
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u NONE -i NONE -es -N \
         -c 'let g:chopsticks_enable_terminal_keymaps = 1' \
         -c 'source .vimrc' \
-        -c 'if has("terminal") && (maparg("<Esc><Esc>", "t") !~# "<C-\\\\><C-N>" || maparg("<C-h>", "t") !~# "<C-W>h" || maparg("<C-j>", "t") !~# "<C-W>j" || maparg("<C-k>", "t") !~# "<C-W>k" || maparg("<C-l>", "t") !~# "<C-W>l") | cquit | endif' \
+        -c 'if has("terminal") && (maparg("<Esc><Esc>", "t") !~# "<C-\\\\><C-N>" || maparg("<C-h>", "t") !~# "NavigateWindow" || maparg("<C-j>", "t") !~# "NavigateWindow" || maparg("<C-k>", "t") !~# "NavigateWindow" || maparg("<C-l>", "t") !~# "NavigateWindow") | cquit | endif' \
+        -c 'qa!' 2>&1
+
+    TMUX=/tmp/chopsticks-test XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \
+        -c 'if has_key(g:plugs, "vim-tmux-navigator") | cquit | endif' \
+        -c 'qa!' 2>&1
+
+    TMUX=/tmp/chopsticks-test XDG_CONFIG_HOME="$EMPTY_XDG" vim -u NONE -i NONE -es -N \
+        -c 'let g:chopsticks_enable_tmux_navigator = 1' \
+        -c 'source .vimrc' \
+        -c 'if !has_key(g:plugs, "vim-tmux-navigator") | cquit | endif' \
+        -c 'qa!' 2>&1
+
+    XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \
+        -c 'setfiletype netrw' \
+        -c 'if &filetype !=# "netrw" | cquit | endif' \
+        -c 'if !maparg("<C-l>", "n", 0, 1).buffer | cquit | endif' \
+        -c 'if maparg("<C-h>", "n") !~# "NavigateWindow" || maparg("<C-l>", "n") !~# "NavigateWindow" | cquit | endif' \
         -c 'qa!' 2>&1
 
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \
@@ -281,7 +300,8 @@ check_vim() {
     grep -Fq 'gd        definition' "$TMP_ROOT/cheat-default.txt"
     grep -Fq 'K         hover docs' "$TMP_ROOT/cheat-default.txt"
     grep -Fq '[d ]d     LSP diagnostics' "$TMP_ROOT/cheat-default.txt"
-    grep -Fq '<C-w>hjkl navigate splits' "$TMP_ROOT/cheat-default.txt"
+    grep -Fq 'Ctrl-hjkl windows' "$TMP_ROOT/cheat-default.txt"
+    grep -Fq '<C-w>hjkl native fallback' "$TMP_ROOT/cheat-default.txt"
     grep -Fq 'SPC w     save' "$TMP_ROOT/cheat-default.txt"
     grep -Fq 'SPC fc    edit local config' "$TMP_ROOT/cheat-default.txt"
     grep -Fq 's+2ch     easymotion jump' "$TMP_ROOT/cheat-default.txt"
@@ -379,6 +399,8 @@ check_vim() {
     grep -Fq 'SPC fc     edit local config' "$TMP_ROOT/tutor-default.txt"
     grep -Fq ':ChopsticksHelp    full help' "$TMP_ROOT/tutor-default.txt"
     grep -Fq ':ChopsticksConfig  local config' "$TMP_ROOT/tutor-default.txt"
+    grep -Fq 'Ctrl-h/j/k/l split navigation' "$TMP_ROOT/tutor-default.txt"
+    grep -Fq 'SPC e, Ctrl-h/l  enter/leave sidebar' "$TMP_ROOT/tutor-default.txt"
     grep -Fq 's + 2 chars  visible jump' "$TMP_ROOT/tutor-default.txt"
     grep -Fq 'cl / cc      native s / S substitute' "$TMP_ROOT/tutor-default.txt"
     grep -Fq 'gd / gr / K  definition / refs / docs' "$TMP_ROOT/tutor-default.txt"
@@ -396,6 +418,7 @@ check_vim() {
     grep -Fq 'Goal: train one long-term project loop around Vim.' "$TMP_ROOT/tutor-classic.txt"
     grep -Fq ',?         active cheat sheet' "$TMP_ROOT/tutor-classic.txt"
     grep -Fq ',ec       edit local config' "$TMP_ROOT/tutor-classic.txt"
+    grep -Fq 'Ctrl-h/j/k/l  split navigation' "$TMP_ROOT/tutor-classic.txt"
     grep -Fq ',S + 2 chars  EasyMotion jump' "$TMP_ROOT/tutor-classic.txt"
 
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \
@@ -409,6 +432,7 @@ check_vim() {
     grep -Fq 'Prove this can be a long-term project loop.' "$TMP_ROOT/beta-guide.txt"
     grep -Fq 'Record real editing friction, not abstract taste.' "$TMP_ROOT/beta-guide.txt"
     grep -Fq 'no private wiki is needed to remember the daily loop' "$TMP_ROOT/beta-guide.txt"
+    grep -Fq 'window/sidebar navigation beats native <C-w> only' "$TMP_ROOT/beta-guide.txt"
     grep -Fq 'SPC ?     active cheat sheet' "$TMP_ROOT/beta-guide.txt"
     grep -Fq 'BETA.md        full beta checklist and rollback' "$TMP_ROOT/beta-guide.txt"
     grep -Fq ':ChopsticksBetaLog      editable local beta notes' "$TMP_ROOT/beta-guide.txt"

@@ -86,7 +86,8 @@ SPC SPC         fuzzy find file (git-aware)
 SPC /           ripgrep project
 SPC ,           search buffers
 SPC fr          recent files
-SPC e           file browser
+SPC e           sidebar at project cwd
+SPC E           sidebar at current file dir
 SPC Tab         last file
 ```
 
@@ -134,7 +135,9 @@ SPC y           clipboard yank
 ## Navigate
 
 ```
-<C-w>h/j/k/l   splits
+Ctrl-h/j/k/l    splits
+<C-w>h/j/k/l    native Vim fallback
+SPC e, Ctrl-h/l open sidebar, enter/leave it
 SPC bp / SPC bn prev / next buffer
 SPC z           maximize window
 SPC tt / SPC th terminal

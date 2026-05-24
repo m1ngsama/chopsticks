@@ -34,6 +34,8 @@ let g:chopsticks_enable_auto_pairs = get(g:,
     \ 'chopsticks_enable_auto_pairs', 0)
 let g:chopsticks_enable_terminal_keymaps = get(g:,
     \ 'chopsticks_enable_terminal_keymaps', 0)
+let g:chopsticks_enable_tmux_navigator = get(g:,
+    \ 'chopsticks_enable_tmux_navigator', 0)
 
 let g:chopsticks_markdown_lint = get(g:, 'chopsticks_markdown_lint',
     \ s:profile_full)

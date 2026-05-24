@@ -43,6 +43,7 @@ function! s:OpenBetaGuide() abort
         \ '  exit criteria',
         \ '     s as jump still feels worth the native override',
         \ '     no high-frequency action needs an undocumented key',
+        \ '     window/sidebar navigation beats native <C-w> only',
         \ '     README, QUICKSTART, SPC ?, and tutor teach the same layout',
         \ '     no private wiki is needed to remember the daily loop',
         \ '     quick/vim tests pass locally and over SSH',

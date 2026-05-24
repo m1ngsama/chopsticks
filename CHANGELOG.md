@@ -1,6 +1,6 @@
 # Changelog
 
-## 3.0.0-beta.1 — 2026-05-23
+## 2.3.0 — 2026-05-24
 
 ### Breaking
 
@@ -17,7 +17,7 @@
 ### Added
 
 - Canonical QWERTY/CapsLock-friendly Space leader layout:
-  `SPC SPC`, `SPC /`, `SPC ,`, `SPC w`, `SPC qx`, `SPC rr`,
+  `SPC SPC`, `SPC /`, `SPC ,`, `SPC w`, `SPC q`, `SPC rr`,
   `SPC gs`, `SPC gl`, `SPC ca`, `SPC cr`, `SPC cf`, and `SPC ?`
 - Native LSP motions in the default layout: `gd`, `gr`, `gI`, `gy`, `K`,
   `[d`, and `]d`
@@ -28,9 +28,9 @@
 - `:ChopsticksConfig` and `:ChopsticksReload` for editing local preferences
   without touching the managed `.vimrc`
 - `:ChopsticksBeta`, `:ChopsticksBetaLog`, and `:ChopsticksBetaSession` for
-  guided beta testing and local session notes
+  guided release-candidate testing and local session notes
 - Dedicated modules for buffers, utilities, files, runner, quickfix, status,
-  cheat sheet, tutor, beta testing, and help
+  cheat sheet, tutor, release-candidate testing, and help
 - Split test runner: `scripts/test.sh` now dispatches to
   `scripts/test-quick.sh` and `scripts/test-vim.sh`
 

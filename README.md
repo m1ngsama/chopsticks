@@ -20,15 +20,14 @@
 
 ---
 
-Stable install from `main`:
+Install current `main`:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/m1ngsama/chopsticks/main/get.sh | bash
 ```
 
-This branch is a v3 beta candidate, not a tagged stable release. Use
-[BETA.md](BETA.md) instead of the stable install command when testing the Space
-keymap before promotion.
+Current `main` is preparing the 2.3.0 release. Use [BETA.md](BETA.md) for the
+release-candidate checklist, rollback steps, and Space keymap test loop.
 
 ---
 
@@ -79,8 +78,8 @@ chopsticks gives you a production-ready Vim config in one command. Pure VimScrip
 
 ## Install
 
-These commands install the stable `main` branch. For beta testing this branch,
-use [BETA.md](BETA.md).
+These commands install current `main`. For the 2.3.0 release-candidate
+checklist and rollback steps, use [BETA.md](BETA.md).
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/m1ngsama/chopsticks/main/get.sh | bash
@@ -156,9 +155,9 @@ for the active keymap, `:ChopsticksHelp` / `:help chopsticks` for full native
 Vim help, `:ChopsticksConfig` for local preferences, and `:ChopsticksStatus`
 for tool/LSP health.
 `QUICKSTART.md` is the 5-minute path; this README is the full reference.
-During the beta, `:ChopsticksBeta` opens the in-editor test checklist,
-`:ChopsticksBetaLog` opens editable local notes, and `:ChopsticksBetaSession`
-appends a timestamped session block.
+During release-candidate testing, `:ChopsticksBeta` opens the in-editor
+checklist, `:ChopsticksBetaLog` opens editable local notes, and
+`:ChopsticksBetaSession` appends a timestamped session block.
 
 ```
 SPC SPC   fuzzy find file          gd       go to definition
@@ -166,7 +165,7 @@ SPC /     ripgrep project          K        hover docs
 SPC e     toggle file sidebar      SPC rr   run current file
 Ctrl-h/l  enter/leave sidebar      Ctrl-hjkl windows
 SPC gs    git status               SPC cf   format
-SPC w     save                     SPC qq   quit
+SPC w     save                     SPC q    quit
 Esc       exit insert mode         SPC ?    cheat sheet
 :ChopsticksConfig local prefs       :ChopsticksReload reload
 ```
@@ -212,7 +211,7 @@ Esc       exit insert mode         SPC ?    cheat sheet
 
 ### Survival
 
-`SPC w` save | `SPC W` save all | `SPC qq` quit | `SPC qx` save and quit | `SPC fc` local config | `SPC fV` reload | `SPC ?` cheat sheet | `:ChopsticksHelp` full help | `:ChopsticksTutor` practice | `:ChopsticksStatus` diagnostics
+`SPC w` save | `SPC W` save all | `SPC q` quit | `:x` / `ZZ` save and quit | `SPC fc` local config | `SPC fV` reload | `SPC ?` cheat sheet | `:ChopsticksHelp` full help | `:ChopsticksTutor` practice | `:ChopsticksStatus` diagnostics
 
 </details>
 
@@ -317,7 +316,7 @@ For Markdown LSP, install or select `marksman` first.
     ├── status.vim      :ChopsticksStatus diagnostics
     ├── cheatsheet.vim  SPC ? and :ChopsticksCheatSheet
     ├── tutor.vim       :ChopsticksTutor guided practice
-    ├── beta.vim        :ChopsticksBeta test guide
+    ├── beta.vim        :ChopsticksBeta release checklist
     ├── help.vim        :ChopsticksHelp native Vim help
     └── tools.vim       compatibility placeholder
 ```

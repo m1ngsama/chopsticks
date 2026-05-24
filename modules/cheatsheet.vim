@@ -147,8 +147,8 @@ function! s:CheatSheet() abort
             \ '  ── survival ──────────────',
             \ '  SPC w     save',
             \ '  SPC W     save all',
-            \ '  SPC qq    quit',
-            \ '  SPC qx    save + quit',
+            \ '  SPC q     quit',
+            \ '  :x / ZZ   save + quit',
             \ '  Esc       exit insert',
             \ '  SPC fc    edit local config',
             \ '  SPC fv    edit vimrc',
@@ -158,9 +158,9 @@ function! s:CheatSheet() abort
             \ '  :ChopsticksReload  reload config',
             \ '  :ChopsticksTutor   practice',
             \ '  :ChopsticksStatus  health',
-            \ '  :ChopsticksBeta    beta test guide',
-            \ '  :ChopsticksBetaLog beta notes',
-            \ '  :ChopsticksBetaSession new beta note',
+            \ '  :ChopsticksBeta    release checklist',
+            \ '  :ChopsticksBetaLog release notes',
+            \ '  :ChopsticksBetaSession new release note',
             \ ])
 
         call s:OpenCheatSheet(l:lines)
@@ -280,9 +280,9 @@ function! s:CheatSheet() abort
         \ '  :ChopsticksReload  reload config',
         \ '  :ChopsticksTutor   practice',
         \ '  :ChopsticksStatus  health',
-        \ '  :ChopsticksBeta    beta test guide',
-        \ '  :ChopsticksBetaLog beta notes',
-        \ '  :ChopsticksBetaSession new beta note',
+        \ '  :ChopsticksBeta    release checklist',
+        \ '  :ChopsticksBetaLog release notes',
+        \ '  :ChopsticksBetaSession new release note',
         \ ])
 
     call s:OpenCheatSheet(l:lines)

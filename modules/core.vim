@@ -106,8 +106,7 @@ endif
 if g:chopsticks_space_keymaps
     nnoremap <leader>w :w<cr>
     nnoremap <leader>W :wa<cr>
-    nnoremap <leader>qq :q<cr>
-    nnoremap <leader>qx :x<cr>
+    nnoremap <leader>q :q<cr>
 
     nnoremap <silent> <leader>uh :noh<cr>
 

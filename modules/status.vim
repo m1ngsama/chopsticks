@@ -77,7 +77,7 @@ function! s:BetaLogPath() abort
     let l:xdg = !empty($XDG_CONFIG_HOME) && $XDG_CONFIG_HOME =~# '^/'
         \ ? $XDG_CONFIG_HOME
         \ : '~/.config'
-    return expand(l:xdg . '/chopsticks-beta.md')
+    return expand(l:xdg . '/chopsticks-2.3.0.md')
 endfunction
 
 function! s:LocalConfigPath() abort
@@ -99,7 +99,7 @@ function! s:ChopsticksStatus() abort
     call add(l:lines, '')
 
     if !empty(get(g:, 'chopsticks_beta_label', ''))
-        call add(l:lines, '── beta ──')
+        call add(l:lines, '── release candidate ──')
         call add(l:lines, '  candidate  ' . g:chopsticks_beta_label)
         call add(l:lines, '  keymap     ' . (get(g:, 'chopsticks_space_keymaps', 0) ? 'space' : 'classic'))
         call add(l:lines, '  log        ' . s:BetaLogPath())

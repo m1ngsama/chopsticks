@@ -5,10 +5,10 @@ CONTENTS                                                    *chopsticks-contents
 
   1. What chopsticks solves...............|chopsticks-why|
   2. First five minutes...................|chopsticks-start|
-  3. Canonical Space layout...............|chopsticks-v3-space|
+  3. Canonical Space layout...............|chopsticks-space|
   4. Commands.............................|chopsticks-commands|
   5. Profiles and local config............|chopsticks-profiles|
-  6. Beta testing.........................|chopsticks-beta|
+  6. Release testing......................|chopsticks-release-test|
   7. Troubleshooting......................|chopsticks-troubleshooting|
 
 ==============================================================================
@@ -41,11 +41,11 @@ Daily loop:
   s + 2ch   jump on screen         gd / gr   definition / references
   K         hover docs             SPC rr    run current file
   SPC gs    git status             SPC cf    format
-  SPC w     save                   SPC qq    quit
+  SPC w     save                   SPC q     quit
 <
 
 ==============================================================================
-CANONICAL SPACE LAYOUT                                      *chopsticks-v3-space*
+CANONICAL SPACE LAYOUT                                         *chopsticks-space*
 
 Default layout: Space leader, comma localleader.
 
@@ -85,9 +85,9 @@ User-facing commands:
   :ChopsticksTutor        guided practice
   :ChopsticksCheatSheet   active keymap reference
   :ChopsticksStatus       health diagnostics
-  :ChopsticksBeta         beta checklist
-  :ChopsticksBetaLog      editable beta notes
-  :ChopsticksBetaSession  append a timestamped beta note block
+  :ChopsticksBeta         release checklist
+  :ChopsticksBetaLog      editable release notes
+  :ChopsticksBetaSession  append a timestamped release note block
 <
 
 LSP commands come from vim-lsp:
@@ -131,19 +131,19 @@ Optional habits:
 <
 
 ==============================================================================
-BETA TESTING                                                  *chopsticks-beta*
+RELEASE TESTING                                       *chopsticks-release-test*
 
-For the v3 beta candidate, record real editing friction instead of abstract
-opinions:
+For the 2.3.0 release candidate, record real editing friction instead of
+abstract opinions:
 >
-  :ChopsticksBeta         compact beta checklist
+  :ChopsticksBeta         compact release checklist
   :ChopsticksBetaLog      open editable local notes
   :ChopsticksBetaSession  append a new session block
 <
 
-Default beta log:
+Default release log:
 >
-  ${XDG_CONFIG_HOME:-~/.config}/chopsticks-beta.md
+  ${XDG_CONFIG_HOME:-~/.config}/chopsticks-2.3.0.md
 <
 
 Exit criteria before a stable release:
@@ -174,7 +174,7 @@ Common fixes:
   Need full docs         :help chopsticks
   Need local config      :ChopsticksConfig
   Changed local config   :ChopsticksReload
-  Need beta notes        :ChopsticksBetaSession
+  Need release notes     :ChopsticksBetaSession
   Slow large file        Syntax, undo, swap, and ALE are auto-reduced
 
 ==============================================================================

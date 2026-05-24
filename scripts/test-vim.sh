@@ -53,7 +53,7 @@ check_vim() {
         vim -u "$TMP_ROOT/chopsticks path/.vimrc" -i NONE -es -N \
         -c 'ChopsticksHelp' \
         -c 'if expand("%:t") !=# "chopsticks.txt" | cquit | endif' \
-        -c 'if search("chopsticks-v3-space", "n") == 0 | cquit | endif' \
+        -c 'if search("chopsticks-space", "n") == 0 | cquit | endif' \
         -c 'qa!' 2>&1
 
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u NONE -i NONE -es -N \
@@ -101,11 +101,11 @@ check_vim() {
     grep -Fq 'OK  vim-lsp stack  (installed)' "$TMP_ROOT/status-default.txt"
     grep -Fq 'help       :ChopsticksHelp  :ChopsticksTutor  SPC ?' "$TMP_ROOT/status-default.txt"
     grep -Fq 'commands   :ChopsticksConfig  :ChopsticksReload' "$TMP_ROOT/status-default.txt"
-    grep -Fq 'candidate  3.0.0-beta.1' "$TMP_ROOT/status-default.txt"
+    grep -Fq 'candidate  2.3.0' "$TMP_ROOT/status-default.txt"
     grep -Fq 'keymap     space' "$TMP_ROOT/status-default.txt"
     grep -Fq 'commands   :ChopsticksBeta  :ChopsticksBetaLog' "$TMP_ROOT/status-default.txt"
     grep -Fq ':ChopsticksBetaSession' "$TMP_ROOT/status-default.txt"
-    grep -Fq 'chopsticks-beta.md' "$TMP_ROOT/status-default.txt"
+    grep -Fq 'chopsticks-2.3.0.md' "$TMP_ROOT/status-default.txt"
     grep -Fq 'python  (:LspInstallServer in a python file)' "$TMP_ROOT/status-default.txt"
     grep -Fq 'LSP actions are buffer-local and start after a server attaches.' "$TMP_ROOT/status-default.txt"
     grep -Fq 'Open that filetype and run :LspInstallServer once.' "$TMP_ROOT/status-default.txt"
@@ -268,9 +268,9 @@ check_vim() {
         -c 'source .vimrc' \
         -c 'if mapleader !=# "\<Space>" || maplocalleader !=# "," | cquit | endif' \
         -c 'if maparg(",ff", "n") !=# "" || maparg(",w", "n") !=# "" || maparg(",mt", "n") !=# "" || maparg(",gp", "n") !=# "" || maparg("<Space>gp", "n") !=# "" | cquit | endif' \
-        -c 'if maparg("<Space>f", "n") !=# "" || maparg("<Space>q", "n") !=# "" || maparg("<Space>u", "n") !=# "" || maparg("<Space>c", "n") !=# "" || maparg("<Space>x", "n") !=# "" || maparg("<Space>wm", "n") !=# "" || maparg("<Space>w+", "n") !=# "" || maparg("<Space>w-", "n") !=# "" | cquit | endif' \
+        -c 'if maparg("<Space>f", "n") !=# "" || maparg("<Space>u", "n") !=# "" || maparg("<Space>c", "n") !=# "" || maparg("<Space>x", "n") !=# "" || maparg("<Space>wm", "n") !=# "" || maparg("<Space>w+", "n") !=# "" || maparg("<Space>w-", "n") !=# "" | cquit | endif' \
         -c 'if maparg("<Space><Space>", "n") !~# "SmartFiles" || maparg("<Space>ff", "n") !~# "SmartFiles" || maparg("<Space>,", "n") !~# "Buffers" || maparg("<Space>bd", "n") !~# "Bclose" | cquit | endif' \
-        -c 'if maparg("<Space>w", "n") !~# ":w" || maparg("<Space>W", "n") !~# ":wa" || maparg("<Space>qq", "n") !~# ":q" || maparg("<Space>qx", "n") !~# ":x" || maparg("<Space>fc", "n") !~# "ChopsticksConfig" || maparg("<Space>fV", "n") !~# "ChopsticksReload" || maparg("<Space>U", "n") !~# "UndotreeToggle" || maparg("<Space>fs", "n") !=# "" || maparg("<Space>bu", "n") !=# "" | cquit | endif' \
+        -c 'if maparg("<Space>w", "n") !~# ":w" || maparg("<Space>W", "n") !~# ":wa" || maparg("<Space>q", "n") !~# ":q" || maparg("<Space>qq", "n") !=# "" || maparg("<Space>qx", "n") !=# "" || maparg("<Space>fc", "n") !~# "ChopsticksConfig" || maparg("<Space>fV", "n") !~# "ChopsticksReload" || maparg("<Space>U", "n") !~# "UndotreeToggle" || maparg("<Space>fs", "n") !=# "" || maparg("<Space>bu", "n") !=# "" | cquit | endif' \
         -c 'if maparg("<Space>gl", "n") !~# "Git log" || maparg("<Space>gC", "n") !~# "Commits" | cquit | endif' \
         -c 'qa!' 2>&1
 
@@ -310,9 +310,9 @@ check_vim() {
     grep -Fq ':ChopsticksConfig  local config' "$TMP_ROOT/cheat-default.txt"
     grep -Fq ':ChopsticksReload  reload config' "$TMP_ROOT/cheat-default.txt"
     grep -Fq ':ChopsticksTutor   practice' "$TMP_ROOT/cheat-default.txt"
-    grep -Fq ':ChopsticksBeta    beta test guide' "$TMP_ROOT/cheat-default.txt"
-    grep -Fq ':ChopsticksBetaLog beta notes' "$TMP_ROOT/cheat-default.txt"
-    grep -Fq ':ChopsticksBetaSession new beta note' "$TMP_ROOT/cheat-default.txt"
+    grep -Fq ':ChopsticksBeta    release checklist' "$TMP_ROOT/cheat-default.txt"
+    grep -Fq ':ChopsticksBetaLog release notes' "$TMP_ROOT/cheat-default.txt"
+    grep -Fq ':ChopsticksBetaSession new release note' "$TMP_ROOT/cheat-default.txt"
     if grep -Eq 'Ctrl\\+p    find file|Ctrl\\+hjkl navigate splits|Ctrl\\+s    save|jk        exit insert|SPC fs    save|SPC cd    definition|SPC ck    hover|SPC wm|SPC w\\+/-|\\[g \\]g     LSP diagnostics' "$TMP_ROOT/cheat-default.txt"; then
         cat "$TMP_ROOT/cheat-default.txt"
         exit 1
@@ -428,24 +428,24 @@ check_vim() {
         -c 'silent %print' \
         -c 'redir END' \
         -c 'qa!' 2>&1
-    grep -Fq 'chopsticks beta' "$TMP_ROOT/beta-guide.txt"
-    grep -Fq 'Prove this can be a long-term project loop.' "$TMP_ROOT/beta-guide.txt"
-    grep -Fq 'Record real editing friction, not abstract taste.' "$TMP_ROOT/beta-guide.txt"
+    grep -Fq 'chopsticks 2.3.0' "$TMP_ROOT/beta-guide.txt"
+    grep -Fq 'Prove this can be the long-term project loop.' "$TMP_ROOT/beta-guide.txt"
+    grep -Fq 'Record real editing friction before release.' "$TMP_ROOT/beta-guide.txt"
     grep -Fq 'no private wiki is needed to remember the daily loop' "$TMP_ROOT/beta-guide.txt"
     grep -Fq 'window/sidebar navigation beats native <C-w> only' "$TMP_ROOT/beta-guide.txt"
     grep -Fq 'SPC ?     active cheat sheet' "$TMP_ROOT/beta-guide.txt"
-    grep -Fq 'BETA.md        full beta checklist and rollback' "$TMP_ROOT/beta-guide.txt"
-    grep -Fq ':ChopsticksBetaLog      editable local beta notes' "$TMP_ROOT/beta-guide.txt"
+    grep -Fq 'BETA.md        release checklist and rollback' "$TMP_ROOT/beta-guide.txt"
+    grep -Fq ':ChopsticksBetaLog      editable local release notes' "$TMP_ROOT/beta-guide.txt"
     grep -Fq ':ChopsticksBetaSession  append a new session block' "$TMP_ROOT/beta-guide.txt"
 
-    beta_log="$TMP_ROOT/beta log/chopsticks-beta.md"
+    beta_log="$TMP_ROOT/release log/chopsticks-2.3.0.md"
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u NONE -i NONE -es -N \
         -c "let g:chopsticks_beta_log = '$beta_log'" \
         -c 'source .vimrc' \
         -c 'ChopsticksBetaLog' \
-        -c 'if expand("%:p") !~# "chopsticks-beta.md" || &l:filetype !=# "markdown" | cquit | endif' \
+        -c 'if expand("%:p") !~# "chopsticks-2.3.0.md" || &l:filetype !=# "markdown" | cquit | endif' \
         -c 'qa!' 2>&1
-    grep -Fq '# chopsticks beta log' "$beta_log"
+    grep -Fq '# chopsticks 2.3.0 release log' "$beta_log"
     grep -Fq 'First key tried when stuck:' "$beta_log"
     printf '%s\n' '- keep-existing-note' >> "$beta_log"
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u NONE -i NONE -es -N \

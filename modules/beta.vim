@@ -1,6 +1,6 @@
-" beta.vim — in-editor beta test guide
+" beta.vim — in-editor release-candidate checklist
 
-let g:chopsticks_beta_label = get(g:, 'chopsticks_beta_label', '3.0.0-beta.1')
+let g:chopsticks_beta_label = get(g:, 'chopsticks_beta_label', '2.3.0')
 
 function! s:OpenBetaGuide() abort
     let l:name = '__ChopsticksBeta__'
@@ -15,12 +15,12 @@ function! s:OpenBetaGuide() abort
     setlocal nowrap nonumber norelativenumber signcolumn=no
 
     let l:lines = [
-        \ '  chopsticks beta        q close',
+        \ '  chopsticks 2.3.0      q close',
         \ '  ─────────────────────────────',
         \ '',
         \ '  goal',
-        \ '     Prove this can be a long-term project loop.',
-        \ '     Record real editing friction, not abstract taste.',
+        \ '     Prove this can be the long-term project loop.',
+        \ '     Record real editing friction before release.',
         \ '',
         \ '  daily loop',
         \ '     SPC SPC   find file',
@@ -49,8 +49,8 @@ function! s:OpenBetaGuide() abort
         \ '     quick/vim tests pass locally and over SSH',
         \ '',
         \ '  files',
-        \ '     BETA.md        full beta checklist and rollback',
-        \ '     :ChopsticksBetaLog      editable local beta notes',
+        \ '     BETA.md        release checklist and rollback',
+        \ '     :ChopsticksBetaLog      editable local release notes',
         \ '     :ChopsticksBetaSession  append a new session block',
         \ '     QUICKSTART.md  five-minute path',
         \ '     README.md      complete reference',
@@ -71,7 +71,7 @@ function! s:BetaLogPath() abort
     let l:xdg = !empty($XDG_CONFIG_HOME) && $XDG_CONFIG_HOME =~# '^/'
         \ ? $XDG_CONFIG_HOME
         \ : '~/.config'
-    return expand(l:xdg . '/chopsticks-beta.md')
+    return expand(l:xdg . '/chopsticks-2.3.0.md')
 endfunction
 
 function! s:SessionBlock() abort
@@ -96,9 +96,9 @@ function! s:EnsureBetaLog(path) abort
 
     if !filereadable(l:path)
         call writefile([
-            \ '# chopsticks beta log',
+            \ '# chopsticks 2.3.0 release log',
             \ '',
-            \ 'Use :ChopsticksBeta for the checklist. Keep one session block per real editing session.',
+            \ 'Use :ChopsticksBeta for the release checklist. Keep one session block per real editing session.',
             \ ] + s:SessionBlock(), l:path)
     endif
 endfunction

@@ -9,8 +9,8 @@ check git, and ask Vim which keys are active.
 
 ## Install
 
-These commands install the stable `main` branch. For beta testing this branch,
-use [BETA.md](BETA.md).
+These commands install current `main`. For the 2.3.0 release-candidate
+checklist and rollback steps, use [BETA.md](BETA.md).
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/m1ngsama/chopsticks/main/get.sh | bash
@@ -60,7 +60,8 @@ SPC ?           show the active keymap
 ```
 Esc             back to Normal
 SPC w           save
-SPC qx          save + quit
+SPC q           quit current window
+:x / ZZ         save + quit
 :q!             force quit
 SPC ?           cheat sheet (toggle sidebar)
 SPC fc          edit local preferences
@@ -167,5 +168,5 @@ The `SPC ?` cheat sheet follows your active profile, so `minimal` users only see
 keys for features that are actually loaded.
 
 Inside Vim, `:help chopsticks` opens the same reference after helptags are
-available. See [README](README.md) for the full reference. For beta testing and
-rollback, see [BETA.md](BETA.md).
+available. See [README](README.md) for the full reference. For release-candidate
+testing and rollback, see [BETA.md](BETA.md).

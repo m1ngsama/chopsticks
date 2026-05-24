@@ -1,23 +1,23 @@
-# Beta Testing
+# 2.3.0 Release Candidate Testing
 
-This branch is the v3 beta candidate. The goal is to prove that the Space
-layout can serve as a long-term project loop for experienced Vim users, not
-just that the mappings work in isolation. Do not tag or publish it as `v3.0.0`
-until the checklist below is closed.
+This branch is the 2.3.0 release candidate. The goal is to prove that the Space
+layout can serve as the project loop for experienced Vim users, not just that
+the mappings work in isolation. Do not tag or publish it as `2.3.0` until the
+checklist below is closed.
 
 Inside Vim, run `:ChopsticksBeta` for the compact checklist,
 `:ChopsticksBetaLog` for editable local notes, and `:ChopsticksBetaSession`
 to append a new session block. Run `:ChopsticksHelp` or `:help chopsticks`
 for the native Vim reference.
 
-## Install the beta
+## Install the release candidate
 
 Existing checkout:
 
 ```bash
 cd ~/.vim
 git fetch origin
-git checkout release/v3-candidate
+git checkout release/2.3.0
 git pull --ff-only
 vim -Nu ~/.vimrc -n -es +'PlugInstall --sync' +'qa!'
 ```
@@ -25,7 +25,7 @@ vim -Nu ~/.vimrc -n -es +'PlugInstall --sync' +'qa!'
 Fresh checkout:
 
 ```bash
-git clone --branch release/v3-candidate https://github.com/m1ngsama/chopsticks.git ~/.vim
+git clone --branch release/2.3.0 https://github.com/m1ngsama/chopsticks.git ~/.vim
 ln -sf ~/.vim/.vimrc ~/.vimrc
 vim -Nu ~/.vimrc -n -es +'PlugInstall --sync' +'qa!'
 ```
@@ -42,9 +42,9 @@ reloads chopsticks after saving it.
 
 ## Daily test loop
 
-Use the beta for real editing, not only demos. A session should exercise the
-trained loop until it either feels automatic or exposes friction. For each
-session, record:
+Use the release candidate for real editing, not only demos. A session should
+exercise the trained loop until it either feels automatic or exposes friction.
+For each session, record:
 
 - The task: project navigation, code edit, grep, git, LSP, Markdown, SSH.
 - The first key you tried when you got stuck.
@@ -52,7 +52,7 @@ session, record:
 - Any mapping that felt slow, awkward, surprising, or too easy to mistype.
 - Any documentation line that was wrong, missing, or redundant.
 
-`:ChopsticksBetaLog` opens `${XDG_CONFIG_HOME:-~/.config}/chopsticks-beta.md`
+`:ChopsticksBetaLog` opens `${XDG_CONFIG_HOME:-~/.config}/chopsticks-2.3.0.md`
 by default. Set `g:chopsticks_beta_log` before loading chopsticks to use a
 different path. Use `:ChopsticksBetaSession` at the start of each real editing
 session so every test has a timestamped block.
@@ -84,7 +84,7 @@ file, edit Markdown, and use a machine with missing optional tools.
 - `scripts/test.sh quick` and `scripts/test.sh vim` pass locally.
 - The README GIF has been regenerated from `.github/demo.tape` after any public
   key change.
-- The beta has been tested on macOS and over SSH on Linux.
+- The release candidate has been tested on macOS and over SSH on Linux.
 
 ## Roll back
 

@@ -42,7 +42,7 @@ check_docs() {
         done
     done
     grep -Fq '*chopsticks.txt*' doc/chopsticks.txt
-    grep -Fq '*chopsticks-v3-space*' doc/chopsticks.txt
+    grep -Fq '*chopsticks-space*' doc/chopsticks.txt
     grep -Fq 'command! ChopsticksHelp' modules/help.vim
     grep -Fq 'command! ChopsticksConfig' modules/utilities.vim
     grep -Fq 'command! ChopsticksReload' modules/utilities.vim

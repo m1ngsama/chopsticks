@@ -1,13 +1,13 @@
 <p align="center">
-  <img src=".github/demo.gif" alt="chopsticks demo" width="720">
+  <img src=".github/demo.gif" alt="chopsticks Vim demo: open the in-editor keymap, jump, switch files, run, grep, and inspect Git" width="720">
   <br>
-  <sub>For Vim users who already know how to edit: one trained project loop for jump, files, run, grep, git, and active key help.</sub>
+  <sub>First minute after install: open the in-editor map, then use it.</sub>
 </p>
 
 <h1 align="center">chopsticks</h1>
 
 <p align="center">
-  <strong>A long-term Vim efficiency kit: find, jump, run, grep, git, LSP, and self-documenting keys over SSH.</strong>
+  <strong>Pure Vim project workflow for people who already know Vim.</strong>
 </p>
 
 <p align="center">
@@ -26,58 +26,56 @@ Install current `main`:
 curl -fsSL https://raw.githubusercontent.com/m1ngsama/chopsticks/main/get.sh | bash
 ```
 
-Current `main` is preparing the 2.3.0 release. Use [BETA.md](BETA.md) for the
-release-candidate checklist, rollback steps, and Space keymap test loop.
+Open Vim once, wait for pinned plugins to install, restart Vim, then press
+`SPC ?`. That is the active map for your profile. `:ChopsticksTutor` gives you
+a guided lap when you want one.
 
 ---
 
 ## Why
 
-chopsticks is for experienced Vim users who want one stable, ergonomic working
-set they can train once and keep for years. It does not replace Vim's editing
-language; it standardizes the project loop around it.
+Vim already gives you the editing language: operators, motions, text objects,
+windows, registers, `gd`, `K`, `:help`.
 
-Stock Vim is a great editor core, but it does not ship that complete project
-workflow. You still have to assemble fuzzy finding, project grep, git, LSP,
-diagnostics, formatters, runners, terminal behavior, and a keymap that will not
-collapse over SSH.
+The part that drifts is the project layer around editing. Every machine ends up
+with a slightly different answer for files, grep, Git, LSP, running the current
+file, terminal behavior, health checks, and key help.
 
-That assembly work is the pain chopsticks removes:
+chopsticks makes that layer one habit:
 
-- **Project motion is scattered.** Files, buffers, grep, tags, marks, git, and
-  diagnostics live behind unrelated commands unless you design a system.
-- **Plugin defaults fight muscle memory.** chopsticks gives QWERTY users one
-  canonical Space layout and keeps native Vim/LSP habits where they matter:
-  `gd`, `gr`, `K`, `Ctrl-h/j/k/l`, `<C-w>hjkl`, `cl`, `cc`.
-- **Remote editing is fragile.** It is built to degrade on TTY, slow SSH, and
-  headless machines instead of assuming a GUI desktop.
-- **Runtime drift is subtle.** Vim version, terminal capability, plugin locks,
-  and optional tools need to be visible before they become mysterious behavior.
-- **Custom configs are hard to onboard.** `:ChopsticksHelp`, `SPC ?`,
-  `:ChopsticksTutor`, `:ChopsticksConfig`, `:ChopsticksStatus`, and
-  `:ChopsticksDoctor` make the active keymap, full help, local preferences,
-  and health issues visible inside Vim.
+```text
+SPC ?    show the active map
+SPC SPC  open a project file
+s{2}     jump on the visible screen
+SPC rr   run the current file
+SPC /    search the project
+SPC gs   inspect Git
+```
 
-You SSH into a server. You need to edit code. You want LSP, fuzzy find, git
-integration, format-on-save — not a 20-minute setup.
+It keeps standard Vim and LSP habits where the muscle memory is already right:
+`gd`, `gr`, `K`, `Ctrl-h/j/k/l`, `<C-w>hjkl`, `cl`, and `cc`. Git push and pull
+are deliberately not default hotkeys; use explicit shell or Fugitive commands
+for operations that change remote state.
 
-chopsticks gives you a production-ready Vim config in one command. Pure VimScript, Vim 8.2/9.x only, no Neovim runtime, and no Node.js for the core. Degrades gracefully on TTY. Works the same on your MacBook and your headless Arch box.
+Everything here is Vimscript for Vim 8.2 and Vim 9.x. There is no Neovim
+runtime, no Lua runtime, no `stdpath()`, and no `init.lua`. The core does not
+need Node.js. The config is meant to survive terminal Vim, SSH, tmux, and slow
+remote machines.
 
-**23+ plugins** depending on profile and opt-ins, LSP, linting, and a hand-built statusline. No bloat, no decorations, just tools.
+## What ships
 
-## What's in the box
+- `minimal`: navigation, editing assists, Git, Markdown basics, survival keys,
+  and the in-editor learning surfaces.
+- `engineer`: `minimal` plus LSP, completion, linting, formatting, language
+  plugins, and diagnostics.
+- `full`: `engineer` plus heavier Markdown feedback for users who want it.
 
-| Feature           | Description                                                                                                                                                    |
-| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **LSP**           | completion, go-to-def, hover, rename, code actions — pure VimScript ([vim-lsp](https://github.com/prabirshrestha/vim-lsp))                                     |
-| **Lint + format** | [ALE](https://github.com/dense-analysis/ale) runs black, prettier, goimports, rustfmt on save                                                                  |
-| **Fuzzy find**    | files, buffers, grep, tags, marks, commands — [FZF](https://github.com/junegunn/fzf.vim)                                                                       |
-| **Git**           | status, diff, blame, commit, log, conflict markers — [fugitive](https://github.com/tpope/vim-fugitive) + [gitgutter](https://github.com/airblade/vim-gitgutter) |
-| **Run file**      | `SPC rr` — auto-detects Python, Go, Rust, JS, C, Shell, and more                                                                                               |
-| **Markdown**      | quiet writing defaults, browser preview (`,mp`), table of contents (`,mt`)                                                                                     |
-| **Input method**  | optional `im-select` integration for Chinese/Japanese writing: restore Insert-mode IM, switch Normal mode back to ABC                                           |
-| **Diagnostics**   | `:ChopsticksStatus` + `:ChopsticksDoctor` + `:ChopsticksKeymapAudit` — see Vim runtime, plugin locks, tools, LSP, navigation/tmux, and keymap contract health   |
-| **TTY-aware**     | degrades gracefully on SSH, console, slow links — never breaks                                                                                                 |
+The daily help surface is inside Vim: `SPC ?`, `:ChopsticksTutor`,
+`:ChopsticksHelp`, `:ChopsticksStatus`, `:ChopsticksDoctor`, and native
+`:help chopsticks`. GitHub Wiki is disabled on purpose.
+
+[QUICKSTART.md](QUICKSTART.md) is the five-minute path. [BETA.md](BETA.md) has
+the 2.3.0 release-candidate checklist and rollback steps.
 
 ## Install
 
@@ -302,7 +300,8 @@ Esc       exit insert mode         SPC ?    cheat sheet
 :ChopsticksDoctor    " actionable health issues and setup hints
 ```
 
-pylsp, gopls, rust-analyzer, clangd, sqls — no Node.js. JS/TS servers need Node.
+pylsp, gopls, rust-analyzer, clangd, and sqls need no Node.js. JS/TS servers
+need Node.
 Markdown LSP (`marksman`) is opt-in so prose buffers stay quiet by default.
 `:ChopsticksStatus` separates the Vim LSP stack from individual servers:
 profile disabled, plugin missing, plugin installed but not loaded yet, and

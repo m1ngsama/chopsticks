@@ -1,8 +1,6 @@
-# chopsticks demo — for people who already know Vim:
-# show the project workflow layer Vim does not assemble by default.
-# project loop: visible jump → files → run → grep → git → active key help.
-# Rule: NEVER use Escape to close FZF — always Enter (deterministic).
-# Pacing: hold each scene long enough for the viewer to read.
+# chopsticks README demo.
+# Start with the in-editor map, then use that map for one project loop.
+# Rule: NEVER use Escape to close FZF. Always Enter for deterministic output.
 
 Output .github/demo.gif
 Require bash
@@ -31,61 +29,65 @@ Type "cd $CHOPSTICKS_DEMO_PROJECT"
 Enter
 Type "git init -q && git symbolic-ref HEAD refs/heads/main && git add ."
 Enter
-Type `clear && printf "%s\n" "chopsticks: a long-term Vim efficiency kit" "" "For experienced Vim users who already know how to edit." "Keep Vim's language. Standardize the project loop:" "" "  s + 2 chars   visible jump on the current screen" "  SPC SPC       project-aware file switcher" "  SPC rr        run the current file" "  SPC /         ripgrep the project" "  SPC gs        git status, with no push/pull hotkeys" "  SPC ?         active keys explained inside Vim"`
+Type "stty -echo"
 Enter
-Show
-Sleep 6s
 Type "clear"
 Enter
 Type `vim -Nu "$CHOPSTICKS_ROOT/.vimrc" server.py`
 Enter
 Wait+Screen /server.py/
-Sleep 1s
+Type ":ChopsticksCheatSheet"
+Enter
+Wait+Screen /trained loop/
+Show
+Sleep 4s
+Type "q"
+Sleep 0.5s
 
-# ── 1. Screen-local motion: stop counting hjkl across dense code ───────────
+# ── 1. Screen-local motion: jump where the eye already is ──────────────────
 Type "s"
 Sleep 0.5s
 Type "di"
-Sleep 2s
-Ctrl+C
-Sleep 1s
-
-# ── 2. Project files: one habit for git-aware file switching ───────────────
-Space 2
 Sleep 1.5s
+Ctrl+C
+Sleep 0.8s
+
+# ── 2. Project files: switch files from the same map ───────────────────────
+Space 2
+Sleep 1s
 Type "report"
-Sleep 2s
+Sleep 1.4s
 Enter
-Sleep 3s
+Sleep 1.8s
 
 # ── 3. Edit-run loop: run the current file without leaving Vim ─────────────
 Space
 Type "rr"
-Sleep 4s
-Enter
-Sleep 1s
-
-# ── 4. Project grep: ripgrep as part of the same muscle-memory layer ───────
-Space
-Type "/"
-Sleep 1s
-Type "def get_users"
 Sleep 2.5s
 Enter
-Sleep 3s
+Sleep 0.8s
+
+# ── 4. Project grep: search the repo and land in the result ────────────────
+Space
+Type "/"
+Sleep 0.8s
+Type "def get_users"
+Sleep 1.5s
+Enter
+Sleep 2s
 
 # ── 5. Git boundary: status is fast; push/pull stay explicit commands ──────
 Space
 Type "gs"
-Sleep 3s
+Sleep 2.2s
 Type ":bd!"
 Enter
-Sleep 1s
+Sleep 0.8s
 
-# ── 6. Self-documenting config: no private wiki required ───────────────────
+# ── 6. End where the user learns: inside Vim ───────────────────────────────
 Space
 Type "?"
-Sleep 5.5s
+Sleep 4s
 Type "q"
 Sleep 0.5s
 
@@ -94,6 +96,9 @@ Hide
 Type ":qa!"
 Enter
 Sleep 0.5s
+Type "stty echo"
+Enter
+Sleep 0.2s
 Type `test -n "$CHOPSTICKS_DEMO_PROJECT" && rm -rf "$CHOPSTICKS_DEMO_PROJECT"`
 Enter
 Sleep 0.5s

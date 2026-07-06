@@ -1,11 +1,24 @@
 " files.vim — file safety and large-file handling
 
+function! s:Bytes(value) abort
+    return a:value . ' bytes'
+endfunction
+
+function! s:Number(value) abort
+    try
+        return a:value + 0
+    catch
+        return 0
+    endtry
+endfunction
+
+function! s:ThresholdValid() abort
+    return s:Number(get(g:, 'LargeFile', 0)) > 0
+endfunction
+
 function! s:MkNonExDir(file, buf)
     if empty(getbufvar(a:buf, '&buftype')) && a:file !~# '\v^\w+\:\/'
-        let dir = fnamemodify(a:file, ':h')
-        if !isdirectory(dir)
-            call mkdir(dir, 'p')
-        endif
+        call ChopsticksEnsureParentDir(a:file)
     endif
 endfunction
 augroup BWCCreateDir
@@ -52,3 +65,73 @@ augroup ChopstickLargeFile
     autocmd BufReadPre * call s:MarkLargeFile(expand('<afile>'))
     autocmd BufReadPost,FileType,Syntax * call s:ApplyLargeFileSettings()
 augroup END
+
+function! s:CurrentBufferItem() abort
+    let l:file = expand('%:p')
+    if empty(l:file) || &buftype !=# ''
+        return ChopsticksInfoItem('current buffer', 'off', 'no file', {
+            \ 'diagnostic': 0,
+            \ })
+    endif
+
+    let l:size = getfsize(l:file)
+    if get(b:, 'chopsticks_large_file', 0)
+        return ChopsticksInfoItem('current buffer', 'ready',
+            \ 'syntax/undo/swap/ALE reduced', {
+            \ 'value': 'large file',
+            \ 'diagnostic': 0,
+            \ 'size': l:size,
+            \ })
+    endif
+    if get(b:, 'chopsticks_tty_large_file', 0)
+        return ChopsticksInfoItem('current buffer', 'ready', 'syntax reduced', {
+            \ 'value': 'TTY large file',
+            \ 'diagnostic': 0,
+            \ 'size': l:size,
+            \ })
+    endif
+    return ChopsticksInfoItem('current buffer', 'ready', 'normal', {
+        \ 'value': l:size >= 0 ? s:Bytes(l:size) : 'unknown size',
+        \ 'diagnostic': 0,
+        \ 'size': l:size,
+        \ })
+endfunction
+
+function! s:LargeFileGuardItem() abort
+    let l:large = s:Number(get(g:, 'LargeFile', 0))
+    if s:ThresholdValid()
+        return ChopsticksInfoItem('large file guard', 'ready',
+            \ 'threshold=' . l:large, {'diagnostic': 0})
+    endif
+    return ChopsticksInfoDiagnosticItem('large file guard', 'missing',
+        \ 'invalid threshold: ' . string(get(g:, 'LargeFile', '')),
+        \ 'large file threshold',
+        \ 'set g:LargeFile to a positive byte threshold', {
+        \ 'detail': 'invalid g:LargeFile: '
+        \     . string(get(g:, 'LargeFile', '')),
+        \ })
+endfunction
+
+function! ChopsticksFileSafetyInfo() abort
+    let l:large = s:Number(get(g:, 'LargeFile', 0))
+    let l:tty = s:Number(s:tty_large)
+    return ChopsticksInfoSection('file safety', {
+        \ 'large_threshold': l:large,
+        \ 'tty_threshold': l:tty,
+        \ 'current_file': expand('%:p'),
+        \ 'current_size': empty(expand('%:p')) ? -1 : getfsize(expand('%:p')),
+        \ 'large_buffer': get(b:, 'chopsticks_large_file', 0),
+        \ 'tty_large_buffer': get(b:, 'chopsticks_tty_large_file', 0),
+        \ 'details': [
+        \   ChopsticksInfoDetail('write', 'auto mkdir'),
+        \   ChopsticksInfoDetail('large', s:Bytes(l:large)),
+        \   ChopsticksInfoDetail('tty', s:Bytes(l:tty)),
+        \ ],
+        \ 'items': [
+        \   ChopsticksInfoItem('write directory guard', 'ready',
+        \       'BufWritePre mkdir -p', {'diagnostic': 0}),
+        \   s:LargeFileGuardItem(),
+        \   s:CurrentBufferItem(),
+        \ ],
+        \ })
+endfunction

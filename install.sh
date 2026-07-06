@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # install.sh - chopsticks vim configuration installer
-# Usage: cd /path/to/chopsticks && ./install.sh [--yes] [--profile=engineer] [--help]
+# Usage: cd /path/to/chopsticks && ./install.sh [--yes] [--profile=engineer] [--install-tools] [--help]
 #
-# --yes              non-interactive: use default profile/component selections
+# --yes              non-interactive: use defaults; does not enable optional tools
 # --profile=PROFILE  choose minimal, engineer, or full without prompting
+# --install-tools    install optional system, formatter, LSP, Go, and tmux tools
 # --configure-only   update local chopsticks profile config and exit
 # --dry-run          show resolved profile/config path without writing files
 # --help             show this help and exit
@@ -15,6 +16,7 @@ AUTO_YES=0
 REQUESTED_PROFILE=""
 CONFIGURE_ONLY=0
 DRY_RUN=0
+INSTALL_TOOLS=0
 for arg in "$@"; do
     case "$arg" in
         --yes)  AUTO_YES=1 ;;
@@ -22,15 +24,18 @@ for arg in "$@"; do
         --profile)
             echo "Use --profile=minimal, --profile=engineer, or --profile=full" >&2
             exit 1 ;;
+        --install-tools) INSTALL_TOOLS=1 ;;
         --configure-only) CONFIGURE_ONLY=1 ;;
         --dry-run) DRY_RUN=1 ;;
         --help|-h)
             echo "Usage: ./install.sh [OPTIONS]"
             echo ""
             echo "Options:"
-            echo "  --yes    Non-interactive mode: use default profile/component selections"
+            echo "  --yes    Non-interactive mode: use defaults; does not enable optional tools"
             echo "  --profile=PROFILE"
             echo "           Select minimal, engineer, or full without prompting"
+            echo "  --install-tools"
+            echo "           Install optional system tools, formatters, language tools, and tmux config"
             echo "  --configure-only"
             echo "           Update local profile config and exit; no plugins or tools installed"
             echo "  --dry-run"
@@ -171,6 +176,11 @@ configure_profile() {
         info "Dry run: no files will be changed"
         info "Profile: $CONFIG_PROFILE"
         info "Local config: $LOCAL_CONFIG"
+        if [[ $INSTALL_TOOLS -eq 1 ]]; then
+            info "Optional tools: enabled (--install-tools)"
+        else
+            info "Optional tools: disabled (pass --install-tools to install system tools)"
+        fi
         return
     fi
 
@@ -422,9 +432,23 @@ HAS_APT=0;    command -v apt    >/dev/null 2>&1 && HAS_APT=1
 HAS_DNF=0;    command -v dnf    >/dev/null 2>&1 && HAS_DNF=1
 HAS_PACMAN=0; command -v pacman >/dev/null 2>&1 && HAS_PACMAN=1
 
+CORE_INSTALL_NEEDED=0
+command -v curl >/dev/null 2>&1 || CORE_INSTALL_NEEDED=1
+command -v git  >/dev/null 2>&1 || CORE_INSTALL_NEEDED=1
+if [[ $OS == "macos" ]]; then
+    if ! command -v vim >/dev/null 2>&1 && \
+       [[ ! -x /opt/homebrew/bin/vim && ! -x /usr/local/bin/vim ]]; then
+        CORE_INSTALL_NEEDED=1
+    fi
+elif ! command -v vim >/dev/null 2>&1; then
+    CORE_INSTALL_NEEDED=1
+fi
+
 # sudo
 HAS_SUDO=0
-if [[ $OS == "macos" ]]; then
+if [[ $INSTALL_TOOLS -eq 0 && $CORE_INSTALL_NEEDED -eq 0 ]]; then
+    skip "sudo check (not needed; pass --install-tools to install optional tools)"
+elif [[ $OS == "macos" ]]; then
     HAS_SUDO=1   # brew handles its own privilege escalation
 elif sudo -n true 2>/dev/null; then
     HAS_SUDO=1; ok "sudo: available (passwordless)"
@@ -450,7 +474,9 @@ fi
 # Homebrew (macOS)
 if [[ $OS == "macos" && $HAS_BREW -eq 0 ]]; then
     warn "Homebrew not found — it is the recommended package manager for macOS"
-    if ask "Install Homebrew now? (strongly recommended — required for system tools)"; then
+    if [[ $INSTALL_TOOLS -eq 0 ]]; then
+        skip "Homebrew install (--install-tools not set)"
+    elif ask "Install Homebrew now? (strongly recommended — required for system tools)"; then
         info "This may take a few minutes and will prompt for your password..."
         /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || \
             die "Homebrew installation failed. Install manually: https://brew.sh"
@@ -518,8 +544,8 @@ if [[ -z "$VIM_BIN" ]]; then
 fi
 [[ -n "$VIM_BIN" ]] || die "vim installed but not found in PATH"
 ok "Found: $("$VIM_BIN" --version | head -n1) ($VIM_BIN)"
-"$VIM_BIN" --version | grep -q 'Vi IMproved 8\|Vi IMproved 9' || \
-    warn "Vim 8.1+ recommended for full async/LSP support — some features may not work"
+"$VIM_BIN" --version | head -n1 | grep -Eq 'Vi IMproved (8\.2|9\.)' || \
+    die "chopsticks targets Vim 8.2 or Vim 9.x. Install a supported Vim and re-run."
 
 # Node.js (optional — vim-lsp needs no Node.js; only npm formatters do)
 HAS_NODE=0; command -v node >/dev/null 2>&1 && HAS_NODE=1
@@ -735,10 +761,10 @@ else
 fi
 
 # ============================================================================
-# 4. Module Selection
+# 4. Optional Tool Selection
 # ============================================================================
 
-step "Select optional components"
+step "Optional tool installation"
 info "Vim profile: $CONFIG_PROFILE"
 
 _ITEMS=()
@@ -761,7 +787,9 @@ if [[ $HAS_BREW -eq 1 ]] || \
 fi
 
 # ── System tools ─────────────────────────────────────────────────────────────
-if [[ $HAS_PKG_MGR -eq 1 ]]; then
+if [[ $INSTALL_TOOLS -eq 0 ]]; then
+    skip "optional system/tool installs disabled (pass --install-tools to enable)"
+elif [[ $HAS_PKG_MGR -eq 1 ]]; then
     _I_RIPGREP=$_idx
     _ITEMS+=("ripgrep|SPC / project search · SPC sw word search · powers FZF preview|1")
     : $(( _idx++ ))
@@ -794,28 +822,28 @@ else
 fi
 
 # ── npm tools ────────────────────────────────────────────────────────────────
-if [[ $HAS_NODE -eq 1 && $_PROFILE_TOOLING -eq 1 ]]; then
+if [[ $INSTALL_TOOLS -eq 1 && $HAS_NODE -eq 1 && $_PROFILE_TOOLING -eq 1 ]]; then
     _I_NPM=$_idx
     _ITEMS+=("npm formatter suite|Optional prettier / eslint / markdownlint / stylelint / tsc|0")
     : $(( _idx++ ))
 fi
 
 # ── Python tools ─────────────────────────────────────────────────────────────
-if [[ $HAS_PIP -eq 1 && $_PROFILE_TOOLING -eq 1 ]]; then
+if [[ $INSTALL_TOOLS -eq 1 && $HAS_PIP -eq 1 && $_PROFILE_TOOLING -eq 1 ]]; then
     _I_PYTHON=$_idx
     _ITEMS+=("Python tool suite|Optional black / isort / flake8 / pylint / yamllint / sqlfluff|0")
     : $(( _idx++ ))
 fi
 
 # ── Go tools ─────────────────────────────────────────────────────────────────
-if [[ $HAS_GO -eq 1 && $_PROFILE_TOOLING -eq 1 ]]; then
+if [[ $INSTALL_TOOLS -eq 1 && $HAS_GO -eq 1 && $_PROFILE_TOOLING -eq 1 ]]; then
     _I_GO=$_idx
     _ITEMS+=("Go tool suite|Optional gopls / goimports / staticcheck|0")
     : $(( _idx++ ))
 fi
 
 # ── tmux ─────────────────────────────────────────────────────────────────────
-if command -v tmux >/dev/null 2>&1; then
+if [[ $INSTALL_TOOLS -eq 1 ]] && command -v tmux >/dev/null 2>&1; then
     if ! grep -q 'vim-tmux-navigator' "$HOME/.tmux.conf" 2>/dev/null; then
         _I_TMUX=$_idx
         _ITEMS+=("tmux integration|Optional Ctrl+h/j/k/l navigation between vim and tmux panes|0")
@@ -825,7 +853,9 @@ if command -v tmux >/dev/null 2>&1; then
     fi
 fi
 
-if [[ ${#_ITEMS[@]} -gt 0 ]]; then
+if [[ $INSTALL_TOOLS -eq 0 ]]; then
+    MENU_SEL=()
+elif [[ ${#_ITEMS[@]} -gt 0 ]]; then
     _menu_checkbox "Select components to install:" "${_ITEMS[@]}"
     echo -e "${BOLD}Install plan:${NC}"
     for ((_i = 0; _i < _MENU_N; _i++)); do
@@ -847,7 +877,10 @@ fi
 
 step "System tools"
 
-if [[ $HAS_PKG_MGR -eq 0 ]]; then
+if [[ $INSTALL_TOOLS -eq 0 ]]; then
+    skip "system tools (--install-tools not set)"
+    SKIPPED+=("ripgrep" "fzf" "universal-ctags" "shellcheck" "hadolint" "marksman")
+elif [[ $HAS_PKG_MGR -eq 0 ]]; then
     skip "system tools (no package manager available)"
     SKIPPED+=("ripgrep" "fzf" "universal-ctags" "shellcheck" "hadolint" "marksman")
 else
@@ -990,7 +1023,10 @@ fi  # end HAS_PKG_MGR
 
 step "npm tools (formatters + linters)"
 
-if [[ $HAS_NODE -eq 0 ]]; then
+if [[ $INSTALL_TOOLS -eq 0 ]]; then
+    skip "npm tools (--install-tools not set)"
+    SKIPPED+=("prettier" "markdownlint-cli" "stylelint" "eslint" "typescript")
+elif [[ $HAS_NODE -eq 0 ]]; then
     skip "npm tools (Node.js not installed)"
     SKIPPED+=("prettier" "markdownlint-cli" "stylelint" "eslint" "typescript")
 elif [[ $_PROFILE_TOOLING -eq 0 ]]; then
@@ -1025,7 +1061,10 @@ fi
 
 step "Python tools (formatters + linters)"
 
-if [[ $HAS_PIP -eq 0 ]]; then
+if [[ $INSTALL_TOOLS -eq 0 ]]; then
+    skip "Python tools (--install-tools not set)"
+    SKIPPED+=("black" "isort" "flake8" "pylint" "yamllint" "sqlfluff")
+elif [[ $HAS_PIP -eq 0 ]]; then
     skip "Python tools (pip3 not installed)"
     SKIPPED+=("black" "isort" "flake8" "pylint" "yamllint" "sqlfluff")
 elif [[ $_PROFILE_TOOLING -eq 0 ]]; then
@@ -1089,7 +1128,10 @@ fi
 
 step "Go tools"
 
-if [[ $HAS_GO -eq 0 ]]; then
+if [[ $INSTALL_TOOLS -eq 0 ]]; then
+    skip "Go tools (--install-tools not set)"
+    SKIPPED+=("gopls" "goimports" "staticcheck")
+elif [[ $HAS_GO -eq 0 ]]; then
     skip "Go tools (go not installed — see https://go.dev/dl/)"
     SKIPPED+=("gopls" "goimports" "staticcheck")
 elif [[ $_PROFILE_TOOLING -eq 0 ]]; then
@@ -1127,7 +1169,10 @@ fi
 
 step "tmux: vim-tmux-navigator integration"
 
-if ! command -v tmux >/dev/null 2>&1; then
+if [[ $INSTALL_TOOLS -eq 0 ]]; then
+    skip "tmux navigator config (--install-tools not set)"
+    SKIPPED+=("tmux-navigator-config")
+elif ! command -v tmux >/dev/null 2>&1; then
     skip "tmux not found — skipping navigator config"
     SKIPPED+=("tmux-navigator-config")
 elif [[ $_I_TMUX -lt 0 ]]; then

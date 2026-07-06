@@ -21,7 +21,7 @@ if !g:is_tty
         colorscheme solarized8
     catch /^Vim\%((\a\+)\)\=:E185/
         colorscheme default
-        if has('timers')
+        if ChopsticksRuntimeFeatureAvailable('timers')
             call timer_start(500, function('s:WarnSolarized8Missing'))
         else
             augroup ChopstickColorschemeWarn
@@ -63,7 +63,7 @@ endif
 
 " ── Startify ────────────────────────────────────────────────────────────────
 
-if exists('g:plugs["vim-startify"]')
+if ChopsticksPluginDeclared('vim-startify')
     let g:startify_lists = [
         \ { 'type': 'sessions',  'header': ['   Sessions']     },
         \ { 'type': 'files',     'header': ['   Recent Files'] },
@@ -86,7 +86,7 @@ if exists('g:plugs["vim-startify"]')
         let l:dir = fnameescape(argv()[0])
         execute 'cd ' . l:dir
         vertical rightbelow vnew
-        if exists(':Startify') == 2
+        if ChopsticksCommandAvailable('Startify')
             Startify
         else
             enew
@@ -224,3 +224,144 @@ endif
 if !g:is_tty
     set signcolumn=yes
 endif
+
+function! s:ColorschemeItem() abort
+    let l:colors = get(g:, 'colors_name', 'default')
+    if g:is_tty
+        return ChopsticksInfoItem('color palette', 'ready', 'TTY default',
+            \ {'diagnostic': 0})
+    endif
+    if l:colors ==# 'solarized8'
+        return ChopsticksInfoItem('color palette', 'ready', 'solarized8',
+            \ {'diagnostic': 0})
+    endif
+    return ChopsticksInfoDiagnosticItem('color palette', 'missing',
+        \ empty(l:colors) ? 'no colorscheme' : l:colors,
+        \ 'color palette', ':PlugInstall', {
+        \ 'severity': 'setup',
+        \ 'detail': 'expected solarized8, found '
+        \     . (empty(l:colors) ? 'none' : l:colors),
+        \ })
+endfunction
+
+function! s:TrueColorItem() abort
+    if g:is_tty
+        return ChopsticksInfoItem('truecolor', 'off', 'TTY fallback',
+            \ {'diagnostic': 0})
+    endif
+    if !g:has_true_color
+        return ChopsticksInfoDiagnosticItem('truecolor', 'optional',
+            \ 'COLORTERM not truecolor', 'truecolor',
+            \ 'export COLORTERM=truecolor', {
+            \ 'severity': 'setup',
+            \ 'detail': 'COLORTERM is not truecolor or 24bit',
+            \ })
+    endif
+    if !exists('&termguicolors')
+        return ChopsticksInfoDiagnosticItem('truecolor', 'optional',
+            \ 'Vim lacks termguicolors', 'truecolor',
+            \ 'install a fuller Vim build', {
+            \ 'severity': 'setup',
+            \ 'detail': 'Vim was built without termguicolors support',
+            \ })
+    endif
+    if !&termguicolors
+        return ChopsticksInfoDiagnosticItem('truecolor', 'missing',
+            \ 'termguicolors disabled', 'truecolor',
+            \ 'reload chopsticks or review local termguicolors', {
+            \ 'detail': 'termguicolors is disabled in rich terminal mode',
+            \ })
+    endif
+    return ChopsticksInfoItem('truecolor', 'ready', 'termguicolors',
+        \ {'diagnostic': 0})
+endfunction
+
+function! s:StatuslineItem() abort
+    let l:ready = &laststatus == 2 && !&showmode
+    if g:is_tty
+        if l:ready && &statusline !~# 'SLBuild'
+            return ChopsticksInfoItem('statusline', 'ready', 'TTY fallback',
+                \ {'diagnostic': 0})
+        endif
+        return ChopsticksInfoDiagnosticItem('statusline', 'missing',
+            \ 'TTY fallback broken', 'statusline', 'reload chopsticks', {
+            \ 'detail': 'TTY statusline fallback is not active',
+            \ })
+    endif
+    if l:ready && &statusline =~# 'SLBuild' && exists('*SLBuild')
+        return ChopsticksInfoItem('statusline', 'ready', 'SLBuild',
+            \ {'diagnostic': 0})
+    endif
+    return ChopsticksInfoDiagnosticItem('statusline', 'missing',
+        \ 'SLBuild not active', 'statusline', 'reload chopsticks', {
+        \ 'detail': 'custom statusline is not active',
+        \ })
+endfunction
+
+function! s:TablineItem() abort
+    if g:is_tty
+        return ChopsticksInfoItem('tabline', 'off', 'TTY fallback',
+            \ {'diagnostic': 0})
+    endif
+    if &showtabline == 1 && &tabline =~# 'TLBuild' && exists('*TLBuild')
+        return ChopsticksInfoItem('tabline', 'ready', 'TLBuild',
+            \ {'diagnostic': 0})
+    endif
+    return ChopsticksInfoDiagnosticItem('tabline', 'missing',
+        \ 'TLBuild not active', 'tabline', 'reload chopsticks', {
+        \ 'detail': 'custom tabline is not active',
+        \ })
+endfunction
+
+function! s:LayoutStabilityItem() abort
+    if g:is_tty
+        return ChopsticksInfoItem('layout stability', 'off', 'TTY fallback',
+            \ {'diagnostic': 0})
+    endif
+    if &signcolumn ==# 'yes' && &fillchars =~# 'vert:│'
+        return ChopsticksInfoItem('layout stability', 'ready',
+            \ 'signcolumn=yes; stable separators', {'diagnostic': 0})
+    endif
+    return ChopsticksInfoDiagnosticItem('layout stability', 'missing',
+        \ 'signcolumn/fillchars changed', 'layout stability',
+        \ 'reload chopsticks or review local UI overrides', {
+        \ 'detail': 'expected signcolumn=yes and stable vertical separators',
+        \ })
+endfunction
+
+function! s:StartScreenItem() abort
+    if !get(g:, 'chopsticks_enable_ui_extras', 1)
+        return ChopsticksInfoItem('start screen', 'off', 'disabled by profile',
+            \ {'diagnostic': 0})
+    endif
+    if ChopsticksPluginDeclared('vim-startify')
+        return ChopsticksInfoItem('start screen', 'ready', 'vim-startify',
+            \ {'diagnostic': 0})
+    endif
+    return ChopsticksInfoDiagnosticItem('start screen', 'missing',
+        \ 'vim-startify not declared', 'start screen',
+        \ 'check g:chopsticks_enable_ui_extras and plugin profile', {
+        \ 'severity': 'setup',
+        \ 'detail': 'UI extras are enabled but vim-startify is not declared',
+        \ })
+endfunction
+
+function! ChopsticksUiInfo() abort
+    return ChopsticksInfoSection('ui', {
+        \ 'details': [
+        \   ChopsticksInfoDetail('terminal',
+        \       g:is_tty ? 'TTY fallback' : 'rich terminal'),
+        \   ChopsticksInfoDetail('colors', get(g:, 'colors_name', 'default')),
+        \   ChopsticksInfoDetail('status',
+        \       g:is_tty ? 'native fallback' : 'custom'),
+        \ ],
+        \ 'items': [
+        \   s:ColorschemeItem(),
+        \   s:TrueColorItem(),
+        \   s:StatuslineItem(),
+        \   s:TablineItem(),
+        \   s:LayoutStabilityItem(),
+        \   s:StartScreenItem(),
+        \ ],
+        \ })
+endfunction

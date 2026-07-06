@@ -4,6 +4,7 @@
 # Usage:
 #   curl -fsSL https://raw.githubusercontent.com/m1ngsama/chopsticks/main/get.sh | bash
 #   curl -fsSL https://raw.githubusercontent.com/m1ngsama/chopsticks/main/get.sh | bash -s -- --yes
+#   curl -fsSL https://raw.githubusercontent.com/m1ngsama/chopsticks/main/get.sh | bash -s -- --install-tools
 #   CHOPSTICKS_DEST=/absolute/path bash get.sh --dry-run
 
 set -eo pipefail

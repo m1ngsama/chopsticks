@@ -12,7 +12,7 @@
 
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square" alt="MIT License"></a>
-  <a href="https://www.vim.org/"><img src="https://img.shields.io/badge/Vim-8.1%2B-brightgreen?style=flat-square" alt="Vim 8.1+"></a>
+  <a href="https://www.vim.org/"><img src="https://img.shields.io/badge/Vim-8.2%20%7C%209.x-brightgreen?style=flat-square" alt="Vim 8.2 or 9.x"></a>
   <a href="#install"><img src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux-lightgrey?style=flat-square" alt="Platform"></a>
   <a href="https://github.com/m1ngsama/chopsticks/actions"><img src="https://img.shields.io/github/actions/workflow/status/m1ngsama/chopsticks/test.yml?style=flat-square&label=tests" alt="Tests"></a>
   <a href="https://github.com/m1ngsama/chopsticks/releases"><img src="https://img.shields.io/github/v/release/m1ngsama/chopsticks?style=flat-square&color=orange" alt="Release"></a>
@@ -51,15 +51,17 @@ That assembly work is the pain chopsticks removes:
   `gd`, `gr`, `K`, `Ctrl-h/j/k/l`, `<C-w>hjkl`, `cl`, `cc`.
 - **Remote editing is fragile.** It is built to degrade on TTY, slow SSH, and
   headless machines instead of assuming a GUI desktop.
+- **Runtime drift is subtle.** Vim version, terminal capability, plugin locks,
+  and optional tools need to be visible before they become mysterious behavior.
 - **Custom configs are hard to onboard.** `:ChopsticksHelp`, `SPC ?`,
-  `:ChopsticksTutor`, `:ChopsticksConfig`, and `:ChopsticksStatus` make the
-  active keymap, full help, local preferences, and missing tools visible inside
-  Vim.
+  `:ChopsticksTutor`, `:ChopsticksConfig`, `:ChopsticksStatus`, and
+  `:ChopsticksDoctor` make the active keymap, full help, local preferences,
+  and health issues visible inside Vim.
 
 You SSH into a server. You need to edit code. You want LSP, fuzzy find, git
 integration, format-on-save — not a 20-minute setup.
 
-chopsticks gives you a production-ready Vim config in one command. Pure VimScript — no Node.js for the core. Degrades gracefully on TTY. Works the same on your MacBook and your headless Arch box.
+chopsticks gives you a production-ready Vim config in one command. Pure VimScript, Vim 8.2/9.x only, no Neovim runtime, and no Node.js for the core. Degrades gracefully on TTY. Works the same on your MacBook and your headless Arch box.
 
 **23+ plugins** depending on profile and opt-ins, LSP, linting, and a hand-built statusline. No bloat, no decorations, just tools.
 
@@ -73,7 +75,8 @@ chopsticks gives you a production-ready Vim config in one command. Pure VimScrip
 | **Git**           | status, diff, blame, commit, log, conflict markers — [fugitive](https://github.com/tpope/vim-fugitive) + [gitgutter](https://github.com/airblade/vim-gitgutter) |
 | **Run file**      | `SPC rr` — auto-detects Python, Go, Rust, JS, C, Shell, and more                                                                                               |
 | **Markdown**      | quiet writing defaults, browser preview (`,mp`), table of contents (`,mt`)                                                                                     |
-| **Diagnostics**   | `:ChopsticksStatus` — see what's installed, what's missing, how to fix it                                                                                      |
+| **Input method**  | optional `im-select` integration for Chinese/Japanese writing: restore Insert-mode IM, switch Normal mode back to ABC                                           |
+| **Diagnostics**   | `:ChopsticksStatus` + `:ChopsticksDoctor` + `:ChopsticksKeymapAudit` — see Vim runtime, plugin locks, tools, LSP, navigation/tmux, and keymap contract health   |
 | **TTY-aware**     | degrades gracefully on SSH, console, slow links — never breaks                                                                                                 |
 
 ## Install
@@ -84,6 +87,7 @@ checklist and rollback steps, use [BETA.md](BETA.md).
 ```bash
 curl -fsSL https://raw.githubusercontent.com/m1ngsama/chopsticks/main/get.sh | bash
 curl -fsSL https://raw.githubusercontent.com/m1ngsama/chopsticks/main/get.sh | bash -s -- --profile=minimal
+curl -fsSL https://raw.githubusercontent.com/m1ngsama/chopsticks/main/get.sh | bash -s -- --install-tools
 curl -fsSL https://raw.githubusercontent.com/m1ngsama/chopsticks/main/get.sh | bash -s -- --dry-run --profile=full
 ```
 
@@ -94,14 +98,18 @@ git clone https://github.com/m1ngsama/chopsticks.git ~/.vim
 cd ~/.vim && ./install.sh --profile=engineer
 ```
 
-Supports macOS (brew), Debian/Ubuntu (apt), Arch (pacman), Fedora (dnf).
-Set `CHOPSTICKS_DEST=/absolute/path` before running `get.sh` to install
-somewhere other than `~/.vim`.
+Default install manages the Vim config and pinned Vim plugins only. Pass
+`--install-tools` when you want chopsticks to install optional system tools,
+formatter suites, language tools, or tmux integration. Tool installation
+supports macOS (brew), Debian/Ubuntu (apt), Arch (pacman), Fedora (dnf). Set
+`CHOPSTICKS_DEST=/absolute/path` before running `get.sh` to install somewhere
+other than `~/.vim`.
 
 First launch installs plugins automatically (30-60s). Restart vim when done.
-Use `./install.sh --dry-run --profile=full` to inspect the resolved profile and
-config path without changing files. Use `./install.sh --configure-only
---profile=minimal` to switch profiles without reinstalling plugins or tools.
+Use `./install.sh --dry-run --profile=full` to inspect the resolved profile,
+config path, and optional-tool mode without changing files. Use `./install.sh
+--configure-only --profile=minimal` to switch profiles without reinstalling
+plugins or tools.
 
 ## Profiles
 
@@ -126,6 +134,10 @@ let g:chopsticks_enable_terminal_keymaps = 1 " optional: terminal Esc/Ctrl navig
 let g:chopsticks_enable_tmux_navigator = 1 " optional: vim-tmux-navigator integration
 let g:chopsticks_enable_exrc = 1 " optional: source project-local .vimrc/.exrc from CWD
 let g:chopsticks_enable_reindent_file = 1 " optional: full-file reindent map
+let g:chopsticks_enable_input_method = 1 " optional: switch IM around Insert mode
+let g:chopsticks_input_method_default = 'com.apple.keylayout.ABC' " macOS default
+" let g:chopsticks_input_method_filetypes = ['markdown', 'text', 'gitcommit']
+" let g:chopsticks_pin_plugins = 0 " optional: test plugin updates before relocking
 ```
 
 `minimal` avoids LSP, ALE, completion plugins, extra language syntax plugins,
@@ -133,10 +145,27 @@ Startify, UndoTree, and browser Markdown preview. `full` keeps those and opts
 into Markdown lint, format, spell, conceal, Marksman, and LSP virtual text.
 
 Project updates leave `~/.config/chopsticks.vim` alone, so put local choices
-there instead of editing the managed `.vimrc`. The `SPC ?` cheat sheet follows
-the active profile and only shows keys for enabled features. Inside Vim, use
+there instead of editing the managed `.vimrc`. Plugins are pinned to revisions
+verified by the smoke suite; set `g:chopsticks_pin_plugins = 0` only when you
+are deliberately testing updates. The `SPC ?` cheat sheet follows the active
+profile and only shows keys for enabled features. Inside Vim, use
 `:ChopsticksConfig` to edit that local file and `:ChopsticksReload` after
-saving it.
+saving it. If that file has a Vimscript error, chopsticks keeps loading and
+reports the source error in `:ChopsticksStatus` and `:ChopsticksDoctor`.
+Invalid profile or keymap values fall back to safe defaults, but
+`:ChopsticksStatus` and `:ChopsticksDoctor` report the requested value and the
+resolved value. `:ChopsticksStatus` shows the resolved profile, keymap, enabled
+feature groups, opt-in habits, Markdown mode, Vim runtime, SSH session state,
+module inventory/load state, public command surface, local preference load
+state, and active plugin lock coverage. `:ChopsticksDoctor` reports low Vim
+versions, module inventory drift or source errors, missing public commands, bad
+profile/keymap values, local preference source errors, missing runtime features,
+missing lock coverage, unapplied pins, and missing plugin directories as
+actionable health issues. Each Doctor issue includes a stable `[domain.label]`
+code for release notes, tests, and personal troubleshooting notes.
+When both completion keymaps and auto-pairs are enabled, auto-pairs owns the
+buffer-local `<CR>` map and wraps the completion `<CR>` behavior. The keymap
+audit checks that this opt-in interaction stays intact.
 
 ## Keys
 
@@ -152,8 +181,19 @@ for native `S`.
 
 For learning the kit, use `:ChopsticksTutor` to train the core loop, `SPC ?`
 for the active keymap, `:ChopsticksHelp` / `:help chopsticks` for full native
-Vim help, `:ChopsticksConfig` for local preferences, and `:ChopsticksStatus`
-for tool/LSP health.
+Vim help, `:ChopsticksConfig` for local preferences, `:ChopsticksStatus` for
+tool/LSP/navigation health, and `:ChopsticksDoctor` for the actionable problem
+list. Use `:ChopsticksKeymapAudit` when changing mappings or validating a new
+profile.
+For Chinese/Japanese writing on macOS, install `im-select` and opt into
+`g:chopsticks_enable_input_method`; chopsticks will remember the buffer's
+Insert-mode input source and switch Normal mode back to `ABC`.
+Input-method switching is disabled on SSH sessions by default; set
+`g:chopsticks_input_method_disable_on_ssh = 0` only if the remote machine owns
+the input-source command you want to run. Use
+`:ChopsticksInputMethodStatus`, `:ChopsticksInputMethodEnable`,
+`:ChopsticksInputMethodDisable`, and `:ChopsticksInputMethodToggle` to inspect
+or change the switcher inside Vim.
 `QUICKSTART.md` is the 5-minute path; this README is the full reference.
 During release-candidate testing, `:ChopsticksBeta` opens the in-editor
 checklist, `:ChopsticksBetaLog` opens editable local notes, and
@@ -257,11 +297,15 @@ Esc       exit insert mode         SPC ?    cheat sheet
 ```vim
 :LspInstallServer    " auto-detects filetype
 :LspStatus           " check what's running
-:ChopsticksStatus    " see all tools + LSP + linters at a glance
+:ChopsticksStatus    " see runtime, plugin locks, tools, LSP, and linters
+:ChopsticksDoctor    " actionable health issues and setup hints
 ```
 
 pylsp, gopls, rust-analyzer, clangd, sqls — no Node.js. JS/TS servers need Node.
 Markdown LSP (`marksman`) is opt-in so prose buffers stay quiet by default.
+`:ChopsticksStatus` separates the Vim LSP stack from individual servers:
+profile disabled, plugin missing, plugin installed but not loaded yet, and
+per-filetype server installation are reported independently.
 
 ALE and vim-lsp coexist cleanly (`ale_disable_lsp=1`). ALE handles linting + formatting. vim-lsp handles everything else.
 
@@ -295,33 +339,44 @@ For Markdown LSP, install or select `marksman` first.
 ```
 ~/.vim/
 ├── .vimrc              thin loader
+├── CONTEXT.md          project vocabulary and long-term constraints
+├── docs/
+│   └── adr/            recorded architecture decisions
 ├── doc/
 │   └── chopsticks.txt  :help chopsticks
 └── modules/
-    ├── env.vim         TTY detection, truecolor, skip built-in plugins
-    ├── plugins.vim     vim-plug + profile/option-driven plugins
+    ├── env.vim         profile, TTY detection, truecolor, built-in skips
+    │                   :ChopsticksRuntimeInfo runtime compatibility
+    ├── info.vim        shared info shape, surface registry, status adapter
+    ├── input_method.vim optional im-select integration for CJK writing
+    ├── plugins.vim     vim-plug + pinned profile/option-driven plugins
     ├── core.vim        settings, keymaps, performance
     ├── ui.vim          solarized, statusline, startify
-    ├── editing.vim     easymotion, yank highlight, blank lines
-    ├── navigation.vim  fzf, netrw sidebar, windows, terminal
-    ├── lsp.vim         vim-lsp, asyncomplete
+    ├── editing.vim     editing assist, easymotion, undo history
+    ├── navigation.vim  project search, netrw sidebar, windows, terminal
+    ├── lsp.vim         vim-lsp, asyncomplete, LSP diagnostics
     ├── lint.vim        ale, format-on-save
     ├── git.vim         fugitive, gitgutter, conflict nav
     ├── languages.vim   vim-go, markdown, filetype settings
-    ├── buffers.vim     buffer commands
-    ├── utilities.vim   config, reload, trim, clipboard helpers
+    ├── buffers.vim     buffer lifecycle commands
+    ├── utilities.vim   config/reload, path copy, sudo-save helpers
     ├── files.vim       auto mkdir, large-file protection
     ├── runner.vim      run current file
     ├── quickfix.vim    quickfix and location-list helpers
+    ├── keymap.vim      :ChopsticksKeymapAudit ergonomic contract
+    ├── tools.vim       external toolchain diagnostics
+    ├── health.vim      :ChopsticksDoctor machine-readable health
     ├── status.vim      :ChopsticksStatus diagnostics
-    ├── cheatsheet.vim  SPC ? and :ChopsticksCheatSheet
+    ├── learning.vim    Learning Surface model and readiness
+    ├── cheatsheet.vim  SPC ?, :ChopsticksCheatSheet reference view
     ├── tutor.vim       :ChopsticksTutor guided practice
     ├── beta.vim        :ChopsticksBeta release checklist
-    ├── help.vim        :ChopsticksHelp native Vim help
-    └── tools.vim       compatibility placeholder
+    └── help.vim        :ChopsticksHelp native Vim help
 ```
 
 Each module is self-contained. Comment out one line in `.vimrc` to disable it. Add your own with `call s:load('mine')`.
+Use [CONTEXT.md](CONTEXT.md) for project vocabulary and `docs/adr/` for
+decisions that future changes must not re-litigate casually.
 
 ## Performance
 
@@ -341,7 +396,7 @@ Each module is self-contained. Comment out one line in `.vimrc` to disable it. A
 | Colors wrong        | `export COLORTERM=truecolor` in shell rc      |
 | Optional `Ctrl+s` freezes | `stty -ixon` in shell rc                |
 | Everything slow     | Large file? Auto-disabled >10MB               |
-| What's installed?   | `:ChopsticksStatus` shows tools, LSP, linters |
+| What's installed?   | `:ChopsticksStatus` shows runtime and optional tools |
 
 For deeper checks, start with `:ChopsticksStatus`, `SPC ?`,
 `:ChopsticksTutor`, `:ChopsticksHelp`, `:ChopsticksConfig`, and
@@ -349,7 +404,9 @@ For deeper checks, start with `:ChopsticksStatus`, `SPC ?`,
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). The two rules that matter: no Node.js in the Vim runtime, and don't regress startup time.
+See [CONTRIBUTING.md](CONTRIBUTING.md). The rules that matter most: Vim only,
+no Node.js in the Vim runtime, pinned plugins, documented architectural
+decisions, and no unjustified startup regression.
 
 Regenerate the README demo after changing public keybindings:
 

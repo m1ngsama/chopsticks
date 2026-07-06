@@ -15,10 +15,14 @@ checklist and rollback steps, use [BETA.md](BETA.md).
 ```bash
 curl -fsSL https://raw.githubusercontent.com/m1ngsama/chopsticks/main/get.sh | bash
 curl -fsSL https://raw.githubusercontent.com/m1ngsama/chopsticks/main/get.sh | bash -s -- --profile=minimal
+curl -fsSL https://raw.githubusercontent.com/m1ngsama/chopsticks/main/get.sh | bash -s -- --install-tools
 curl -fsSL https://raw.githubusercontent.com/m1ngsama/chopsticks/main/get.sh | bash -s -- --dry-run --profile=full
 ```
 
-Open vim. First launch auto-installs plugins — **wait 30-60s, don't close vim**. Restart when done.
+Open vim. First launch auto-installs pinned plugins — **wait 30-60s, don't close vim**. Restart when done.
+By default, the installer does not install optional system tools. Use
+`--install-tools` when you want it to install ripgrep, fzf, formatter suites,
+language tools, or tmux integration.
 
 Default profile is `engineer`. Interactive installs ask for a profile first;
 `--profile=minimal`, `--profile=engineer`, or `--profile=full` selects it
@@ -161,11 +165,13 @@ syntax. Enable the heavier Markdown tools only when you want them.
 :ChopsticksConfig      edit local preferences
 :ChopsticksReload      reload after saving local preferences
 :ChopsticksTutor       guided practice for the final keymap
-:ChopsticksStatus       see what's installed and what's missing
+:ChopsticksStatus       see runtime, locks, tools, LSP, and linters
+:ChopsticksDoctor       actionable health issues and setup hints
 ```
 
 The `SPC ?` cheat sheet follows your active profile, so `minimal` users only see
 keys for features that are actually loaded.
+Doctor issues include stable `[domain.label]` codes for notes and bug reports.
 
 Inside Vim, `:help chopsticks` opens the same reference after helptags are
 available. See [README](README.md) for the full reference. For release-candidate

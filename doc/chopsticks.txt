@@ -85,6 +85,12 @@ User-facing commands:
   :ChopsticksTutor        guided practice
   :ChopsticksCheatSheet   active keymap reference
   :ChopsticksStatus       health diagnostics
+  :ChopsticksDoctor       actionable health issues and setup hints
+  :ChopsticksKeymapAudit  ergonomic keymap contract
+  :ChopsticksInputMethodStatus   input method status
+  :ChopsticksInputMethodEnable   enable input method switch
+  :ChopsticksInputMethodDisable  disable input method switch
+  :ChopsticksInputMethodToggle   toggle input method switch
   :ChopsticksBeta         release checklist
   :ChopsticksBetaLog      editable release notes
   :ChopsticksBetaSession  append a timestamped release note block
@@ -95,6 +101,11 @@ LSP commands come from vim-lsp:
   :LspInstallServer       install a server for the current filetype
   :LspStatus              inspect attached servers
 <
+  :ChopsticksStatus reports the Vim LSP stack separately from per-filetype
+  servers, so a disabled profile, missing plugin, unloaded command, and missing
+  server are different states.
+  It also reports Vim runtime compatibility, SSH session detection, active
+  plugin lock coverage, applied pins, and installed plugin directories.
 
 ==============================================================================
 PROFILES AND LOCAL CONFIG                                   *chopsticks-profiles*
@@ -115,19 +126,75 @@ Reload after saving it:
 >
   :ChopsticksReload
 <
+  Local preference source errors are caught so the Runtime Core can still open.
+  Use :ChopsticksStatus or :ChopsticksDoctor to inspect the error, then
+  :ChopsticksConfig to fix the file.
 
 Profiles:
 
   minimal   Core navigation, editing, git, Markdown. No LSP/ALE/completion.
   engineer  Default. LSP, ALE, completion, syntax extras.
   full      Engineer plus heavier Markdown feedback.
+  Invalid profile or keymap values fall back to engineer/space and are reported
+  by :ChopsticksStatus and :ChopsticksDoctor.
+  :ChopsticksStatus shows Vim runtime compatibility, module inventory/load
+  state, public command surface, SSH session detection, the resolved profile,
+  keymap, enabled feature groups, opt-in habits, Markdown mode, and plugin
+  reproducibility.
 
 Optional habits:
 >
   let g:chopsticks_enable_jk_escape = 1
   let g:chopsticks_enable_ctrl_s_save = 1
+  let g:chopsticks_enable_completion_keymaps = 1
   let g:chopsticks_enable_auto_pairs = 1
   let g:chopsticks_enable_terminal_keymaps = 1
+  let g:chopsticks_enable_tmux_navigator = 1
+  let g:chopsticks_enable_input_method = 1
+  let g:chopsticks_input_method_default = 'com.apple.keylayout.ABC'
+  let g:chopsticks_pin_plugins = 0
+<
+  When completion keymaps and auto-pairs are both enabled, auto-pairs owns the
+  buffer-local <CR> map and wraps the completion <CR> behavior. Verify changes
+  with :ChopsticksKeymapAudit.
+  :ChopsticksStatus reports whether window and terminal navigation are using
+  plain Vim split maps or vim-tmux-navigator.
+
+Installer scope:
+
+  The default installer manages chopsticks, your Vim profile, vim-plug, pinned
+  Vim plugins, and help tags. It does not install optional system tools,
+  formatter suites, language tools, or tmux integration unless explicitly run
+  with --install-tools.
+>
+  ./install.sh --install-tools --profile=engineer
+<
+
+Plugin reproducibility:
+
+  chopsticks pins vim-plug plugins to revisions verified by the smoke suite.
+  Leave this on for daily use. Disable it only when deliberately testing plugin
+  updates before relocking modules/plugins.vim.
+>
+  let g:chopsticks_pin_plugins = 0
+<
+
+Input method switching:
+
+  macOS users who write Chinese or Japanese can install im-select and enable
+  the input-method module. On InsertLeave chopsticks remembers the current
+  buffer input source and switches to the configured default. On InsertEnter it
+  restores the buffer's saved input source. SSH sessions skip this by default
+  so remote editing never runs input-source commands on every Insert transition.
+>
+  let g:chopsticks_enable_input_method = 1
+  let g:chopsticks_input_method_default = 'com.apple.keylayout.ABC'
+  let g:chopsticks_input_method_filetypes = ['markdown', 'text', 'gitcommit']
+  let g:chopsticks_input_method_disable_on_ssh = 1
+  :ChopsticksInputMethodStatus
+  :ChopsticksInputMethodEnable
+  :ChopsticksInputMethodDisable
+  :ChopsticksInputMethodToggle
 <
 
 ==============================================================================
@@ -160,17 +227,23 @@ TROUBLESHOOTING                                      *chopsticks-troubleshooting
 Start with:
 >
   :ChopsticksStatus
+  :ChopsticksDoctor
   SPC ?
   :ChopsticksTutor
   :ChopsticksHelp
   :ChopsticksConfig
 <
+  Doctor issues include stable [domain.label] codes for notes, tests, and bug
+  reports, so a local problem can be referenced without copying the whole line.
 
 Common fixes:
 
   Plugins missing        :PlugInstall
+  Testing plugin updates set g:chopsticks_pin_plugins = 0 temporarily
   LSP missing            Open that filetype, then :LspInstallServer
+  Health issue list      :ChopsticksDoctor
   Need active keys       SPC ?
+  Need keymap audit      :ChopsticksKeymapAudit
   Need full docs         :help chopsticks
   Need local config      :ChopsticksConfig
   Changed local config   :ChopsticksReload

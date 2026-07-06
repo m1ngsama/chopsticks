@@ -18,6 +18,10 @@ check_plugin_dirs() {
     done
 }
 
+has_chopsticks_truecolor_env() {
+    [ "${COLORTERM:-}" = "truecolor" ] || [ "${COLORTERM:-}" = "24bit" ]
+}
+
 check_vim() {
     step "Vim smoke tests"
     need vim
@@ -1101,7 +1105,11 @@ VIMEOF
     grep -Fq 'colors    solarized8' "$TMP_ROOT/status-default.txt"
     grep -Fq 'status    custom' "$TMP_ROOT/status-default.txt"
     grep -Fq 'OK  color palette  (solarized8)' "$TMP_ROOT/status-default.txt"
-    grep -Fq 'OK  truecolor  (termguicolors)' "$TMP_ROOT/status-default.txt"
+    if has_chopsticks_truecolor_env; then
+        grep -Eq 'OK  truecolor  \(termguicolors\)|opt truecolor  \(Vim lacks termguicolors\)' "$TMP_ROOT/status-default.txt"
+    else
+        grep -Fq 'opt truecolor  (COLORTERM not truecolor)' "$TMP_ROOT/status-default.txt"
+    fi
     grep -Fq 'OK  statusline  (SLBuild)' "$TMP_ROOT/status-default.txt"
     grep -Fq 'OK  tabline  (TLBuild)' "$TMP_ROOT/status-default.txt"
     grep -Fq 'OK  layout stability  (signcolumn=yes; stable separators)' "$TMP_ROOT/status-default.txt"
@@ -1288,7 +1296,10 @@ VIMEOF
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \
         -c 'if !exists("*ChopsticksUiInfo") | cquit | endif' \
         -c 'let g:ui = ChopsticksUiInfo() | if get(g:ui, "title", "") !=# "ui" || !ChopsticksInfoShapeIssue(g:ui, "ChopsticksUiInfo()").ok || len(get(g:ui, "details", [])) != 3 || len(get(g:ui, "items", [])) != 6 || get(g:ui.details[0], "value", "") !=# "rich terminal" || get(g:ui.details[1], "value", "") !=# "solarized8" || get(g:ui.details[2], "value", "") !=# "custom" | cquit | endif' \
-        -c 'if get(g:ui.items[0], "label", "") !=# "color palette" || get(g:ui.items[0], "state", "") !=# "ready" || get(g:ui.items[0], "reason", "") !=# "solarized8" || get(g:ui.items[1], "label", "") !=# "truecolor" || get(g:ui.items[1], "state", "") !=# "ready" || get(g:ui.items[1], "reason", "") !=# "termguicolors" | cquit | endif' \
+        -c 'if get(g:ui.items[0], "label", "") !=# "color palette" || get(g:ui.items[0], "state", "") !=# "ready" || get(g:ui.items[0], "reason", "") !=# "solarized8" || get(g:ui.items[1], "label", "") !=# "truecolor" | cquit | endif' \
+        -c 'if g:has_true_color && exists("&termguicolors") && &termguicolors && (get(g:ui.items[1], "state", "") !=# "ready" || get(g:ui.items[1], "reason", "") !=# "termguicolors") | cquit | endif' \
+        -c 'if g:has_true_color && !exists("&termguicolors") && (get(g:ui.items[1], "state", "") !=# "optional" || get(g:ui.items[1], "reason", "") !=# "Vim lacks termguicolors" || get(g:ui.items[1], "severity", "") !=# "setup") | cquit | endif' \
+        -c 'if !g:has_true_color && (get(g:ui.items[1], "state", "") !=# "optional" || get(g:ui.items[1], "reason", "") !=# "COLORTERM not truecolor" || get(g:ui.items[1], "severity", "") !=# "setup") | cquit | endif' \
         -c 'if get(g:ui.items[2], "label", "") !=# "statusline" || get(g:ui.items[2], "state", "") !=# "ready" || get(g:ui.items[2], "reason", "") !=# "SLBuild" || get(g:ui.items[3], "label", "") !=# "tabline" || get(g:ui.items[3], "state", "") !=# "ready" || get(g:ui.items[4], "label", "") !=# "layout stability" || get(g:ui.items[4], "state", "") !=# "ready" || get(g:ui.items[5], "label", "") !=# "start screen" || get(g:ui.items[5], "state", "") !=# "ready" || get(g:ui.items[5], "diagnostic", 1) | cquit | endif' \
         -c 'qa!' 2>&1
 
@@ -1996,6 +2007,11 @@ IMEOF
 
     TERM=xterm-256color XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \
         -c 'let g:core = ChopsticksCoreInfo() | if g:is_tty || &ttimeoutlen != 10 || get(g:core.details[1], "value", "") !=# "timeout=500 ttimeout=10ms" || get(g:core.items[5], "reason", "") !=# "rich timing" | cquit | endif' \
+        -c 'qa!' 2>&1
+
+    TERM=xterm-256color COLORTERM=truecolor XDG_CONFIG_HOME="$EMPTY_XDG" \
+        vim -u .vimrc -i NONE -es -N \
+        -c 'let g:ui = ChopsticksUiInfo() | if g:is_tty || !g:has_true_color || get(g:ui.items[1], "label", "") !=# "truecolor" || get(g:ui.items[1], "state", "") !=# "ready" || get(g:ui.items[1], "reason", "") !=# "termguicolors" | cquit | endif' \
         -c 'qa!' 2>&1
 
     TERM=linux XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \

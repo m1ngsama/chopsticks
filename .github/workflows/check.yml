@@ -40,10 +40,8 @@ jobs:
 
       - name: Install Vim and vim-plug
         run: |
-          if ! command -v vim >/dev/null 2>&1; then
-            sudo apt-get update
-            sudo apt-get install -y vim
-          fi
+          sudo apt-get update
+          sudo apt-get install -y vim ripgrep
           vim --version | head -1
           curl -fLo ~/.vim/autoload/plug.vim --create-dirs \
             https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim

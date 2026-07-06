@@ -142,6 +142,7 @@ check_vim() {
     test ! -e "$local_config_cmd"
 
     step "Core project loop surfaces"
+    step "Runner surface"
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \
         -c 'if !exists("*ChopsticksRunnerInfo") | cquit | endif' \
         -c 'let g:run_keys = ChopsticksKeymapContractKeys("project_run") | let g:runner = ChopsticksRunnerInfo() | if join(g:run_keys, "/") !=# "SPC rr" || get(g:runner, "title", "") !=# "run file" || !ChopsticksInfoShapeIssue(g:runner, "ChopsticksRunnerInfo()").ok || get(g:runner, "keymap", "") !=# "SPC rr" || get(g:runner.details[0], "value", "") !=# "SPC rr" || !empty(get(g:runner, "missing_maps", [])) || len(get(g:runner, "details", [])) != 3 || len(get(g:runner, "items", [])) != 1 || get(g:runner.items[0], "state", "") !=# "off" || get(g:runner.items[0], "reason", "") !=# "no filetype" || get(g:runner.items[0], "diagnostic", 1) || get(g:runner, "supported", "") !~# "python" || get(g:runner, "supported", "") !~# "c" | cquit | endif' \
@@ -158,6 +159,7 @@ check_vim() {
         -c 'let g:run_keys = ChopsticksKeymapContractKeys("project_run") | let g:runner = ChopsticksRunnerInfo() | if join(g:run_keys, "/") !=# ",cr" || get(g:runner, "keymap", "") !=# ",cr" || get(g:runner.details[0], "value", "") !=# ",cr" || !empty(get(g:runner, "missing_maps", [])) | cquit | endif' \
         -c 'qa!' 2>&1
 
+    step "Editing assist surface"
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \
         -c 'if !exists("*ChopsticksEditingInfo") | cquit | endif' \
         -c 'let g:visible_jump_keys = ChopsticksKeymapContractKeys("visible_jump_summary") | let g:cleanup_keys = ChopsticksKeymapContractKeys("edit_cleanup_summary") | let g:blank_line_keys = ChopsticksKeymapContractKeys("blank_lines") | let g:undo_keys = ChopsticksKeymapContractKeys("undo_tree") | if join(g:visible_jump_keys, " / ") !=# "s / SPC S" || join(g:cleanup_keys, "/") !=# "SPC cW/SPC sr/SPC =" || join(g:blank_line_keys, " ") !=# "[<Space> ]<Space>" || join(g:undo_keys, "/") !=# "SPC U" | cquit | endif' \
@@ -168,6 +170,7 @@ check_vim() {
         -c 'if get(g:editing.items[3], "label", "") !=# "blank lines" || get(g:editing.items[3], "state", "") !=# "ready" || get(g:editing.items[3], "diagnostic", 1) || get(g:editing.items[4], "label", "") !=# "full-file reindent" || get(g:editing.items[4], "state", "") !=# "off" || get(g:editing.items[4], "diagnostic", 1) | cquit | endif' \
         -c 'qa!' 2>&1
 
+    step "Buffer lifecycle surface"
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \
         -c 'if !exists("*ChopsticksBufferInfo") | cquit | endif' \
         -c 'let g:buffer_close_keys = ChopsticksKeymapContractKeys("buffer_close") | let g:buffer_navigation_keys = ChopsticksKeymapContractKeys("buffer_navigation") | let g:buffer_alternate_keys = ChopsticksKeymapContractKeys("buffer_alternate") | if join(g:buffer_close_keys, "/") !=# "SPC bd" || join(g:buffer_navigation_keys, "/") !=# "SPC bn/SPC bp" || join(g:buffer_alternate_keys, "/") !=# "SPC Tab" | cquit | endif' \
@@ -177,6 +180,7 @@ check_vim() {
         -c 'qa!' 2>&1
 
     printf '%s\n' 'changed' > "$TMP_ROOT/bclose-safe.txt"
+    step "Buffer close behavior"
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \
         "$TMP_ROOT/bclose-safe.txt" \
         -c 'let g:bclose_buf = bufnr("%")' \
@@ -195,6 +199,7 @@ check_vim() {
         -c 'if buflisted(g:bclose_buf) || expand("%:t") !=# "bclose-first.txt" | cquit | endif' \
         -c 'qa!' 2>&1
 
+    step "Quickfix and file safety surfaces"
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \
         -c 'if !exists("*ChopsticksQuickfixInfo") | cquit | endif' \
         -c 'let g:quickfix_keys = ChopsticksKeymapContractKeys("quickfix_navigation") | let g:loclist_keys = ChopsticksKeymapContractKeys("loclist_navigation") | let g:qf = ChopsticksQuickfixInfo() | if join(g:quickfix_keys, " ") !=# "[q ]q" || join(g:loclist_keys, " ") !=# "[l ]l" || get(g:qf, "title", "") !=# "quickfix" || !ChopsticksInfoShapeIssue(g:qf, "ChopsticksQuickfixInfo()").ok || len(get(g:qf, "details", [])) != 3 || len(get(g:qf, "items", [])) != 4 || get(g:qf, "quickfix_count", -1) != 0 || get(g:qf, "loclist_count", -1) != 0 || !empty(get(g:qf, "missing_maps", [])) || !empty(get(g:qf, "missing_loc_maps", [])) || get(g:qf.items[0], "label", "") !=# "quickfix window" || get(g:qf.items[0], "state", "") !=# "ready" || get(g:qf.items[1], "label", "") !=# "location window" || get(g:qf.items[1], "state", "") !=# "ready" || get(g:qf.items[2], "label", "") !=# "quickfix navigation" || get(g:qf.items[2], "state", "") !=# "ready" || get(g:qf.items[2], "reason", "") !=# "[q ]q" || get(g:qf.items[2], "diagnostic", 1) || get(g:qf.items[3], "label", "") !=# "location navigation" || get(g:qf.items[3], "state", "") !=# "ready" || get(g:qf.items[3], "reason", "") !=# "[l ]l" || get(g:qf.items[3], "diagnostic", 1) | cquit | endif' \
@@ -210,11 +215,13 @@ check_vim() {
         -c 'let g:qf = ChopsticksQuickfixInfo() | let g:keymap = ChopsticksKeymapAuditInfo() | let g:health = ChopsticksHealthInfo() | if get(g:qf.items[3], "state", "") !=# "missing" || stridx(get(g:qf.items[3], "detail", ""), "]l") < 0 || g:keymap.ok || empty(filter(copy(g:health.issues), "v:val.code ==# \"quickfix.location-navigation\" && stridx(v:val.detail, \"]l\") >= 0")) | cquit | endif' \
         -c 'qa!' 2>&1
 
+    step "File safety surface"
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \
         -c 'if !exists("*ChopsticksFileSafetyInfo") | cquit | endif' \
         -c 'let g:files = ChopsticksFileSafetyInfo() | if get(g:files, "title", "") !=# "file safety" || !ChopsticksInfoShapeIssue(g:files, "ChopsticksFileSafetyInfo()").ok || len(get(g:files, "details", [])) != 3 || len(get(g:files, "items", [])) != 3 || get(g:files.items[0], "label", "") !=# "write directory guard" || get(g:files.items[0], "state", "") !=# "ready" || get(g:files.items[1], "label", "") !=# "large file guard" || get(g:files.items[1], "state", "") !=# "ready" || get(g:files.items[1], "diagnostic", 1) || get(g:files.items[2], "label", "") !=# "current buffer" || get(g:files.items[2], "state", "") !=# "off" || get(g:files.items[2], "diagnostic", 1) | cquit | endif' \
         -c 'qa!' 2>&1
 
+    step "Git and editor core surfaces"
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \
         -c 'if !exists("*ChopsticksGitInfo") | cquit | endif' \
         -c 'let g:git_keys = ChopsticksKeymapContractKeys("git_keymaps") | let g:git_status_keys = ChopsticksKeymapContractKeys("git_status") | let g:git_commit_keys = ChopsticksKeymapContractKeys("git_commit") | let g:git_diff_keys = ChopsticksKeymapContractKeys("git_diff") | let g:git_blame_keys = ChopsticksKeymapContractKeys("git_blame") | let g:git_log_keys = ChopsticksKeymapContractKeys("git_log") | let g:git_conflict_keys = ChopsticksKeymapContractKeys("git_conflict_navigation") | if join(g:git_keys, "/") !=# "SPC gs/SPC gc/SPC gd/SPC gb/SPC gl" || join(g:git_status_keys, "/") !=# "SPC gs" || join(g:git_commit_keys, "/") !=# "SPC gc" || join(g:git_diff_keys, "/") !=# "SPC gd" || join(g:git_blame_keys, "/") !=# "SPC gb" || join(g:git_log_keys, "/") !=# "SPC gl" || join(g:git_conflict_keys, " ") !=# "[x ]x" | cquit | endif' \
@@ -261,6 +268,7 @@ check_vim() {
         -c 'if g:clipboard_case && (g:keymap.ok || stridx(g:issue_text, "missing nmap <Space>y") < 0) | cquit | endif' \
         -c 'qa!' 2>&1
 
+    step "Help and command adapters"
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \
         -c 'if !exists("*ChopsticksHelpInfo") | cquit | endif' \
         -c 'let g:help = ChopsticksHelpInfo() | if get(g:help, "title", "") !=# "help surface" || !ChopsticksInfoShapeIssue(g:help, "ChopsticksHelpInfo()").ok || !get(g:help, "ok", 0) || len(get(g:help, "details", [])) != 3 || len(get(g:help, "items", [])) != 3 || get(g:help.details[0], "value", "") !=# ":ChopsticksHelp" || get(g:help.details[1], "value", "") !~# "doc/chopsticks.txt" | cquit | endif' \
@@ -336,6 +344,7 @@ VIMEOF
     grep -Fq 'commands   CONFIG HEAD' \
         "$TMP_ROOT/status-header-fallback.txt"
 
+    step "Info and status adapters"
     info_call_vim="$TMP_ROOT/info-call.vim"
     cat > "$info_call_vim" <<'VIMEOF'
 source modules/env.vim
@@ -622,6 +631,7 @@ VIMEOF
     XDG_CONFIG_HOME="$EMPTY_XDG" \
         vim -u NONE -i NONE -es -N -S "$info_fallback_vim" 2>&1
 
+    step "Keymap and file adapters"
     keymap_ready_vim="$TMP_ROOT/keymap-ready.vim"
     cat > "$keymap_ready_vim" <<'VIMEOF'
 source modules/env.vim

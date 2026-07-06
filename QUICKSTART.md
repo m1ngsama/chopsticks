@@ -9,8 +9,8 @@ check git, and ask Vim which keys are active.
 
 ## Install
 
-These commands install current `main`. For the 2.3.0 release-candidate
-checklist and rollback steps, use [BETA.md](BETA.md).
+These commands install current `main`. For release checklist and rollback
+steps, use [BETA.md](BETA.md).
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/m1ngsama/chopsticks/main/get.sh | bash
@@ -174,5 +174,5 @@ keys for features that are actually loaded.
 Doctor issues include stable `[domain.label]` codes for notes and bug reports.
 
 Inside Vim, `:help chopsticks` opens the same reference after helptags are
-available. See [README](README.md) for the full reference. For release-candidate
-testing and rollback, see [BETA.md](BETA.md).
+available. See [README](README.md) for the full reference. For release checks
+and rollback, see [BETA.md](BETA.md).

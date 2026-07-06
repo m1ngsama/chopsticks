@@ -1,9 +1,13 @@
-" beta.vim — in-editor release-candidate checklist
+" beta.vim — in-editor release checklist
 
-let g:chopsticks_beta_label = get(g:, 'chopsticks_beta_label', '2.3.0')
+let g:chopsticks_release_label = get(g:, 'chopsticks_release_label',
+    \ get(g:, 'chopsticks_beta_label', '2.3.0'))
+let g:chopsticks_beta_label = get(g:, 'chopsticks_beta_label',
+    \ g:chopsticks_release_label)
 
 function! s:BetaLabel() abort
-    return get(g:, 'chopsticks_beta_label', '2.3.0')
+    return get(g:, 'chopsticks_release_label',
+        \ get(g:, 'chopsticks_beta_label', '2.3.0'))
 endfunction
 
 function! s:BetaCommandLines() abort
@@ -164,11 +168,11 @@ endfunction
 
 function! s:OpenBetaGuide() abort
     let l:lines = [
-        \ '  chopsticks ' . s:BetaLabel() . '      q close',
+        \ '  chopsticks release ' . s:BetaLabel() . '      q close',
         \ '  ─────────────────────────────',
         \ '',
         \ '  goal',
-        \ '     Prove this can be the long-term project loop.',
+        \ '     Validate the long-term project loop before tagging.',
         \ '     Record real editing friction before release.',
         \ '',
         \ '  daily loop',
@@ -251,7 +255,7 @@ endfunction
 function! ChopsticksBetaInfo() abort
     let l:label = s:BetaLabel()
     if empty(l:label)
-        return ChopsticksInfoSection('release candidate', {
+        return ChopsticksInfoSection('release guide', {
             \ 'enabled': 0,
             \ 'label': '',
             \ 'log_path': '',
@@ -262,13 +266,13 @@ function! ChopsticksBetaInfo() abort
 
     let l:log_path = s:BetaLogPath()
     let l:details = [
-        \ ChopsticksInfoDetail('candidate', l:label),
+        \ ChopsticksInfoDetail('release', l:label),
         \ ChopsticksInfoDetail('keymap', get(g:, 'chopsticks_space_keymaps', 0)
         \   ? 'space' : 'classic'),
         \ ChopsticksInfoDetail('log', l:log_path),
         \ ]
     call extend(l:details, s:BetaCommandDetails())
-    return ChopsticksInfoSection('release candidate', {
+    return ChopsticksInfoSection('release guide', {
         \ 'enabled': 1,
         \ 'label': l:label,
         \ 'log_path': l:log_path,

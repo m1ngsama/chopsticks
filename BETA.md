@@ -1,105 +1,127 @@
-# 2.3.0 Release Candidate Testing
+# Release Checklist
 
-This branch is the 2.3.0 release candidate. The goal is to prove that the Space
-layout can serve as the project loop for experienced Vim users, not just that
-the mappings work in isolation. Do not tag or publish it as `2.3.0` until the
-checklist below is closed.
+Use this before tagging a stable chopsticks release. It does not publish
+anything by itself; publishing happens only after a semver tag is intentionally
+created and pushed.
 
-Inside Vim, run `:ChopsticksBeta` for the compact checklist,
-`:ChopsticksBetaLog` for editable local notes, and `:ChopsticksBetaSession`
-to append a new session block. Run `:ChopsticksHelp` or `:help chopsticks`
-for the native Vim reference.
+The goal is to prove the daily project loop in real Vim sessions, not only in a
+demo recording:
 
-## Install the release candidate
+- `SPC ?` answers "what key do I press next?"
+- `s` jump, native `gd`/`gr`/`K`, and `SPC rr` feel faster than assembling the
+  same workflow by hand.
+- Git push and pull stay explicit shell or Fugitive actions, not default
+  hotkeys.
+- SSH, TTY, macOS, and Linux sessions stay predictable.
 
-Existing checkout:
+## Install The Build Under Test
 
-```bash
-cd ~/.vim
-git fetch origin
-git checkout release/2.3.0
-git pull --ff-only
-vim -Nu ~/.vimrc -n -es +'PlugInstall --sync' +'qa!'
-```
-
-Fresh checkout:
-
-```bash
-git clone --branch release/2.3.0 https://github.com/m1ngsama/chopsticks.git ~/.vim
-ln -sf ~/.vim/.vimrc ~/.vimrc
-vim -Nu ~/.vimrc -n -es +'PlugInstall --sync' +'qa!'
-```
-
-Keep local choices in `${XDG_CONFIG_HOME:-~/.config}/chopsticks.vim`:
-
-```vim
-let g:chopsticks_profile = 'engineer'
-let g:chopsticks_keymap_style = 'space'
-```
-
-Inside Vim, `:ChopsticksConfig` opens that file and `:ChopsticksReload`
-reloads chopsticks after saving it.
-
-## Daily test loop
-
-Use the release candidate for real editing, not only demos. A session should
-exercise the trained loop until it either feels automatic or exposes friction.
-For each session, record:
-
-- The task: project navigation, code edit, grep, git, LSP, Markdown, SSH.
-- The first key you tried when you got stuck.
-- Whether `SPC ?`, `:ChopsticksTutor`, or `:ChopsticksStatus` answered it.
-- Any mapping that felt slow, awkward, surprising, or too easy to mistype.
-- Any documentation line that was wrong, missing, or redundant.
-
-`:ChopsticksBetaLog` opens `${XDG_CONFIG_HOME:-~/.config}/chopsticks-2.3.0.md`
-by default. Set `g:chopsticks_beta_log` before loading chopsticks to use a
-different path. Use `:ChopsticksBetaSession` at the start of each real editing
-session so every test has a timestamped block.
-
-## Workflows to exercise
-
-```text
-SPC SPC   find file              SPC /     grep project
-s + 2ch   jump on screen         gd / gr   definition / references
-SPC rr    run current file       SPC gs    git status
-SPC cf    format                 SPC ca    code action
-SPC fc    local config           SPC ?     active cheat sheet
-Ctrl-hjkl windows                SPC e     sidebar
-:ChopsticksStatus health         :ChopsticksConfig preferences
-```
-
-Also test the boring path: save, quit, reopen Vim, edit over SSH, open a large
-file, edit Markdown, and use a machine with missing optional tools.
-
-## Exit criteria
-
-- `s` as the default visible jump still feels worth the native override after
-  real editing.
-- No high-frequency action requires remembering an undocumented key.
-- Window/sidebar navigation feels faster than native `<C-w>` only.
-- README, QUICKSTART, `:help chopsticks`, `SPC ?`, and `:ChopsticksTutor`
-  teach the same layout.
-- No GitHub Wiki, private wiki, or external note is needed to remember the
-  daily loop.
-- `scripts/test.sh quick` and `scripts/test.sh vim` pass locally.
-- The README GIF has been regenerated from `.github/demo.tape` after any public
-  key change.
-- The release candidate has been tested on macOS and over SSH on Linux.
-
-## Roll back
-
-Return to the latest stable release:
+Existing install:
 
 ```bash
 cd ~/.vim
 git fetch origin --tags
-git checkout v2.2.0
-vim -Nu ~/.vimrc -n -es +'PlugInstall --sync' +'qa!'
+git checkout main
+git pull --ff-only
+./install.sh --profile=engineer
 ```
 
-Or keep the code but switch back to the legacy layout:
+Fresh install:
+
+```bash
+git clone https://github.com/m1ngsama/chopsticks.git ~/.vim
+cd ~/.vim
+./install.sh --profile=engineer
+```
+
+If you are testing a release branch or tag, replace `main` with that exact ref
+before running `./install.sh`.
+
+Open Vim, wait for pinned plugins to install, then restart Vim.
+
+## In-Vim Checklist
+
+Run these inside Vim:
 
 ```vim
-let g:chopsticks_keymap_style = 'classic'
+:ChopsticksStatus
+:ChopsticksDoctor
+:ChopsticksKeymapAudit
+:ChopsticksHelp
+:ChopsticksConfig
+:ChopsticksReload
+:ChopsticksBeta
+:ChopsticksBetaLog
+:ChopsticksBetaSession
 ```
+
+Use the build for real editing. A useful session should touch:
+
+- project files: `SPC SPC`, `SPC ff`, `SPC ,`
+- visible jumps: `s`, fallback `SPC S`
+- code inspection: `gd`, `gr`, `K`
+- run/search/git: `SPC rr`, `SPC /`, `SPC gs`
+- quickfix/location-list: `[q`, `]q`, `[l`, `]l`
+- Markdown-local actions: `,mt`, `,mp`
+- help surfaces: `SPC ?`, `:ChopsticksTutor`, `:help chopsticks`
+
+`:ChopsticksBetaLog` opens
+`${XDG_CONFIG_HOME:-~/.config}/chopsticks-<release-label>.md` by default.
+The default label is the current release label. Override it when preparing a
+specific release:
+
+```vim
+let g:chopsticks_release_label = 'vX.Y.Z'
+" Legacy name still works:
+" let g:chopsticks_beta_label = 'vX.Y.Z'
+```
+
+You can also set a custom log path:
+
+```vim
+let g:chopsticks_beta_log = expand('~/.config/chopsticks-release.md')
+```
+
+## Local Checks
+
+Before tagging, run:
+
+```bash
+scripts/test.sh quick
+scripts/test.sh vim
+scripts/release-notes.sh vX.Y.Z
+```
+
+The release notes command only reads `CHANGELOG.md`; it does not publish.
+
+## Exit Criteria
+
+- quick and Vim smoke checks pass locally.
+- `:ChopsticksStatus` has no unexpected attention rows.
+- `SPC ?`, `:ChopsticksTutor`, README, QUICKSTART, and `:help chopsticks`
+  teach the same layout.
+- `s` remains worth the native substitute override, with `cl` and `cc`
+  documented as the native substitute path.
+- Git push/pull remain unbound by default.
+- The release log has at least one real session note, not just a demo note.
+- Rollback has been tested or is mechanically obvious.
+
+## Rollback
+
+Keep rollback explicit:
+
+```bash
+cd ~/.vim
+git fetch origin --tags
+git tag --sort=-version:refname | head -1
+git checkout <last-stable-tag>
+./install.sh --configure-only --profile=engineer
+```
+
+If plugin state is suspect:
+
+```bash
+vim -Nu NONE -n +'set nomore' +PlugClean +PlugInstall +qa
+```
+
+Then open Vim and run `:ChopsticksStatus`.

@@ -1,0 +1,108 @@
+name: release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Stable tag to publish, for example v2.3.0
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}-${{ inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: publish GitHub release
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Resolve release tag
+        id: release
+        env:
+          REQUESTED_TAG: ${{ inputs.tag }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            tag="$REQUESTED_TAG"
+          else
+            tag="$GITHUB_REF_NAME"
+          fi
+
+          if ! printf '%s\n' "$tag" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "Expected a stable semver tag like v2.3.0, got: $tag" >&2
+            exit 1
+          fi
+
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            git fetch --tags origin
+            git checkout "refs/tags/$tag"
+          fi
+
+          test -n "$(git rev-parse --verify --quiet "refs/tags/$tag")"
+          printf 'tag=%s\n' "$tag" >> "$GITHUB_OUTPUT"
+          printf 'version=%s\n' "${tag#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Install check tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+          npm install -g markdownlint-cli
+
+      - name: Install Vim and vim-plug
+        run: |
+          if ! command -v vim >/dev/null 2>&1; then
+            sudo apt-get install -y vim
+          fi
+          vim --version | head -1
+          curl -fLo ~/.vim/autoload/plug.vim --create-dirs \
+            https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+
+      - name: Install plugins
+        run: scripts/ci-install-plugins.sh
+
+      - name: Run release checks
+        run: |
+          scripts/test.sh quick
+          scripts/test.sh vim
+
+      - name: Build release notes
+        env:
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          scripts/release-notes.sh "$RELEASE_TAG" > "$RUNNER_TEMP/release-notes.md"
+          test -s "$RUNNER_TEMP/release-notes.md"
+          sed -n '1,40p' "$RUNNER_TEMP/release-notes.md"
+
+      - name: Create GitHub release
+        env:
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+          RELEASE_VERSION: ${{ steps.release.outputs.version }}
+        run: |
+          tag="$RELEASE_TAG"
+          version="$RELEASE_VERSION"
+
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "Release $tag already exists; leaving it unchanged."
+            gh release view "$tag"
+            exit 0
+          fi
+
+          gh release create "$tag" \
+            --verify-tag \
+            --title "chopsticks $version" \
+            --notes-file "$RUNNER_TEMP/release-notes.md"
+
+          gh release view "$tag" --json url --jq .url

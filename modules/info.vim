@@ -400,8 +400,8 @@ function! s:InfoSurfaceSpecs() abort
         \ s:InfoSurface({
         \   'name': 'beta',
         \   'function': 'ChopsticksBetaInfo',
-        \   'status_title': 'release candidate',
-        \   'status_label': 'release candidate',
+        \   'status_title': 'release guide',
+        \   'status_label': 'release guide',
         \   'status_enabled_only': 1,
         \ }),
         \ s:InfoSurface({

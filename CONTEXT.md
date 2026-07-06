@@ -101,8 +101,8 @@ lists
 **Command Display Group**:
 A named, display-ready subset of **Command Surface** returned by
 `ChopsticksCommandLines()` for shared in-editor command lists such as survival
-commands in the **Learning Surface** and release-candidate commands in the
-beta guide.
+commands in the **Learning Surface** and release checklist commands in the beta
+guide.
 _Avoid_: hand-maintained `:Chopsticks...` command rows in each learning view
 
 **Command Surface Adapter**:
@@ -334,8 +334,8 @@ severity/action metadata for **Chopsticks Doctor**.
 _Avoid_: `:ChopsticksStatus` counting keymap issues or formatting audit state
 
 **Learning Surface**:
-The active cheat sheet, guided tutor, native Vim help, and release-candidate
-guide entry points owned by `modules/learning.vim` and surfaced by
+The active cheat sheet, guided tutor, native Vim help, and release guide entry
+points owned by `modules/learning.vim` and surfaced by
 `ChopsticksLearningInfo()` so a user can recover the daily loop from inside
 Vim. GitHub Wiki is disabled; durable usage memory belongs in the in-editor
 cheatmap, tutor, native help, and audited keymap surfaces.
@@ -646,12 +646,12 @@ metadata for **Chopsticks Doctor** when the opt-in switch is unavailable or
 disabled by SSH policy.
 _Avoid_: `:ChopsticksStatus` knowing SSH/input-source branching rules
 
-**Release Candidate Item**:
-Detail rows returned by `ChopsticksBetaInfo()` for beta label, active keymap,
-local release log path, release-candidate commands, and active cheat sheet key
-guidance.
-_Avoid_: `:ChopsticksStatus` calculating beta log paths or owning beta command
-lists
+**Release Guide Item**:
+Detail rows returned by `ChopsticksBetaInfo()` for release label, active
+keymap, local release log path, release checklist commands, and active cheat
+sheet key guidance.
+_Avoid_: `:ChopsticksStatus` calculating release log paths or owning release
+command lists
 
 **Status Footer**:
 A display-ready next-step line returned by an owning `Chopsticks...Info()`
@@ -722,7 +722,7 @@ _Avoid_: degraded editor
   uncataloged command issues from the same item interface.
 - The **Command Surface Adapter** keeps fallback-aware command names, header
   rows, and display rows in `modules/env.vim`, so **Learning Surface**,
-  **Runtime Status**, and release-candidate views do not each implement
+  **Runtime Status**, and release guide views do not each implement
   late-load command catalog checks or fallback copying.
 - The **Command Availability Adapter** keeps Vim command existence checks and
   colon-prefixed missing command lists in `modules/env.vim`, so **Learning
@@ -751,7 +751,7 @@ _Avoid_: degraded editor
   item interface.
 - The **Managed File Adapter** keeps directory creation, seed-file writes,
   append writes, escaped editing, filetype setup, and buffer-template seeding in
-  `modules/env.vim`, so **Local Preferences**, **Release Candidate Items**,
+  `modules/env.vim`, so **Local Preferences**, **Release Guide Items**,
   **Editor Core**, and **File Safety** do not each assemble local-file
   side-effect policy from low-level Vim file functions.
 - The **Scratch Surface Adapter** keeps nofile scratch buffer toggle/refresh
@@ -953,9 +953,9 @@ _Avoid_: degraded editor
   **Health Issue Adapter** do not each implement their own call path.
 - The **Info Fallback Adapter** gives **Learning Surface** consumers a single
   fallback-safe way to consume **Learning Surface**, **Help Surface**,
-  **release candidate**, and LSP learning info, so the active cheat sheet,
-  guided tutor, release-candidate guide, and status header do not each know
-  late-load `exists()` or LSP stack fallback rules.
+  **Release Guide**, and LSP learning info, so the active cheat sheet, guided
+  tutor, release guide, and status header do not each know late-load `exists()`
+  or LSP stack fallback rules.
 - The **Health Issue Adapter** keeps diagnostic-to-issue conversion inside
   `ChopsticksHealthInfo()` so new **Chopsticks Modules** do not duplicate
   issue-building policy. A **Chopsticks Module** with a normal
@@ -1110,14 +1110,14 @@ _Avoid_: degraded editor
   `:ChopsticksStatus` only formats state-bearing rows and details, while
   **Chopsticks Doctor** reports input-method setup from the same item
   interface.
-- **Release Candidate Items** keep beta label, keymap, release-log path, and
-  release-candidate command display in `ChopsticksBetaInfo()`, consuming the
+- **Release Guide Items** keep release label, keymap, release-log path, and
+  release checklist command display in `ChopsticksBetaInfo()`, consuming the
   **Command Surface** beta owner group and **Keymap Contract Groups** for active
   cheat sheet guidance so `:ChopsticksStatus` only renders detail rows.
 - The beta guide consumes the **Command Display Group** for beta commands and
   **Keymap Contract Groups** for daily-loop file, visible-jump, grep, run, Git
   status, **LSP Attach Keymap**, and active cheat sheet guidance, so
-  `:ChopsticksBeta` does not hand-maintain release-candidate command rows or
+  `:ChopsticksBeta` does not hand-maintain release checklist command rows or
   Space/classic key wording.
 - **LSP Attach Keymap** keeps attach-time buffer maps in
   **Keymap Contract Specs** with `lsp_buffer` scope, so `modules/lsp.vim`,
@@ -1144,7 +1144,7 @@ _Avoid_: degraded editor
   returning the registry fallback **Status Section** or a rendered missing row
   for that Module instead of crashing the whole status window.
 - The **Status Section Registry** keeps the `:ChopsticksStatus` section order,
-  fallback **Status Section** data, and optional release-candidate visibility
+  fallback **Status Section** data, and optional release guide visibility
   in one place, so adding or moving a status section is a registry row rather
   than a new wrapper function plus an aggregation edit.
 - **Status Sections** keep section titles and rows in the owning interface so

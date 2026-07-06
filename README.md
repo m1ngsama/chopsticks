@@ -14,7 +14,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square" alt="MIT License"></a>
   <a href="https://www.vim.org/"><img src="https://img.shields.io/badge/Vim-8.2%20%7C%209.x-brightgreen?style=flat-square" alt="Vim 8.2 or 9.x"></a>
   <a href="#install"><img src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux-lightgrey?style=flat-square" alt="Platform"></a>
-  <a href="https://github.com/m1ngsama/chopsticks/actions"><img src="https://img.shields.io/github/actions/workflow/status/m1ngsama/chopsticks/test.yml?style=flat-square&label=tests" alt="Tests"></a>
+  <a href="https://github.com/m1ngsama/chopsticks/actions"><img src="https://img.shields.io/github/actions/workflow/status/m1ngsama/chopsticks/check.yml?style=flat-square&label=checks" alt="Checks"></a>
   <a href="https://github.com/m1ngsama/chopsticks/releases"><img src="https://img.shields.io/github/v/release/m1ngsama/chopsticks?style=flat-square&color=orange" alt="Release"></a>
 </p>
 
@@ -74,13 +74,13 @@ The daily help surface is inside Vim: `SPC ?`, `:ChopsticksTutor`,
 `:ChopsticksHelp`, `:ChopsticksStatus`, `:ChopsticksDoctor`, and native
 `:help chopsticks`. GitHub Wiki is disabled on purpose.
 
-[QUICKSTART.md](QUICKSTART.md) is the five-minute path. [BETA.md](BETA.md) has
-the 2.3.0 release-candidate checklist and rollback steps.
+[QUICKSTART.md](QUICKSTART.md) is the five-minute path. [BETA.md](BETA.md) is
+the release checklist and rollback guide.
 
 ## Install
 
-These commands install current `main`. For the 2.3.0 release-candidate
-checklist and rollback steps, use [BETA.md](BETA.md).
+These commands install current `main`. For release checklist and rollback
+steps, use [BETA.md](BETA.md).
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/m1ngsama/chopsticks/main/get.sh | bash
@@ -194,9 +194,9 @@ the input-source command you want to run. Use
 `:ChopsticksInputMethodDisable`, and `:ChopsticksInputMethodToggle` to inspect
 or change the switcher inside Vim.
 `QUICKSTART.md` is the 5-minute path; this README is the full reference.
-During release-candidate testing, `:ChopsticksBeta` opens the in-editor
-checklist, `:ChopsticksBetaLog` opens editable local notes, and
-`:ChopsticksBetaSession` appends a timestamped session block.
+During release checks, `:ChopsticksBeta` opens the in-editor checklist,
+`:ChopsticksBetaLog` opens editable local notes, and `:ChopsticksBetaSession`
+appends a timestamped session block.
 
 ```
 SPC SPC   fuzzy find file          gd       go to definition

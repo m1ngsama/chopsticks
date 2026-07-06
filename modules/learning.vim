@@ -438,7 +438,7 @@ function! s:ReleaseGuideItem() abort
     if !empty(l:beta)
         if !get(l:beta, 'enabled', 0)
             return ChopsticksInfoItem('release guide', 'off',
-                \ 'no release candidate', {'diagnostic': 0})
+                \ 'no release guide', {'diagnostic': 0})
         endif
     endif
 

@@ -36,6 +36,15 @@ scripts/test.sh vim
 `scripts/test.sh vim` expects plugins to be installed under `~/.vim/plugged`.
 Use `STARTUP_LIMIT_MS=150 scripts/test.sh vim` to match CI's startup threshold.
 
+## CI and releases
+
+GitHub Actions intentionally stays small:
+
+- `.github/workflows/check.yml` runs `scripts/test.sh quick` plus one Ubuntu Vim smoke check on pushes and pull requests to `main`.
+- `.github/workflows/release.yml` runs only for stable tags like `v2.3.0`, repeats the same checks, extracts the matching `CHANGELOG.md` section, and creates the GitHub Release.
+
+Release flow: update `CHANGELOG.md`, complete the release checklist, create `vX.Y.Z`, then push that tag. The release workflow does not push tags, publish packages, deploy a site, or regenerate the README GIF.
+
 ## Reporting bugs
 
 Open an issue. Include:

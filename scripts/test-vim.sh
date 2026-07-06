@@ -23,6 +23,7 @@ check_vim() {
     need vim
     check_plugin_dirs
 
+    step "Startup and plugin reproducibility"
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -c 'qa!' 2>&1
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N -c 'qa!' 2>&1
     if [ -x /usr/bin/vim ] && [ "$(command -v vim)" != "/usr/bin/vim" ]; then
@@ -74,6 +75,7 @@ check_vim() {
         -c 'if search("chopsticks-space", "n") == 0 | cquit | endif' \
         -c 'qa!' 2>&1
 
+    step "Profiles and local config"
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u NONE -i NONE -es -N \
         -c 'let g:chopsticks_profile = "minimal"' \
         -c 'source .vimrc' \
@@ -139,6 +141,7 @@ check_vim() {
     test -d "$(dirname "$local_config_cmd")"
     test ! -e "$local_config_cmd"
 
+    step "Core project loop surfaces"
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \
         -c 'if !exists("*ChopsticksRunnerInfo") | cquit | endif' \
         -c 'let g:run_keys = ChopsticksKeymapContractKeys("project_run") | let g:runner = ChopsticksRunnerInfo() | if join(g:run_keys, "/") !=# "SPC rr" || get(g:runner, "title", "") !=# "run file" || !ChopsticksInfoShapeIssue(g:runner, "ChopsticksRunnerInfo()").ok || get(g:runner, "keymap", "") !=# "SPC rr" || get(g:runner.details[0], "value", "") !=# "SPC rr" || !empty(get(g:runner, "missing_maps", [])) || len(get(g:runner, "details", [])) != 3 || len(get(g:runner, "items", [])) != 1 || get(g:runner.items[0], "state", "") !=# "off" || get(g:runner.items[0], "reason", "") !=# "no filetype" || get(g:runner.items[0], "diagnostic", 1) || get(g:runner, "supported", "") !~# "python" || get(g:runner, "supported", "") !~# "c" | cquit | endif' \
@@ -1006,6 +1009,7 @@ VIMEOF
     XDG_CONFIG_HOME="$EMPTY_XDG" \
         vim -u NONE -i NONE -es -N -S "$display_adapter_vim" 2>&1
 
+    step "Status and info surfaces"
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \
         -c 'if !exists("*ChopsticksRuntimeInfo") || !exists("*ChopsticksRuntimeFeatureSpec") || !exists("*ChopsticksRuntimeFeatureAvailable") || !exists("*ChopsticksDisplayKeyLine") || !exists("*ChopsticksStatusDisplay") || !exists("*ChopsticksStatusInfoFromSpec") || !exists("*ChopsticksInfoSurfaceSpecs") || !exists("*ChopsticksInfoSurfaceSpec") || !exists("*ChopsticksInfoSurfaceSpecsFor") || !exists("*ChopsticksLearningRowLines") || !exists("*ChopsticksLearningRowLinesOr") || !exists("*ChopsticksLearningTaskLine") || !exists("*ChopsticksLearningDrillLine") || !exists("*ChopsticksLearningLoopEnabled") || !exists("*ChopsticksLearningKey") || !exists("*ChopsticksLearningInfoRowLinesOr") || !exists("*ChopsticksOpenScratchBuffer") || !exists("*ChopsticksModuleInfo") || !exists("*ChopsticksCoreInfo") || !exists("*ChopsticksCommandInfo") || !exists("*ChopsticksCommandLines") || !exists("*ChopsticksUtilityInfo") || !exists("*ChopsticksLearningInfo") || !exists("*ChopsticksLearningDailyLoopInfo") || !exists("*ChopsticksLearningLspLoopInfo") || !exists("*ChopsticksHelpInfo") || !exists("*ChopsticksUiInfo") || !exists("*ChopsticksLanguageInfo") || !exists("*ChopsticksLintInfo") || !exists("*ChopsticksCompletionInfo") || !exists("*ChopsticksEditingInfo") || !exists("*ChopsticksBufferInfo") || !exists("*ChopsticksQuickfixInfo") || !exists("*ChopsticksFileSafetyInfo") || !exists("*ChopsticksGitInfo") || !exists("*ChopsticksRunnerInfo") || !exists("*ChopsticksToolchainInfo") || !exists("*ChopsticksLspInfo") || !exists("*ChopsticksLspLearningEnabled") || !exists("*ChopsticksProfileInfo") || !exists("*ChopsticksHealthInfo") || !exists("*ChopsticksKeymapContractSpecs") || !exists("*ChopsticksKeymapContractSpecsFor") || !exists("*ChopsticksKeymapContractKeys") || !exists("*ChopsticksKeymapContractLines") || !exists("*ChopsticksKeymapAuditInfo") || !exists("*ChopsticksBetaInfo") || !exists("*ChopsticksStatusHeaderInfo") | cquit | endif' \
         -c 'let g:runtime_info = ChopsticksRuntimeInfo() | let g:module_info = ChopsticksModuleInfo() | let g:clipboard_feature = ChopsticksRuntimeFeatureSpec("clipboard") | if get(g:runtime_info, "title", "") !=# "runtime" || g:runtime_info.editor !=# "vim" || !g:runtime_info.compatible || len(get(g:runtime_info, "details", [])) != 3 || len(get(g:runtime_info, "items", [])) != len(g:runtime_info.features) + 1 || get(g:runtime_info.items[0], "label", "") !=# "runtime gate" || get(g:runtime_info.items[0], "state", "") !=# "ready" || get(g:runtime_info.items[0], "diagnostic", 1) || get(g:runtime_info.items[1], "diagnostic", 1) || get(g:module_info, "title", "") !=# "modules" || !g:module_info.ok || !g:module_info.inventory_ok || get(g:clipboard_feature, "label", "") !=# "clipboard" || get(g:clipboard_feature, "available", -1) != has("clipboard") || ChopsticksRuntimeFeatureAvailable("+terminal") != has("terminal") || ChopsticksRuntimeFeatureAvailable("popupwin") != (has("popupwin") || has("patch-8.1.1517")) | cquit | endif' \
@@ -1013,7 +1017,7 @@ VIMEOF
         -c 'let g:local_config = ChopsticksLocalConfigInfo() | let g:header = ChopsticksStatusHeaderInfo() | if len(get(g:command_info, "details", [])) != 2 || get(g:command_info.details[1], "label", "") !=# "defined" || len(get(g:command_info, "items", [])) != 1 || get(g:command_info.items[0], "label", "") !=# "command surface" || get(g:command_info.items[0], "state", "") !=# "ready" || get(g:command_info.items[0], "reason", "") !=# "catalog matches Vim commands" || get(g:command_info.items[0], "diagnostic", 1) || len(filter(copy(g:command_info.commands), "get(v:val, \"header\", \"\") ==# \"help\"")) != 2 || len(filter(copy(g:command_info.commands), "get(v:val, \"header\", \"\") ==# \"config\"")) != 2 || get(g:local_config, "title", "") !=# "local preferences" || len(get(g:local_config, "details", [])) != 3 || get(g:local_config.details[2], "value", "") !=# ":ChopsticksConfig  :ChopsticksReload" || len(get(g:local_config, "items", [])) != 1 || get(g:local_config.items[0], "state", "") !=# "off" || get(g:local_config.items[0], "diagnostic", 1) || get(g:header, "title", "") !=# "status header" || len(get(g:header, "details", [])) != 3 || get(g:header.details[0], "value", "") !=# ":ChopsticksHelp  :ChopsticksTutor  SPC ?" || get(g:header.details[2], "value", "") !=# ":ChopsticksConfig  :ChopsticksReload" | cquit | endif' \
         -c 'let g:profile_info = ChopsticksProfileInfo() | let g:lsp = ChopsticksLspInfo() | let g:daily_loop = ChopsticksLearningDailyLoopInfo() | let g:lsp_loop = ChopsticksLearningLspLoopInfo() | if get(g:profile_info, "title", "") !=# "profile" || g:profile_info.profile !=# "engineer" || g:profile_info.keymap !=# "space" || len(get(g:profile_info, "details", [])) != 7 || len(get(g:profile_info, "items", [])) != 0 || get(g:profile_info.details[4], "label", "") !=# "features" || g:lsp.stack.state !=# "ready" || !ChopsticksInfoShapeIssue(g:lsp, "ChopsticksLspInfo()").ok || !ChopsticksLspLearningEnabled() || !get(g:daily_loop, "lsp_enabled", 0) || !get(g:lsp_loop, "enabled", 0) || get(g:lsp_loop.keys, "definition_references_docs", "") !=# "gd / gr / K" || get(g:lsp_loop.tutor_rows[0], "key", "") !=# "gd / gr / K" || get(g:lsp_loop.beta_rows[2], "key", "") !=# "SPC cf" || len(get(g:lsp_loop, "cheat_rows", [])) != 12 || get(g:lsp_loop.cheat_rows[0], "key", "") !=# "gd" || get(g:lsp_loop.cheat_rows[11], "key", "") !=# "SPC cS" || get(g:lsp_loop.cheat_command_lines, 2, "") !=# "  :ChopsticksDoctor   health issues" || get(g:daily_loop.summary_lines, 0, "") !=# "files → s jump → gd/K" || join(get(g:daily_loop, "drill_steps", []), ", ") !=# "SPC SPC, s, gd/K, edit, SPC rr, SPC /, SPC gs" || join(get(g:daily_loop, "tasks", []), ", ") !=# "project navigation, code, grep, git, LSP, Markdown, SSH" || len(get(g:daily_loop, "tutor_rows", [])) != 6 || get(g:daily_loop.tutor_rows[0], "key", "") !=# "SPC SPC" || get(g:daily_loop.tutor_rows[1], "label", "") !=# "jump to visible text" || get(g:daily_loop.tutor_rows[2], "key", "") !=# "gd / gr / K" || get(g:daily_loop.tutor_rows[-1], "label", "") !=# "check git status" || get(get(g:daily_loop, "visible_jump", {}), "primary_key", "") !=# "s" || len(get(get(g:daily_loop, "visible_jump", {}), "cheat_rows", [])) != 2 || len(get(get(g:daily_loop, "visible_jump", {}), "tutor_lines", [])) != 2 || len(get(g:daily_loop, "beta_rows", [])) != 8 || get(g:daily_loop.beta_rows[0], "key", "") !=# "SPC SPC" || get(g:daily_loop.beta_rows[2], "key", "") !=# "gd / gr" || get(g:daily_loop.beta_rows[-1], "key", "") !=# "SPC cf" || len(get(g:lsp, "items", [])) != len(g:lsp.servers) + 1 || get(g:lsp.items[0], "label", "") !=# "vim-lsp stack" || get(g:lsp.items[0], "severity", "") !=# "setup" || get(g:lsp.items[0], "action", "") !=# ":PlugInstall" || get(g:lsp.items[1], "severity", "") !=# "optional" || get(g:lsp.items[1], "action", "") !=# ":LspInstallServer" || get(g:lsp.items[1], "issue_label", "") !=# "python language server" || get(g:lsp, "title", "") !=# "lsp servers" || get(g:lsp, "suffix", "") !~# ":LspInstallServer" || len(get(g:lsp, "notes", [])) != 2 || len(get(g:lsp, "footers", [])) != 1 || ChopsticksHealthInfo().summary.attention != 0 | cquit | endif' \
         -c 'let g:health = ChopsticksHealthInfo() | let g:toolchain = ChopsticksToolchainInfo() | if get(g:health, "title", "") !=# "health" || !ChopsticksInfoShapeIssue(g:health, "ChopsticksHealthInfo()").ok || get(g:health, "summary_line", "") !~# "^attention=0 setup=" || get(g:health, "summary_line", "") !~# " info=" || len(get(g:health, "details", [])) != 2 || get(g:health.details[0], "label", "") !=# "doctor" || get(g:health.details[1], "label", "") !=# "command" || get(g:toolchain, "title", "") !=# "toolchain" || !ChopsticksInfoShapeIssue(g:toolchain, "ChopsticksToolchainInfo()").ok || len(get(g:toolchain, "sections", [])) != 4 || get(g:toolchain.sections[0], "title", "") !=# "project loop tools" || get(g:toolchain.sections[3], "suffix", "") !~# "format-on-save" || len(get(g:toolchain, "footers", [])) != 1 || get(g:toolchain.sections[0], "severity", "") !=# "setup" || get(g:toolchain.sections[1], "severity", "") !=# "optional" || get(g:toolchain.sections[0].items[1], "cmd", "") !=# "rg" || get(g:toolchain.sections[0].items[1], "detail", "") !=# "project grep" || get(g:toolchain.sections[0].items[1], "diagnostic", 1) || get(g:toolchain.sections[1].items[0], "action", "") !=# "install: node" || !has_key(g:toolchain.sections[1].items[0], "diagnostic") | cquit | endif' \
-        -c 'let g:beta = ChopsticksBetaInfo() | if !g:beta.enabled || get(g:beta, "title", "") !=# "release candidate" || !ChopsticksInfoShapeIssue(g:beta, "ChopsticksBetaInfo()").ok || get(g:beta, "label", "") !=# "2.3.0" || get(g:beta, "log_path", "") !~# "chopsticks-2.3.0.md" || len(get(g:beta, "details", [])) != 5 || get(g:beta.details[0], "label", "") !=# "candidate" || get(g:beta.details[3], "value", "") !=# ":ChopsticksBeta  :ChopsticksBetaLog" || get(g:beta.details[4], "value", "") !=# ":ChopsticksBetaSession" || len(get(g:health, "summary_rows", [])) != 4 || get(g:health.summary_rows[0], "severity", "") !=# "attention" || get(g:health.summary_rows[3], "severity", "") !=# "info" | cquit | endif' \
+        -c 'let g:beta = ChopsticksBetaInfo() | if !g:beta.enabled || get(g:beta, "title", "") !=# "release guide" || !ChopsticksInfoShapeIssue(g:beta, "ChopsticksBetaInfo()").ok || get(g:beta, "label", "") !=# "2.3.0" || get(g:beta, "log_path", "") !~# "chopsticks-2.3.0.md" || len(get(g:beta, "details", [])) != 5 || get(g:beta.details[0], "label", "") !=# "release" || get(g:beta.details[3], "value", "") !=# ":ChopsticksBeta  :ChopsticksBetaLog" || get(g:beta.details[4], "value", "") !=# ":ChopsticksBetaSession" || len(get(g:health, "summary_rows", [])) != 4 || get(g:health.summary_rows[0], "severity", "") !=# "attention" || get(g:health.summary_rows[3], "severity", "") !=# "info" | cquit | endif' \
         -c 'ChopsticksStatus' \
         -c "redir! > $TMP_ROOT/status-default.txt" \
         -c 'silent %print | redir END | qa!' 2>&1
@@ -1175,7 +1179,7 @@ VIMEOF
     grep -Fq 'off markdownlint (md)  (disabled by default)' "$TMP_ROOT/status-default.txt"
     grep -Fq 'off prettier (md)  (disabled by default)' "$TMP_ROOT/status-default.txt"
     grep -Fq 'Install optional tools with ./install.sh --install-tools' "$TMP_ROOT/status-default.txt"
-    grep -Fq 'candidate 2.3.0' "$TMP_ROOT/status-default.txt"
+    grep -Fq 'release   2.3.0' "$TMP_ROOT/status-default.txt"
     grep -Fq 'commands  :ChopsticksBeta  :ChopsticksBetaLog' "$TMP_ROOT/status-default.txt"
     grep -Fq ':ChopsticksBetaSession' "$TMP_ROOT/status-default.txt"
     grep -Fq 'chopsticks-2.3.0.md' "$TMP_ROOT/status-default.txt"
@@ -1682,6 +1686,7 @@ VIMEOF
         -c 'let g:health = ChopsticksHealthInfo() | if empty(filter(copy(g:health.issues), "v:val.code ==# \"profile.custom-profile\" && v:val.severity ==# \"setup\" && v:val.detail ==# \"from profile item\" && v:val.action ==# \"fix profile\"")) | cquit | endif' \
         -c 'qa!' 2>&1
 
+    step "Keymap contract and opt-ins"
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \
         -c 'let last_change_map = nr2char(96) . "[v" . nr2char(96) . "]"' \
         -c 'if maparg("0", "n") !=# "" || maparg("0", "v") !=# "" || maparg("Y", "n") !=# "" || maparg("Q", "n") !=# "" || maparg("<Space>", "n") !=# "" || maparg("//", "v") !=# "" || maparg("gV", "n") !=# "" || maparg("jk", "i") !=# "" || maparg("<C-s>", "n") !=# "" || maparg("<C-s>", "i") !=# "" || maparg("<C-p>", "n") !=# "" || maparg("<C-p>", "c") !=# "" || maparg("<C-n>", "c") !=# "" || maparg("w!!", "c") !=# "" | cquit | endif' \
@@ -1808,6 +1813,7 @@ VIMEOF
         -c 'if len(ChopsticksKeymapAuditIssues()) != 0 | cquit | endif' \
         -c 'qa!' 2>&1
 
+    step "Terminal, SSH, and TTY behavior"
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u NONE -i NONE -es -N \
         -c 'let g:chopsticks_enable_terminal_keymaps = 1' \
         -c 'source .vimrc' \
@@ -2083,6 +2089,7 @@ IMEOF
         -c 'if maparg("<Space>gl", "n") !~# "Git log" || maparg("<Space>gC", "n") !~# "Commits" | cquit | endif' \
         -c 'qa!' 2>&1
 
+    step "Space, classic, cheat, and tutor surfaces"
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u NONE -i NONE -es -N \
         -c 'let g:chopsticks_keymap_style = "space"' \
         -c 'source .vimrc' \
@@ -2331,6 +2338,7 @@ IMEOF
     grep -Fq ',S + 2 chars  EasyMotion jump' "$TMP_ROOT/tutor-classic.txt"
     grep -Fq ',u            undo tree' "$TMP_ROOT/tutor-classic.txt"
 
+    step "Release guide surfaces"
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \
         -c 'ChopsticksBeta' \
         -c 'if max(map(getline(1, "$"), "strdisplaywidth(v:val)")) > 78 | cquit | endif' \
@@ -2338,8 +2346,8 @@ IMEOF
         -c 'silent %print' \
         -c 'redir END' \
         -c 'qa!' 2>&1
-    grep -Fq 'chopsticks 2.3.0' "$TMP_ROOT/beta-guide.txt"
-    grep -Fq 'Prove this can be the long-term project loop.' "$TMP_ROOT/beta-guide.txt"
+    grep -Fq 'chopsticks release 2.3.0' "$TMP_ROOT/beta-guide.txt"
+    grep -Fq 'Validate the long-term project loop before tagging.' "$TMP_ROOT/beta-guide.txt"
     grep -Fq 'Record real editing friction before release.' "$TMP_ROOT/beta-guide.txt"
     grep -Fq 'no GitHub/private wiki is needed to remember the daily loop' "$TMP_ROOT/beta-guide.txt"
     grep -Fq 'window/sidebar navigation beats native <C-w> only' "$TMP_ROOT/beta-guide.txt"
@@ -2418,6 +2426,18 @@ IMEOF
         exit 1
     fi
 
+    XDG_CONFIG_HOME="$EMPTY_XDG" vim -u NONE -i NONE -es -N \
+        -c 'let g:chopsticks_release_label = "v9.9.9"' \
+        -c 'source .vimrc' \
+        -c 'let g:beta = ChopsticksBetaInfo() | if get(g:beta, "label", "") !=# "v9.9.9" || get(g:beta.details[0], "label", "") !=# "release" || get(g:beta, "log_path", "") !~# "chopsticks-v9.9.9.md" | cquit | endif' \
+        -c 'qa!' 2>&1
+
+    XDG_CONFIG_HOME="$EMPTY_XDG" vim -u NONE -i NONE -es -N \
+        -c 'let g:chopsticks_beta_label = "legacy-test"' \
+        -c 'source .vimrc' \
+        -c 'let g:beta = ChopsticksBetaInfo() | if get(g:, "chopsticks_release_label", "") !=# "legacy-test" || get(g:beta, "label", "") !=# "legacy-test" | cquit | endif' \
+        -c 'qa!' 2>&1
+
     beta_log="$TMP_ROOT/release log/chopsticks-2.3.0.md"
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u NONE -i NONE -es -N \
         -c "let g:chopsticks_beta_log = '$beta_log'" \
@@ -2460,6 +2480,7 @@ IMEOF
     test "$after_sessions" -eq $((before_sessions + 1))
     grep -Fq -- '- keep-existing-note' "$beta_log"
 
+    step "Markdown and file safety"
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u NONE -i NONE -es -N README.md \
         -c 'let g:chopsticks_keymap_style = "space"' \
         -c 'source .vimrc' \
@@ -2511,6 +2532,7 @@ IMEOF
         -c 'let g:files = ChopsticksFileSafetyInfo() | if !g:files.large_buffer || get(g:files.items[2], "label", "") !=# "current buffer" || get(g:files.items[2], "state", "") !=# "ready" || get(g:files.items[2], "value", "") !=# "large file" || get(g:files.items[2], "reason", "") !~# "reduced" || get(g:files.items[2], "diagnostic", 1) | cquit | endif' \
         -c 'qa!' 2>&1
 
+    step "Runner execution and startup budget"
     mkdir -p "$TMP_ROOT/fake-bin" "$TMP_ROOT/c runner"
     cat > "$TMP_ROOT/fake-bin/gcc" <<'GCCEOF'
 #!/usr/bin/env bash

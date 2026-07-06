@@ -201,7 +201,7 @@ Input method switching:
 ==============================================================================
 RELEASE TESTING                                       *chopsticks-release-test*
 
-For the 2.3.0 release candidate, record real editing friction instead of
+Before tagging a stable release, record real editing friction instead of
 abstract opinions:
 >
   :ChopsticksBeta         compact release checklist
@@ -211,7 +211,14 @@ abstract opinions:
 
 Default release log:
 >
-  ${XDG_CONFIG_HOME:-~/.config}/chopsticks-2.3.0.md
+  ${XDG_CONFIG_HOME:-~/.config}/chopsticks-{release-label}.md
+<
+
+The default release label is g:chopsticks_release_label. The legacy
+g:chopsticks_beta_label name is still accepted. Override the label or path with:
+>
+  let g:chopsticks_release_label = 'vX.Y.Z'
+  let g:chopsticks_beta_log = expand('~/tmp/chopsticks-release.md')
 <
 
 Exit criteria before a stable release:

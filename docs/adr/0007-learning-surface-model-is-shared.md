@@ -1,7 +1,7 @@
 # Learning Surface Model Is Shared
 
 Chopsticks teaches one trained project loop through the active cheat sheet,
-guided tutor, and release-candidate guide. Those views can have different
+guided tutor, and release guide. Those views can have different
 layouts, but their row, task, and drill models should not be rebuilt in each
 module. GitHub Wiki is intentionally disabled, so durable usage memory must
 live in Vim-native learning surfaces instead of an external wiki.

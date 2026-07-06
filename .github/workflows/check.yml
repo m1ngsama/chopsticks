@@ -1,0 +1,55 @@
+name: check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: check-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quick:
+    name: quick checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install check tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+          npm install -g markdownlint-cli
+
+      - name: Run quick checks
+        run: scripts/test.sh quick
+
+  vim:
+    name: Vim smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install Vim and vim-plug
+        run: |
+          if ! command -v vim >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y vim
+          fi
+          vim --version | head -1
+          curl -fLo ~/.vim/autoload/plug.vim --create-dirs \
+            https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+
+      - name: Install plugins
+        run: scripts/ci-install-plugins.sh
+
+      - name: Run Vim smoke tests
+        run: scripts/test.sh vim

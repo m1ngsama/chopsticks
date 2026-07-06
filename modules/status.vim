@@ -22,7 +22,7 @@ function! s:LspFallbackInfo() abort
 endfunction
 
 function! s:BetaFallbackInfo() abort
-    return ChopsticksInfoSection('release candidate', {
+    return ChopsticksInfoSection('release guide', {
         \   'enabled': 0,
         \   'details': [],
         \   'items': [],

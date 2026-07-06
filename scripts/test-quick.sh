@@ -14,13 +14,18 @@ check_shell() {
     bash -n scripts/test-common.sh
     bash -n scripts/test-quick.sh
     bash -n scripts/test-vim.sh
+    bash -n scripts/ci-install-plugins.sh
+    bash -n scripts/release-notes.sh
     test -x install.sh
     test -x get.sh
     test -x scripts/test.sh
+    test -x scripts/ci-install-plugins.sh
+    test -x scripts/release-notes.sh
 
     need shellcheck
     shellcheck install.sh get.sh scripts/test.sh \
-        scripts/test-common.sh scripts/test-quick.sh scripts/test-vim.sh
+        scripts/test-common.sh scripts/test-quick.sh scripts/test-vim.sh \
+        scripts/ci-install-plugins.sh scripts/release-notes.sh
 }
 
 check_vim_only_runtime() {
@@ -48,6 +53,16 @@ check_vim_only_runtime() {
         echo "$unexpected_nvim_gate" >&2
         exit 1
     fi
+}
+
+check_release_notes() {
+    step "Release notes extraction"
+
+    local latest_version
+    latest_version="$(awk '/^## [0-9]+\.[0-9]+\.[0-9]+/{ print $2; exit }' CHANGELOG.md)"
+    test -n "$latest_version"
+    scripts/release-notes.sh "v$latest_version" > "$TMP_ROOT/release-notes.txt"
+    grep -Fq "## $latest_version" "$TMP_ROOT/release-notes.txt"
 }
 
 check_docs() {
@@ -975,7 +990,7 @@ check_docs() {
     grep -Fq 'function! ChopsticksStatusInfoFromSpec' modules/info.vim
     grep -Fq 'function! s:StatusInfoFallback' modules/info.vim
     grep -Fq "ChopsticksInfoSection('lsp servers'" modules/status.vim
-    grep -Fq "ChopsticksInfoSection('release candidate'" modules/status.vim
+    grep -Fq "ChopsticksInfoSection('release guide'" modules/status.vim
     grep -Fq "function! s:StatusHeaderHelpKey" modules/status.vim
     grep -Fq "function! s:StatusHeaderFallbackInfo" modules/status.vim
     grep -Fq "function! s:StatusInfoSpec" modules/status.vim
@@ -1006,7 +1021,7 @@ check_docs() {
         grep -Fq 'function! s:ToolchainInfo' modules/status.vim ||
         grep -Fq 'function! s:LspInfo' modules/status.vim ||
         grep -Fq 'function! s:BetaInfo' modules/status.vim ||
-        grep -Fq "'ChopsticksBetaInfo', 'release candidate'" modules/status.vim ||
+        grep -Fq "'ChopsticksBetaInfo', 'release guide'" modules/status.vim ||
         grep -Fq "'ChopsticksToolchainInfo', 'toolchain'" modules/status.vim ||
         grep -Fq "'ChopsticksLspInfo', 'lsp servers'" modules/status.vim; then
         echo "Status sections must be loaded through the Status Section Registry" >&2
@@ -1025,13 +1040,13 @@ check_docs() {
     grep -Fq 'ChopsticksInfoItem(' modules/input_method.vim
     grep -Fq "return ChopsticksInfoSection('input method'" modules/input_method.vim
     grep -Fq 'ChopsticksInfoDetail(' modules/beta.vim
-    grep -Fq "return ChopsticksInfoSection('release candidate'" modules/beta.vim
+    grep -Fq "return ChopsticksInfoSection('release guide'" modules/beta.vim
     if grep -Fq "'title': 'help surface'" modules/help.vim ||
         grep -Fq "'title': 'languages'" modules/languages.vim ||
         grep -Fq "'title': 'ui'" modules/ui.vim ||
         grep -Fq "'title': 'navigation'" modules/navigation.vim ||
         grep -Fq "'title': 'input method'" modules/input_method.vim ||
-        grep -Fq "'title': 'release candidate'" modules/beta.vim; then
+        grep -Fq "'title': 'release guide'" modules/beta.vim; then
         echo "Auxiliary info producers must use the Info Shape Contract" >&2
         exit 1
     fi
@@ -1040,7 +1055,7 @@ check_docs() {
         grep -Fq "'title': 'health'" modules/health.vim ||
         grep -Fq "'title': a:title" modules/status.vim ||
         grep -Fq "'title': 'lsp servers'" modules/status.vim ||
-        grep -Fq "'title': 'release candidate'" modules/status.vim ||
+        grep -Fq "'title': 'release guide'" modules/status.vim ||
         grep -Fq "'title': 'status header'" modules/status.vim; then
         echo "Audit, health, and status fallback info must use the Info Shape Contract" >&2
         exit 1
@@ -1308,12 +1323,16 @@ run_quick_group() {
             check_shell
             check_vim_only_runtime
             check_docs
+            check_release_notes
             check_installer_modes
             check_bootstrap
             ;;
         shell) check_shell ;;
         vim-only) check_vim_only_runtime ;;
-        docs) check_docs ;;
+        docs)
+            check_docs
+            check_release_notes
+            ;;
         installer) check_installer_modes ;;
         bootstrap) check_bootstrap ;;
         *)

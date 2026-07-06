@@ -194,12 +194,17 @@ check_vim() {
 
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \
         -c 'if !exists("*ChopsticksQuickfixInfo") | cquit | endif' \
-        -c 'let g:quickfix_keys = ChopsticksKeymapContractKeys("quickfix_navigation") | let g:qf = ChopsticksQuickfixInfo() | if join(g:quickfix_keys, " ") !=# "[q ]q" || get(g:qf, "title", "") !=# "quickfix" || !ChopsticksInfoShapeIssue(g:qf, "ChopsticksQuickfixInfo()").ok || len(get(g:qf, "details", [])) != 3 || len(get(g:qf, "items", [])) != 3 || get(g:qf, "quickfix_count", -1) != 0 || get(g:qf, "loclist_count", -1) != 0 || !empty(get(g:qf, "missing_maps", [])) || get(g:qf.items[0], "label", "") !=# "quickfix window" || get(g:qf.items[0], "state", "") !=# "ready" || get(g:qf.items[1], "label", "") !=# "location window" || get(g:qf.items[1], "state", "") !=# "ready" || get(g:qf.items[2], "label", "") !=# "quickfix navigation" || get(g:qf.items[2], "state", "") !=# "ready" || get(g:qf.items[2], "reason", "") !=# "[q ]q" || get(g:qf.items[2], "diagnostic", 1) | cquit | endif' \
+        -c 'let g:quickfix_keys = ChopsticksKeymapContractKeys("quickfix_navigation") | let g:loclist_keys = ChopsticksKeymapContractKeys("loclist_navigation") | let g:qf = ChopsticksQuickfixInfo() | if join(g:quickfix_keys, " ") !=# "[q ]q" || join(g:loclist_keys, " ") !=# "[l ]l" || get(g:qf, "title", "") !=# "quickfix" || !ChopsticksInfoShapeIssue(g:qf, "ChopsticksQuickfixInfo()").ok || len(get(g:qf, "details", [])) != 3 || len(get(g:qf, "items", [])) != 4 || get(g:qf, "quickfix_count", -1) != 0 || get(g:qf, "loclist_count", -1) != 0 || !empty(get(g:qf, "missing_maps", [])) || !empty(get(g:qf, "missing_loc_maps", [])) || get(g:qf.items[0], "label", "") !=# "quickfix window" || get(g:qf.items[0], "state", "") !=# "ready" || get(g:qf.items[1], "label", "") !=# "location window" || get(g:qf.items[1], "state", "") !=# "ready" || get(g:qf.items[2], "label", "") !=# "quickfix navigation" || get(g:qf.items[2], "state", "") !=# "ready" || get(g:qf.items[2], "reason", "") !=# "[q ]q" || get(g:qf.items[2], "diagnostic", 1) || get(g:qf.items[3], "label", "") !=# "location navigation" || get(g:qf.items[3], "state", "") !=# "ready" || get(g:qf.items[3], "reason", "") !=# "[l ]l" || get(g:qf.items[3], "diagnostic", 1) | cquit | endif' \
         -c 'qa!' 2>&1
 
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \
         -c 'silent! nunmap [q' \
         -c 'let g:qf = ChopsticksQuickfixInfo() | let g:keymap = ChopsticksKeymapAuditInfo() | let g:health = ChopsticksHealthInfo() | if get(g:qf.items[2], "state", "") !=# "missing" || stridx(get(g:qf.items[2], "detail", ""), "[q") < 0 || g:keymap.ok || empty(filter(copy(g:health.issues), "v:val.code ==# \"quickfix.quickfix-navigation\" && stridx(v:val.detail, \"[q\") >= 0")) | cquit | endif' \
+        -c 'qa!' 2>&1
+
+    XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \
+        -c 'silent! nunmap ]l' \
+        -c 'let g:qf = ChopsticksQuickfixInfo() | let g:keymap = ChopsticksKeymapAuditInfo() | let g:health = ChopsticksHealthInfo() | if get(g:qf.items[3], "state", "") !=# "missing" || stridx(get(g:qf.items[3], "detail", ""), "]l") < 0 || g:keymap.ok || empty(filter(copy(g:health.issues), "v:val.code ==# \"quickfix.location-navigation\" && stridx(v:val.detail, \"]l\") >= 0")) | cquit | endif' \
         -c 'qa!' 2>&1
 
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \
@@ -1143,10 +1148,11 @@ VIMEOF
     grep -Fq '── quickfix ──' "$TMP_ROOT/status-default.txt"
     grep -Fq 'quickfix  0 entries' "$TMP_ROOT/status-default.txt"
     grep -Fq 'loclist   0 entries' "$TMP_ROOT/status-default.txt"
-    grep -Fq 'maps      [q ]q' "$TMP_ROOT/status-default.txt"
+    grep -Fq 'maps      [q ]q / [l ]l' "$TMP_ROOT/status-default.txt"
     grep -Fq 'OK  quickfix window  (cwindow)' "$TMP_ROOT/status-default.txt"
     grep -Fq 'OK  location window  (lwindow)' "$TMP_ROOT/status-default.txt"
     grep -Fq 'OK  quickfix navigation  ([q ]q)' "$TMP_ROOT/status-default.txt"
+    grep -Fq 'OK  location navigation  ([l ]l)' "$TMP_ROOT/status-default.txt"
     grep -Fq '── file safety ──' "$TMP_ROOT/status-default.txt"
     grep -Fq 'write     auto mkdir' "$TMP_ROOT/status-default.txt"
     grep -Fq 'large     10485760 bytes' "$TMP_ROOT/status-default.txt"
@@ -1311,7 +1317,7 @@ VIMEOF
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \
         -c 'let g:file_picker_keys = ChopsticksKeymapContractKeys("project_files_picker") | let g:buffer_picker_keys = ChopsticksKeymapContractKeys("project_buffers_picker") | let g:git_file_keys = ChopsticksKeymapContractKeys("project_git_files") | let g:recent_file_keys = ChopsticksKeymapContractKeys("project_recent_files") | let g:buffer_line_keys = ChopsticksKeymapContractKeys("project_buffer_lines") | if join(g:file_picker_keys, "/") !=# "SPC ff" || join(g:buffer_picker_keys, "/") !=# "SPC fb" || join(g:git_file_keys, "/") !=# "SPC fg" || join(g:recent_file_keys, "/") !=# "SPC fr" || join(g:buffer_line_keys, "/") !=# "SPC fl" | cquit | endif' \
         -c 'let g:command_keys = ChopsticksKeymapContractKeys("project_commands") | let g:mark_keys = ChopsticksKeymapContractKeys("project_marks") | let g:search_history_keys = ChopsticksKeymapContractKeys("project_search_history") | let g:command_history_keys = ChopsticksKeymapContractKeys("project_command_history") | let g:grep_picker_keys = ChopsticksKeymapContractKeys("project_grep_picker") | let g:grep_word_keys = ChopsticksKeymapContractKeys("project_grep_word") | let g:tag_keys = ChopsticksKeymapContractKeys("project_tags") | if join(g:command_keys, "/") !=# "SPC sc" || join(g:mark_keys, "/") !=# "SPC sm" || join(g:search_history_keys, "/") !=# "SPC s/" || join(g:command_history_keys, "/") !=# "SPC s:" || join(g:grep_picker_keys, "/") !=# "SPC sg" || join(g:grep_word_keys, "/") !=# "SPC sw" || join(g:tag_keys, "/") !=# "SPC st" | cquit | endif' \
-        -c 'let g:close_other_keys = ChopsticksKeymapContractKeys("buffer_close_others") | let g:quickfix_window_keys = ChopsticksKeymapContractKeys("quickfix_window") | let g:loclist_window_keys = ChopsticksKeymapContractKeys("loclist_window") | let g:terminal_keys = ChopsticksKeymapContractKeys("terminal_entry") | if join(g:close_other_keys, "/") !=# "SPC bo" || join(g:quickfix_window_keys, "/") !=# "SPC xq/SPC xQ" || join(g:loclist_window_keys, "/") !=# "SPC xl/SPC xL" || (has("terminal") && join(g:terminal_keys, "/") !=# "SPC tt/SPC th") | cquit | endif' \
+        -c 'let g:close_other_keys = ChopsticksKeymapContractKeys("buffer_close_others") | let g:quickfix_window_keys = ChopsticksKeymapContractKeys("quickfix_window") | let g:loclist_window_keys = ChopsticksKeymapContractKeys("loclist_window") | let g:quickfix_nav_keys = ChopsticksKeymapContractKeys("quickfix_navigation") | let g:loclist_nav_keys = ChopsticksKeymapContractKeys("loclist_navigation") | let g:terminal_keys = ChopsticksKeymapContractKeys("terminal_entry") | if join(g:close_other_keys, "/") !=# "SPC bo" || join(g:quickfix_window_keys, "/") !=# "SPC xq/SPC xQ" || join(g:loclist_window_keys, "/") !=# "SPC xl/SPC xL" || join(g:quickfix_nav_keys, "/") !=# "[q/]q" || join(g:loclist_nav_keys, "/") !=# "[l/]l" || (has("terminal") && join(g:terminal_keys, "/") !=# "SPC tt/SPC th") | cquit | endif' \
         -c 'qa!' 2>&1
 
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \
@@ -1740,7 +1746,7 @@ VIMEOF
         vim --cmd 'let g:chopsticks_keymap_style = "classic"' \
         -u .vimrc -i NONE -es -N \
         -c 'let g:classic_grep_word_keys = ChopsticksKeymapContractKeys("project_grep_word") | let g:classic_tag_keys = ChopsticksKeymapContractKeys("project_tags") | let g:classic_recent_keys = ChopsticksKeymapContractKeys("project_recent_files") | let g:classic_buffer_line_keys = ChopsticksKeymapContractKeys("project_buffer_lines") | let g:classic_command_keys = ChopsticksKeymapContractKeys("project_commands") | let g:classic_mark_keys = ChopsticksKeymapContractKeys("project_marks") | if join(g:classic_grep_word_keys, "/") !=# ",rG" || join(g:classic_tag_keys, "/") !=# ",rt" || join(g:classic_recent_keys, "/") !=# ",fh" || join(g:classic_buffer_line_keys, "/") !=# ",fl" || join(g:classic_command_keys, "/") !=# ",fc" || join(g:classic_mark_keys, "/") !=# ",fm" | cquit | endif' \
-        -c 'let g:classic_quickfix_window_keys = ChopsticksKeymapContractKeys("quickfix_window") | let g:classic_terminal_keys = ChopsticksKeymapContractKeys("terminal_entry") | if join(g:classic_quickfix_window_keys, "/") !=# ",qo/,qc" || (has("terminal") && join(g:classic_terminal_keys, "/") !=# ",tv/,th") | cquit | endif' \
+        -c 'let g:classic_quickfix_window_keys = ChopsticksKeymapContractKeys("quickfix_window") | let g:classic_quickfix_nav_keys = ChopsticksKeymapContractKeys("quickfix_navigation") | let g:classic_loclist_nav_keys = ChopsticksKeymapContractKeys("loclist_navigation") | let g:classic_terminal_keys = ChopsticksKeymapContractKeys("terminal_entry") | if join(g:classic_quickfix_window_keys, "/") !=# ",qo/,qc" || join(g:classic_quickfix_nav_keys, "/") !=# "[q/]q" || join(g:classic_loclist_nav_keys, "/") !=# "[l/]l" || (has("terminal") && join(g:classic_terminal_keys, "/") !=# ",tv/,th") | cquit | endif' \
         -c 'qa!' 2>&1
 
     XDG_CONFIG_HOME="$EMPTY_XDG" \
@@ -2133,6 +2139,7 @@ IMEOF
     grep -Fq 'SPC bp/bn prev / next buf' "$TMP_ROOT/cheat-default.txt"
     grep -Fq 'SPC bo    close other buffers' "$TMP_ROOT/cheat-default.txt"
     grep -Fq 'SPC tt/th terminal / split' "$TMP_ROOT/cheat-default.txt"
+    grep -Fq ']l [l     next / prev loc' "$TMP_ROOT/cheat-default.txt"
     grep -Fq 'SPC xq/xQ open / close qf' "$TMP_ROOT/cheat-default.txt"
     grep -Fq 'SPC xl/xL open / close loclist' "$TMP_ROOT/cheat-default.txt"
     grep -Fq 'SPC us    spell check' "$TMP_ROOT/cheat-default.txt"
@@ -2181,6 +2188,7 @@ IMEOF
     grep -Fq ',gB       FZF buffer commits' "$TMP_ROOT/cheat-classic.txt"
     grep -Fq ',h ,l     prev / next buf' "$TMP_ROOT/cheat-classic.txt"
     grep -Fq ',tv ,th   terminal v / h' "$TMP_ROOT/cheat-classic.txt"
+    grep -Fq ']l [l     next / prev loc' "$TMP_ROOT/cheat-classic.txt"
     grep -Fq ',qo ,qc   open / close qf' "$TMP_ROOT/cheat-classic.txt"
     grep -Fq ',ss       spell check' "$TMP_ROOT/cheat-classic.txt"
     grep -Fq 'trained loop:' "$TMP_ROOT/cheat-classic.txt"
@@ -2247,6 +2255,7 @@ IMEOF
     grep -Fq 'SPC gl    log graph' "$TMP_ROOT/cheat-space.txt"
     grep -Fq 'SPC fc    edit local config' "$TMP_ROOT/cheat-space.txt"
     grep -Fq 's+2ch     easymotion jump' "$TMP_ROOT/cheat-space.txt"
+    grep -Fq ']l [l     next / prev loc' "$TMP_ROOT/cheat-space.txt"
     if grep -Eq ',w        save|,gp       push|SPC gp    push|SPC gl    pull|SPC fs    save|SPC cd    definition|SPC f     format' "$TMP_ROOT/cheat-space.txt"; then
         cat "$TMP_ROOT/cheat-space.txt"
         exit 1
@@ -2269,6 +2278,7 @@ IMEOF
     grep -Fq ':ChopsticksDoctor      issues' "$TMP_ROOT/tutor-default.txt"
     grep -Fq 'Ctrl-h/j/k/l split navigation' "$TMP_ROOT/tutor-default.txt"
     grep -Fq 'SPC e, Ctrl-h/l  enter/leave sidebar' "$TMP_ROOT/tutor-default.txt"
+    grep -Fq '[q/]q [l/]l   qf / loclist' "$TMP_ROOT/tutor-default.txt"
     grep -Fq 's + 2 chars jump to visible text' "$TMP_ROOT/tutor-default.txt"
     grep -Fq 's + 2 chars  visible jump' "$TMP_ROOT/tutor-default.txt"
     grep -Fq 'SPC S        same jump fallback' "$TMP_ROOT/tutor-default.txt"
@@ -2317,6 +2327,7 @@ IMEOF
     grep -Fq ':ChopsticksConfig      local config' "$TMP_ROOT/tutor-classic.txt"
     grep -Fq ':ChopsticksBetaSession new release note' "$TMP_ROOT/tutor-classic.txt"
     grep -Fq 'Ctrl-h/j/k/l  split navigation' "$TMP_ROOT/tutor-classic.txt"
+    grep -Fq '[q/]q [l/]l   qf / loclist' "$TMP_ROOT/tutor-classic.txt"
     grep -Fq ',S + 2 chars  EasyMotion jump' "$TMP_ROOT/tutor-classic.txt"
     grep -Fq ',u            undo tree' "$TMP_ROOT/tutor-classic.txt"
 
@@ -2330,7 +2341,7 @@ IMEOF
     grep -Fq 'chopsticks 2.3.0' "$TMP_ROOT/beta-guide.txt"
     grep -Fq 'Prove this can be the long-term project loop.' "$TMP_ROOT/beta-guide.txt"
     grep -Fq 'Record real editing friction before release.' "$TMP_ROOT/beta-guide.txt"
-    grep -Fq 'no private wiki is needed to remember the daily loop' "$TMP_ROOT/beta-guide.txt"
+    grep -Fq 'no GitHub/private wiki is needed to remember the daily loop' "$TMP_ROOT/beta-guide.txt"
     grep -Fq 'window/sidebar navigation beats native <C-w> only' "$TMP_ROOT/beta-guide.txt"
     grep -Fq 'SPC SPC   find file' "$TMP_ROOT/beta-guide.txt"
     grep -Fq 's / SPC S jump on screen' "$TMP_ROOT/beta-guide.txt"

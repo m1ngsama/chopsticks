@@ -337,9 +337,10 @@ _Avoid_: `:ChopsticksStatus` counting keymap issues or formatting audit state
 The active cheat sheet, guided tutor, native Vim help, and release-candidate
 guide entry points owned by `modules/learning.vim` and surfaced by
 `ChopsticksLearningInfo()` so a user can recover the daily loop from inside
-Vim.
-_Avoid_: private wiki, README-only onboarding, or scattered help availability
-checks
+Vim. GitHub Wiki is disabled; durable usage memory belongs in the in-editor
+cheatmap, tutor, native help, and audited keymap surfaces.
+_Avoid_: GitHub Wiki, private wiki, README-only onboarding, or scattered help
+availability checks
 
 **Learning Surface Item**:
 A state-bearing entry and detail rows returned by `ChopsticksLearningInfo()`

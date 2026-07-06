@@ -190,6 +190,14 @@ function! s:GitStatusDiffBlame() abort
     return join(l:keys, '/')
 endfunction
 
+function! s:QuickfixLoclistKeys() abort
+    let l:qf = ChopsticksKeymapContractKeysOr('quickfix_navigation',
+        \ ['[q', ']q'])
+    let l:loc = ChopsticksKeymapContractKeysOr('loclist_navigation',
+        \ ['[l', ']l'])
+    return join(l:qf, '/') . ' ' . join(l:loc, '/')
+endfunction
+
 function! s:LearningDailyLoopInfo() abort
     return ChopsticksInfoOr('ChopsticksLearningDailyLoopInfo', {})
 endfunction
@@ -432,6 +440,8 @@ function! s:ChopsticksTutor() abort
             \   . '  enter/leave sidebar',
             \ ChopsticksDisplayKeyLine('     ', 13, s:WindowLayoutKey(),
             \   'maximize split'),
+            \ ChopsticksDisplayKeyLine('     ', 13,
+            \   s:QuickfixLoclistKeys(), 'qf / loclist'),
             \ '',
             \ '  daily drill',
             \ '     ' . s:DailyDrill(),
@@ -476,6 +486,8 @@ function! s:ChopsticksTutor() abort
             \   s:GitStatusDiffBlame(), 'status / diff / blame'),
             \ '     ' . s:WindowNavigationLabel() . '  split navigation',
             \ '     <C-w>hjkl     native fallback',
+            \ ChopsticksDisplayKeyLine('     ', 13,
+            \   s:QuickfixLoclistKeys(), 'qf / loclist'),
             \ '',
             \ '  support',
             \ ])

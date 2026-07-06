@@ -67,6 +67,7 @@ High-frequency keys:
   SPC ca    code action            SPC cr    rename
   SPC cf    format                 SPC fc    edit local config
   SPC fV    reload config          SPC ?     cheat sheet
+  [q / ]q   quickfix prev / next   [l / ]l   loclist prev / next
 <
 
 Classic comma mappings remain available:

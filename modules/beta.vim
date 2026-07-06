@@ -189,7 +189,7 @@ function! s:OpenBetaGuide() abort
         \ '     no high-frequency action needs an undocumented key',
         \ '     window/sidebar navigation beats native <C-w> only',
         \ s:LearningConsistencyLine(),
-        \ '     no private wiki is needed to remember the daily loop',
+        \ '     no GitHub/private wiki is needed to remember the daily loop',
         \ '     quick/vim tests pass locally and over SSH',
         \ '',
         \ '  commands',

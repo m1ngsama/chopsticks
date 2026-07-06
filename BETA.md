@@ -80,7 +80,8 @@ file, edit Markdown, and use a machine with missing optional tools.
 - Window/sidebar navigation feels faster than native `<C-w>` only.
 - README, QUICKSTART, `:help chopsticks`, `SPC ?`, and `:ChopsticksTutor`
   teach the same layout.
-- No private wiki or external note is needed to remember the daily loop.
+- No GitHub Wiki, private wiki, or external note is needed to remember the
+  daily loop.
 - `scripts/test.sh quick` and `scripts/test.sh vim` pass locally.
 - The README GIF has been regenerated from `.github/demo.tape` after any public
   key change.

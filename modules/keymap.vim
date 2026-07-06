@@ -1138,6 +1138,16 @@ function! s:SharedContractSpecs() abort
         \   'display_groups': ['quickfix_navigation'],
         \   'display_key': ']q',
         \   'display_label': 'next quickfix'}),
+        \ s:ExpectedMapSpec('n', '[l', 'lprev',
+        \   'location-list navigation', {
+        \   'display_groups': ['loclist_navigation'],
+        \   'display_key': '[l',
+        \   'display_label': 'previous loclist'}),
+        \ s:ExpectedMapSpec('n', ']l', 'lnext',
+        \   'location-list navigation', {
+        \   'display_groups': ['loclist_navigation'],
+        \   'display_key': ']l',
+        \   'display_label': 'next loclist'}),
         \ s:ExpectedMapSpec('n', '[x', '<<<<<<<',
         \   'git conflict navigation', {
         \   'display_groups': ['git_conflict_navigation'],

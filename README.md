@@ -184,7 +184,8 @@ for the active keymap, `:ChopsticksHelp` / `:help chopsticks` for full native
 Vim help, `:ChopsticksConfig` for local preferences, `:ChopsticksStatus` for
 tool/LSP/navigation health, and `:ChopsticksDoctor` for the actionable problem
 list. Use `:ChopsticksKeymapAudit` when changing mappings or validating a new
-profile.
+profile. GitHub Wiki is deliberately disabled; the in-editor cheatmap, tutor,
+and native Vim help are the source of truth for daily usage.
 For Chinese/Japanese writing on macOS, install `im-select` and opt into
 `g:chopsticks_enable_input_method`; chopsticks will remember the buffer's
 Insert-mode input source and switch Normal mode back to `ABC`.
@@ -239,7 +240,7 @@ Esc       exit insert mode         SPC ?    cheat sheet
 
 ### Windows
 
-`Ctrl-h/j/k/l` windows | `<C-w>h/j/k/l` native fallback | `SPC z` maximize | `SPC bp` `SPC bn` buffers | `SPC bd` close buffer | `SPC bo` close other buffers | `SPC tt` `SPC th` terminal | `]q` `[q` quickfix | `SPC xq` `SPC xQ` open/close quickfix | `SPC xl` `SPC xL` open/close loclist
+`Ctrl-h/j/k/l` windows | `<C-w>h/j/k/l` native fallback | `SPC z` maximize | `SPC bp` `SPC bn` buffers | `SPC bd` close buffer | `SPC bo` close other buffers | `SPC tt` `SPC th` terminal | `]q` `[q` quickfix | `]l` `[l` loclist | `SPC xq` `SPC xQ` open/close quickfix | `SPC xl` `SPC xL` open/close loclist
 
 ### Markdown
 

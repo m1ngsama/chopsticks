@@ -11,8 +11,19 @@ function! s:FallbackNavigationSpecs() abort
         \ ]
 endfunction
 
+function! s:FallbackLocationNavigationSpecs() abort
+    return [
+        \ {'mode': 'n', 'lhs': '[l', 'key': '[l', 'text': 'lprev'},
+        \ {'mode': 'n', 'lhs': ']l', 'key': ']l', 'text': 'lnext'},
+        \ ]
+endfunction
+
 function! s:FallbackNavigationKeys() abort
     return ['[q', ']q']
+endfunction
+
+function! s:FallbackLocationNavigationKeys() abort
+    return ['[l', ']l']
 endfunction
 
 function! s:NavigationSpecs() abort
@@ -20,9 +31,19 @@ function! s:NavigationSpecs() abort
         \ s:FallbackNavigationSpecs())
 endfunction
 
+function! s:LocationNavigationSpecs() abort
+    return ChopsticksKeymapContractSpecsOr('loclist_navigation',
+        \ s:FallbackLocationNavigationSpecs())
+endfunction
+
 function! s:NavigationKey() abort
     return join(ChopsticksKeymapContractKeysOr('quickfix_navigation',
         \ s:FallbackNavigationKeys()), ' ')
+endfunction
+
+function! s:LocationNavigationKey() abort
+    return join(ChopsticksKeymapContractKeysOr('loclist_navigation',
+        \ s:FallbackLocationNavigationKeys()), ' ')
 endfunction
 
 function! s:QuickfixWindowItem(ready) abort
@@ -61,6 +82,18 @@ function! s:QuickfixNavigationItem(missing) abort
         \ })
 endfunction
 
+function! s:LocationNavigationItem(missing) abort
+    if empty(a:missing)
+        return ChopsticksInfoItem('location navigation', 'ready',
+            \ s:LocationNavigationKey(), {'diagnostic': 0})
+    endif
+    return ChopsticksInfoDiagnosticItem('location navigation', 'missing',
+        \ 'missing: ' . join(a:missing, ', '), 'location navigation',
+        \ ':ChopsticksKeymapAudit', {
+        \ 'detail': 'missing location navigation maps: ' . join(a:missing, ', '),
+        \ })
+endfunction
+
 augroup ChopstickQF
     autocmd!
     autocmd QuickFixCmdPost [^l]* cwindow
@@ -69,28 +102,35 @@ augroup END
 
 nnoremap <silent> ]q :cnext<CR>
 nnoremap <silent> [q :cprev<CR>
+nnoremap <silent> ]l :lnext<CR>
+nnoremap <silent> [l :lprev<CR>
 
 function! ChopsticksQuickfixInfo() abort
     let l:qf_window = s:QfAutocmdExists('[^l]*')
     let l:loc_window = s:QfAutocmdExists('l*')
     let l:map_specs = s:NavigationSpecs()
+    let l:loc_map_specs = s:LocationNavigationSpecs()
     let l:missing_maps = ChopsticksKeymapMissingKeys(l:map_specs)
+    let l:missing_loc_maps = ChopsticksKeymapMissingKeys(l:loc_map_specs)
     return ChopsticksInfoSection('quickfix', {
         \ 'quickfix_count': len(getqflist()),
         \ 'loclist_count': len(getloclist(0)),
         \ 'quickfix_window': l:qf_window,
         \ 'location_window': l:loc_window,
-        \ 'maps_ready': empty(l:missing_maps),
+        \ 'maps_ready': empty(l:missing_maps) && empty(l:missing_loc_maps),
         \ 'missing_maps': l:missing_maps,
+        \ 'missing_loc_maps': l:missing_loc_maps,
         \ 'details': [
         \   ChopsticksInfoDetail('quickfix', len(getqflist()) . ' entries'),
         \   ChopsticksInfoDetail('loclist', len(getloclist(0)) . ' entries'),
-        \   ChopsticksInfoDetail('maps', s:NavigationKey()),
+        \   ChopsticksInfoDetail('maps',
+        \       s:NavigationKey() . ' / ' . s:LocationNavigationKey()),
         \ ],
         \ 'items': [
         \   s:QuickfixWindowItem(l:qf_window),
         \   s:LocationWindowItem(l:loc_window),
         \   s:QuickfixNavigationItem(l:missing_maps),
+        \   s:LocationNavigationItem(l:missing_loc_maps),
         \ ],
         \ })
 endfunction

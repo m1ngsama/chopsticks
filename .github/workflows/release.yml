@@ -72,6 +72,8 @@ jobs:
         run: scripts/ci-install-plugins.sh
 
       - name: Run release checks
+        env:
+          TERM: xterm-256color
         run: |
           scripts/test.sh quick
           scripts/test.sh vim

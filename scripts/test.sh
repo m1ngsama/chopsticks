@@ -15,7 +15,7 @@ Groups:
   docs        markdownlint for project docs
   installer   install.sh dry-run/configure-only profile checks
   bootstrap   get.sh dry-run safety checks
-  vim         Vim smoke tests; requires plugins in ~/.vim/plugged
+  vim         full Vim smoke tests; requires CI plugins in ~/.vim/plugged
   all         quick plus vim
 
 Options:

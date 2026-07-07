@@ -9,8 +9,11 @@ set -E
 check_plugin_dirs() {
     step "Plugin directories"
     for plugin in \
-        fzf fzf.vim vim-fugitive vim-gitgutter ale vim-lsp vim-lsp-settings \
-        asyncomplete.vim asyncomplete-lsp.vim vim-markdown
+        ale asyncomplete-lsp.vim asyncomplete.vim auto-pairs fzf fzf.vim \
+        previm targets.vim undotree vim-commentary vim-easymotion \
+        vim-fugitive vim-gitgutter vim-go vim-javascript vim-lsp \
+        vim-lsp-settings vim-markdown vim-repeat vim-sleuth vim-solarized8 \
+        vim-startify vim-surround vim-tmux-navigator yats.vim
     do
         test -d "$HOME/.vim/plugged/$plugin" || {
             echo "Missing plugin directory: $plugin" >&2
@@ -53,158 +56,12 @@ dump_vim_status_diagnostics() {
     fi
 }
 
-dump_vim_keymap_diagnostics() {
-    local diag_script="$TMP_ROOT/keymap-diagnostics.vim"
-    local diag_file="$TMP_ROOT/keymap-diagnostics.txt"
-
-    echo "Keymap diagnostics:" >&2
-    echo "Keymap phase=${CHOPSTICKS_TEST_KEYMAP_PHASE:-unknown}" >&2
-    echo "TERM=${TERM:-} COLORTERM=${COLORTERM:-}" >&2
-    vim --version | sed -n '1,80p' >&2 || true
-
-    local keymap_file
-    for keymap_file in \
-        "$TMP_ROOT/status-keymap-audit.txt" \
-        "$TMP_ROOT/status-keymap-audit-broken.txt"
-    do
-        if [ -s "$keymap_file" ]; then
-            echo "--- $(basename "$keymap_file") ---" >&2
-            cat "$keymap_file" >&2
-        fi
-    done
-
-    if [ "${CHOPSTICKS_TEST_KEYMAP_PHASE:-}" = "auto-pairs opt-in" ] \
-        || [ "${CHOPSTICKS_TEST_KEYMAP_PHASE:-}" = "auto-pairs and completion opt-ins" ]; then
-        local auto_pairs_diag_script="$TMP_ROOT/auto-pairs-diagnostics.vim"
-        local auto_pairs_diag_file="$TMP_ROOT/auto-pairs-diagnostics.txt"
-        cat > "$auto_pairs_diag_script" <<'VIM'
-let s:lines = []
-try
-    let g:chopsticks_enable_auto_pairs = 1
-    source .vimrc
-    runtime plugin/auto-pairs.vim
-    doautocmd BufEnter
-    call add(s:lines, 'plug=' . has_key(g:plugs, 'auto-pairs') . ' loaded=' . exists('g:AutoPairsLoaded'))
-    call add(s:lines, 'CR=' . string(maparg('<CR>', 'i', 0, 1)))
-    call add(s:lines, 'BS=' . string(maparg('<BS>', 'i', 0, 1)))
-    call add(s:lines, 'C-h=' . string(maparg('<C-h>', 'i', 0, 1)))
-    call add(s:lines, 'Space=' . string(maparg('<Space>', 'i', 0, 1)))
-    let s:auto_pairs_ch = {
-        \ 'kind': 'auto_pairs_map',
-        \ 'lhs': '<C-h>',
-        \ 'text': 'AutoPairsDelete',
-        \ 'label': 'opt-in auto-pairs Ctrl-H',
-        \ }
-    call add(s:lines, 'C-h ready=' . ChopsticksKeymapSpecReady(s:auto_pairs_ch))
-    call add(s:lines, 'C-h issue=' . string(ChopsticksKeymapSpecIssue(s:auto_pairs_ch)))
-    call add(s:lines, 'audit issues=' . string(ChopsticksKeymapAuditIssues()))
-catch
-    call add(s:lines, 'error=' . v:exception)
-    call add(s:lines, 'throwpoint=' . v:throwpoint)
-endtry
-call writefile(s:lines, g:chopsticks_auto_pairs_diag_file)
-qa!
-VIM
-        XDG_CONFIG_HOME="$EMPTY_XDG" vim -u NONE -i NONE -es -N \
-            -c "let g:chopsticks_auto_pairs_diag_file = '$auto_pairs_diag_file'" \
-            -S "$auto_pairs_diag_script" 2>&1 || true
-        if [ -s "$auto_pairs_diag_file" ]; then
-            echo "--- auto-pairs-diagnostics.txt ---" >&2
-            cat "$auto_pairs_diag_file" >&2
-        fi
-    fi
-
-    cat > "$diag_script" <<'VIM'
-execute 'redir! > ' . fnameescape(g:chopsticks_diag_file)
-silent echo 'features terminal=' . has('terminal') . ' clipboard=' . has('clipboard') . ' termguicolors=' . exists('&termguicolors')
-silent echo 'leaders mapleader=' . string(exists('mapleader') ? mapleader : '<unset>') . ' maplocalleader=' . string(exists('maplocalleader') ? maplocalleader : '<unset>')
-silent echo 'auto-pairs registered=' . has_key(get(g:, 'plugs', {}), 'auto-pairs')
-let s:last_change_map = nr2char(96) . '[v' . nr2char(96) . ']'
-let s:checks = [
-    \ ['reserved n 0 empty', maparg('0', 'n') ==# ''],
-    \ ['reserved v 0 empty', maparg('0', 'v') ==# ''],
-    \ ['reserved n Y empty', maparg('Y', 'n') ==# ''],
-    \ ['reserved n Q empty', maparg('Q', 'n') ==# ''],
-    \ ['reserved n Space empty', maparg('<Space>', 'n') ==# ''],
-    \ ['reserved v // empty', maparg('//', 'v') ==# ''],
-    \ ['reserved n gV empty', maparg('gV', 'n') ==# ''],
-    \ ['opt-in i jk empty', maparg('jk', 'i') ==# ''],
-    \ ['opt-in n C-s empty', maparg('<C-s>', 'n') ==# ''],
-    \ ['opt-in i C-s empty', maparg('<C-s>', 'i') ==# ''],
-    \ ['opt-in n C-p empty', maparg('<C-p>', 'n') ==# ''],
-    \ ['opt-in c C-p empty', maparg('<C-p>', 'c') ==# ''],
-    \ ['opt-in c C-n empty', maparg('<C-n>', 'c') ==# ''],
-    \ ['opt-in c w!! empty', maparg('w!!', 'c') ==# ''],
-    \ ['window n C-h NavigateWindow', maparg('<C-h>', 'n') =~# 'NavigateWindow'],
-    \ ['window n C-j NavigateWindow', maparg('<C-j>', 'n') =~# 'NavigateWindow'],
-    \ ['window n C-k NavigateWindow', maparg('<C-k>', 'n') =~# 'NavigateWindow'],
-    \ ['window n C-l NavigateWindow', maparg('<C-l>', 'n') =~# 'NavigateWindow'],
-    \ ['no auto-pairs plugin', !has_key(get(g:, 'plugs', {}), 'auto-pairs')],
-    \ ['default i Tab no completion', maparg('<Tab>', 'i') !~# 'pumvisible'],
-    \ ['default i S-Tab no completion', maparg('<S-Tab>', 'i') !~# 'pumvisible'],
-    \ ['default i CR no asyncomplete', maparg('<CR>', 'i') !~# 'asyncomplete#close_popup'],
-    \ ['default i CR no AutoPairs', maparg('<CR>', 'i') !~# 'AutoPairs'],
-    \ ['default t EscEsc empty', maparg('<Esc><Esc>', 't') ==# ''],
-    \ ['default t C-h empty', maparg('<C-h>', 't') ==# ''],
-    \ ['default t C-j empty', maparg('<C-j>', 't') ==# ''],
-    \ ['default t C-k empty', maparg('<C-k>', 't') ==# ''],
-    \ ['default t C-l empty', maparg('<C-l>', 't') ==# ''],
-    \ ['jump n s easymotion', maparg('s', 'n') =~# 'easymotion-overwin-f2'],
-    \ ['space v / escape', maparg('<Space>/', 'v') =~# 'escape'],
-    \ ['space n v last visual change', maparg('<Space>v', 'n') ==# s:last_change_map],
-    \ ['space n SpaceSpace files', maparg('<Space><Space>', 'n') =~# 'SmartFiles'],
-    \ ['space n SpaceTab alternate', maparg('<Space><Tab>', 'n') =~# 'Balternate'],
-    \ ['space n z maximize', maparg('<Space>z', 'n') =~# 'ToggleMaximize'],
-    \ ['classic v ,/ empty', maparg(',/', 'v') ==# ''],
-    \ ['classic n ,v empty', maparg(',v', 'n') ==# ''],
-    \ ['classic n ,ff empty', maparg(',ff', 'n') ==# ''],
-    \ ]
-for s:check in s:checks
-    silent echo 'check ' . (s:check[1] ? 'OK   ' : 'FAIL ') . s:check[0]
-endfor
-let s:maps = [
-    \ ['n', '0'], ['v', '0'], ['n', 'Y'], ['n', 'Q'],
-    \ ['n', '<Space>'], ['v', '//'], ['n', 'gV'], ['i', 'jk'],
-    \ ['n', '<C-s>'], ['i', '<C-s>'], ['n', '<C-p>'],
-    \ ['c', '<C-p>'], ['c', '<C-n>'], ['c', 'w!!'],
-    \ ['n', '<C-h>'], ['n', '<C-j>'], ['n', '<C-k>'], ['n', '<C-l>'],
-    \ ['i', '<Tab>'], ['i', '<S-Tab>'], ['i', '<CR>'],
-    \ ['t', '<Esc><Esc>'], ['t', '<C-h>'], ['t', '<C-j>'], ['t', '<C-k>'], ['t', '<C-l>'],
-    \ ['n', 's'], ['v', '<Space>/'], ['n', '<Space>v'],
-    \ ['n', '<Space><Space>'], ['n', '<Space><Tab>'], ['n', '<Space>z'],
-    \ ['v', ',/'], ['n', ',v'], ['n', ',ff'],
-    \ ]
-for s:item in s:maps
-    silent echo 'map ' . s:item[0] . ' ' . s:item[1] . ' rhs=' . string(maparg(s:item[1], s:item[0])) . ' dict=' . string(maparg(s:item[1], s:item[0], 0, 1))
-endfor
-silent echo 'contract project files=' . string(ChopsticksKeymapContractKeys('project_files'))
-silent echo 'contract visible jump=' . string(ChopsticksKeymapContractKeys('visible_jump_summary'))
-silent echo 'audit issues=' . string(ChopsticksKeymapAuditIssues())
-silent echo 'audit info=' . string(ChopsticksKeymapAuditInfo())
-redir END
-qa!
-VIM
-
-    XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \
-        -c "let g:chopsticks_diag_file = '$diag_file'" \
-        -S "$diag_script" 2>&1 || true
-
-    if [ -s "$diag_file" ]; then
-        echo "--- keymap-diagnostics.txt ---" >&2
-        cat "$diag_file" >&2
-    fi
-}
-
 on_error() {
     local status=$?
     case "${CHOPSTICKS_TEST_STEP:-}" in
         status_info)
             CHOPSTICKS_TEST_STEP=
             dump_vim_status_diagnostics || true
-            ;;
-        keymap)
-            CHOPSTICKS_TEST_STEP=
-            dump_vim_keymap_diagnostics || true
             ;;
     esac
     exit "$status"
@@ -1898,9 +1755,7 @@ VIMEOF
         -c 'let g:health = ChopsticksHealthInfo() | if empty(filter(copy(g:health.issues), "v:val.code ==# \"profile.custom-profile\" && v:val.severity ==# \"setup\" && v:val.detail ==# \"from profile item\" && v:val.action ==# \"fix profile\"")) | cquit | endif' \
         -c 'qa!' 2>&1
 
-    CHOPSTICKS_TEST_STEP=keymap
     step "Keymap contract and opt-ins"
-    CHOPSTICKS_TEST_KEYMAP_PHASE="default space contract"
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \
         -c 'let last_change_map = nr2char(96) . "[v" . nr2char(96) . "]"' \
         -c 'if maparg("0", "n") !=# "" || maparg("0", "v") !=# "" || maparg("Y", "n") !=# "" || maparg("Q", "n") !=# "" || maparg("<Space>", "n") !=# "" || maparg("//", "v") !=# "" || maparg("gV", "n") !=# "" || maparg("jk", "i") !=# "" || maparg("<C-s>", "n") !=# "" || maparg("<C-s>", "i") !=# "" || maparg("<C-p>", "n") !=# "" || maparg("<C-p>", "c") !=# "" || maparg("<C-n>", "c") !=# "" || maparg("w!!", "c") !=# "" | cquit | endif' \
@@ -1912,7 +1767,6 @@ VIMEOF
         -c 'if maparg(",/", "v") !=# "" || maparg(",v", "n") !=# "" || maparg(",ff", "n") !=# "" | cquit | endif' \
         -c 'qa!' 2>&1
 
-    CHOPSTICKS_TEST_KEYMAP_PHASE="keymap audit surface"
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \
         -c 'if exists(":ChopsticksKeymapAudit") != 2 || !exists("*ChopsticksKeymapContractSpecs") || !exists("*ChopsticksKeymapContractSpecsFor") || !exists("*ChopsticksKeymapContractKeys") || !exists("*ChopsticksKeymapContractLines") || !exists("*ChopsticksKeymapAuditIssues") || !exists("*ChopsticksKeymapAuditInfo") | cquit | endif' \
         -c 'let g:contract = ChopsticksKeymapContractSpecs() | let g:contract_leader = !empty(filter(copy(g:contract.specs), "get(v:val, \"kind\", \"\") ==# \"leader\" && get(v:val, \"var\", \"\") ==# \"mapleader\"")) | let g:contract_save = !empty(filter(copy(g:contract.specs), "get(v:val, \"kind\", \"\") ==# \"map\" && get(v:val, \"lhs\", \"\") ==# \"<Space>w\" && get(v:val, \"text\", \"\") ==# \":w\"")) | let g:contract_no_push = !empty(filter(copy(g:contract.specs), "get(v:val, \"kind\", \"\") ==# \"no_map\" && get(v:val, \"lhs\", \"\") ==# \"<Space>gp\"")) | let g:learning_entrypoint_lines = ChopsticksKeymapContractLines("learning_entrypoint", "  ", 9) | let g:learning_entrypoint_keys = ChopsticksKeymapContractKeys("learning_entrypoint") | let g:survival_key_lines = ChopsticksKeymapContractLines("survival_core", "  ", 9) | let g:survival_config_lines = ChopsticksKeymapContractLines("survival_config", "  ", 9) | let g:core_survival_specs = ChopsticksKeymapContractSpecsFor("core_survival") | let g:core_survival_keys = ChopsticksKeymapContractKeys("core_survival")' \
@@ -1926,7 +1780,6 @@ VIMEOF
         -c 'qa!' 2>&1
     grep -Fq 'OK  keymap audit  (:ChopsticksKeymapAudit)' "$TMP_ROOT/status-keymap-audit.txt"
 
-    CHOPSTICKS_TEST_KEYMAP_PHASE="keymap audit missing map"
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \
         -c 'silent! nunmap <Space>w' \
         -c 'let g:keymap = ChopsticksKeymapAuditInfo() | let g:health = ChopsticksHealthInfo() | if g:keymap.ok || g:keymap.issue_count < 1 || get(g:keymap.items[0], "state", "") !=# "missing" || !get(g:keymap.items[0], "diagnostic", 0) || len(get(g:keymap.items[0], "diagnostics", [])) != g:keymap.issue_count || get(g:keymap.items[0].diagnostics[0], "issue_label", "") !=# "ergonomic contract" || get(g:keymap.items[0].diagnostics[0], "action", "") !=# ":ChopsticksKeymapAudit" || empty(filter(copy(g:health.issues), "v:val.code ==# \"keymap.ergonomic-contract\" && v:val.detail =~# \"missing nmap <Space>w\"")) | cquit | endif' \
@@ -1936,14 +1789,12 @@ VIMEOF
     grep -Fq -- '--  keymap audit  (' \
         "$TMP_ROOT/status-keymap-audit-broken.txt"
 
-    CHOPSTICKS_TEST_KEYMAP_PHASE="classic summary keys"
     XDG_CONFIG_HOME="$EMPTY_XDG" \
         vim --cmd 'let g:chopsticks_keymap_style = "classic"' \
         -u .vimrc -i NONE -es -N \
         -c 'let g:line_move_keys = ChopsticksKeymapContractKeys("line_move_summary") | let g:clipboard_keys = ChopsticksKeymapContractKeys("clipboard_summary") | if join(g:line_move_keys, "/") !=# "Alt+j/Alt+k" || (has("clipboard") && join(g:clipboard_keys, "/") !=# ",y/,p") || (!has("clipboard") && !empty(g:clipboard_keys)) | cquit | endif' \
         -c 'qa!' 2>&1
 
-    CHOPSTICKS_TEST_KEYMAP_PHASE="classic core maps"
     XDG_CONFIG_HOME="$EMPTY_XDG" \
         vim --cmd 'let g:chopsticks_keymap_style = "classic"' \
         -u .vimrc -i NONE -es -N \
@@ -1958,7 +1809,6 @@ VIMEOF
         -c 'let g:classic_core_lines = ChopsticksKeymapContractLines("survival_core", "  ", 9) | let g:classic_config_lines = ChopsticksKeymapContractLines("survival_config", "  ", 9) | let g:classic_core_keys = ChopsticksKeymapContractKeys("core_survival") | let g:classic_learning_keys = ChopsticksKeymapContractKeys("learning_entrypoint") | let g:classic_learning = ChopsticksLearningInfo() | if len(ChopsticksKeymapAuditIssues()) != 0 || get(ChopsticksStatusHeaderInfo().details[0], "value", "") !=# ":ChopsticksHelp  :ChopsticksTutor  ,?" || join(g:classic_learning_keys, "/") !=# ",?" || get(g:classic_learning.details[1], "value", "") !=# ",?" || get(g:classic_learning.items[0], "reason", "") !=# ",?" || g:classic_core_lines[0] !=# "  ,w        save" || g:classic_core_lines[-1] !=# "  ,x        save + quit" || g:classic_config_lines[0] !=# "  ,ec       edit local config" || join(g:classic_core_keys, "/") !=# ",w/,q/,x/,<CR>/,cd" | cquit | endif' \
         -c 'qa!' 2>&1
 
-    CHOPSTICKS_TEST_KEYMAP_PHASE="classic learning entrypoint"
     XDG_CONFIG_HOME="$EMPTY_XDG" \
         vim --cmd 'let g:chopsticks_keymap_style = "classic"' \
         -u .vimrc -i NONE -es -N \
@@ -1966,7 +1816,6 @@ VIMEOF
         -c 'if maparg(",?", "n") !~# "ChopsticksCheatSheet" | cquit | endif' \
         -c 'qa!' 2>&1
 
-    CHOPSTICKS_TEST_KEYMAP_PHASE="classic picker and quickfix keys"
     XDG_CONFIG_HOME="$EMPTY_XDG" \
         vim --cmd 'let g:chopsticks_keymap_style = "classic"' \
         -u .vimrc -i NONE -es -N \
@@ -1974,7 +1823,6 @@ VIMEOF
         -c 'let g:classic_quickfix_window_keys = ChopsticksKeymapContractKeys("quickfix_window") | let g:classic_quickfix_nav_keys = ChopsticksKeymapContractKeys("quickfix_navigation") | let g:classic_loclist_nav_keys = ChopsticksKeymapContractKeys("loclist_navigation") | let g:classic_terminal_keys = ChopsticksKeymapContractKeys("terminal_entry") | if join(g:classic_quickfix_window_keys, "/") !=# ",qo/,qc" || join(g:classic_quickfix_nav_keys, "/") !=# "[q/]q" || join(g:classic_loclist_nav_keys, "/") !=# "[l/]l" || (has("terminal") && join(g:classic_terminal_keys, "/") !=# ",tv/,th") | cquit | endif' \
         -c 'qa!' 2>&1
 
-    CHOPSTICKS_TEST_KEYMAP_PHASE="classic git keys"
     XDG_CONFIG_HOME="$EMPTY_XDG" \
         vim --cmd 'let g:chopsticks_keymap_style = "classic"' \
         -u .vimrc -i NONE -es -N \
@@ -1982,21 +1830,18 @@ VIMEOF
         -c 'let g:git_commit_picker_keys = ChopsticksKeymapContractKeys("git_commit_picker") | let g:git_buffer_commit_picker_keys = ChopsticksKeymapContractKeys("git_buffer_commit_picker") | if join(g:git_commit_picker_keys, "/") !=# ",gC" || join(g:git_buffer_commit_picker_keys, "/") !=# ",gB" | cquit | endif' \
         -c 'qa!' 2>&1
 
-    CHOPSTICKS_TEST_KEYMAP_PHASE="classic editing keys"
     XDG_CONFIG_HOME="$EMPTY_XDG" \
         vim --cmd 'let g:chopsticks_keymap_style = "classic"' \
         -u .vimrc -i NONE -es -N \
         -c 'let g:classic_visible_jump_keys = ChopsticksKeymapContractKeys("visible_jump_summary") | let g:classic_cleanup_keys = ChopsticksKeymapContractKeys("edit_cleanup_summary") | let g:blank_line_keys = ChopsticksKeymapContractKeys("blank_lines") | let g:undo_keys = ChopsticksKeymapContractKeys("undo_tree") | let g:editing = ChopsticksEditingInfo() | if join(g:classic_visible_jump_keys, " / ") !=# ",S" || join(g:classic_cleanup_keys, "/") !=# ",W/,*/,F" || join(g:blank_line_keys, " ") !=# "[<Space> ]<Space>" || join(g:undo_keys, "/") !=# ",u" || get(g:editing.items[0], "reason", "") !=# ",S" || get(g:editing.items[2], "reason", "") !=# ",W/,*/,F" | cquit | endif' \
         -c 'qa!' 2>&1
 
-    CHOPSTICKS_TEST_KEYMAP_PHASE="jk escape opt-in"
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u NONE -i NONE -es -N \
         -c 'let g:chopsticks_enable_jk_escape = 1' \
         -c 'source .vimrc' \
         -c 'if maparg("jk", "i") !~# "<Esc>" | cquit | endif' \
         -c 'qa!' 2>&1
 
-    CHOPSTICKS_TEST_KEYMAP_PHASE="utility and completion opt-ins"
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u NONE -i NONE -es -N \
         -c 'let g:chopsticks_enable_ctrl_s_save = 1' \
         -c 'let g:chopsticks_enable_sudo_save_bang = 1' \
@@ -2009,7 +1854,6 @@ VIMEOF
         -c 'if len(ChopsticksKeymapAuditIssues()) != 0 | cquit | endif' \
         -c 'qa!' 2>&1
 
-    CHOPSTICKS_TEST_KEYMAP_PHASE="completion missing map audit"
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u NONE -i NONE -es -N \
         -c 'let g:chopsticks_enable_completion_keymaps = 1' \
         -c 'source .vimrc' \
@@ -2017,7 +1861,6 @@ VIMEOF
         -c 'let g:completion = ChopsticksCompletionInfo() | let g:keymap = ChopsticksKeymapAuditInfo() | let g:health = ChopsticksHealthInfo() | if get(g:completion.items[4], "state", "") !=# "missing" || stridx(get(g:completion.items[4], "detail", ""), "<Tab>") < 0 || g:keymap.ok || empty(filter(copy(g:health.issues), "v:val.code ==# \"completion.completion-keymaps\" && stridx(v:val.detail, \"<Tab>\") >= 0")) | cquit | endif' \
         -c 'qa!' 2>&1
 
-    CHOPSTICKS_TEST_KEYMAP_PHASE="auto-pairs opt-in"
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u NONE -i NONE -es -N \
         -c 'let g:chopsticks_enable_auto_pairs = 1' \
         -c 'source .vimrc' \
@@ -2029,7 +1872,6 @@ VIMEOF
         -c 'if len(ChopsticksKeymapAuditIssues()) != 0 | cquit | endif' \
         -c 'qa!' 2>&1
 
-    CHOPSTICKS_TEST_KEYMAP_PHASE="auto-pairs and completion opt-ins"
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u NONE -i NONE -es -N \
         -c 'let g:chopsticks_enable_auto_pairs = 1' \
         -c 'let g:chopsticks_enable_completion_keymaps = 1' \
@@ -2041,8 +1883,6 @@ VIMEOF
         -c 'if len(ChopsticksKeymapAuditIssues()) != 0 | cquit | endif' \
         -c 'qa!' 2>&1
 
-    CHOPSTICKS_TEST_STEP=
-    CHOPSTICKS_TEST_KEYMAP_PHASE=
     step "Terminal, SSH, and TTY behavior"
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u NONE -i NONE -es -N \
         -c 'let g:chopsticks_enable_terminal_keymaps = 1' \

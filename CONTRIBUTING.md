@@ -33,15 +33,20 @@ scripts/test.sh vim
 ```
 
 `scripts/test.sh quick` runs shell, Vim-only static gates, docs, installer, and bootstrap checks without requiring Vim plugins.
-`scripts/test.sh vim` expects plugins to be installed under `~/.vim/plugged`.
+`scripts/test.sh vim` expects the full release smoke plugin set under
+`~/.vim/plugged`; run `scripts/ci-install-plugins.sh` to install the same
+opt-in plugin set that release checks use.
 Use `STARTUP_LIMIT_MS=150 scripts/test.sh vim` to match CI's startup threshold.
 
 ## CI and releases
 
 GitHub Actions intentionally stays small:
 
-- `.github/workflows/check.yml` runs `scripts/test.sh quick` plus one Ubuntu Vim smoke check on pushes and pull requests to `main`.
-- `.github/workflows/release.yml` runs only for stable tags like `v2.3.0`, repeats the same checks, extracts the matching `CHANGELOG.md` section, and creates the GitHub Release.
+- `.github/workflows/check.yml` runs `scripts/test.sh quick` plus a minimal
+  Vim startup sanity check on pushes and pull requests to `main`.
+- `.github/workflows/release.yml` runs only for stable tags like `v2.3.0`,
+  installs the full smoke plugin set, runs quick checks and full Vim smoke,
+  extracts the matching `CHANGELOG.md` section, and creates the GitHub Release.
 
 Release flow: update `CHANGELOG.md`, complete the release checklist, create `vX.Y.Z`, then push that tag. The release workflow does not push tags, publish packages, deploy a site, or regenerate the README GIF.
 

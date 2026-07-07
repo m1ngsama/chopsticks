@@ -15,8 +15,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  quick:
-    name: quick checks
+  checks:
+    name: checks
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -25,31 +25,23 @@ jobs:
       - name: Install check tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y shellcheck
+          sudo apt-get install -y curl shellcheck vim
           npm install -g markdownlint-cli
-
-      - name: Run quick checks
-        run: scripts/test.sh quick
-
-  vim:
-    name: Vim smoke
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@v5
-
-      - name: Install Vim and vim-plug
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y vim fzf ripgrep
           vim --version | head -1
           curl -fLo ~/.vim/autoload/plug.vim --create-dirs \
             https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
 
-      - name: Install plugins
-        run: scripts/ci-install-plugins.sh
+      - name: Run quick checks
+        run: scripts/test.sh quick
 
-      - name: Run Vim smoke tests
+      - name: Run Vim startup sanity
         env:
           TERM: xterm-256color
-        run: scripts/test.sh vim
+        run: |
+          XDG_CONFIG_HOME="$RUNNER_TEMP/xdg" \
+            vim -u .vimrc -i NONE -es -N \
+              -c 'if exists(":ChopsticksDoctor") != 2 | cquit | endif' \
+              -c 'if exists(":ChopsticksStatus") != 2 | cquit | endif' \
+              -c 'if exists(":ChopsticksKeymapAudit") != 2 | cquit | endif' \
+              -c 'if !exists("*ChopsticksKeymapAuditInfo") | cquit | endif' \
+              -c 'qa!'

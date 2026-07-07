@@ -407,6 +407,8 @@ For deeper checks, start with `:ChopsticksStatus`, `SPC ?`,
 See [CONTRIBUTING.md](CONTRIBUTING.md). The rules that matter most: Vim only,
 no Node.js in the Vim runtime, pinned plugins, documented architectural
 decisions, and no unjustified startup regression.
+Push CI runs quick checks plus a minimal Vim startup sanity check; full Vim
+smoke is reserved for release tags and local release prep.
 
 Regenerate the README demo after changing public keybindings:
 

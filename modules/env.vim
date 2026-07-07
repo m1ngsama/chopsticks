@@ -594,6 +594,19 @@ function! ChopsticksKeymapSpecIssue(spec) abort
     elseif l:kind ==# 'auto_pairs_map'
         let l:lhs = get(a:spec, 'lhs', '')
         let l:info = maparg(l:lhs, 'i', 0, 1)
+        let l:text = get(a:spec, 'text', '')
+        if l:lhs ==# '<C-h>'
+            " Some terminal Vim builds report Ctrl-H through the Backspace map.
+            let l:bs_info = maparg('<BS>', 'i', 0, 1)
+            if !empty(l:bs_info)
+                \ && get(l:bs_info, 'buffer', 0)
+                \ && stridx(get(l:bs_info, 'rhs', ''), l:text) >= 0
+                \ && (empty(l:info)
+                \   || !get(l:info, 'buffer', 0)
+                \   || stridx(get(l:info, 'rhs', ''), l:text) < 0)
+                let l:info = l:bs_info
+            endif
+        endif
         if empty(l:info)
             return l:label . ': missing imap ' . l:lhs
         endif
@@ -601,7 +614,7 @@ function! ChopsticksKeymapSpecIssue(spec) abort
             return l:label . ': ' . l:lhs . ' is not buffer-local'
         endif
         let l:rhs = get(l:info, 'rhs', '')
-        if stridx(l:rhs, get(a:spec, 'text', '')) < 0
+        if stridx(l:rhs, l:text) < 0
             return l:label . ': ' . l:lhs . ' maps to ' . l:rhs
         endif
     endif

@@ -1982,8 +1982,9 @@ VIMEOF
         -c 'source .vimrc' \
         -c 'runtime plugin/auto-pairs.vim' \
         -c 'doautocmd BufEnter' \
-        -c 'if !has_key(g:plugs, "auto-pairs") || !exists("g:AutoPairsLoaded") || !maparg("<CR>", "i", 0, 1).buffer || !maparg("<BS>", "i", 0, 1).buffer || !maparg("<C-h>", "i", 0, 1).buffer || !maparg("<Space>", "i", 0, 1).buffer | cquit | endif' \
-        -c 'if maparg("<CR>", "i") !~# "AutoPairsReturn" || maparg("<BS>", "i") !~# "AutoPairsDelete" || maparg("<C-h>", "i") !~# "AutoPairsDelete" || maparg("<Space>", "i") !~# "AutoPairsSpace" | cquit | endif' \
+        -c 'let g:auto_pairs_ch = {"kind": "auto_pairs_map", "lhs": "<C-h>", "text": "AutoPairsDelete", "label": "opt-in auto-pairs Ctrl-H"}' \
+        -c 'if !has_key(g:plugs, "auto-pairs") || !exists("g:AutoPairsLoaded") || !maparg("<CR>", "i", 0, 1).buffer || !maparg("<BS>", "i", 0, 1).buffer || !ChopsticksKeymapSpecReady(g:auto_pairs_ch) || !maparg("<Space>", "i", 0, 1).buffer | cquit | endif' \
+        -c 'if maparg("<CR>", "i") !~# "AutoPairsReturn" || maparg("<BS>", "i") !~# "AutoPairsDelete" || !ChopsticksKeymapSpecReady(g:auto_pairs_ch) || maparg("<Space>", "i") !~# "AutoPairsSpace" | cquit | endif' \
         -c 'if len(ChopsticksKeymapAuditIssues()) != 0 | cquit | endif' \
         -c 'qa!' 2>&1
 

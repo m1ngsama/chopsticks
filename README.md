@@ -1,7 +1,7 @@
 <p align="center">
-  <img src=".github/demo.gif" alt="chopsticks Vim demo: open the in-editor keymap, jump, switch files, run, grep, and inspect Git" width="720">
+  <img src=".github/demo.gif" alt="chopsticks Vim demo: open the active map, find a file, search text, edit, save, and inspect Git" width="720">
   <br>
-  <sub>First minute after install: open the in-editor map, then use it.</sub>
+  <sub>The common Vim project loop: map, find, search, edit, save, Git.</sub>
 </p>
 
 <h1 align="center">chopsticks</h1>

@@ -1,12 +1,13 @@
 # chopsticks README demo.
-# Start with the in-editor map, then use that map for one project loop.
+# Start with the in-editor map, then use it for the most common Vim project
+# loop: find a file, search text, edit, save, inspect Git.
 # Rule: NEVER use Escape to close FZF. Always Enter for deterministic output.
 
 Output .github/demo.gif
 Require bash
 Require vim
-Require python3
 Require git
+Require rg
 Set Shell bash
 Set FontSize 14
 Set Width 1080
@@ -23,73 +24,65 @@ Type "export XDG_CONFIG_HOME=$(mktemp -d /tmp/chopsticks-demo-xdg-XXXXXX)"
 Enter
 Type "export CHOPSTICKS_DEMO_PROJECT=$(mktemp -d /tmp/chopsticks-demo-project-XXXXXX)"
 Enter
-Type `cp "$CHOPSTICKS_ROOT/.github/demo-project/"*.py "$CHOPSTICKS_DEMO_PROJECT/"`
+Type `cp -R "$CHOPSTICKS_ROOT/.github/demo-project/." "$CHOPSTICKS_DEMO_PROJECT/"`
 Enter
 Type "cd $CHOPSTICKS_DEMO_PROJECT"
 Enter
-Type "git init -q && git symbolic-ref HEAD refs/heads/main && git add ."
+Type "git init -q && git symbolic-ref HEAD refs/heads/main"
+Enter
+Type "git config user.email demo@chopsticks.local && git config user.name demo"
+Enter
+Type "git add . && git commit -qm 'Seed language-neutral demo'"
 Enter
 Type "stty -echo"
 Enter
 Type "clear"
 Enter
-Type `vim -Nu "$CHOPSTICKS_ROOT/.vimrc" server.py`
+Type `vim -Nu "$CHOPSTICKS_ROOT/.vimrc" README.md`
 Enter
-Wait+Screen /server.py/
-Type ":ChopsticksCheatSheet"
-Enter
+Wait+Screen /project notes/
+Space
+Type "?"
 Wait+Screen /trained loop/
 Show
-Sleep 4s
+Sleep 3s
 Type "q"
 Sleep 0.5s
 
-# ── 1. Screen-local motion: jump where the eye already is ──────────────────
-Type "s"
-Sleep 0.5s
-Type "di"
-Sleep 1.5s
-Ctrl+C
-Sleep 0.8s
-
-# ── 2. Project files: switch files from the same map ───────────────────────
+# ── 1. Find a project file from normal mode ────────────────────────────────
 Space 2
 Sleep 1s
-Type "report"
+Type "today"
+Sleep 1.2s
+Enter
+Wait+Screen /maintenance/
 Sleep 1.4s
-Enter
-Sleep 1.8s
 
-# ── 3. Edit-run loop: run the current file without leaving Vim ─────────────
-Space
-Type "rr"
-Sleep 2.5s
-Enter
-Sleep 0.8s
-
-# ── 4. Project grep: search the repo and land in the result ────────────────
+# ── 2. Search the whole project and land on the match ──────────────────────
 Space
 Type "/"
 Sleep 0.8s
-Type "def get_users"
-Sleep 1.5s
+Type "remote state"
+Sleep 1.2s
 Enter
-Sleep 2s
+Wait+Screen /remote state/
+Sleep 1.2s
 
-# ── 5. Git boundary: status is fast; push/pull stay explicit commands ──────
+# ── 3. Make the ordinary edit and save it ──────────────────────────────────
+Type "o"
+Type "Remote changes stay deliberate."
+Sleep 0.8s
+Ctrl+C
+Sleep 0.5s
+Space
+Type "w"
+Sleep 1.2s
+
+# ── 4. Inspect Git, no push/pull hotkeys ───────────────────────────────────
 Space
 Type "gs"
-Sleep 2.2s
-Type ":bd!"
-Enter
-Sleep 0.8s
-
-# ── 6. End where the user learns: inside Vim ───────────────────────────────
-Space
-Type "?"
+Wait+Screen /decision-log.md/
 Sleep 4s
-Type "q"
-Sleep 0.5s
 
 # ── done ───────────────────────────────────────────────────────────────────
 Hide

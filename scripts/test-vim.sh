@@ -4,6 +4,7 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=scripts/test-common.sh
 source "$SCRIPT_DIR/test-common.sh"
+set -E
 
 check_plugin_dirs() {
     step "Plugin directories"

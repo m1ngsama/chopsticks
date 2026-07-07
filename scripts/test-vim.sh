@@ -53,12 +53,107 @@ dump_vim_status_diagnostics() {
     fi
 }
 
+dump_vim_keymap_diagnostics() {
+    local diag_script="$TMP_ROOT/keymap-diagnostics.vim"
+    local diag_file="$TMP_ROOT/keymap-diagnostics.txt"
+
+    echo "Keymap diagnostics:" >&2
+    echo "TERM=${TERM:-} COLORTERM=${COLORTERM:-}" >&2
+    vim --version | sed -n '1,80p' >&2 || true
+
+    cat > "$diag_script" <<'VIM'
+execute 'redir! > ' . fnameescape(g:chopsticks_diag_file)
+silent echo 'features terminal=' . has('terminal') . ' clipboard=' . has('clipboard') . ' termguicolors=' . exists('&termguicolors')
+silent echo 'leaders mapleader=' . string(exists('mapleader') ? mapleader : '<unset>') . ' maplocalleader=' . string(exists('maplocalleader') ? maplocalleader : '<unset>')
+silent echo 'auto-pairs registered=' . has_key(get(g:, 'plugs', {}), 'auto-pairs')
+let s:last_change_map = nr2char(96) . '[v' . nr2char(96) . ']'
+let s:checks = [
+    \ ['reserved n 0 empty', maparg('0', 'n') ==# ''],
+    \ ['reserved v 0 empty', maparg('0', 'v') ==# ''],
+    \ ['reserved n Y empty', maparg('Y', 'n') ==# ''],
+    \ ['reserved n Q empty', maparg('Q', 'n') ==# ''],
+    \ ['reserved n Space empty', maparg('<Space>', 'n') ==# ''],
+    \ ['reserved v // empty', maparg('//', 'v') ==# ''],
+    \ ['reserved n gV empty', maparg('gV', 'n') ==# ''],
+    \ ['opt-in i jk empty', maparg('jk', 'i') ==# ''],
+    \ ['opt-in n C-s empty', maparg('<C-s>', 'n') ==# ''],
+    \ ['opt-in i C-s empty', maparg('<C-s>', 'i') ==# ''],
+    \ ['opt-in n C-p empty', maparg('<C-p>', 'n') ==# ''],
+    \ ['opt-in c C-p empty', maparg('<C-p>', 'c') ==# ''],
+    \ ['opt-in c C-n empty', maparg('<C-n>', 'c') ==# ''],
+    \ ['opt-in c w!! empty', maparg('w!!', 'c') ==# ''],
+    \ ['window n C-h NavigateWindow', maparg('<C-h>', 'n') =~# 'NavigateWindow'],
+    \ ['window n C-j NavigateWindow', maparg('<C-j>', 'n') =~# 'NavigateWindow'],
+    \ ['window n C-k NavigateWindow', maparg('<C-k>', 'n') =~# 'NavigateWindow'],
+    \ ['window n C-l NavigateWindow', maparg('<C-l>', 'n') =~# 'NavigateWindow'],
+    \ ['no auto-pairs plugin', !has_key(get(g:, 'plugs', {}), 'auto-pairs')],
+    \ ['default i Tab no completion', maparg('<Tab>', 'i') !~# 'pumvisible'],
+    \ ['default i S-Tab no completion', maparg('<S-Tab>', 'i') !~# 'pumvisible'],
+    \ ['default i CR no asyncomplete', maparg('<CR>', 'i') !~# 'asyncomplete#close_popup'],
+    \ ['default i CR no AutoPairs', maparg('<CR>', 'i') !~# 'AutoPairs'],
+    \ ['default t EscEsc empty', maparg('<Esc><Esc>', 't') ==# ''],
+    \ ['default t C-h empty', maparg('<C-h>', 't') ==# ''],
+    \ ['default t C-j empty', maparg('<C-j>', 't') ==# ''],
+    \ ['default t C-k empty', maparg('<C-k>', 't') ==# ''],
+    \ ['default t C-l empty', maparg('<C-l>', 't') ==# ''],
+    \ ['jump n s easymotion', maparg('s', 'n') =~# 'easymotion-overwin-f2'],
+    \ ['space v / escape', maparg('<Space>/', 'v') =~# 'escape'],
+    \ ['space n v last visual change', maparg('<Space>v', 'n') ==# s:last_change_map],
+    \ ['space n SpaceSpace files', maparg('<Space><Space>', 'n') =~# 'SmartFiles'],
+    \ ['space n SpaceTab alternate', maparg('<Space><Tab>', 'n') =~# 'Balternate'],
+    \ ['space n z maximize', maparg('<Space>z', 'n') =~# 'ToggleMaximize'],
+    \ ['classic v ,/ empty', maparg(',/', 'v') ==# ''],
+    \ ['classic n ,v empty', maparg(',v', 'n') ==# ''],
+    \ ['classic n ,ff empty', maparg(',ff', 'n') ==# ''],
+    \ ]
+for s:check in s:checks
+    silent echo 'check ' . (s:check[1] ? 'OK   ' : 'FAIL ') . s:check[0]
+endfor
+let s:maps = [
+    \ ['n', '0'], ['v', '0'], ['n', 'Y'], ['n', 'Q'],
+    \ ['n', '<Space>'], ['v', '//'], ['n', 'gV'], ['i', 'jk'],
+    \ ['n', '<C-s>'], ['i', '<C-s>'], ['n', '<C-p>'],
+    \ ['c', '<C-p>'], ['c', '<C-n>'], ['c', 'w!!'],
+    \ ['n', '<C-h>'], ['n', '<C-j>'], ['n', '<C-k>'], ['n', '<C-l>'],
+    \ ['i', '<Tab>'], ['i', '<S-Tab>'], ['i', '<CR>'],
+    \ ['t', '<Esc><Esc>'], ['t', '<C-h>'], ['t', '<C-j>'], ['t', '<C-k>'], ['t', '<C-l>'],
+    \ ['n', 's'], ['v', '<Space>/'], ['n', '<Space>v'],
+    \ ['n', '<Space><Space>'], ['n', '<Space><Tab>'], ['n', '<Space>z'],
+    \ ['v', ',/'], ['n', ',v'], ['n', ',ff'],
+    \ ]
+for s:item in s:maps
+    silent echo 'map ' . s:item[0] . ' ' . s:item[1] . ' rhs=' . string(maparg(s:item[1], s:item[0])) . ' dict=' . string(maparg(s:item[1], s:item[0], 0, 1))
+endfor
+silent echo 'contract project files=' . string(ChopsticksKeymapContractKeys('project_files'))
+silent echo 'contract visible jump=' . string(ChopsticksKeymapContractKeys('visible_jump_summary'))
+silent echo 'audit issues=' . string(ChopsticksKeymapAuditIssues())
+silent echo 'audit info=' . string(ChopsticksKeymapAuditInfo())
+redir END
+qa!
+VIM
+
+    XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \
+        -c "let g:chopsticks_diag_file = '$diag_file'" \
+        -S "$diag_script" 2>&1 || true
+
+    if [ -s "$diag_file" ]; then
+        echo "--- keymap-diagnostics.txt ---" >&2
+        cat "$diag_file" >&2
+    fi
+}
+
 on_error() {
     local status=$?
-    if [ "${CHOPSTICKS_TEST_STEP:-}" = "status_info" ]; then
-        CHOPSTICKS_TEST_STEP=
-        dump_vim_status_diagnostics || true
-    fi
+    case "${CHOPSTICKS_TEST_STEP:-}" in
+        status_info)
+            CHOPSTICKS_TEST_STEP=
+            dump_vim_status_diagnostics || true
+            ;;
+        keymap)
+            CHOPSTICKS_TEST_STEP=
+            dump_vim_keymap_diagnostics || true
+            ;;
+    esac
     exit "$status"
 }
 trap on_error ERR
@@ -1750,7 +1845,7 @@ VIMEOF
         -c 'let g:health = ChopsticksHealthInfo() | if empty(filter(copy(g:health.issues), "v:val.code ==# \"profile.custom-profile\" && v:val.severity ==# \"setup\" && v:val.detail ==# \"from profile item\" && v:val.action ==# \"fix profile\"")) | cquit | endif' \
         -c 'qa!' 2>&1
 
-    CHOPSTICKS_TEST_STEP=
+    CHOPSTICKS_TEST_STEP=keymap
     step "Keymap contract and opt-ins"
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \
         -c 'let last_change_map = nr2char(96) . "[v" . nr2char(96) . "]"' \
@@ -1878,6 +1973,7 @@ VIMEOF
         -c 'if len(ChopsticksKeymapAuditIssues()) != 0 | cquit | endif' \
         -c 'qa!' 2>&1
 
+    CHOPSTICKS_TEST_STEP=
     step "Terminal, SSH, and TTY behavior"
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u NONE -i NONE -es -N \
         -c 'let g:chopsticks_enable_terminal_keymaps = 1' \

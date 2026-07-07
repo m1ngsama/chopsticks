@@ -53,7 +53,9 @@ the same pieces yourself:
 SPC SPC         open a project file
 s + 2 chars     jump to visible text
 gd / gr / K     inspect definition, references, docs
-SPC rr          run the current file
+SPC rr          run the current context
+SPC rt          pick a project task
+SPC rl          repeat the last run
 SPC /           grep the project
 SPC gs          check git status
 SPC ?           show the active keymap
@@ -104,7 +106,9 @@ K               hover docs
 SPC cr          rename symbol
 SPC ca          code action
 SPC cf          format
-SPC rr          run current file
+SPC rr          run context
+SPC rt          pick project task
+SPC rl          repeat last run
 Tab / S-Tab     cycle completions
 ```
 

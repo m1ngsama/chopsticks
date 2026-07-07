@@ -1,7 +1,7 @@
 <p align="center">
-  <img src=".github/demo.gif" alt="chopsticks Vim demo: open the active map, find a file, search text, edit, save, and inspect Git" width="720">
+  <img src=".github/demo.gif" alt="chopsticks Vim demo: learn the active map, find code, jump, run context, search, and inspect Git" width="720">
   <br>
-  <sub>The common Vim project loop: map, find, search, edit, save, Git.</sub>
+  <sub>The common Vim project loop: map, find, jump, run, search, Git.</sub>
 </p>
 
 <h1 align="center">chopsticks</h1>
@@ -38,8 +38,8 @@ Vim already gives you the editing language: operators, motions, text objects,
 windows, registers, `gd`, `K`, `:help`.
 
 The part that drifts is the project layer around editing. Every machine ends up
-with a slightly different answer for files, grep, Git, LSP, running the current
-file, terminal behavior, health checks, and key help.
+with a slightly different answer for files, grep, Git, LSP, project tasks,
+terminal behavior, health checks, and key help.
 
 chopsticks makes that layer one habit:
 
@@ -47,7 +47,8 @@ chopsticks makes that layer one habit:
 SPC ?    show the active map
 SPC SPC  open a project file
 s{2}     jump on the visible screen
-SPC rr   run the current file
+SPC rr   run the current context
+SPC rt   pick a project task
 SPC /    search the project
 SPC gs   inspect Git
 ```
@@ -201,7 +202,8 @@ appends a timestamped session block.
 ```
 SPC SPC   fuzzy find file          gd       go to definition
 SPC /     ripgrep project          K        hover docs
-SPC e     toggle file sidebar      SPC rr   run current file
+SPC e     toggle file sidebar      SPC rr   run context
+SPC rt    pick project task        SPC rl   repeat last run
 Ctrl-h/l  enter/leave sidebar      Ctrl-hjkl windows
 SPC gs    git status               SPC cf   format
 SPC w     save                     SPC q    quit
@@ -226,7 +228,7 @@ Esc       exit insert mode         SPC ?    cheat sheet
 
 ### Code
 
-`gd` def | `gr` refs | `gI` impl | `gy` type | `K` docs | `[d` `]d` LSP diagnostics | `[e` `]e` ALE errors | `SPC ca` action | `SPC cr` rename | `SPC cf` format | `SPC co` outline | `SPC ci` LSP status | `SPC rr` run
+`gd` def | `gr` refs | `gI` impl | `gy` type | `K` docs | `[d` `]d` LSP diagnostics | `[e` `]e` ALE errors | `SPC ca` action | `SPC cr` rename | `SPC cf` format | `SPC co` outline | `SPC ci` LSP status | `SPC rr` run context | `SPC rt` pick task | `SPC rl` last run
 
 ### Edit
 
@@ -238,7 +240,7 @@ Esc       exit insert mode         SPC ?    cheat sheet
 
 ### Windows
 
-`Ctrl-h/j/k/l` windows | `<C-w>h/j/k/l` native fallback | `SPC z` maximize | `SPC bp` `SPC bn` buffers | `SPC bd` close buffer | `SPC bo` close other buffers | `SPC tt` `SPC th` terminal | `]q` `[q` quickfix | `]l` `[l` loclist | `SPC xq` `SPC xQ` open/close quickfix | `SPC xl` `SPC xL` open/close loclist
+`Ctrl-h/j/k/l` windows | `<C-w>h/j/k/l` native fallback | `SPC z` maximize | `SPC bp` `SPC bn` buffers | `SPC bd` close buffer | `SPC bo` close others | `SPC ba` close all | `SPC tt` `SPC th` terminal | `]q` `[q` quickfix | `]l` `[l` loclist | `SPC xq` `SPC xQ` open/close quickfix | `SPC xl` `SPC xL` open/close loclist
 
 ### Markdown
 
@@ -263,7 +265,7 @@ Esc       exit insert mode         SPC ?    cheat sheet
 
 ### Classic Code
 
-`,dd` def | `,dt` type | `,di` impl | `,dr` refs | `,dk` docs | `,dp` `,dn` diagnostics | `[e` `]e` ALE errors | `,rn` rename | `,ca` action | `,o` outline | `,cr` run
+`,dd` def | `,dt` type | `,di` impl | `,dr` refs | `,dk` docs | `,dp` `,dn` diagnostics | `[e` `]e` ALE errors | `,rn` rename | `,ca` action | `,o` outline | `,cr` run context | `,ct` pick task | `,cR` last run
 
 ### Classic Edit
 
@@ -275,7 +277,7 @@ Esc       exit insert mode         SPC ?    cheat sheet
 
 ### Classic Windows
 
-`Ctrl-h/j/k/l` windows | `<C-w>h/j/k/l` native fallback | `,z` maximize | `,h` `,l` buffers | `,bd` close buffer | `,=` `,-` resize | `,tv` `,th` terminal
+`Ctrl-h/j/k/l` windows | `<C-w>h/j/k/l` native fallback | `,z` maximize | `,h` `,l` buffers | `,bd` close buffer | `,bo` close others | `,ba` close all | `,=` `,-` resize | `,tv` `,th` terminal
 
 ### Classic Markdown
 
@@ -361,7 +363,7 @@ For Markdown LSP, install or select `marksman` first.
     ├── buffers.vim     buffer lifecycle commands
     ├── utilities.vim   config/reload, path copy, sudo-save helpers
     ├── files.vim       auto mkdir, large-file protection
-    ├── runner.vim      run current file
+    ├── runner.vim      run current context and project tasks
     ├── quickfix.vim    quickfix and location-list helpers
     ├── keymap.vim      :ChopsticksKeymapAudit ergonomic contract
     ├── tools.vim       external toolchain diagnostics

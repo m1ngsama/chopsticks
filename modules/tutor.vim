@@ -122,6 +122,16 @@ function! s:ProjectRunKey() abort
         \ s:SpaceLayout() ? 'SPC rr' : ',cr')
 endfunction
 
+function! s:ProjectTaskPickerKey() abort
+    return s:ContractKey('project_task_picker',
+        \ s:SpaceLayout() ? 'SPC rt' : ',ct')
+endfunction
+
+function! s:ProjectRunLastKey() abort
+    return s:ContractKey('project_run_last',
+        \ s:SpaceLayout() ? 'SPC rl' : ',cR')
+endfunction
+
 function! s:BufferAlternateKey() abort
     return s:ContractKey('buffer_alternate',
         \ s:SpaceLayout() ? 'SPC Tab' : ',,')
@@ -231,7 +241,9 @@ function! s:DailyLoopTutorLines() abort
         call add(l:lines, l:lsp_training_line)
     endif
     call extend(l:lines, [
-        \ s:TutorKeyLine(s:ProjectRunKey(), 'run current file'),
+        \ s:TutorKeyLine(s:ProjectRunKey(), 'run current context'),
+        \ s:TutorKeyLine(s:ProjectTaskPickerKey() . ' / '
+        \   . s:ProjectRunLastKey(), 'pick task / repeat last run'),
         \ s:TutorKeyLine(s:ProjectGrepKey(), 'grep project'),
         \ s:TutorKeyLine(s:GitStatusKey(), 'check git status'),
         \ ])
@@ -426,7 +438,10 @@ function! s:ChopsticksTutor() abort
         call extend(l:lines, s:LspTutorLines())
         call extend(l:lines, [
             \ ChopsticksDisplayKeyLine('     ', 12, s:ProjectRunKey(),
-            \   'run current file'),
+            \   'run context'),
+            \ ChopsticksDisplayKeyLine('     ', 12,
+            \   s:ProjectTaskPickerKey() . '/' . s:ProjectRunLastKey(),
+            \   'task / last run'),
             \ '',
             \ '  6. git and windows',
             \ ChopsticksDisplayKeyLine('     ', 13,
@@ -469,7 +484,9 @@ function! s:ChopsticksTutor() abort
             \ ])
         call extend(l:lines, s:LspTutorLines())
         call extend(l:lines, [
-            \ s:TutorKeyLine(s:ProjectRunKey(), 'run current file'),
+            \ s:TutorKeyLine(s:ProjectRunKey(), 'run current context'),
+            \ s:TutorKeyLine(s:ProjectTaskPickerKey() . ' / '
+            \   . s:ProjectRunLastKey(), 'pick task / repeat last run'),
             \ '',
             \ '  edit and git',
             \ ])

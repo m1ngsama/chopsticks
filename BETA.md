@@ -8,8 +8,8 @@ The goal is to prove the daily project loop in real Vim sessions, not only in a
 demo recording:
 
 - `SPC ?` answers "what key do I press next?"
-- `s` jump, native `gd`/`gr`/`K`, and `SPC rr` feel faster than assembling the
-  same workflow by hand.
+- `s` jump, native `gd`/`gr`/`K`, `SPC rr`, `SPC rt`, and `SPC rl` feel faster
+  than assembling the same workflow by hand.
 - Git push and pull stay explicit shell or Fugitive actions, not default
   hotkeys.
 - SSH, TTY, macOS, and Linux sessions stay predictable.
@@ -60,7 +60,7 @@ Use the build for real editing. A useful session should touch:
 - project files: `SPC SPC`, `SPC ff`, `SPC ,`
 - visible jumps: `s`, fallback `SPC S`
 - code inspection: `gd`, `gr`, `K`
-- run/search/git: `SPC rr`, `SPC /`, `SPC gs`
+- run/search/git: `SPC rr`, `SPC rt`, `SPC rl`, `SPC /`, `SPC gs`
 - quickfix/location-list: `[q`, `]q`, `[l`, `]l`
 - Markdown-local actions: `,mt`, `,mp`
 - help surfaces: `SPC ?`, `:ChopsticksTutor`, `:help chopsticks`

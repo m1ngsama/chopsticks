@@ -390,12 +390,12 @@ function! s:InfoSurfaceSpecs() abort
         \ s:InfoSurface({
         \   'name': 'runner',
         \   'function': 'ChopsticksRunnerInfo',
-        \   'status_title': 'run file',
-        \   'status_label': 'run file',
+        \   'status_title': 'project run',
+        \   'status_label': 'project run',
         \   'health_domain': 'runner',
         \   'health_interface_label': 'runner interface',
         \   'health_defaults': s:HealthDefaults('setup',
-        \       'run file', 'runner not ready', ':ChopsticksStatus'),
+        \       'project run', 'runner not ready', ':ChopsticksStatus'),
         \ }),
         \ s:InfoSurface({
         \   'name': 'beta',

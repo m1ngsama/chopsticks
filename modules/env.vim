@@ -2,8 +2,9 @@
 
 set nocompatible
 
-let g:is_tty       = empty($TERM) || $TERM ==# 'dumb' || $TERM =~# 'linux'
-                 \ || $TERM =~# 'screen' || &term =~# 'builtin'
+let s:term_name = empty($TERM) ? &term : $TERM
+let g:is_tty       = empty(s:term_name) || s:term_name ==# 'dumb'
+                 \ || s:term_name =~# '^linux' || &term =~# 'builtin'
 let g:has_true_color = ($COLORTERM ==# 'truecolor' || $COLORTERM ==# '24bit')
 
 let s:profile_choices = ['minimal', 'engineer', 'full']
@@ -490,8 +491,29 @@ function! ChopsticksPluginInstalled(name) abort
     return !empty(l:dir) && isdirectory(l:dir)
 endfunction
 
+function! s:PluginToolPath(cmd) abort
+    if a:cmd ==# 'fzf'
+        let l:fzf = ChopsticksPluginDir('fzf')
+        let l:path = empty(l:fzf) ? '' : l:fzf . '/bin/fzf'
+        if !empty(l:path) && executable(l:path)
+            return l:path
+        endif
+    endif
+    return ''
+endfunction
+
+function! ChopsticksToolPath(cmd) abort
+    if empty(a:cmd)
+        return ''
+    endif
+    if executable(a:cmd)
+        return a:cmd
+    endif
+    return s:PluginToolPath(a:cmd)
+endfunction
+
 function! ChopsticksToolAvailable(cmd) abort
-    return !empty(a:cmd) && executable(a:cmd)
+    return !empty(ChopsticksToolPath(a:cmd))
 endfunction
 
 function! ChopsticksMissingTools(tools) abort
@@ -1024,6 +1046,12 @@ function! s:CommandCatalog() abort
         \ s:PublicCommand('ChopsticksKeymapAudit', 'keymap',
         \   'ergonomic contract',
         \   {'groups': ['survival'], 'display_label': 'key audit'}),
+        \ s:PublicCommand('ChopsticksRun', 'runner',
+        \   'run current context'),
+        \ s:PublicCommand('ChopsticksRunTask', 'runner',
+        \   'pick project task'),
+        \ s:PublicCommand('ChopsticksRunLast', 'runner',
+        \   'repeat last run'),
         \ s:PublicCommand('ChopsticksInputMethodStatus', 'input_method', 'input method status'),
         \ s:PublicCommand('ChopsticksInputMethodEnable', 'input_method', 'enable input method switch'),
         \ s:PublicCommand('ChopsticksInputMethodDisable', 'input_method', 'disable input method switch'),

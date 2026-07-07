@@ -325,6 +325,7 @@ check_docs() {
         exit 1
     fi
     grep -Fq 'buffer_close' modules/keymap.vim
+    grep -Fq 'buffer_close_all' modules/keymap.vim
     grep -Fq 'buffer_close_others' modules/keymap.vim
     grep -Fq 'buffer_navigation' modules/keymap.vim
     grep -Fq 'buffer_alternate' modules/keymap.vim
@@ -367,6 +368,8 @@ check_docs() {
     grep -Fq 'git_buffer_commit_picker' modules/keymap.vim
     grep -Fq 'git_conflict_navigation' modules/keymap.vim
     grep -Fq 'project_run' modules/keymap.vim
+    grep -Fq 'project_task_picker' modules/keymap.vim
+    grep -Fq 'project_run_last' modules/keymap.vim
     grep -Fq 'lint_keymaps' modules/keymap.vim
     grep -Fq 'markdown_maps' modules/keymap.vim
     grep -Fq 'completion_keymaps' modules/keymap.vim
@@ -390,7 +393,8 @@ check_docs() {
     grep -Fq "'audit': 0" modules/keymap.vim
     grep -Fq "'display_groups': ['survival_config', 'utility_config']" modules/keymap.vim
     grep -Fq "'display_groups': ['buffer_navigation', 'buffer_lifecycle']" modules/keymap.vim
-    grep -Fq "'display_groups': ['buffer_close_others']" modules/keymap.vim
+    grep -Fq "'display_groups': ['buffer_close_all', 'buffer_lifecycle']" modules/keymap.vim
+    grep -Fq "'display_groups': ['buffer_close_others', 'buffer_lifecycle']" modules/keymap.vim
     grep -Fq "'display_groups': ['project_search', 'project_files']" \
         modules/keymap.vim
     grep -Fq "'display_groups': ['project_files_picker']" modules/keymap.vim
@@ -443,6 +447,8 @@ check_docs() {
     grep -Fq "'display_groups': ['git_conflict_navigation']" \
         modules/keymap.vim
     grep -Fq "'display_groups': ['project_run']" modules/keymap.vim
+    grep -Fq "'display_groups': ['project_task_picker']" modules/keymap.vim
+    grep -Fq "'display_groups': ['project_run_last']" modules/keymap.vim
     grep -Fq "'display_groups': ['lint_keymaps']" modules/keymap.vim
     grep -Fq "'display_groups': ['markdown_maps']" modules/keymap.vim
     grep -Fq "'display_groups': ['completion_keymaps']" modules/keymap.vim
@@ -459,6 +465,11 @@ check_docs() {
         modules/buffers.vim
     grep -Fq "ChopsticksKeymapContractFirstSpecOr('buffer_close'" \
         modules/buffers.vim
+    grep -Fq "ChopsticksKeymapContractFirstSpecOr('buffer_close_all'" \
+        modules/buffers.vim
+    grep -Fq "ChopsticksKeymapContractFirstSpecOr(" \
+        modules/buffers.vim
+    grep -Fq "'buffer_close_others'" modules/buffers.vim
     grep -Fq "ChopsticksKeymapContractFirstSpecOr('buffer_alternate'" \
         modules/buffers.vim
     grep -Fq "ChopsticksKeymapContractSpecsOr('utility_config'" \
@@ -495,6 +506,10 @@ check_docs() {
     grep -Fq "ChopsticksKeymapContractKeysOr('git_log'" modules/git.vim
     grep -Fq "ChopsticksKeymapContractSpecsOr('project_run'" \
         modules/runner.vim
+    grep -Fq "ChopsticksKeymapContractSpecsOr(" \
+        modules/runner.vim
+    grep -Fq "'project_task_picker'" modules/runner.vim
+    grep -Fq "'project_run_last'" modules/runner.vim
     grep -Fq "ChopsticksKeymapContractKeysOr('project_run'" \
         modules/runner.vim
     grep -Fq "ChopsticksKeymapContractSpecsOr('lint_keymaps'" \
@@ -939,11 +954,11 @@ check_docs() {
     grep -Fq "return ChopsticksInfoSection('file safety'" modules/files.vim
     grep -Fq 'ChopsticksInfoDetail(' modules/runner.vim
     grep -Fq 'ChopsticksInfoDiagnosticItem(' modules/runner.vim
-    grep -Fq "return ChopsticksInfoSection('run file'" modules/runner.vim
+    grep -Fq "return ChopsticksInfoSection('project run'" modules/runner.vim
     if grep -Fq "'title': 'buffers'" modules/buffers.vim ||
         grep -Fq "'title': 'quickfix'" modules/quickfix.vim ||
         grep -Fq "'title': 'file safety'" modules/files.vim ||
-        grep -Fq "'title': 'run file'" modules/runner.vim; then
+        grep -Fq "'title': 'project run'" modules/runner.vim; then
         echo "Leaf info producers must use the Info Shape Contract" >&2
         exit 1
     fi

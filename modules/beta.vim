@@ -143,7 +143,9 @@ function! s:DailyLoopLines() abort
         \ s:GuideKeyLine(s:ContractKey('project_grep',
         \       l:space ? 'SPC /' : ',rg'), 'grep project'),
         \ s:GuideKeyLine(s:ContractKey('project_run',
-        \       l:space ? 'SPC rr' : ',cr'), 'run current file'),
+        \       l:space ? 'SPC rr' : ',cr'), 'run current context'),
+        \ s:GuideKeyLine(s:ContractKey('project_task_picker',
+        \       l:space ? 'SPC rt' : ',ct'), 'pick project task'),
         \ s:GuideKeyLine(s:ContractKey('git_status',
         \       l:space ? 'SPC gs' : ',gs'), 'git status'),
         \ ])
@@ -158,7 +160,7 @@ endfunction
 
 function! s:RecordTaskLine() abort
     let l:loop = s:LearningDailyLoopInfo()
-    let l:tasks = ['project navigation', 'code', 'grep', 'git']
+    let l:tasks = ['project navigation', 'code', 'run tasks', 'grep', 'git']
     if s:LspDailyLoopAvailable()
         call add(l:tasks, 'LSP')
     endif

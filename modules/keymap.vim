@@ -547,10 +547,20 @@ function! s:SpaceContractSpecs() abort
         \   'display_groups': ['project_search', 'project_tags'],
         \   'display_key': 'SPC st',
         \   'display_label': 'tags'}),
-        \ s:ExpectedMapSpec('n', '<Space>rr', 'RunFile', 'space run loop', {
+        \ s:ExpectedMapSpec('n', '<Space>rr', 'ChopsticksRun', 'space run loop', {
         \   'display_groups': ['project_run'],
         \   'display_key': 'SPC rr',
-        \   'display_label': 'run file'}),
+        \   'display_label': 'run context'}),
+        \ s:ExpectedMapSpec('n', '<Space>rt', 'ChopsticksRunTask',
+        \   'space task picker', {
+        \   'display_groups': ['project_task_picker'],
+        \   'display_key': 'SPC rt',
+        \   'display_label': 'pick task'}),
+        \ s:ExpectedMapSpec('n', '<Space>rl', 'ChopsticksRunLast',
+        \   'space last run', {
+        \   'display_groups': ['project_run_last'],
+        \   'display_key': 'SPC rl',
+        \   'display_label': 'last run'}),
         \ s:ExpectedMapSpec('n', '<Space>gs', 'Git status', 'space git', {
         \   'display_groups': ['git_keymaps', 'git_status'],
         \   'display_key': 'SPC gs',
@@ -586,6 +596,16 @@ function! s:SpaceContractSpecs() abort
         \   'display_groups': ['buffer_close', 'buffer_lifecycle'],
         \   'display_key': 'SPC bd',
         \   'display_label': 'close buffer'}),
+        \ s:ExpectedMapSpec('n', '<Space>ba', 'BcloseAll',
+        \   'space close all buffers', {
+        \   'display_groups': ['buffer_close_all', 'buffer_lifecycle'],
+        \   'display_key': 'SPC ba',
+        \   'display_label': 'close all buffers'}),
+        \ s:ExpectedMapSpec('n', '<Space>bo', 'BcloseOthers',
+        \   'space close other buffers', {
+        \   'display_groups': ['buffer_close_others', 'buffer_lifecycle'],
+        \   'display_key': 'SPC bo',
+        \   'display_label': 'close other buffers'}),
         \ s:ExpectedMapSpec('n', '<Space>bn', 'bnext',
         \   'space buffer lifecycle', {
         \   'display_groups': ['buffer_navigation', 'buffer_lifecycle'],
@@ -601,11 +621,6 @@ function! s:SpaceContractSpecs() abort
         \   'display_groups': ['buffer_alternate', 'buffer_lifecycle'],
         \   'display_key': 'SPC Tab',
         \   'display_label': 'alternate buffer'}),
-        \ s:ExpectedMapSpec('n', '<Space>bo', '%bd',
-        \   'space close other buffers', {
-        \   'display_groups': ['buffer_close_others'],
-        \   'display_key': 'SPC bo',
-        \   'display_label': 'close other buffers'}),
         \ s:ExpectedMapSpec('n', '<Space>xq', 'copen',
         \   'space quickfix window', {
         \   'display_groups': ['quickfix_window'],
@@ -874,10 +889,20 @@ function! s:ClassicContractSpecs() abort
         \   'display_groups': ['project_marks'],
         \   'display_key': ',fm',
         \   'display_label': 'marks'}),
-        \ s:ExpectedMapSpec('n', ',cr', 'RunFile', 'classic run loop', {
+        \ s:ExpectedMapSpec('n', ',cr', 'ChopsticksRun', 'classic run loop', {
         \   'display_groups': ['project_run'],
         \   'display_key': ',cr',
-        \   'display_label': 'run file'}),
+        \   'display_label': 'run context'}),
+        \ s:ExpectedMapSpec('n', ',ct', 'ChopsticksRunTask',
+        \   'classic task picker', {
+        \   'display_groups': ['project_task_picker'],
+        \   'display_key': ',ct',
+        \   'display_label': 'pick task'}),
+        \ s:ExpectedMapSpec('n', ',cR', 'ChopsticksRunLast',
+        \   'classic last run', {
+        \   'display_groups': ['project_run_last'],
+        \   'display_key': ',cR',
+        \   'display_label': 'last run'}),
         \ s:ExpectedMapSpec('n', ',gs', 'Git status', 'classic git', {
         \   'display_groups': ['git_keymaps', 'git_status'],
         \   'display_key': ',gs',
@@ -928,6 +953,16 @@ function! s:ClassicContractSpecs() abort
         \   'display_groups': ['buffer_close', 'buffer_lifecycle'],
         \   'display_key': ',bd',
         \   'display_label': 'close buffer'}),
+        \ s:ExpectedMapSpec('n', ',ba', 'BcloseAll',
+        \   'classic close all buffers', {
+        \   'display_groups': ['buffer_close_all', 'buffer_lifecycle'],
+        \   'display_key': ',ba',
+        \   'display_label': 'close all buffers'}),
+        \ s:ExpectedMapSpec('n', ',bo', 'BcloseOthers',
+        \   'classic close other buffers', {
+        \   'display_groups': ['buffer_close_others', 'buffer_lifecycle'],
+        \   'display_key': ',bo',
+        \   'display_label': 'close other buffers'}),
         \ s:ExpectedMapSpec('n', ',l', 'bnext',
         \   'classic buffer lifecycle', {
         \   'display_groups': ['buffer_navigation', 'buffer_lifecycle'],

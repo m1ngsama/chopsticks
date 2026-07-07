@@ -180,6 +180,10 @@ function! s:LearningDailyLoopInfo() abort
         \ 'lsp_hover': get(l:lsp_keys, 'hover', l:space ? 'K' : ',dk'),
         \ 'project_run': s:ContractKey('project_run',
         \   l:space ? 'SPC rr' : ',cr'),
+        \ 'project_task_picker': s:ContractKey('project_task_picker',
+        \   l:space ? 'SPC rt' : ',ct'),
+        \ 'project_run_last': s:ContractKey('project_run_last',
+        \   l:space ? 'SPC rl' : ',cR'),
         \ 'project_grep': s:ContractKey('project_grep',
         \   l:space ? 'SPC /' : ',rg'),
         \ 'git_status': s:ContractKey('git_status',
@@ -204,10 +208,11 @@ function! s:LearningDailyLoopInfo() abort
     call extend(l:drill_steps, [
         \ 'edit',
         \ l:keys.project_run,
+        \ l:keys.project_task_picker,
         \ l:keys.project_grep,
         \ l:keys.git_status,
         \ ])
-    let l:tasks = ['project navigation', 'code', 'grep', 'git']
+    let l:tasks = ['project navigation', 'code', 'run tasks', 'grep', 'git']
     if l:lsp
         call add(l:tasks, 'LSP')
     endif
@@ -250,7 +255,9 @@ function! s:LearningDailyLoopInfo() abort
             \ })
     endif
     call extend(l:tutor_rows, [
-        \ {'key': l:keys.project_run, 'label': 'run current file'},
+        \ {'key': l:keys.project_run, 'label': 'run current context'},
+        \ {'key': l:keys.project_task_picker . ' / ' . l:keys.project_run_last,
+        \  'label': 'pick task / repeat last run'},
         \ {'key': l:keys.project_grep, 'label': 'grep project'},
         \ {'key': l:keys.git_status, 'label': 'check git status'},
         \ ])
@@ -263,7 +270,8 @@ function! s:LearningDailyLoopInfo() abort
     endif
     call extend(l:beta_rows, [
         \ {'key': l:keys.project_grep, 'label': 'grep project'},
-        \ {'key': l:keys.project_run, 'label': 'run current file'},
+        \ {'key': l:keys.project_run, 'label': 'run current context'},
+        \ {'key': l:keys.project_task_picker, 'label': 'pick project task'},
         \ {'key': l:keys.git_status, 'label': 'git status'},
         \ ])
     if l:lsp

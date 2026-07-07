@@ -23,6 +23,10 @@ function! s:FallbackKeySpecs() abort
     if get(g:, 'chopsticks_space_keymaps', 1)
         return {
             \ 'close': {'lhs': '<Space>bd', 'key': 'SPC bd', 'text': 'Bclose'},
+            \ 'close_all': {'lhs': '<Space>ba', 'key': 'SPC ba',
+            \   'text': 'BcloseAll'},
+            \ 'close_others': {'lhs': '<Space>bo', 'key': 'SPC bo',
+            \   'text': 'BcloseOthers'},
             \ 'next': {'lhs': '<Space>bn', 'key': 'SPC bn', 'text': 'bnext'},
             \ 'previous': {'lhs': '<Space>bp', 'key': 'SPC bp', 'text': 'bprevious'},
             \ 'alternate': {'lhs': '<Space><Tab>', 'key': 'SPC Tab', 'text': 'Balternate'},
@@ -30,6 +34,8 @@ function! s:FallbackKeySpecs() abort
     endif
     return {
         \ 'close': {'lhs': ',bd', 'key': ',bd', 'text': 'Bclose'},
+        \ 'close_all': {'lhs': ',ba', 'key': ',ba', 'text': 'BcloseAll'},
+        \ 'close_others': {'lhs': ',bo', 'key': ',bo', 'text': 'BcloseOthers'},
         \ 'next': {'lhs': ',l', 'key': ',l', 'text': 'bnext'},
         \ 'previous': {'lhs': ',h', 'key': ',h', 'text': 'bprevious'},
         \ 'alternate': {'lhs': ',,', 'key': ',,', 'text': 'Balternate'},
@@ -43,11 +49,32 @@ function! s:KeySpecs() abort
     return {
         \ 'close': ChopsticksKeymapContractFirstSpecOr('buffer_close',
         \   l:fallback.close),
+        \ 'close_all': ChopsticksKeymapContractFirstSpecOr('buffer_close_all',
+        \   l:fallback.close_all),
+        \ 'close_others': ChopsticksKeymapContractFirstSpecOr(
+        \   'buffer_close_others', l:fallback.close_others),
         \ 'next': get(l:navigation, 0, l:fallback.next),
         \ 'previous': get(l:navigation, 1, l:fallback.previous),
         \ 'alternate': ChopsticksKeymapContractFirstSpecOr('buffer_alternate',
         \   l:fallback.alternate),
         \ }
+endfunction
+
+function! s:BufferCommandItem(label, command, spec) abort
+    let l:command = ':' . a:command
+    let l:command_ready = ChopsticksCommandAvailable(a:command)
+    let l:map_ready = ChopsticksKeymapSpecReady(a:spec)
+    if l:command_ready && l:map_ready
+        return ChopsticksInfoItem(a:label, 'ready',
+            \ get(a:spec, 'key', l:command), {'diagnostic': 0})
+    endif
+    let l:reason = l:command_ready
+        \ ? 'missing ' . get(a:spec, 'key', a:label . ' map')
+        \ : 'missing ' . l:command
+    return ChopsticksInfoDiagnosticItem(a:label, 'missing', l:reason,
+        \ a:label, l:command_ready ? ':ChopsticksKeymapAudit' : 'reload chopsticks', {
+        \ 'detail': l:reason,
+        \ })
 endfunction
 
 function! s:BufferCloseItem(spec) abort
@@ -106,6 +133,18 @@ function! s:Warn(message) abort
     echohl None
 endfunction
 
+function! s:ListedBuffers() abort
+    return filter(range(1, bufnr('$')), 'buflisted(v:val)')
+endfunction
+
+function! s:ModifiedBuffers(buffers) abort
+    return filter(copy(a:buffers), 'getbufvar(v:val, "&modified")')
+endfunction
+
+function! s:BufferListDisplay(buffers) abort
+    return join(map(copy(a:buffers), 's:BufferDisplay(v:val)'), ', ')
+endfunction
+
 command! Bclose call <SID>BufcloseCloseIt()
 function! <SID>BufcloseCloseIt()
     let l:currentBufNum   = bufnr("%")
@@ -136,16 +175,53 @@ function! <SID>AlternateBuffer() abort
     call s:Warn('Balternate: no listed alternate buffer')
 endfunction
 
+command! BcloseOthers call <SID>CloseOtherBuffers()
+function! <SID>CloseOtherBuffers() abort
+    let l:current = bufnr('%')
+    let l:targets = filter(s:ListedBuffers(), 'v:val != l:current')
+    let l:modified = s:ModifiedBuffers(l:targets)
+    if !empty(l:modified)
+        call s:Warn('BcloseOthers: unsaved buffers: '
+            \ . s:BufferListDisplay(l:modified))
+        return
+    endif
+    for l:buf in l:targets
+        if buflisted(l:buf)
+            execute 'bdelete ' . l:buf
+        endif
+    endfor
+endfunction
+
+command! BcloseAll call <SID>CloseAllBuffers()
+function! <SID>CloseAllBuffers() abort
+    let l:targets = s:ListedBuffers()
+    let l:modified = s:ModifiedBuffers(l:targets)
+    if !empty(l:modified)
+        call s:Warn('BcloseAll: unsaved buffers: '
+            \ . s:BufferListDisplay(l:modified))
+        return
+    endif
+    for l:buf in l:targets
+        if buflisted(l:buf)
+            execute 'bdelete ' . l:buf
+        endif
+    endfor
+    if empty(s:ListedBuffers())
+        enew
+    endif
+endfunction
+
 if g:chopsticks_space_keymaps
     nnoremap <leader>bd :Bclose<cr>
-    nnoremap <leader>ba :bufdo bd<cr>
-    nnoremap <leader>bo :%bd<bar>e#<bar>bd#<cr>
+    nnoremap <leader>ba :BcloseAll<cr>
+    nnoremap <leader>bo :BcloseOthers<cr>
     nnoremap <leader>bn :bnext<cr>
     nnoremap <leader>bp :bprevious<cr>
     nnoremap <leader><Tab> :Balternate<cr>
 else
     nnoremap <leader>bd :Bclose<cr>
-    nnoremap <leader>ba :bufdo bd<cr>
+    nnoremap <leader>ba :BcloseAll<cr>
+    nnoremap <leader>bo :BcloseOthers<cr>
     nnoremap <leader>l  :bnext<cr>
     nnoremap <leader>h  :bprevious<cr>
     nnoremap <leader><leader> :Balternate<cr>
@@ -165,6 +241,10 @@ function! ChopsticksBufferInfo() abort
         \ ],
         \ 'items': [
         \   s:BufferCloseItem(l:keys.close),
+        \   s:BufferCommandItem('close all buffers', 'BcloseAll',
+        \       l:keys.close_all),
+        \   s:BufferCommandItem('close other buffers', 'BcloseOthers',
+        \       l:keys.close_others),
         \   s:BufferNavigationItem(l:navigation_specs),
         \   s:AlternateBufferItem(l:keys.alternate),
         \ ],

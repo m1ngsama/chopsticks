@@ -339,7 +339,9 @@ function! s:CheatSheet() abort
         endif
 
         call extend(l:lines, [
-            \ s:CheatContractLine('project_run', 'SPC rr', 'run file'),
+            \ s:CheatContractLine('project_run', 'SPC rr', 'run context'),
+            \ s:CheatContractLine('project_task_picker', 'SPC rt', 'pick task'),
+            \ s:CheatContractLine('project_run_last', 'SPC rl', 'last run'),
             \ s:ReindentCheatLine(),
             \ ])
         call extend(l:lines, s:MarkdownCheatLines(l:has_previm))
@@ -468,8 +470,11 @@ function! s:CheatSheet() abort
         call extend(l:lines, s:LspCheatLines())
     endif
 
-    call add(l:lines, s:CheatContractLine('project_run', ',cr',
-        \ 'run file'))
+    call extend(l:lines, [
+        \ s:CheatContractLine('project_run', ',cr', 'run context'),
+        \ s:CheatContractLine('project_task_picker', ',ct', 'pick task'),
+        \ s:CheatContractLine('project_run_last', ',cR', 'last run'),
+        \ ])
     call extend(l:lines, s:MarkdownCheatLines(l:has_previm))
 
     if l:has_lint

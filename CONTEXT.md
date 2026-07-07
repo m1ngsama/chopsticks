@@ -216,16 +216,17 @@ _Avoid_: `:ChopsticksStatus` or **Chopsticks Doctor** knowing utility-map,
 clipboard, or sudo-save branching rules
 
 **Buffer Lifecycle**:
-The listed-buffer, alternate-buffer, close-buffer, and buffer navigation
-workflow owned by `modules/buffers.vim` and surfaced by
+The listed-buffer, alternate-buffer, safe close-buffer, close-others, close-all,
+and buffer navigation workflow owned by `modules/buffers.vim` and surfaced by
 `ChopsticksBufferInfo()`.
 _Avoid_: scattered `:bdelete`, `:bnext`, and alternate-file mappings
 
 **Buffer Lifecycle Item**:
 A state-bearing entry and detail rows returned by `ChopsticksBufferInfo()` for
-safe buffer close, buffer navigation maps, alternate-buffer switching, current
-listed-buffer count, and current/alternate buffer context, with diagnostic
-severity/action metadata for **Chopsticks Doctor**.
+safe buffer close, safe close-all/close-others, buffer navigation maps,
+alternate-buffer switching, current listed-buffer count, and current/alternate
+buffer context, with diagnostic severity/action metadata for
+**Chopsticks Doctor**.
 _Avoid_: `:ChopsticksStatus` or **Chopsticks Doctor** knowing buffer-map and
 delete-safety branching rules
 
@@ -376,16 +377,17 @@ _Avoid_: `:ChopsticksStatus` or **Chopsticks Doctor** knowing Git plugin and
 keymap branching rules
 
 **Project Run**:
-The current-buffer run-file workflow owned by `modules/runner.vim` and surfaced
-by `ChopsticksRunnerInfo()`.
-_Avoid_: hidden keymap-only runner logic
+The current-context file runner, project-task picker, and last-run workflow owned
+by `modules/runner.vim` and surfaced by `ChopsticksRunnerInfo()`.
+_Avoid_: hidden keymap-only runner logic or one-off shell wrappers
 
 **Project Run Item**:
 A state-bearing entry and detail rows returned by `ChopsticksRunnerInfo()` for
-the active filetype, run keymap, supported runner catalog, and executable
-readiness, with diagnostic severity/action metadata for **Chopsticks Doctor**.
-_Avoid_: `:ChopsticksStatus` or **Chopsticks Doctor** knowing filetype runner
-branching rules
+the active filetype, run/task/last keymaps, detected npm/make/cargo/go project
+tasks, supported runner catalog, last-run state, and executable readiness, with
+diagnostic severity/action metadata for **Chopsticks Doctor**.
+_Avoid_: `:ChopsticksStatus` or **Chopsticks Doctor** knowing filetype runner or
+project-task branching rules
 
 **Chopsticks Doctor**:
 The `:ChopsticksDoctor` command and `ChopsticksHealthInfo()` interface that
@@ -927,13 +929,14 @@ _Avoid_: degraded editor
   **Ergonomic Contract**.
 - **Project Run** is part of the trained project loop, but its executable
   policy lives in the runner module rather than the keymap or status renderer.
-- **Project Run Items** keep run-file keymap, current filetype, supported
-  runner catalog, and executable readiness in `ChopsticksRunnerInfo()` so
-  `:ChopsticksStatus` only renders rows and **Chopsticks Doctor** reports
-  missing runner commands from the same item interface.
-- **Project Run** consumes **Keymap Contract Groups** for run-file map
-  readiness and key summaries, so runner status rows do not rebuild keymap
-  specs already owned by the executable **Ergonomic Contract**.
+- **Project Run Items** keep run/task/last keymaps, current filetype, detected
+  project tasks, supported runner catalog, last-run state, and executable
+  readiness in `ChopsticksRunnerInfo()` so `:ChopsticksStatus` only renders rows
+  and **Chopsticks Doctor** reports missing runner commands from the same item
+  interface.
+- **Project Run** consumes **Keymap Contract Groups** for run/task/last map
+  readiness and key summaries, so runner status rows do not rebuild keymap specs
+  already owned by the executable **Ergonomic Contract**.
 - **Chopsticks Doctor** is the executable health report for setup and runtime
   problems across **Chopsticks Modules**.
 - **Health Diagnostic Items** let each owning `Chopsticks...Info()` interface

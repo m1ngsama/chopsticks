@@ -33,13 +33,17 @@ Inside Vim:
   :ChopsticksStatus    tool, plugin, and LSP diagnostics
   :ChopsticksHelp      this help page
   :ChopsticksConfig    edit local preferences
+  :ChopsticksRun       run current context
+  :ChopsticksRunTask   pick project task
+  :ChopsticksRunLast   repeat last run
 <
 
 Daily loop:
 >
   SPC SPC   find file              SPC /     grep project
   s + 2ch   jump on screen         gd / gr   definition / references
-  K         hover docs             SPC rr    run current file
+  K         hover docs             SPC rr    run context
+  SPC rt    pick project task      SPC rl    repeat last run
   SPC gs    git status             SPC cf    format
   SPC w     save                   SPC q     quit
 <
@@ -61,7 +65,8 @@ High-frequency keys:
 >
   SPC SPC   files                  SPC ,     buffers
   SPC /     grep project           SPC Tab   alternate file
-  SPC e/E   file sidebar           SPC rr    run file
+  SPC e/E   file sidebar           SPC rr    run context
+  SPC rt    pick project task      SPC rl    repeat last run
   Ctrl-hjkl windows                Ctrl-h/l  enter/leave sidebar
   SPC gs    git status             SPC gl    git log graph
   SPC ca    code action            SPC cr    rename

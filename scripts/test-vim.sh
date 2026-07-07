@@ -75,24 +75,39 @@ dump_vim_keymap_diagnostics() {
 
     if [ "${CHOPSTICKS_TEST_KEYMAP_PHASE:-}" = "auto-pairs opt-in" ] \
         || [ "${CHOPSTICKS_TEST_KEYMAP_PHASE:-}" = "auto-pairs and completion opt-ins" ]; then
+        local auto_pairs_diag_script="$TMP_ROOT/auto-pairs-diagnostics.vim"
         local auto_pairs_diag_file="$TMP_ROOT/auto-pairs-diagnostics.txt"
+        cat > "$auto_pairs_diag_script" <<'VIM'
+let s:lines = []
+try
+    let g:chopsticks_enable_auto_pairs = 1
+    source .vimrc
+    runtime plugin/auto-pairs.vim
+    doautocmd BufEnter
+    call add(s:lines, 'plug=' . has_key(g:plugs, 'auto-pairs') . ' loaded=' . exists('g:AutoPairsLoaded'))
+    call add(s:lines, 'CR=' . string(maparg('<CR>', 'i', 0, 1)))
+    call add(s:lines, 'BS=' . string(maparg('<BS>', 'i', 0, 1)))
+    call add(s:lines, 'C-h=' . string(maparg('<C-h>', 'i', 0, 1)))
+    call add(s:lines, 'Space=' . string(maparg('<Space>', 'i', 0, 1)))
+    let s:auto_pairs_ch = {
+        \ 'kind': 'auto_pairs_map',
+        \ 'lhs': '<C-h>',
+        \ 'text': 'AutoPairsDelete',
+        \ 'label': 'opt-in auto-pairs Ctrl-H',
+        \ }
+    call add(s:lines, 'C-h ready=' . ChopsticksKeymapSpecReady(s:auto_pairs_ch))
+    call add(s:lines, 'C-h issue=' . string(ChopsticksKeymapSpecIssue(s:auto_pairs_ch)))
+    call add(s:lines, 'audit issues=' . string(ChopsticksKeymapAuditIssues()))
+catch
+    call add(s:lines, 'error=' . v:exception)
+    call add(s:lines, 'throwpoint=' . v:throwpoint)
+endtry
+call writefile(s:lines, g:chopsticks_auto_pairs_diag_file)
+qa!
+VIM
         XDG_CONFIG_HOME="$EMPTY_XDG" vim -u NONE -i NONE -es -N \
-            -c 'let g:chopsticks_enable_auto_pairs = 1' \
-            -c 'source .vimrc' \
-            -c 'runtime plugin/auto-pairs.vim' \
-            -c 'doautocmd BufEnter' \
             -c "let g:chopsticks_auto_pairs_diag_file = '$auto_pairs_diag_file'" \
-            -c 'execute "redir! > " . fnameescape(g:chopsticks_auto_pairs_diag_file)' \
-            -c 'silent echo "plug=" . has_key(g:plugs, "auto-pairs") . " loaded=" . exists("g:AutoPairsLoaded")' \
-            -c 'silent echo "CR=" . string(maparg("<CR>", "i", 0, 1))' \
-            -c 'silent echo "BS=" . string(maparg("<BS>", "i", 0, 1))' \
-            -c 'silent echo "C-h=" . string(maparg("<C-h>", "i", 0, 1))' \
-            -c 'silent echo "Space=" . string(maparg("<Space>", "i", 0, 1))' \
-            -c 'let g:auto_pairs_ch = {"kind": "auto_pairs_map", "lhs": "<C-h>", "text": "AutoPairsDelete", "label": "opt-in auto-pairs Ctrl-H"}' \
-            -c 'silent echo "C-h issue=" . string(ChopsticksKeymapSpecIssue(g:auto_pairs_ch))' \
-            -c 'silent echo "audit issues=" . string(ChopsticksKeymapAuditIssues())' \
-            -c 'redir END' \
-            -c 'qa!' 2>&1 || true
+            -S "$auto_pairs_diag_script" 2>&1 || true
         if [ -s "$auto_pairs_diag_file" ]; then
             echo "--- auto-pairs-diagnostics.txt ---" >&2
             cat "$auto_pairs_diag_file" >&2

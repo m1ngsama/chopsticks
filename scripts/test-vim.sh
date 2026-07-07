@@ -22,6 +22,46 @@ has_chopsticks_truecolor_env() {
     [ "${COLORTERM:-}" = "truecolor" ] || [ "${COLORTERM:-}" = "24bit" ]
 }
 
+dump_vim_status_diagnostics() {
+    local status_file="$TMP_ROOT/status-default.txt"
+    local diag_file="$TMP_ROOT/status-diagnostics.txt"
+
+    echo "Status/info diagnostics:" >&2
+    echo "TERM=${TERM:-} COLORTERM=${COLORTERM:-}" >&2
+    vim --version | sed -n '1,80p' >&2 || true
+
+    if [ -s "$status_file" ]; then
+        echo "--- status-default.txt ---" >&2
+        cat "$status_file" >&2
+    fi
+
+    XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \
+        -c "redir! > $diag_file" \
+        -c 'silent echo "features terminal=" . has("terminal") . " job=" . has("job") . " timers=" . has("timers") . " popupwin=" . (has("popupwin") || has("patch-8.1.1517")) . " clipboard=" . has("clipboard") . " termguicolors=" . exists("&termguicolors")' \
+        -c 'silent echo "runtime=" . string(ChopsticksRuntimeInfo().items)' \
+        -c 'silent echo "ui=" . string(ChopsticksUiInfo().items)' \
+        -c 'silent echo "completion=" . string(ChopsticksCompletionInfo().items)' \
+        -c 'silent echo "lsp_stack=" . string(ChopsticksLspInfo().stack)' \
+        -c 'silent echo "health=" . string(ChopsticksHealthInfo().summary_line)' \
+        -c 'redir END' \
+        -c 'qa!' 2>&1 || true
+
+    if [ -s "$diag_file" ]; then
+        echo "--- status-diagnostics.txt ---" >&2
+        cat "$diag_file" >&2
+    fi
+}
+
+on_error() {
+    local status=$?
+    if [ "${CHOPSTICKS_TEST_STEP:-}" = "status_info" ]; then
+        CHOPSTICKS_TEST_STEP=
+        dump_vim_status_diagnostics || true
+    fi
+    exit "$status"
+}
+trap on_error ERR
+
 check_vim() {
     step "Vim smoke tests"
     need vim
@@ -1025,6 +1065,7 @@ VIMEOF
         vim -u NONE -i NONE -es -N -S "$display_adapter_vim" 2>&1
 
     step "Status and info surfaces"
+    CHOPSTICKS_TEST_STEP=status_info
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \
         -c 'if !exists("*ChopsticksRuntimeInfo") || !exists("*ChopsticksRuntimeFeatureSpec") || !exists("*ChopsticksRuntimeFeatureAvailable") || !exists("*ChopsticksDisplayKeyLine") || !exists("*ChopsticksStatusDisplay") || !exists("*ChopsticksStatusInfoFromSpec") || !exists("*ChopsticksInfoSurfaceSpecs") || !exists("*ChopsticksInfoSurfaceSpec") || !exists("*ChopsticksInfoSurfaceSpecsFor") || !exists("*ChopsticksLearningRowLines") || !exists("*ChopsticksLearningRowLinesOr") || !exists("*ChopsticksLearningTaskLine") || !exists("*ChopsticksLearningDrillLine") || !exists("*ChopsticksLearningLoopEnabled") || !exists("*ChopsticksLearningKey") || !exists("*ChopsticksLearningInfoRowLinesOr") || !exists("*ChopsticksOpenScratchBuffer") || !exists("*ChopsticksModuleInfo") || !exists("*ChopsticksCoreInfo") || !exists("*ChopsticksCommandInfo") || !exists("*ChopsticksCommandLines") || !exists("*ChopsticksUtilityInfo") || !exists("*ChopsticksLearningInfo") || !exists("*ChopsticksLearningDailyLoopInfo") || !exists("*ChopsticksLearningLspLoopInfo") || !exists("*ChopsticksHelpInfo") || !exists("*ChopsticksUiInfo") || !exists("*ChopsticksLanguageInfo") || !exists("*ChopsticksLintInfo") || !exists("*ChopsticksCompletionInfo") || !exists("*ChopsticksEditingInfo") || !exists("*ChopsticksBufferInfo") || !exists("*ChopsticksQuickfixInfo") || !exists("*ChopsticksFileSafetyInfo") || !exists("*ChopsticksGitInfo") || !exists("*ChopsticksRunnerInfo") || !exists("*ChopsticksToolchainInfo") || !exists("*ChopsticksLspInfo") || !exists("*ChopsticksLspLearningEnabled") || !exists("*ChopsticksProfileInfo") || !exists("*ChopsticksHealthInfo") || !exists("*ChopsticksKeymapContractSpecs") || !exists("*ChopsticksKeymapContractSpecsFor") || !exists("*ChopsticksKeymapContractKeys") || !exists("*ChopsticksKeymapContractLines") || !exists("*ChopsticksKeymapAuditInfo") || !exists("*ChopsticksBetaInfo") || !exists("*ChopsticksStatusHeaderInfo") | cquit | endif' \
         -c 'let g:runtime_info = ChopsticksRuntimeInfo() | let g:module_info = ChopsticksModuleInfo() | let g:clipboard_feature = ChopsticksRuntimeFeatureSpec("clipboard") | if get(g:runtime_info, "title", "") !=# "runtime" || g:runtime_info.editor !=# "vim" || !g:runtime_info.compatible || len(get(g:runtime_info, "details", [])) != 3 || len(get(g:runtime_info, "items", [])) != len(g:runtime_info.features) + 1 || get(g:runtime_info.items[0], "label", "") !=# "runtime gate" || get(g:runtime_info.items[0], "state", "") !=# "ready" || get(g:runtime_info.items[0], "diagnostic", 1) || get(g:module_info, "title", "") !=# "modules" || !g:module_info.ok || !g:module_info.inventory_ok || get(g:clipboard_feature, "label", "") !=# "clipboard" || get(g:clipboard_feature, "available", -1) != has("clipboard") || ChopsticksRuntimeFeatureAvailable("+terminal") != has("terminal") || ChopsticksRuntimeFeatureAvailable("popupwin") != (has("popupwin") || has("patch-8.1.1517")) | cquit | endif | let g:runtime_items = get(g:runtime_info, "items", [])[1:] | if len(g:runtime_items) != len(g:runtime_info.features) | cquit | endif | for g:i in range(0, len(g:runtime_info.features) - 1) | let g:feature = g:runtime_info.features[g:i] | let g:item = g:runtime_items[g:i] | let g:available = get(g:feature, "available", 0) | if get(g:item, "label", "") !=# "+" . get(g:feature, "label", "") || get(g:item, "state", "") !=# (g:available ? "ready" : "missing") || get(g:item, "diagnostic", 0) != !g:available | cquit | endif | endfor' \
@@ -1708,6 +1749,7 @@ VIMEOF
         -c 'let g:health = ChopsticksHealthInfo() | if empty(filter(copy(g:health.issues), "v:val.code ==# \"profile.custom-profile\" && v:val.severity ==# \"setup\" && v:val.detail ==# \"from profile item\" && v:val.action ==# \"fix profile\"")) | cquit | endif' \
         -c 'qa!' 2>&1
 
+    CHOPSTICKS_TEST_STEP=
     step "Keymap contract and opt-ins"
     XDG_CONFIG_HOME="$EMPTY_XDG" vim -u .vimrc -i NONE -es -N \
         -c 'let last_change_map = nr2char(96) . "[v" . nr2char(96) . "]"' \

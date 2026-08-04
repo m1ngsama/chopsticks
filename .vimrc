@@ -4,6 +4,7 @@ scriptencoding utf-8
 " chopsticks — a modern, Vim-only development and Markdown writing setup
 
 let s:startup_started_at = reltime()
+let s:directory_startup_opened = 0
 let g:chopsticks_version = '0.1.0'
 
 if has('nvim')
@@ -1092,6 +1093,25 @@ function! s:ExploreHere() abort
     call s:ToggleExplorer(l:directory)
 endfunction
 
+function! s:MaybeOpenDirectory() abort
+    if s:directory_startup_opened || argc() != 1
+        \ || !isdirectory(argv(0)) || &modified
+        return
+    endif
+    let l:directory = fnamemodify(argv(0), ':p')
+    if !isdirectory(expand('%:p'))
+        return
+    endif
+    let s:directory_startup_opened = 1
+    let l:directory_buffer = bufnr('%')
+    silent keepalt enew
+    execute 'lcd ' . fnameescape(l:directory)
+    if l:directory_buffer != bufnr('%') && bufexists(l:directory_buffer)
+        execute 'silent! bwipeout ' . l:directory_buffer
+    endif
+    call s:ToggleExplorer(l:directory)
+endfunction
+
 function! s:ToggleQuickfix() abort
     for l:window in getwininfo()
         if get(l:window, 'quickfix', 0) && !get(l:window, 'loclist', 0)
@@ -1905,6 +1925,11 @@ augroup END
 augroup ChopsticksPlugins
     autocmd!
     autocmd VimEnter * call <SID>PluginsReady()
+augroup END
+
+augroup ChopsticksDirectory
+    autocmd!
+    autocmd BufEnter * nested call <SID>MaybeOpenDirectory()
 augroup END
 
 augroup ChopsticksDashboard

@@ -1519,6 +1519,7 @@ call s:LeaderN(['q', 'q'], ':confirm qall<CR>', 'Quit', 'Quit Vim')
 if has('terminal')
     call s:LeaderN(['t', 't'], ':call <SID>OpenTerminal([], ''tab'')<CR>', 'Terminal', 'Terminal in new tab')
     call s:LeaderN(['t', 's'], ':call <SID>OpenTerminal([], ''split'')<CR>', 'Terminal', 'Terminal below')
+    silent! tunmap <Esc><Esc>
     call s:Catalog('Terminal', 't', 'Ctrl-w N', 'Leave terminal mode')
 endif
 

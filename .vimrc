@@ -60,23 +60,22 @@ let g:netrw_list_hide = '\(^\|\s\s\)\zs\.\S\+'
 let g:netrw_list_hide .= ',\.pyc$,node_modules,\.git,__pycache__,\.DS_Store,dist,build'
 
 let g:fzf_layout = {'window': {'width': 0.92, 'height': 0.84}}
-let g:fzf_preview_window = s:is_remote ? [] : ['right:55%', 'ctrl-/']
 let g:fzf_action = {
     \ 'ctrl-t': 'tab split',
     \ 'ctrl-x': 'split',
     \ 'ctrl-v': 'vsplit',
     \ 'ctrl-o': 'Open',
     \ }
-if executable('fzf-preview.sh')
-    let s:fzf_preview = executable('viu') && executable('pdftoppm')
-        \ ? 'sh -c ''case "$(file -b --mime-type "$1")" in application/pdf) pdftoppm -f 1 -l 1 -singlefile -scale-to 1200 -png "$1" 2>/dev/null ' .
-        \ '| viu -b -s -h "${FZF_PREVIEW_LINES:-20}" - ;; image/*) exec viu -b -s -h "${FZF_PREVIEW_LINES:-20}" "$1" ;; *) exec fzf-preview.sh "$1" ;; esac'' _ {}'
-        \ : 'fzf-preview.sh {}'
-    let g:fzf_vim = {
-        \ 'files_options': ['--preview', s:fzf_preview],
-        \ 'gfiles_options': ['--preview', s:fzf_preview],
-        \ }
-endif
+let s:fzf_abort_keys = 'esc:abort,ctrl-c:abort,ctrl-g:abort,ctrl-q:abort'
+let s:fzf_skip_dirs = [
+    \ '.git', '.cache', '.cargo', '.npm', '.pnpm-store', '.rustup',
+    \ '.bun', '.codex', 'Library', 'node_modules', 'plugged',
+    \ '.venv', 'venv', '__pycache__', 'build', 'dist', 'target', 'vendor',
+    \ ]
+let g:fzf_vim = {
+    \ 'preview_window': s:is_remote ? [] : ['right,55%', 'ctrl-/'],
+    \ 'gfiles_options': ['--bind', s:fzf_abort_keys],
+    \ }
 
 let g:ale_disable_lsp = 1
 let g:ale_linters_explicit = 1
@@ -196,7 +195,7 @@ let s:dashboard_compact_logo = [
     \ '╰────────────────────────────────╯',
     \ ]
 let s:dashboard_items = [
-    \ {'key': 'f', 'icon': ' ', 'label': 'Find File', 'action': 'Files'},
+    \ {'key': 'f', 'icon': ' ', 'label': 'Find File', 'action': 'ChopsticksFindFiles'},
     \ {'key': 'n', 'icon': ' ', 'label': 'New File', 'action': 'enew | startinsert'},
     \ {'key': 'g', 'icon': ' ', 'label': 'Find Text', 'action': 'Rg'},
     \ {'key': 'r', 'icon': ' ', 'label': 'Recent Files', 'action': 'History'},
@@ -750,6 +749,45 @@ function! s:ProjectRoot() abort
     return empty(l:marker) ? getcwd() : fnamemodify(l:marker, ':h')
 endfunction
 
+function! s:FzfFileSource() abort
+    if executable('fd')
+        let l:parts = ['fd', '--type', 'f', '--hidden', '--color', 'never']
+        for l:directory in s:fzf_skip_dirs
+            call extend(l:parts, ['--exclude', shellescape(l:directory)])
+        endfor
+        return join(l:parts, ' ')
+    endif
+    if executable('rg')
+        let l:parts = ['rg', '--files', '--hidden', '--color', 'never']
+        for l:directory in s:fzf_skip_dirs
+            call extend(l:parts,
+                \ ['--glob', shellescape('!**/' . l:directory . '/**')])
+        endfor
+        return join(l:parts, ' ')
+    endif
+    return ''
+endfunction
+
+function! s:FzfFiles(path, bang) abort
+    let l:root = empty(a:path) ? s:ProjectRoot() : expand(a:path)
+    let l:root = fnamemodify(l:root, ':p')
+    let l:options = [
+        \ '--bind', s:fzf_abort_keys,
+        \ '--header', 'ESC / CTRL-Q close · ENTER open',
+        \ ]
+    let l:spec = {'dir': l:root, 'options': l:options}
+    let l:source = s:FzfFileSource()
+    if empty(l:source)
+        call extend(l:options, [
+            \ '--walker', 'file,hidden',
+            \ '--walker-skip', join(s:fzf_skip_dirs, ','),
+            \ ])
+    else
+        let l:spec.source = l:source
+    endif
+    call fzf#vim#files(l:root, fzf#vim#with_preview(l:spec), a:bang)
+endfunction
+
 function! s:FindFiles() abort
     if exists(':GFiles') == 2 && executable('git')
         let l:root = s:ProjectRoot()
@@ -764,6 +802,16 @@ function! s:FindFiles() abort
         execute 'Files ' . fnameescape(s:ProjectRoot())
     endif
 endfunction
+
+command! ChopsticksFindFiles call s:FindFiles()
+
+function! s:DefineFzfCommands() abort
+    if exists(':Files') == 2
+        command! -bang -nargs=? -complete=dir Files
+            \ call s:FzfFiles(<q-args>, <bang>0)
+    endif
+endfunction
+call s:DefineFzfCommands()
 
 function! s:CopyPath(relative) abort
     if empty(expand('%:p'))
@@ -1471,8 +1519,7 @@ call s:LeaderN(['q', 'q'], ':confirm qall<CR>', 'Quit', 'Quit Vim')
 if has('terminal')
     call s:LeaderN(['t', 't'], ':call <SID>OpenTerminal([], ''tab'')<CR>', 'Terminal', 'Terminal in new tab')
     call s:LeaderN(['t', 's'], ':call <SID>OpenTerminal([], ''split'')<CR>', 'Terminal', 'Terminal below')
-    tnoremap <silent> <Esc><Esc> <C-\><C-n>
-    call s:Catalog('Terminal', 't', 'Esc Esc', 'Leave terminal mode')
+    call s:Catalog('Terminal', 't', 'Ctrl-w N', 'Leave terminal mode')
 endif
 
 call s:LeaderN(['<Tab>', '<Tab>'], ':tabnew<CR>', 'Tabs', 'New tab')
@@ -1489,6 +1536,7 @@ call s:LeaderN(['g', 'g'], ':call <SID>OpenLazygit()<CR>', 'Git', 'Lazygit at pr
 
 function! s:PluginMaps() abort
     if exists(':Files') == 2 && executable('fzf')
+        call s:Catalog('Fast find', 't', 'Esc / Ctrl-q', 'Close finder')
         call s:LeaderN(['<Space>'], ':Buffers<CR>', 'Buffers', 'Find open buffers')
         call s:LeaderN([','], ':Buffers<CR>', 'Buffers', 'Find open buffers')
         call s:LeaderN(['f', 'f'], ':call <SID>FindFiles()<CR>', 'Files', 'Find files')
@@ -1557,6 +1605,7 @@ function! s:RegisterWhichKey() abort
 endfunction
 
 function! s:PluginsReady() abort
+    call s:DefineFzfCommands()
     call s:PluginMaps()
     call s:RegisterWhichKey()
 endfunction

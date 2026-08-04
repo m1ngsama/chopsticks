@@ -216,9 +216,12 @@ let g:chopsticks_markdown_image_dir = 'images'
 
 ## 输入法切换
 
-macOS 上安装 `im-select` 后，chopsticks 会在普通模式使用 ABC，在插入模式
-恢复该缓冲区上次使用的输入法。这样中文 Markdown 写作结束一次插入后，
-普通模式键位不会被中文输入法吞掉；重新进入插入模式又会回到中文。
+`im-select` 不是常驻程序；每次执行时，它都会修改 macOS 当前的系统输入源，
+自身没有“只改某个应用”的能力。chopsticks 因此在 Vim 获得焦点时先保存外部
+输入源，只在 Vim 内为普通模式选择 ABC、为插入模式恢复该 buffer 上次使用的
+输入法，并在 `FocusLost` 或退出 Vim 时原样恢复外部输入源。这样既保留中文
+Markdown 写作体验；在焦点事件可用时，也不会把 Vim 的 ABC/中文状态遗留给
+浏览器等其他应用。
 
 ```vim
 :ChopsticksInputMethodStatus
@@ -228,7 +231,16 @@ macOS 上安装 `im-select` 后，chopsticks 会在普通模式使用 ABC，在�
 ```
 
 SSH 会默认禁用输入法切换。退出 Vim 时会恢复保存的输入法，不把系统永久
-留在 ABC。
+留在 ABC。终端或 tmux 必须向 Vim 转发焦点事件，跨应用即时恢复才会生效；
+`:ChopsticksInputMethodStatus` 会显示当前是否已捕获外部输入源。
+
+如果只想在 Markdown 中启用，或需要完全关闭所有系统输入源调用，可以在
+加载配置前设置：
+
+```vim
+let g:chopsticks_input_method_filetypes = ['markdown']
+" 或：let g:chopsticks_enable_input_method = 0
+```
 
 ## 其它好用的细节
 

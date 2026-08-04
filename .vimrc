@@ -1324,6 +1324,8 @@ let g:chopsticks_input_method_cmd = get(g:, 'chopsticks_input_method_cmd',
 let g:chopsticks_input_method_default = get(g:, 'chopsticks_input_method_default',
     \ has('macunix') ? 'com.apple.keylayout.ABC' : '')
 let g:chopsticks_input_method_restore = get(g:, 'chopsticks_input_method_restore', 1)
+let g:chopsticks_input_method_preserve_external = get(g:,
+    \ 'chopsticks_input_method_preserve_external', 1)
 let g:chopsticks_input_method_disable_on_ssh = get(g:,
     \ 'chopsticks_input_method_disable_on_ssh', 1)
 let g:chopsticks_input_method_filetypes = get(g:, 'chopsticks_input_method_filetypes', [])
@@ -1332,8 +1334,14 @@ let g:chopsticks_input_method_ignore_filetypes = get(g:,
     \ ['fzf', 'help', 'netrw', 'qf', 'startify'])
 let g:chopsticks_enable_input_method = get(g:, 'chopsticks_enable_input_method',
     \ has('macunix') && executable(g:chopsticks_input_method_cmd))
-let s:input_method_last_saved = ''
 let s:input_method_assumed = ''
+if !exists('g:chopsticks_input_method_state')
+    \ || type(g:chopsticks_input_method_state) != type({})
+    let g:chopsticks_input_method_state = {}
+endif
+let s:input_method_state = g:chopsticks_input_method_state
+let s:input_method_state.active = get(s:input_method_state, 'active', 0)
+let s:input_method_state.external = get(s:input_method_state, 'external', '')
 
 function! s:InputMethodList(value) abort
     if type(a:value) == type([])
@@ -1389,7 +1397,11 @@ function! ChopsticksInputMethodInfo() abort
         \ 'command': g:chopsticks_input_method_cmd,
         \ 'default': g:chopsticks_input_method_default,
         \ 'restore': get(g:, 'chopsticks_input_method_restore', 1),
+        \ 'preserve_external': get(g:,
+        \     'chopsticks_input_method_preserve_external', 1),
         \ 'remote': s:is_remote,
+        \ 'vim_active': s:input_method_state.active,
+        \ 'external': s:input_method_state.external,
         \ 'buffer_enabled': l:buffer.enabled,
         \ 'buffer_reason': l:buffer.reason,
         \ 'saved': get(b:, 'chopsticks_input_method_saved', ''),
@@ -1425,13 +1437,18 @@ endfunction
 
 function! s:InputMethodRemember(input_source) abort
     let b:chopsticks_input_method_saved = a:input_source
-    let s:input_method_last_saved = a:input_source
+endfunction
+
+function! s:InputMethodIsInsertLike() abort
+    " Replace mode and Insert's one-command Normal mode still accept text with
+    " the buffer's Insert preference when control returns to the editor.
+    return mode(1) =~# '^\%(i\|R\|ni[IR]\)'
 endfunction
 
 " Used when leaving Insert mode. Choosing ABC while inserting is treated as
 " an intentional preference change, so the previously saved CJK source clears.
 function! s:InputMethodSwitchToDefault() abort
-    if !s:InputMethodBufferInfo().enabled
+    if !s:input_method_state.active || !s:InputMethodBufferInfo().enabled
         return
     endif
     let l:current = s:InputMethodCurrent()
@@ -1450,7 +1467,8 @@ endfunction
 " Used when entering a normal-mode buffer or returning focus to Vim. It keeps
 " an existing per-buffer preference when the system is already on ABC.
 function! s:InputMethodEnsureDefault() abort
-    if mode(1) =~# '^i' || !s:InputMethodBufferInfo().enabled
+    if !s:input_method_state.active || s:InputMethodIsInsertLike()
+        \ || !s:InputMethodBufferInfo().enabled
         return
     endif
     if s:input_method_assumed ==# g:chopsticks_input_method_default
@@ -1466,7 +1484,7 @@ function! s:InputMethodEnsureDefault() abort
 endfunction
 
 function! s:InputMethodRestore() abort
-    if !s:InputMethodBufferInfo().enabled
+    if !s:input_method_state.active || !s:InputMethodBufferInfo().enabled
         return
     endif
     let l:target = get(b:, 'chopsticks_input_method_saved', '')
@@ -1477,32 +1495,60 @@ function! s:InputMethodRestore() abort
     endif
 endfunction
 
-function! s:InputMethodFocusLost() abort
-    let b:chopsticks_input_method_focus_was_insert = mode(1) =~# '^i'
-    if b:chopsticks_input_method_focus_was_insert
-        call s:InputMethodSwitchToDefault()
-    endif
-endfunction
-
-function! s:InputMethodFocusGained() abort
-    if get(b:, 'chopsticks_input_method_focus_was_insert', 0) && mode(1) =~# '^i'
-        call s:InputMethodRestore()
-    else
-        " Another application may have changed the system-wide input source.
-        let s:input_method_assumed = ''
-        call s:InputMethodEnsureDefault()
-    endif
-    unlet! b:chopsticks_input_method_focus_was_insert
-endfunction
-
-function! s:InputMethodRestoreOnExit() abort
-    if !s:InputMethodBaseInfo().available
+" Save the current Insert-mode preference without changing the system source.
+" This is important on FocusLost: selecting ABC there would leak Vim's Normal
+" mode preference into the application receiving focus.
+function! s:InputMethodRememberInsert() abort
+    if !s:InputMethodIsInsertLike() || !s:InputMethodBufferInfo().enabled
         return
     endif
-    let l:target = get(b:, 'chopsticks_input_method_saved', s:input_method_last_saved)
-    if get(g:, 'chopsticks_input_method_restore', 1) && !empty(l:target)
+    let l:current = s:InputMethodCurrent()
+    if empty(l:current)
+        return
+    endif
+    let b:chopsticks_input_method_last = l:current
+    if l:current ==# g:chopsticks_input_method_default
+        unlet! b:chopsticks_input_method_saved
+    else
+        call s:InputMethodRemember(l:current)
+    endif
+endfunction
+
+" im-select changes macOS's process-independent current input source. Emulate
+" application-local state by bracketing Vim focus: capture the outside source,
+" apply Vim's mode preference, then restore the captured source on focus loss.
+function! s:InputMethodActivate() abort
+    if s:input_method_state.active || !s:InputMethodBaseInfo().available
+        return
+    endif
+    let l:external = s:InputMethodCurrent()
+    if empty(l:external)
+        return
+    endif
+    let s:input_method_state.external = l:external
+    let s:input_method_state.active = 1
+    if s:InputMethodIsInsertLike()
+        call s:InputMethodRestore()
+    elseif s:InputMethodBufferInfo().enabled
+        \ && l:external !=# g:chopsticks_input_method_default
+        call s:InputMethodSelect(g:chopsticks_input_method_default)
+    endif
+endfunction
+
+function! s:InputMethodDeactivate() abort
+    if !s:input_method_state.active
+        return
+    endif
+    call s:InputMethodRememberInsert()
+    let l:target = s:input_method_state.external
+    let l:current = s:InputMethodCurrent()
+    if get(g:, 'chopsticks_input_method_preserve_external', 1)
+        \ && !empty(l:target) && l:current !=# l:target
         call s:InputMethodSelect(l:target)
     endif
+    let s:input_method_state.active = 0
+    let s:input_method_state.external = ''
+    let s:input_method_assumed = ''
 endfunction
 
 function! s:InputMethodStatus() abort
@@ -1512,6 +1558,9 @@ function! s:InputMethodStatus() abort
     echo 'buffer: ' . (l:info.buffer_enabled ? 'enabled' : 'disabled')
         \ . ' (' . l:info.buffer_reason . ')'
     echo 'remote: ' . (l:info.remote ? 'yes' : 'no')
+    echo 'Vim focus: ' . (l:info.vim_active ? 'active' : 'inactive')
+    echo 'outside source: ' . (empty(l:info.external) ? '(not captured)' : l:info.external)
+    echo 'preserve outside: ' . (l:info.preserve_external ? 'yes' : 'no')
     echo 'command: ' . l:info.command
     echo 'default: ' . l:info.default
     echo 'saved: ' . l:info.saved
@@ -1522,7 +1571,7 @@ function! s:InputMethodEnable() abort
     let g:chopsticks_enable_input_method = 1
     let l:info = ChopsticksInputMethodInfo()
     if l:info.available
-        call s:InputMethodEnsureDefault()
+        call s:InputMethodActivate()
         echo 'chopsticks input method enabled'
     else
         echohl WarningMsg
@@ -1532,7 +1581,7 @@ function! s:InputMethodEnable() abort
 endfunction
 
 function! s:InputMethodDisable() abort
-    call s:InputMethodRestoreOnExit()
+    call s:InputMethodDeactivate()
     let g:chopsticks_enable_input_method = 0
     echo 'chopsticks input method disabled'
 endfunction
@@ -1552,10 +1601,17 @@ command! ChopsticksInputMethodToggle call s:InputMethodToggle()
 
 augroup ChopsticksInputMethod
     autocmd!
+    autocmd VimEnter * call <SID>InputMethodActivate()
     autocmd BufEnter * call <SID>InputMethodEnsureDefault()
     autocmd InsertLeave * call <SID>InputMethodSwitchToDefault()
     autocmd InsertEnter * call <SID>InputMethodRestore()
-    autocmd FocusLost * call <SID>InputMethodFocusLost()
-    autocmd FocusGained * call <SID>InputMethodFocusGained()
-    autocmd VimLeavePre * call <SID>InputMethodRestoreOnExit()
+    autocmd FocusLost * call <SID>InputMethodDeactivate()
+    autocmd FocusGained * call <SID>InputMethodActivate()
+    autocmd VimLeavePre * call <SID>InputMethodDeactivate()
 augroup END
+
+" :source $MYVIMRC runs after VimEnter. The global state survives reloads so
+" the original outside input source is not accidentally replaced with ABC.
+if v:vim_did_enter
+    call s:InputMethodActivate()
+endif

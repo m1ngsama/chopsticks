@@ -511,13 +511,50 @@ function! s:DashboardRender() abort
     call cursor(l:item_lines[0], l:desc_cols[string(l:item_lines[0])])
 endfunction
 
+function! s:DashboardSelectNearest() abort
+    let l:lines = get(b:, 'chopsticks_dashboard_item_lines', [])
+    if empty(l:lines)
+        return
+    endif
+    let l:current = line('.')
+    let l:target = l:lines[0]
+    let l:distance = abs(l:target - l:current)
+    for l:candidate in l:lines[1:]
+        if abs(l:candidate - l:current) < l:distance
+            let l:target = l:candidate
+            let l:distance = abs(l:candidate - l:current)
+        endif
+    endfor
+    call cursor(l:target, get(b:chopsticks_dashboard_desc_cols,
+        \ string(l:target), 1))
+endfunction
+
+function! s:DashboardLockCursor() abort
+    if &filetype !=# 'chopsticks-dashboard'
+        return
+    endif
+    let l:lines = get(b:, 'chopsticks_dashboard_item_lines', [])
+    if index(l:lines, line('.')) < 0
+        call s:DashboardSelectNearest()
+        return
+    endif
+    let l:column = get(b:chopsticks_dashboard_desc_cols, string(line('.')), 1)
+    if col('.') != l:column
+        call cursor(line('.'), l:column)
+    endif
+endfunction
+
 function! s:DashboardMove(delta) abort
     let l:lines = get(b:, 'chopsticks_dashboard_item_lines', [])
     if empty(l:lines)
         return
     endif
     let l:index = index(l:lines, line('.'))
-    let l:index = l:index < 0 ? 0 : (l:index + a:delta + len(l:lines)) % len(l:lines)
+    if l:index < 0
+        call s:DashboardSelectNearest()
+        let l:index = index(l:lines, line('.'))
+    endif
+    let l:index = (l:index + a:delta + len(l:lines)) % len(l:lines)
     let l:target = l:lines[l:index]
     call cursor(l:target, get(b:chopsticks_dashboard_desc_cols,
         \ string(l:target), 1))
@@ -660,6 +697,8 @@ augroup ChopsticksInterface
     autocmd ColorScheme * call s:DefineInterfaceColors()
     autocmd BufEnter * if &filetype ==# 'chopsticks-dashboard' | call s:DashboardEnter() | call s:DashboardRender() | endif
     autocmd BufLeave * if &filetype ==# 'chopsticks-dashboard' | call s:DashboardLeave() | endif
+    autocmd CursorMoved * if &filetype ==# 'chopsticks-dashboard' | call s:DashboardLockCursor() | endif
+    autocmd FocusGained * if &filetype ==# 'chopsticks-dashboard' | call s:DashboardLockCursor() | redraw! | endif
     autocmd VimResized * if &filetype ==# 'chopsticks-dashboard' | call s:DashboardRender() | endif
 augroup END
 call s:DefineInterfaceColors()
@@ -1254,6 +1293,8 @@ inoremap <silent> <C-s> <C-o>:update<CR>
 xnoremap <silent> <C-s> :<C-u>update<CR>gv
 call s:Catalog('Essentials', 'n/i/x', 'Ctrl-s', 'Save file')
 call s:LeaderN(['?'], ':ChopsticksCheatsheet<CR>', 'Essentials', 'Full cheatsheet')
+call s:LeaderN(['e'], ':call <SID>ExploreRoot()<CR>', 'Files', 'Explore project root')
+call s:LeaderN(['E'], ':call <SID>ExploreHere()<CR>', 'Files', 'Explore current file directory')
 
 " Wrapped prose moves by screen line; counts retain physical-line semantics.
 nnoremap <silent><expr> j v:count == 0 ? 'gj' : 'j'

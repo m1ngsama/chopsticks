@@ -81,6 +81,14 @@ jobs:
               -c 'call feedkeys("\<Space>e", "xt") | call feedkeys("\<Space>e", "xt") | call assert_equal("markdown", &filetype) | call assert_equal(1, winnr("$"))' \
               -c 'call feedkeys("\<Space>e", "xt") | wincmd p | let content_window = win_getid() | call feedkeys("\<Space>e", "xt") | call assert_equal("markdown", &filetype) | call assert_equal(1, winnr("$")) | call assert_equal(content_window, win_getid()) | if !empty(v:errors) | cquit | endif | qall!'
           HOME="$CHOPSTICKS_TEST_HOME" \
+            vim --cmd 'let g:chopsticks_icons = 1' \
+              -Nu "$GITHUB_WORKSPACE/.vimrc" -n -es "$GITHUB_WORKSPACE" \
+              -c 'sleep 300m' \
+              -c 'call assert_equal("fern", &filetype) | call assert_equal(2, winnr("$")) | call assert_true(search("README.md", "w") > 0)' \
+              -c 'call feedkeys("\<CR>", "xt") | sleep 300m' \
+              -c 'let layout = map(getwininfo(), {_, w -> {"ft": getbufvar(w.bufnr, "&filetype"), "height": w.height, "width": w.width}}) | let fern = filter(copy(layout), {_, w -> w.ft ==# "fern"})[0] | let editor = filter(copy(layout), {_, w -> w.ft ==# "markdown"})[0] | call assert_equal("markdown", &filetype) | call assert_equal(2, winnr("$")) | call assert_equal(fern.height, editor.height) | call assert_true(fern.width < editor.width)' \
+              -c 'call feedkeys("\<Space>e", "xt") | call assert_equal("markdown", &filetype) | call assert_equal(1, winnr("$")) | if !empty(v:errors) | cquit | endif | qall!'
+          HOME="$CHOPSTICKS_TEST_HOME" \
             vim --cmd 'let g:chopsticks_icons = 0' \
               --cmd 'let g:chopsticks_use_fern = 0' \
               -Nu "$GITHUB_WORKSPACE/.vimrc" -n -es README.md \
@@ -91,6 +99,15 @@ jobs:
               -c 'call assert_equal("netrw", &filetype) | call assert_equal(2, winnr("$"))' \
               -c 'call feedkeys("\<Space>e", "xt")' \
               -c 'call assert_equal("markdown", &filetype) | call assert_equal(1, winnr("$")) | if !empty(v:errors) | cquit | endif | qall!'
+          HOME="$CHOPSTICKS_TEST_HOME" \
+            vim --cmd 'let g:chopsticks_icons = 0' \
+              --cmd 'let g:chopsticks_use_fern = 0' \
+              -Nu "$GITHUB_WORKSPACE/.vimrc" -n -es "$GITHUB_WORKSPACE" \
+              -c 'sleep 300m' \
+              -c 'call assert_equal("netrw", &filetype) | call assert_equal(2, winnr("$")) | call assert_true(search("README.md", "w") > 0)' \
+              -c 'call feedkeys("\<CR>", "xt") | sleep 300m' \
+              -c 'let layout = map(getwininfo(), {_, w -> {"ft": getbufvar(w.bufnr, "&filetype"), "height": w.height, "width": w.width}}) | call assert_equal("markdown", &filetype) | call assert_equal(2, winnr("$")) | call assert_equal(layout[0].height, layout[1].height) | call assert_true(layout[0].width < layout[1].width)' \
+              -c 'call feedkeys("\<Space>e", "xt") | call assert_equal("markdown", &filetype) | call assert_equal(1, winnr("$")) | if !empty(v:errors) | cquit | endif | qall!'
 
       - name: Lint source and configuration
         run: |

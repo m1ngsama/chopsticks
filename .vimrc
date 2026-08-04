@@ -28,7 +28,7 @@ let s:is_rich_terminal = !s:is_remote && has('termguicolors')
 let g:chopsticks_markdown_spell = get(g:, 'chopsticks_markdown_spell', 1)
 let g:chopsticks_markdown_conceal = get(g:, 'chopsticks_markdown_conceal', 0)
 let g:chopsticks_markdown_image_dir = get(g:, 'chopsticks_markdown_image_dir', 'assets')
-let g:chopsticks_transparent_background = get(g:, 'chopsticks_transparent_background', 0)
+let g:chopsticks_transparent_background = get(g:, 'chopsticks_transparent_background', 1)
 
 " ── Plugin policy ───────────────────────────────────────────────────────────
 
@@ -165,15 +165,44 @@ let g:limelight_default_coefficient = 0.7
 let g:limelight_paragraph_span = 1
 let g:limelight_priority = -1
 
-let g:startify_lists = [
-    \ {'type': 'sessions', 'header': ['   Sessions']},
-    \ {'type': 'files', 'header': ['   Recent files']},
-    \ {'type': 'dir', 'header': ['   Current directory']},
-    \ {'type': 'bookmarks', 'header': ['   Bookmarks']},
-    \ ]
-let g:startify_bookmarks = [
-    \ {'v': $MYVIMRC},
-    \ {'d': expand('~/Documents')},
+function! ChopsticksStartifyHeader() abort
+    if &columns >= 100
+        let l:logo = [
+            \ '███╗   ███╗ ██╗███╗   ██╗ ██████╗ ███████╗ █████╗ ███╗   ███╗ █████╗',
+            \ '████╗ ████║███║████╗  ██║██╔════╝ ██╔════╝██╔══██╗████╗ ████║██╔══██╗',
+            \ '██╔████╔██║╚██║██╔██╗ ██║██║  ███╗███████╗███████║██╔████╔██║███████║',
+            \ '██║╚██╔╝██║ ██║██║╚██╗██║██║   ██║╚════██║██╔══██║██║╚██╔╝██║██╔══██║',
+            \ '██║ ╚═╝ ██║ ██║██║ ╚████║╚██████╔╝███████║██║  ██║██║ ╚═╝ ██║██║  ██║',
+            \ '╚═╝     ╚═╝ ╚═╝╚═╝  ╚═══╝ ╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝╚═╝  ╚═╝',
+            \ ]
+    else
+        let l:logo = [
+            \ '╭────────────────────────────────╮',
+            \ '│           CHOPSTICKS           │',
+            \ '╰────────────────────────────────╯',
+            \ ]
+    endif
+    let l:width = max(map(copy(l:logo), 'strwidth(v:val)'))
+    let l:subtitle = &columns >= 100 ? 'CHOPSTICKS  ·  VIM ONLY' : 'VIM ONLY'
+    let l:subtitle = repeat(' ', (l:width - strwidth(l:subtitle)) / 2) . l:subtitle
+    let l:top = max([1, (&lines - len(l:logo) - 14) / 3])
+    return repeat([''], l:top) + l:logo + ['', l:subtitle]
+endfunction
+
+function! ChopsticksStartifyFooter() abort
+    return ['SPC ?  keys    ·    :ChopsticksHealth']
+endfunction
+
+let g:startify_lists = [{'type': 'commands'}]
+let g:startify_commands = [
+    \ {'f': ['  Find file', 'Files']},
+    \ {'n': ['  New file', 'enew']},
+    \ {'g': ['  Find text', 'Rg']},
+    \ {'r': ['  Recent files', 'History']},
+    \ {'c': ['  Edit config', 'edit $MYVIMRC']},
+    \ {'h': ['󰓙  Health', 'ChopsticksHealth']},
+    \ {'?': ['󰌌  Cheatsheet', 'ChopsticksCheatsheet']},
+    \ {'q': ['󰈆  Quit', 'qall']},
     \ ]
 let g:startify_skiplist = [
     \ '/\.git/', '/tmp/', '/\.vim/plugged/',
@@ -183,14 +212,9 @@ let g:startify_session_persistence = 1
 let g:startify_session_autoload = 1
 let g:startify_change_to_vcs_root = 1
 let g:startify_enable_special = 0
-let g:startify_files_number = 8
-let g:startify_padding_left = 4
-let g:startify_custom_header = [
-    \ '   ┌──────────────────────────────┐',
-    \ '   │  chopsticks · Vim, refined  │',
-    \ '   │  SPC pause: guide · ? all   │',
-    \ '   └──────────────────────────────┘',
-    \ ]
+let g:startify_padding_left = max([3, (&columns - 36) / 2])
+let g:startify_custom_header = 'startify#center(ChopsticksStartifyHeader())'
+let g:startify_custom_footer = 'startify#center(ChopsticksStartifyFooter())'
 
 " vim-plug is optional. Startup never downloads software.
 if filereadable(expand('~/.vim/autoload/plug.vim'))
@@ -339,6 +363,7 @@ endif
 unlet s:state_dir
 
 set listchars=tab:→\ ,trail:·,extends:›,precedes:‹,nbsp:␣
+execute 'set fillchars+=eob:\ '
 if s:is_rich_terminal
     set termguicolors
 endif
@@ -365,9 +390,37 @@ function! s:DefineInterfaceColors() abort
     highlight CursorLine        ctermbg=235 cterm=NONE guibg=#0c4452 gui=NONE
     highlight CursorLineNr      ctermbg=235 ctermfg=136 cterm=bold guibg=#0c4452 guifg=#b58900 gui=bold
     highlight SignColumn        ctermbg=234 guibg=#002b36
+    highlight StartifyHeader    ctermfg=33  cterm=bold guifg=#268bd2 gui=bold
+    highlight StartifyFile      ctermfg=37  cterm=none guifg=#2aa198 gui=none
+    highlight StartifyNumber    ctermfg=166 cterm=bold guifg=#cb4b16 gui=bold
+    highlight StartifySelect    ctermfg=33  cterm=bold guifg=#268bd2 gui=bold
+    highlight StartifyBracket   ctermfg=240 cterm=none guifg=#586e75 gui=none
+    highlight StartifyPath      ctermfg=245 cterm=none guifg=#839496 gui=none
+    highlight StartifySlash     ctermfg=240 cterm=none guifg=#586e75 gui=none
+    highlight StartifySection   ctermfg=245 cterm=bold guifg=#839496 gui=bold
+    highlight StartifySpecial   ctermfg=240 cterm=none guifg=#586e75 gui=none
+    highlight StartifyFooter    ctermfg=136 cterm=italic guifg=#b58900 gui=italic
+    highlight ChopStartifyStatus ctermbg=235 ctermfg=235 guibg=#073642 guifg=#073642
     if g:chopsticks_transparent_background
         highlight Normal ctermbg=NONE guibg=NONE
+        highlight NormalNC ctermbg=NONE guibg=NONE
         highlight NonText ctermbg=NONE guibg=NONE
+        highlight EndOfBuffer ctermbg=NONE guibg=NONE
+        highlight SignColumn ctermbg=NONE guibg=NONE
+    endif
+endfunction
+
+function! s:StartifyEnter() abort
+    let b:chopsticks_startify_showtabline = &showtabline
+    set showtabline=0
+    setlocal nonumber norelativenumber nolist nocursorline signcolumn=no
+    let &l:statusline = '%#ChopStartifyStatus#%='
+endfunction
+
+function! s:StartifyLeave() abort
+    if exists('b:chopsticks_startify_showtabline')
+        let &showtabline = b:chopsticks_startify_showtabline
+        unlet b:chopsticks_startify_showtabline
     endif
 endfunction
 
@@ -450,6 +503,8 @@ set tabline=%!ChopsticksTabline()
 augroup ChopsticksInterface
     autocmd!
     autocmd ColorScheme * call s:DefineInterfaceColors()
+    autocmd User Startified call s:StartifyEnter()
+    autocmd BufLeave * if &filetype ==# 'startify' | call s:StartifyLeave() | endif
 augroup END
 call s:DefineInterfaceColors()
 

@@ -15,33 +15,44 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  checks:
-    name: checks
+  vim:
+    name: Vim and Markdown
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 12
+
     steps:
       - uses: actions/checkout@v5
 
-      - name: Install check tools
+      - name: Install Vim and check tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y curl shellcheck vim
-          npm install -g markdownlint-cli
+          sudo apt-get install -y curl fzf ripgrep vim
+          npm install --global markdownlint-cli
           vim --version | head -1
-          curl -fLo ~/.vim/autoload/plug.vim --create-dirs \
-            https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
 
-      - name: Run quick checks
-        run: scripts/test.sh quick
-
-      - name: Run Vim startup sanity
+      - name: Install pinned Vim plugins
         env:
-          TERM: xterm-256color
+          CHOPSTICKS_TEST_HOME: ${{ runner.temp }}/chopsticks-home
         run: |
-          XDG_CONFIG_HOME="$RUNNER_TEMP/xdg" \
-            vim -u .vimrc -i NONE -es -N \
-              -c 'if exists(":ChopsticksDoctor") != 2 | cquit | endif' \
-              -c 'if exists(":ChopsticksStatus") != 2 | cquit | endif' \
-              -c 'if exists(":ChopsticksKeymapAudit") != 2 | cquit | endif' \
-              -c 'if !exists("*ChopsticksKeymapAuditInfo") | cquit | endif' \
-              -c 'qa!'
+          mkdir -p "$CHOPSTICKS_TEST_HOME/.vim/autoload"
+          curl -fsSL \
+            https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim \
+            -o "$CHOPSTICKS_TEST_HOME/.vim/autoload/plug.vim"
+          HOME="$CHOPSTICKS_TEST_HOME" \
+            vim -Nu "$GITHUB_WORKSPACE/.vimrc" -n --not-a-term \
+              '+PlugInstall --sync' '+qall!'
+
+      - name: Check Vim startup and Markdown setup
+        env:
+          CHOPSTICKS_TEST_HOME: ${{ runner.temp }}/chopsticks-home
+        run: |
+          HOME="$CHOPSTICKS_TEST_HOME" \
+            vim -Nu "$GITHUB_WORKSPACE/.vimrc" -n -es \
+              -c 'edit README.md' \
+              -c 'doautocmd VimEnter' \
+              -c 'call assert_equal("0.1.0", get(g:, "chopsticks_version", "")) | call assert_equal(2, exists(":ChopsticksHealth")) | call assert_equal(2, exists(":ChopsticksCheatsheet")) | call assert_equal(2, exists(":MarkdownPasteImage")) | call assert_true(index(ChopsticksHealthLines(), "[ok] all declared plugins installed") >= 0) | call assert_equal("markdown", &filetype) | call assert_true(&l:wrap) | call assert_match("WhichKey", maparg("\<Space>", "n")) | call assert_match("WhichKey", maparg(",", "n")) | call assert_match("FindFiles", maparg(";f", "n")) | call assert_match("TableModeToggle", maparg(",tt", "n")) | call assert_true(len(ChopsticksKeyLines()) >= 100) | call assert_true(has_key(ChopsticksInputMethodInfo(), "preserve_external")) | call assert_match("InputMethodDeactivate", execute("autocmd ChopsticksInputMethod FocusLost")) | call assert_match("InputMethodActivate", execute("autocmd ChopsticksInputMethod FocusGained")) | if !empty(v:errors) | cquit | endif | qall!'
+
+      - name: Check documentation and whitespace
+        run: |
+          markdownlint README.md CHANGELOG.md
+          git diff --check

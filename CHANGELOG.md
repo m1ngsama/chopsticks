@@ -1,251 +1,29 @@
 # Changelog
 
-## 2.3.0 — 2026-05-24
+## 0.1.0 - 2026-08-04
 
-### Breaking
-
-- Default keymap style is now `space`: `SPC` is the command leader and `,`
-  is reserved for filetype-local actions. Set
-  `let g:chopsticks_keymap_style = 'classic'` in
-  `${XDG_CONFIG_HOME:-~/.config}/chopsticks.vim` to keep the old comma layout
-- In the default Space layout, Normal-mode `s` is now the fastest
-  EasyMotion over-window two-character jump. Use `cl` for native `s`
-  substitute and `cc` for native `S` substitute
-- Git push and pull hotkeys are removed from both Space and classic layouts;
-  use `:Git push` / `:Git pull` explicitly for irreversible remote operations
+这是 chopsticks 作为纯 Vim 单文件配置重新出发的首个版本。
 
 ### Added
 
-- Canonical QWERTY/CapsLock-friendly Space leader layout:
-  `SPC SPC`, `SPC /`, `SPC ,`, `SPC w`, `SPC q`, `SPC rr`,
-  `SPC gs`, `SPC gl`, `SPC ca`, `SPC cr`, `SPC cf`, and `SPC ?`
-- Native LSP motions in the default layout: `gd`, `gr`, `gI`, `gy`, `K`,
-  `[d`, and `]d`
-- `:ChopsticksTutor` guided practice buffer for learning the final keymap
-- `:ChopsticksCheatSheet` command, with `SPC ?` as the discoverable default
-- `:ChopsticksHelp` and native `:help chopsticks` documentation for in-editor
-  support without a separate wiki
-- `:ChopsticksConfig` and `:ChopsticksReload` for editing local preferences
-  without touching the managed `.vimrc`
-- `:ChopsticksBeta`, `:ChopsticksBetaLog`, and `:ChopsticksBetaSession` for
-  guided release-candidate testing and local session notes
-- Dedicated modules for buffers, utilities, files, runner, quickfix, status,
-  cheat sheet, tutor, release-candidate testing, and help
-- Split test runner: `scripts/test.sh` now dispatches to
-  `scripts/test-quick.sh` and `scripts/test-vim.sh`
+- 基于 fzf、Fugitive、ALE、vim-lsp 和原生 Vim UI 的现代开发工作流。
+- 面向 Markdown 的 Pencil、任务列表、表格、TOC、浏览器与终端预览、专注模式。
+- 通过 `pngpaste` 将剪贴板图片安全保存到文档资源目录。
+- 通过 `im-select` 在普通模式和插入模式之间自动切换 macOS 输入法。
+- craftzdog 风格的快速查找和窗口层，以及按语义分组的 Leader 键位体系。
+- Space/逗号上下文按键提示和可搜索的 `:ChopsticksCheatsheet` 完整速查表。
+- `:ChopsticksHealth` 和 Markdown 就地帮助。
+- 在隔离环境中安装固定版本插件并验证 Vim 启动和 Markdown 能力的 CI。
 
 ### Changed
 
-- README, QUICKSTART, installer onboarding text, PR template, and demo tape now
-  teach the Space layout first while keeping the legacy classic layout documented
-- `SPC ?` / `,?` cheat sheet output is generated from the active keymap style
-  and profile, so minimal installs no longer display disabled features
-- Markdown actions now use localleader maps in the Space layout:
-  `,mp` preview and `,mt` table of contents
-- `SPC U` opens UndoTree, `SPC z` toggles maximize, `SPC bp` / `SPC bn`
-  move between buffers, and quickfix/location-list actions live under `SPC x`
-- `tools.vim` is now a compatibility placeholder; runtime behavior lives in
-  smaller focused modules
-- CI/local smoke coverage now asserts Space defaults, classic compatibility,
-  missing push/pull hotkeys, tutor and cheat-sheet content, runner behavior,
-  large-file protection, and startup budget
+- 配置目标明确为 Vim 8.2/9.x，不支持 Neovim。
+- 插件固定到已验证的提交，启动过程不再隐式下载软件。
+- `im-select` 现在保存并恢复 Vim 外部的输入源，焦点切换不再把 Vim 的输入法
+  状态泄漏到其他应用。
+- 版本序列重置为 0.1.0，作为新架构的发布基线。
 
-### Fixed
+### Removed
 
-- GitHub Actions now uses `actions/checkout@v5`, avoiding the Node.js 20
-  deprecation warning on PR checks
-- `diffopt` enhancements now degrade safely on macOS system Vim builds that
-  report the required patch level but reject individual diff options
-- Installer system-tool reporting now still detects already-installed tools on
-  Linux hosts where sudo is unavailable in non-interactive mode
-
-## 2.2.0 — 2026-05-17
-
-### Added
-
-- `~/.config/chopsticks.vim` local pre-load config for profile and user choices
-- `g:chopsticks_enable_markdown_preview` to control Previm independently
-- `g:chopsticks_profile` with `minimal`, `engineer`, and `full` profiles
-- `.markdownlint.json` aligned with the project's README/changelog style
-- `:ChopsticksStatus` diagnostic command — checks system tools, LSP servers, linters, formatters
-- `,af` toggle format-on-save (ALE `fix_on_save`)
-- `,gL` git log graph (last 20 commits)
-- `,gC` FZF git commits search, `,gB` buffer commits
-- Interactive installer profile selection for `minimal`, `engineer`, and `full`
-- `install.sh --profile=minimal|engineer|full` for scripted profile selection
-- `install.sh --dry-run` to show the resolved profile/config path without writes
-- `install.sh --configure-only` to update local profile config without reinstalling
-- `get.sh --dry-run` for safe bootstrap previews before clone/update/install
-- `CHOPSTICKS_DEST=/absolute/path` to test or install the bootstrap target elsewhere
-- `scripts/test.sh` local test runner reused by GitHub Actions
-- `scripts/test.sh quick`, `--help`, and `list` for easier local test discovery
-
-### Fixed
-
-- Built-in plugin guards for `gzip`, `logiPat`, `rrhelper`, and
-  `spellfile_plugin` are now set in both `g:`-prefixed and unscoped
-  forms — those four old-style runtime plugins check `loaded_X` (no
-  `g:`), so the previous `g:loaded_X` lines did nothing. Saves ~270μs
-  total at startup, mostly from gzip
-- `install.sh` interactive menu and QUICKSTART now show `,ff` (current
-  fuzzy-find binding) instead of the stale `Ctrl+p` left over from the
-  native-first cleanup; `.github/demo.tape` updated to match (the
-  binary GIF still shows `Ctrl+p` until someone regenerates it from a
-  fresh fixture)
-- README badge and `install.sh` recommend Vim 8.1+ instead of 8.0+ —
-  the runtime conditionally relies on patches `8.1.0360` (diffopt) and
-  `8.1.1517` (completeopt+=popup), so 8.0 users hit option errors
-- `ttimeoutlen` is now 50ms when `g:is_tty` (was 10ms unconditionally);
-  fixes F-keys, arrow keys, and Alt-prefixes fragmenting on SSH where
-  one-way latency exceeds 10ms. Local terminals keep the 10ms snappy
-  default
-- `install.sh` no longer silently `PlugClean!`s user-added plugins from
-  `~/.vim/plugged`; it now lists undeclared plugin directories first and
-  asks before removing them (`--yes` skips the removal entirely)
-- `install.sh` Python tools now prefer `pipx` and `pip3 --user` over
-  `pip3 install --break-system-packages`; the break-system path is gated
-  behind `CHOPSTICKS_ALLOW_BREAK_SYSTEM=1` so PEP 668 distros are no
-  longer silently polluted
-- `g:loaded_logipat` typo → `g:loaded_logiPat` — logiPat was loading fully (0.478ms wasted)
-- `get.sh` now refuses to update an existing `~/.vim` git repo unless its
-  origin is chopsticks
-- Large file protection now stays active after filetype and syntax autocommands
-- `g:ale_fix_on_save = 0` in local config is now respected
-- Local config now respects absolute `XDG_CONFIG_HOME` instead of hardcoding
-  `~/.config`
-
-### Changed
-
-- `install.sh` "First steps inside Vim" block now leads with `,?`
-  (cheat sheet) — the single best onboarding asset is now the first
-  thing a new user sees after install, not the fourth
-- `set exrc`/`set secure` are now opt-in via `g:chopsticks_enable_exrc = 1`;
-  Vim no longer sources project-local `.vimrc`/`.exrc` from the working
-  directory by default
-- Normal-mode `,F` (reindent the entire file with `gg=G`) is now opt-in
-  via `g:chopsticks_enable_reindent_file = 1`; visual-mode `,F` (reindent
-  selection) stays as the default since it's bounded by the user's pick
-- `,?` cheat sheet is now profile-aware and hides LSP/ALE/preview/UndoTree keys
-  when those features are disabled
-- Module reload/source paths now use `fnameescape()` so installs in paths with
-  spaces are handled correctly
-- CI now verifies path-safe module loading, the local config hook, and
-  minimal-profile cheat sheet output
-- Markdown now opens in quiet writing mode by default: no real-time markdownlint,
-  no Marksman LSP, no spell noise, no conceal, no sign column, and no realtime preview
-- Native `s` is no longer shadowed by EasyMotion; use `,S` for the two-character jump
-- `,w` now uses a normal `:write` instead of forced `:write!`
-- Swap files are enabled again and stored under `~/.vim/.swap` for crash recovery
-- Installer defaults are slimmer: only core search tools stay selected by default;
-  language and lint suites are opt-in
-- `:ChopsticksStatus` now respects disabled LSP/lint profiles instead of reporting
-  intentionally disabled tools as missing
-- `,sv` now clears the load guard before sourcing `$MYVIMRC`
-- CI now verifies key plugin directories, Markdown quiet defaults, markdownlint,
-  and an explicit startup-time threshold
-- Installer plugin validation now checks every plugin required by the active profile
-- The optional tool menu now hides LSP/lint suites in `minimal` and selects
-  Marksman by default in `full`
-- tmux integration is written as a managed block so future installer runs can
-  update it without appending duplicate bindings
-- Installer cleanup now restores the cursor after interrupted checkbox menus
-- Bootstrap dry-run now refuses unrelated existing git repos before any writes
-- CI now shares shell, installer, bootstrap, docs, and Vim smoke checks with
-  the local test runner
-- CI now checks the test runner help and group-list commands
-- Skip 2 more built-in plugins: openPlugin, manpager (10 → 12 total)
-- Remove deprecated `set ttyfast` (no-op since Vim 8)
-- Add `grepprg=rg --vimgrep` — `:grep` now uses ripgrep + quickfix
-- Add `diffopt` with histogram algorithm and indent-heuristic
-- Consolidate FZF Rg/RgWord/GFiles commands (DRY refactor)
-- vim-tmux-navigator: conditional load (only inside tmux), fallback `Ctrl+hjkl` mappings outside
-- Add `Ctrl+hjkl` window navigation fallback when tmux-navigator not loaded
-
-## 2.1.0 — 2025-04-22
-
-### Added
-
-- Cheat sheet (`,?`) — vertical sidebar, one key per line, section headers
-- Previm markdown preview restored (lazy-loaded, `,mp`)
-- `:LspInstallServer` added to cheat sheet
-
-### Changed
-
-- Plugin count: 25 (restored previm, dropped 5 bloat plugins)
-- QUICKSTART updated — removed stale references, improved first-launch guidance
-
-## 2.0.0 — 2025-04-21
-
-### Added
-
-- Sidebar toggle (`,e` / `,E`) — left-side netrw with `topleft vertical`, winfixwidth, proper toggle
-- Enriched statusline — SLMode, SLGit, SLAle, SLFlags
-- Toggle feedback — F2/F3/F4/F6/`,ss` echo current state
-- `vim .` layout — netrw left + Startify right (removed in later refactor)
-- Interactive tutorial (`:ChopsticksLearn` — removed in later release)
-
-### Removed (Unix minimalism refactor)
-
-- **565 lines** of dead code and bloat
-- 5 plugins: Goyo, Limelight, vim-obsession, indentLine, vim-unimpaired
-- `modules/writing.vim` — folded into `languages.vim`
-- `tutor/chopsticks.tutor` — removed (269 lines)
-- Tab management keybindings (8 mappings), spell nav bindings (4 mappings)
-- Dead functions: HasPaste(), CleanExtraSpaces(), ToggleNumber(), SynStack
-- TTY welcome message, `,so`, `,ms`, `,sh` mappings
-
-### Changed
-
-- CI plugin threshold lowered to 20
-- README: hero layout with demo GIF, badges, architecture diagram
-- vim-markdown settings absorbed from writing.vim into languages.vim
-
-## 1.3.0 — 2025-04-20
-
-### Changed
-
-- Startup: 39ms → 19ms (51% faster)
-- Dropped vim-unimpaired for performance
-- Runtime tuning across modules
-
-## 1.2.0 — 2025-04-19
-
-### Added
-
-- Hero README with demo GIF, CI badges
-- GitHub Actions CI (startup test on macOS + Ubuntu, shellcheck)
-- Issue/PR templates
-
-### Changed
-
-- Documentation rewrite — clean, short, for engineers
-
-## 1.1.0 — 2025-04-18
-
-### Added
-
-- 12-module architecture (env → plugins → core → ui → editing → navigation → lsp → lint → git → writing → languages → tools)
-- Zen mode (Goyo + Limelight)
-- Run file (`,cr`) with auto filetype detection
-- Smart search (SmartFiles, Rg, RgWord)
-- EasyMotion, yank highlight, undo tree
-- Robust installer (`get.sh`) with preflight checks
-
-### Changed
-
-- `.vimrc` split into 12 self-contained modules
-- Comprehensive bug audit (14 fixes)
-
-## 1.0.0 — 2025-04-16
-
-### Added
-
-- Initial Vim configuration — migrated from Neovim
-- vim-plug plugin manager
-- vim-lsp + asyncomplete (pure VimScript LSP)
-- ALE linting + format-on-save
-- FZF fuzzy finder
-- Fugitive + GitGutter
-- Solarized colorscheme
-- TTY detection and graceful degradation
-- Platform installer (macOS, Debian, Arch, Fedora)
+- 旧的模块加载框架、配置 profile、安装器、演示工程和大规模历史测试脚本。
+- 与当前单文件工作流重复或已经失效的文档。

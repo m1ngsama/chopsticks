@@ -2,6 +2,7 @@
 set nocompatible
 scriptencoding utf-8
 
+let s:startup_started_at = reltime()
 let g:chopsticks_version = '0.1.0'
 
 if has('nvim')
@@ -11,6 +12,12 @@ endif
 if v:version < 802
     echoerr 'chopsticks requires Vim 8.2 or newer'
     finish
+endif
+
+" Terminal capability replies can arrive too late and leak onto a transparent
+" dashboard. The interface sets its colors and width policy explicitly.
+if !has('gui_running')
+    set t_RV= t_u7= t_RF= t_RB= ambiwidth=single
 endif
 
 if empty($MYVIMRC)
@@ -165,45 +172,7 @@ let g:limelight_default_coefficient = 0.7
 let g:limelight_paragraph_span = 1
 let g:limelight_priority = -1
 
-function! ChopsticksStartifyHeader() abort
-    if &columns >= 100
-        let l:logo = [
-            \ '███╗   ███╗ ██╗███╗   ██╗ ██████╗ ███████╗ █████╗ ███╗   ███╗ █████╗',
-            \ '████╗ ████║███║████╗  ██║██╔════╝ ██╔════╝██╔══██╗████╗ ████║██╔══██╗',
-            \ '██╔████╔██║╚██║██╔██╗ ██║██║  ███╗███████╗███████║██╔████╔██║███████║',
-            \ '██║╚██╔╝██║ ██║██║╚██╗██║██║   ██║╚════██║██╔══██║██║╚██╔╝██║██╔══██║',
-            \ '██║ ╚═╝ ██║ ██║██║ ╚████║╚██████╔╝███████║██║  ██║██║ ╚═╝ ██║██║  ██║',
-            \ '╚═╝     ╚═╝ ╚═╝╚═╝  ╚═══╝ ╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝╚═╝  ╚═╝',
-            \ ]
-    else
-        let l:logo = [
-            \ '╭────────────────────────────────╮',
-            \ '│           CHOPSTICKS           │',
-            \ '╰────────────────────────────────╯',
-            \ ]
-    endif
-    let l:width = max(map(copy(l:logo), 'strwidth(v:val)'))
-    let l:subtitle = &columns >= 100 ? 'CHOPSTICKS  ·  VIM ONLY' : 'VIM ONLY'
-    let l:subtitle = repeat(' ', (l:width - strwidth(l:subtitle)) / 2) . l:subtitle
-    let l:top = max([1, (&lines - len(l:logo) - 14) / 3])
-    return repeat([''], l:top) + l:logo + ['', l:subtitle]
-endfunction
-
-function! ChopsticksStartifyFooter() abort
-    return ['SPC ?  keys    ·    :ChopsticksHealth']
-endfunction
-
-let g:startify_lists = [{'type': 'commands'}]
-let g:startify_commands = [
-    \ {'f': ['  Find file', 'Files']},
-    \ {'n': ['  New file', 'enew']},
-    \ {'g': ['  Find text', 'Rg']},
-    \ {'r': ['  Recent files', 'History']},
-    \ {'c': ['  Edit config', 'edit $MYVIMRC']},
-    \ {'h': ['󰓙  Health', 'ChopsticksHealth']},
-    \ {'?': ['󰌌  Cheatsheet', 'ChopsticksCheatsheet']},
-    \ {'q': ['󰈆  Quit', 'qall']},
-    \ ]
+let g:startify_disable_at_vimenter = 1
 let g:startify_skiplist = [
     \ '/\.git/', '/tmp/', '/\.vim/plugged/',
     \ '/\.codex/auth\.json$', '/\.ssh/',
@@ -212,9 +181,31 @@ let g:startify_session_persistence = 1
 let g:startify_session_autoload = 1
 let g:startify_change_to_vcs_root = 1
 let g:startify_enable_special = 0
-let g:startify_padding_left = max([3, (&columns - 36) / 2])
-let g:startify_custom_header = 'startify#center(ChopsticksStartifyHeader())'
-let g:startify_custom_footer = 'startify#center(ChopsticksStartifyFooter())'
+
+let s:dashboard_logo = [
+    \ '███╗   ███╗ ██╗███╗   ██╗ ██████╗ ███████╗ █████╗ ███╗   ███╗ █████╗',
+    \ '████╗ ████║███║████╗  ██║██╔════╝ ██╔════╝██╔══██╗████╗ ████║██╔══██╗',
+    \ '██╔████╔██║╚██║██╔██╗ ██║██║  ███╗███████╗███████║██╔████╔██║███████║',
+    \ '██║╚██╔╝██║ ██║██║╚██╗██║██║   ██║╚════██║██╔══██║██║╚██╔╝██║██╔══██║',
+    \ '██║ ╚═╝ ██║ ██║██║ ╚████║╚██████╔╝███████║██║  ██║██║ ╚═╝ ██║██║  ██║',
+    \ '╚═╝     ╚═╝ ╚═╝╚═╝  ╚═══╝ ╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝╚═╝  ╚═╝',
+    \ ]
+let s:dashboard_compact_logo = [
+    \ '╭────────────────────────────────╮',
+    \ '│           CHOPSTICKS           │',
+    \ '╰────────────────────────────────╯',
+    \ ]
+let s:dashboard_items = [
+    \ {'key': 'f', 'icon': ' ', 'label': 'Find File', 'action': 'Files'},
+    \ {'key': 'n', 'icon': ' ', 'label': 'New File', 'action': 'enew | startinsert'},
+    \ {'key': 'g', 'icon': ' ', 'label': 'Find Text', 'action': 'Rg'},
+    \ {'key': 'r', 'icon': ' ', 'label': 'Recent Files', 'action': 'History'},
+    \ {'key': 'c', 'icon': ' ', 'label': 'Config', 'action': 'edit $MYVIMRC'},
+    \ {'key': 's', 'icon': ' ', 'label': 'Restore Session', 'action': 'SLoad!'},
+    \ {'key': 'x', 'icon': ' ', 'label': 'Plugin Update', 'action': 'PlugUpdate'},
+    \ {'key': 'l', 'icon': '󰒲 ', 'label': 'Plugins', 'action': 'PlugStatus'},
+    \ {'key': 'q', 'icon': ' ', 'label': 'Quit', 'action': 'qall'},
+    \ ]
 
 " vim-plug is optional. Startup never downloads software.
 if filereadable(expand('~/.vim/autoload/plug.vim'))
@@ -390,17 +381,11 @@ function! s:DefineInterfaceColors() abort
     highlight CursorLine        ctermbg=235 cterm=NONE guibg=#0c4452 gui=NONE
     highlight CursorLineNr      ctermbg=235 ctermfg=136 cterm=bold guibg=#0c4452 guifg=#b58900 gui=bold
     highlight SignColumn        ctermbg=234 guibg=#002b36
-    highlight StartifyHeader    ctermfg=33  cterm=bold guifg=#268bd2 gui=bold
-    highlight StartifyFile      ctermfg=37  cterm=none guifg=#2aa198 gui=none
-    highlight StartifyNumber    ctermfg=166 cterm=bold guifg=#cb4b16 gui=bold
-    highlight StartifySelect    ctermfg=33  cterm=bold guifg=#268bd2 gui=bold
-    highlight StartifyBracket   ctermfg=240 cterm=none guifg=#586e75 gui=none
-    highlight StartifyPath      ctermfg=245 cterm=none guifg=#839496 gui=none
-    highlight StartifySlash     ctermfg=240 cterm=none guifg=#586e75 gui=none
-    highlight StartifySection   ctermfg=245 cterm=bold guifg=#839496 gui=bold
-    highlight StartifySpecial   ctermfg=240 cterm=none guifg=#586e75 gui=none
-    highlight StartifyFooter    ctermfg=136 cterm=italic guifg=#b58900 gui=italic
-    highlight ChopStartifyStatus ctermbg=235 ctermfg=235 guibg=#073642 guifg=#073642
+    highlight ChopDashboardLogo   ctermfg=33  cterm=bold guifg=#268bd2 gui=bold
+    highlight ChopDashboardItem   ctermfg=37  cterm=none guifg=#2aa198 gui=none
+    highlight ChopDashboardKey    ctermfg=166 cterm=none guifg=#cb4b16 gui=none
+    highlight ChopDashboardFooter ctermfg=136 cterm=italic guifg=#b58900 gui=italic
+    highlight ChopDashboardStatus ctermbg=235 ctermfg=235 guibg=#073642 guifg=#073642
     if g:chopsticks_transparent_background
         highlight Normal ctermbg=NONE guibg=NONE
         highlight NormalNC ctermbg=NONE guibg=NONE
@@ -410,19 +395,189 @@ function! s:DefineInterfaceColors() abort
     endif
 endfunction
 
-function! s:StartifyEnter() abort
-    let b:chopsticks_startify_showtabline = &showtabline
-    set showtabline=0
-    setlocal nonumber norelativenumber nolist nocursorline signcolumn=no
-    let &l:statusline = '%#ChopStartifyStatus#%='
+function! s:DashboardCenter(text) abort
+    return repeat(' ', max([0, (&columns - strwidth(a:text)) / 2])) . a:text
 endfunction
 
-function! s:StartifyLeave() abort
-    if exists('b:chopsticks_startify_showtabline')
-        let &showtabline = b:chopsticks_startify_showtabline
-        unlet b:chopsticks_startify_showtabline
+function! s:DashboardPluginStats() abort
+    let l:plugs = get(g:, 'plugs', {})
+    let l:runtime = map(split(&runtimepath, ','),
+        \ 'resolve(fnamemodify(v:val, ":p"))')
+    let l:loaded = 0
+    for l:plug in values(l:plugs)
+        if index(l:runtime, resolve(fnamemodify(l:plug.dir, ':p'))) >= 0
+            let l:loaded += 1
+        endif
+    endfor
+    return [l:loaded, len(l:plugs)]
+endfunction
+
+function! s:DashboardFooter() abort
+    if !exists('g:chopsticks_startup_ms')
+        let g:chopsticks_startup_ms = exists('*reltimefloat')
+            \ ? reltimefloat(reltime(s:startup_started_at)) * 1000
+            \ : str2float(reltimestr(reltime(s:startup_started_at))) * 1000
+    endif
+    let [l:loaded, l:total] = s:DashboardPluginStats()
+    return l:total > 0
+        \ ? printf('⚡ Vim loaded %d/%d plugins in %.2fms',
+        \     l:loaded, l:total, g:chopsticks_startup_ms)
+        \ : printf('⚡ Vim ready in %.2fms', g:chopsticks_startup_ms)
+endfunction
+
+function! s:DashboardEnter() abort
+    if !exists('b:chopsticks_dashboard_showtabline')
+        let b:chopsticks_dashboard_showtabline = &showtabline
+    endif
+    set showtabline=0
+    setlocal nonumber norelativenumber nolist nocursorline signcolumn=no
+    setlocal nowrap nospell foldcolumn=0 colorcolumn=
+    let &l:statusline = '%#ChopDashboardStatus#%='
+endfunction
+
+function! s:DashboardLeave() abort
+    if exists('b:chopsticks_dashboard_showtabline')
+        let &showtabline = b:chopsticks_dashboard_showtabline
+        unlet b:chopsticks_dashboard_showtabline
     endif
 endfunction
+
+function! s:DashboardRender() abort
+    if &filetype !=# 'chopsticks-dashboard'
+        return
+    endif
+    let l:logo = &columns >= 100 ? s:dashboard_logo : s:dashboard_compact_logo
+    let l:gap = winheight(0) >= 28 ? 1 : 0
+    let l:label_width = min([50, max([20, &columns - 10])])
+    let l:content_height = len(l:logo) + 2 + len(s:dashboard_items)
+        \ + (len(s:dashboard_items) - 1) * l:gap + 2
+    let l:top = max([1, (winheight(0) - l:content_height) / 2])
+    let l:lines = repeat([''], l:top)
+    let l:logo_matches = []
+    let l:item_matches = []
+    let l:key_matches = []
+    let l:item_lines = []
+    let l:desc_cols = {}
+    let l:actions = {}
+
+    for l:text in l:logo
+        let l:line = s:DashboardCenter(l:text)
+        call add(l:lines, l:line)
+        let l:column = strlen(matchstr(l:line, '^ *')) + 1
+        call add(l:logo_matches, [len(l:lines), l:column, strlen(l:text)])
+    endfor
+    call extend(l:lines, ['', ''])
+
+    for l:index in range(len(s:dashboard_items))
+        let l:item = s:dashboard_items[l:index]
+        let l:body = l:item.icon . l:item.label
+            \ . repeat(' ', max([1, l:label_width - strwidth(l:item.label)]))
+            \ . l:item.key
+        let l:line = s:DashboardCenter(l:body)
+        call add(l:lines, l:line)
+        let l:line_number = len(l:lines)
+        let l:column = strlen(matchstr(l:line, '^ *')) + 1
+        call add(l:item_matches, [l:line_number, l:column, strlen(l:body)])
+        call add(l:key_matches,
+            \ [l:line_number, strlen(l:line) - strlen(l:item.key) + 1,
+            \  strlen(l:item.key)])
+        call add(l:item_lines, l:line_number)
+        let l:desc_cols[string(l:line_number)] = l:column + strlen(l:item.icon)
+        let l:actions[string(l:line_number)] = l:item.key
+        if l:gap && l:index + 1 < len(s:dashboard_items)
+            call add(l:lines, '')
+        endif
+    endfor
+
+    call add(l:lines, '')
+    let l:footer = s:DashboardFooter()
+    let l:footer_line = s:DashboardCenter(l:footer)
+    call add(l:lines, l:footer_line)
+    let l:footer_column = strlen(matchstr(l:footer_line, '^ *')) + 1
+
+    setlocal modifiable
+    silent keepjumps %delete _
+    call setline(1, l:lines)
+    setlocal nomodified nomodifiable
+    call clearmatches()
+    call matchaddpos('ChopDashboardLogo', l:logo_matches, 10)
+    call matchaddpos('ChopDashboardItem', l:item_matches, 10)
+    call matchaddpos('ChopDashboardKey', l:key_matches, 20)
+    call matchaddpos('ChopDashboardFooter',
+        \ [[len(l:lines), l:footer_column, strlen(l:footer)]], 10)
+    let b:chopsticks_dashboard_item_lines = l:item_lines
+    let b:chopsticks_dashboard_desc_cols = l:desc_cols
+    let b:chopsticks_dashboard_actions = l:actions
+    call cursor(l:item_lines[0], l:desc_cols[string(l:item_lines[0])])
+endfunction
+
+function! s:DashboardMove(delta) abort
+    let l:lines = get(b:, 'chopsticks_dashboard_item_lines', [])
+    if empty(l:lines)
+        return
+    endif
+    let l:index = index(l:lines, line('.'))
+    let l:index = l:index < 0 ? 0 : (l:index + a:delta + len(l:lines)) % len(l:lines)
+    let l:target = l:lines[l:index]
+    call cursor(l:target, get(b:chopsticks_dashboard_desc_cols,
+        \ string(l:target), 1))
+endfunction
+
+function! s:DashboardRun(key) abort
+    for l:item in s:dashboard_items
+        if l:item.key ==# a:key
+            try
+                execute l:item.action
+            catch
+                echohl ErrorMsg
+                echom 'Dashboard: ' . v:exception
+                echohl None
+            endtry
+            return
+        endif
+    endfor
+endfunction
+
+function! s:DashboardRunCurrent() abort
+    let l:key = get(get(b:, 'chopsticks_dashboard_actions', {}),
+        \ string(line('.')), '')
+    if !empty(l:key)
+        call s:DashboardRun(l:key)
+    endif
+endfunction
+
+function! s:OpenDashboard() abort
+    if &filetype !=# 'chopsticks-dashboard'
+        silent keepalt enew
+        silent file [chopsticks]
+        setlocal buftype=nofile bufhidden=wipe noswapfile nobuflisted
+        setfiletype chopsticks-dashboard
+    endif
+    call s:DashboardEnter()
+    for l:item in s:dashboard_items
+        execute 'nnoremap <silent><nowait><buffer> ' . l:item.key
+            \ . ' :call <SID>DashboardRun(''' . l:item.key . ''')<CR>'
+    endfor
+    nnoremap <silent><buffer> <CR> :call <SID>DashboardRunCurrent()<CR>
+    nnoremap <silent><buffer> j :call <SID>DashboardMove(1)<CR>
+    nnoremap <silent><buffer> k :call <SID>DashboardMove(-1)<CR>
+    nnoremap <silent><buffer> <Down> :call <SID>DashboardMove(1)<CR>
+    nnoremap <silent><buffer> <Up> :call <SID>DashboardMove(-1)<CR>
+    nnoremap <silent><buffer> <Tab> :call <SID>DashboardMove(1)<CR>
+    nnoremap <silent><buffer> <S-Tab> :call <SID>DashboardMove(-1)<CR>
+    nnoremap <silent><nowait><buffer> ? :ChopsticksCheatsheet<CR>
+    nnoremap <silent><nowait><buffer> h :ChopsticksHealth<CR>
+    call s:DashboardRender()
+endfunction
+
+function! s:MaybeOpenDashboard() abort
+    if argc() == 0 && bufname('%') ==# '' && &buftype ==# ''
+        \ && line('$') == 1 && getline(1) ==# '' && !&modified
+        call s:OpenDashboard()
+    endif
+endfunction
+
+command! ChopsticksDashboard call s:OpenDashboard()
 
 function! ChopsticksMode() abort
     let l:mode = mode(1)
@@ -503,8 +658,9 @@ set tabline=%!ChopsticksTabline()
 augroup ChopsticksInterface
     autocmd!
     autocmd ColorScheme * call s:DefineInterfaceColors()
-    autocmd User Startified call s:StartifyEnter()
-    autocmd BufLeave * if &filetype ==# 'startify' | call s:StartifyLeave() | endif
+    autocmd BufEnter * if &filetype ==# 'chopsticks-dashboard' | call s:DashboardEnter() | call s:DashboardRender() | endif
+    autocmd BufLeave * if &filetype ==# 'chopsticks-dashboard' | call s:DashboardLeave() | endif
+    autocmd VimResized * if &filetype ==# 'chopsticks-dashboard' | call s:DashboardRender() | endif
 augroup END
 call s:DefineInterfaceColors()
 
@@ -1287,9 +1443,7 @@ function! s:PluginMaps() abort
     if exists(':UndotreeToggle') == 2
         call s:LeaderN(['u', 'U'], ':UndotreeToggle<CR>', 'Toggles', 'Toggle undo tree')
     endif
-    if exists(':Startify') == 2
-        call s:LeaderN(['f', 'H'], ':Startify<CR>', 'Files', 'Start screen')
-    endif
+    call s:LeaderN(['f', 'H'], ':ChopsticksDashboard<CR>', 'Files', 'Start screen')
     if exists(':Goyo') == 2
         call s:LeaderN(['z'], ':Goyo<CR>', 'Essentials', 'Focus mode')
     endif
@@ -1361,6 +1515,11 @@ augroup ChopsticksPlugins
     autocmd VimEnter * call <SID>PluginsReady()
 augroup END
 
+augroup ChopsticksDashboard
+    autocmd!
+    autocmd VimEnter * call <SID>MaybeOpenDashboard()
+augroup END
+
 if v:vim_did_enter
     call s:PluginMaps()
     call s:RegisterWhichKey()
@@ -1386,7 +1545,7 @@ let g:chopsticks_input_method_disable_on_ssh = get(g:,
 let g:chopsticks_input_method_filetypes = get(g:, 'chopsticks_input_method_filetypes', [])
 let g:chopsticks_input_method_ignore_filetypes = get(g:,
     \ 'chopsticks_input_method_ignore_filetypes',
-    \ ['fzf', 'help', 'netrw', 'qf', 'startify'])
+    \ ['chopsticks-dashboard', 'fzf', 'help', 'netrw', 'qf', 'startify'])
 let g:chopsticks_enable_input_method = get(g:, 'chopsticks_enable_input_method',
     \ has('macunix') && executable(g:chopsticks_input_method_cmd))
 let s:input_method_assumed = ''

@@ -54,7 +54,7 @@ jobs:
           HOME="$CHOPSTICKS_TEST_HOME" \
             vim -Nu "$GITHUB_WORKSPACE/.vimrc" -n -es \
               -c 'doautocmd VimEnter' \
-              -c 'call assert_equal("startify", &filetype) | call assert_equal(0, &showtabline) | call assert_match("MINGSAMA\|CHOPSTICKS", join(getline(1, "$"), "\n")) | call assert_match("Find file", join(getline(1, "$"), "\n")) | call assert_equal("NONE", synIDattr(hlID("Normal"), "bg", "gui")) | if !empty(v:errors) | cquit | endif | qall!'
+              -c 'let dashboard = getline(1, "$"), dashboard_text = join(dashboard, "\n"), normal_bg = synIDattr(hlID("Normal"), "bg", "gui") | call assert_equal("chopsticks-dashboard", &filetype) | call assert_equal(0, &showtabline) | call assert_true(dashboard_text =~# "CHOPSTICKS" || dashboard_text =~# "███") | call assert_equal(1, len(filter(copy(dashboard), {_, text -> text =~# "Find File.*f$"}))) | call assert_equal(1, len(filter(copy(dashboard), {_, text -> text =~# "Restore Session.*s$"}))) | call assert_match("Vim loaded", dashboard_text) | call assert_true(index(["", "NONE"], normal_bg) >= 0) | call assert_equal("", &t_RV) | call assert_equal("", &t_u7) | call assert_equal("", &t_RF) | call assert_equal("", &t_RB) | if !empty(v:errors) | cquit | endif | qall!'
 
       - name: Check documentation and whitespace
         run: |

@@ -27,6 +27,9 @@ brew install ripgrep fzf fd lazygit marksman glow pandoc pngpaste
 npm install --global markdownlint-cli prettier
 ```
 
+iTerm2 enables Nerd Font icons automatically when its active font supports
+them. Set `g:chopsticks_icons = 0` before sourcing the file for ASCII output.
+
 ## Use
 
 Pause after Space, or after comma in Markdown, to open the contextual key
@@ -37,6 +40,7 @@ Ctrl-s  save              Ctrl-p / ;f  find files
 ;r      project grep      \             list buffers
 H / L   previous/next     sh/sj/sk/sl   focus window
 ss / sv split/vsplit      sq            close window
+SPC e   toggle file tree  SPC u i       toggle icons
 
 SPC b   buffers           SPC c         code
 SPC f   files             SPC g         Git

@@ -37,6 +37,104 @@ let g:chopsticks_markdown_spell = get(g:, 'chopsticks_markdown_spell', 1)
 let g:chopsticks_markdown_conceal = get(g:, 'chopsticks_markdown_conceal', 0)
 let g:chopsticks_markdown_image_dir = get(g:, 'chopsticks_markdown_image_dir', 'assets')
 let g:chopsticks_transparent_background = get(g:, 'chopsticks_transparent_background', 1)
+let g:chopsticks_icons = get(g:, 'chopsticks_icons', 'auto')
+let g:chopsticks_use_fern = get(g:, 'chopsticks_use_fern', 1)
+
+let s:icon_auto_enabled = &encoding ==# 'utf-8' && !s:is_remote
+    \ && $TERM !=# 'dumb'
+    \ && (index(['iTerm.app', 'WezTerm', 'vscode'], $TERM_PROGRAM) >= 0
+    \     || !empty($KITTY_WINDOW_ID) || !empty($WEZTERM_PANE)
+    \     || !empty($WT_SESSION) || $TERM =~# '\<\%(xterm-kitty\|wezterm\)\>')
+let s:icons = {
+    \ 'search': ['', '?'],
+    \ 'new_file': ['', '+'],
+    \ 'grep': ['', '/'],
+    \ 'recent': ['', '~'],
+    \ 'config': ['', '#'],
+    \ 'session': ['', '@'],
+    \ 'update': ['', '^'],
+    \ 'plugins': ['', '*'],
+    \ 'quit': ['', 'q'],
+    \ 'file': ['', '-'],
+    \ 'git_branch': ['', 'git:'],
+    \ 'error': ['', 'E'],
+    \ 'warning': ['', 'W'],
+    \ 'modified': ['●', '+'],
+    \ 'readonly': ['', 'RO'],
+    \ 'spell': ['󰓆', 'SPELL'],
+    \ 'wrap': ['󰖶', 'WRAP'],
+    \ 'startup': ['', '*'],
+    \ 'pointer': ['', '>'],
+    \ 'marker': ['', '*'],
+    \ 'group_home': ['', ''],
+    \ 'group_find': ['', ''],
+    \ 'group_buffer': ['󰓩', ''],
+    \ 'group_window': ['', ''],
+    \ 'group_file': ['󰈔', ''],
+    \ 'group_git': ['', ''],
+    \ 'group_code': ['', ''],
+    \ 'group_check': ['󰒡', ''],
+    \ 'group_run': ['', ''],
+    \ 'group_term': ['', ''],
+    \ 'group_toggle': ['', ''],
+    \ 'group_edit': ['', ''],
+    \ 'group_nav': ['', ''],
+    \ 'group_markdown': ['', ''],
+    \ 'group_table': ['', ''],
+    \ 'group_quit': ['', ''],
+    \ }
+let s:group_icons = {
+    \ 'Essentials': 'group_home', 'Fast find': 'group_find',
+    \ 'Buffers': 'group_buffer', 'Windows': 'group_window',
+    \ 'Files': 'group_file', 'Search': 'group_find', 'Quit': 'group_quit',
+    \ 'Git': 'group_git', 'Code': 'group_code',
+    \ 'Diagnostics': 'group_check', 'Run': 'group_run',
+    \ 'Terminal': 'group_term', 'Tabs': 'group_buffer',
+    \ 'Toggles': 'group_toggle', 'Editing': 'group_edit',
+    \ 'Navigation': 'group_nav', 'Markdown': 'group_markdown',
+    \ 'Table': 'group_table',
+    \ }
+
+function! ChopsticksIconsEnabled() abort
+    if type(g:chopsticks_icons) == type(0)
+        return g:chopsticks_icons != 0
+    elseif type(g:chopsticks_icons) == type(v:true)
+        return g:chopsticks_icons
+    elseif type(g:chopsticks_icons) == type('')
+        let l:value = tolower(g:chopsticks_icons)
+        if index(['0', 'off', 'false', 'ascii'], l:value) >= 0
+            return 0
+        elseif index(['1', 'on', 'true', 'nerd'], l:value) >= 0
+            return 1
+        endif
+    endif
+    return s:icon_auto_enabled
+endfunction
+
+function! ChopsticksIcon(name) abort
+    let l:icon = get(s:icons, a:name, ['', ''])
+    return l:icon[ChopsticksIconsEnabled() ? 0 : 1]
+endfunction
+
+function! s:GroupIcon(group) abort
+    return ChopsticksIcon(get(s:group_icons, a:group, ''))
+endfunction
+
+function! s:WhichKeyGroup(group) abort
+    let l:icon = s:GroupIcon(a:group)
+    return '+' . (empty(l:icon) ? '' : l:icon . ' ') . a:group
+endfunction
+
+let g:fern#renderer = ChopsticksIconsEnabled() ? 'nerdfont' : 'default'
+let g:fern#renderer#nerdfont#indent_markers = 1
+let g:fern#renderer#nerdfont#leading = '  '
+let g:fern#renderer#nerdfont#padding = ' '
+let g:fern#mark_symbol = ChopsticksIcon('marker')
+let g:fern#drawer_width = 34
+let g:fern#default_hidden = 1
+let g:fern#default_exclude =
+    \ '^\%(\.git\|node_modules\|\.venv\|__pycache__\|dist\|build\|target\)$'
+let g:fern_git_status#disable_ignored = 1
 
 " ── Plugin policy ───────────────────────────────────────────────────────────
 
@@ -73,9 +171,16 @@ let s:fzf_skip_dirs = [
     \ '.bun', '.codex', 'Library', 'node_modules', 'plugged',
     \ '.venv', 'venv', '__pycache__', 'build', 'dist', 'target', 'vendor',
     \ ]
+function! s:FzfVisualOptions() abort
+    return [
+        \ '--prompt', ChopsticksIcon('search') . ' ',
+        \ '--pointer', ChopsticksIcon('pointer'),
+        \ '--marker', ChopsticksIcon('marker'),
+        \ ]
+endfunction
 let g:fzf_vim = {
     \ 'preview_window': s:is_remote ? [] : ['right,55%', 'ctrl-/'],
-    \ 'gfiles_options': ['--bind', s:fzf_abort_keys],
+    \ 'gfiles_options': ['--bind', s:fzf_abort_keys] + s:FzfVisualOptions(),
     \ }
 
 let g:ale_disable_lsp = 1
@@ -107,8 +212,8 @@ let g:ale_lint_on_insert_leave = 0
 let g:ale_lint_on_text_changed = 'never'
 let g:ale_virtualtext_cursor = 'disabled'
 let g:ale_echo_msg_format = '%severity%: %s'
-let g:ale_sign_error = 'E'
-let g:ale_sign_warning = 'W'
+let g:ale_sign_error = ChopsticksIcon('error')
+let g:ale_sign_warning = ChopsticksIcon('warning')
 
 let g:lsp_settings_lazyload = 1
 let g:lsp_diagnostics_virtual_text_enabled = 0
@@ -196,15 +301,15 @@ let s:dashboard_compact_logo = [
     \ '╰────────────────────────────────╯',
     \ ]
 let s:dashboard_items = [
-    \ {'key': 'f', 'icon': ' ', 'label': 'Find File', 'action': 'ChopsticksFindFiles'},
-    \ {'key': 'n', 'icon': ' ', 'label': 'New File', 'action': 'enew | startinsert'},
-    \ {'key': 'g', 'icon': ' ', 'label': 'Find Text', 'action': 'Rg'},
-    \ {'key': 'r', 'icon': ' ', 'label': 'Recent Files', 'action': 'History'},
-    \ {'key': 'c', 'icon': ' ', 'label': 'Config', 'action': 'edit $MYVIMRC'},
-    \ {'key': 's', 'icon': ' ', 'label': 'Restore Session', 'action': 'SLoad!'},
-    \ {'key': 'x', 'icon': ' ', 'label': 'Plugin Update', 'action': 'PlugUpdate'},
-    \ {'key': 'l', 'icon': '󰒲 ', 'label': 'Plugins', 'action': 'PlugStatus'},
-    \ {'key': 'q', 'icon': ' ', 'label': 'Quit', 'action': 'qall'},
+    \ {'key': 'f', 'icon': 'search', 'label': 'Find File', 'action': 'ChopsticksFindFiles'},
+    \ {'key': 'n', 'icon': 'new_file', 'label': 'New File', 'action': 'enew | startinsert'},
+    \ {'key': 'g', 'icon': 'grep', 'label': 'Find Text', 'action': 'Rg'},
+    \ {'key': 'r', 'icon': 'recent', 'label': 'Recent Files', 'action': 'History'},
+    \ {'key': 'c', 'icon': 'config', 'label': 'Config', 'action': 'edit $MYVIMRC'},
+    \ {'key': 's', 'icon': 'session', 'label': 'Restore Session', 'action': 'SLoad!'},
+    \ {'key': 'x', 'icon': 'update', 'label': 'Plugin Update', 'action': 'PlugUpdate'},
+    \ {'key': 'l', 'icon': 'plugins', 'label': 'Plugins', 'action': 'PlugStatus'},
+    \ {'key': 'q', 'icon': 'quit', 'label': 'Quit', 'action': 'qall'},
     \ ]
 
 " vim-plug is optional. Startup never downloads software.
@@ -214,6 +319,13 @@ if filereadable(expand('~/.vim/autoload/plug.vim'))
     " Find and navigate.
     Plug 'junegunn/fzf', {'commit': '0eb2ae9f8bd57fed6242d76d2273df4a1be31cc8', 'do': { -> fzf#install() }}
     Plug 'junegunn/fzf.vim', {'commit': '34a564c81f36047f50e593c1656f4580ff75ccca'}
+    if has('patch-8.2.5136')
+        Plug 'lambdalisue/vim-fern', {'commit': '3bbca3c87a57cdc87495b91a695b8eda722a1de1'}
+        Plug 'lambdalisue/vim-nerdfont', {'commit': '3a28b3f061a8b6de751175cc3f91f072d4bfc811'}
+        Plug 'lambdalisue/vim-fern-renderer-nerdfont', {'commit': '325629c68eb543229715b68920fbcb92b206beb6'}
+        Plug 'lambdalisue/vim-glyph-palette', {'commit': '675f0ad64e2c4b823bffc1907d469deefaf6e3bd'}
+        Plug 'lambdalisue/vim-fern-git-status', {'commit': '151336335d3b6975153dad77e60049ca7111da8e'}
+    endif
     Plug 'tpope/vim-vinegar', {'commit': 'bb1bcddf43cfebe05eb565a84ab069b357d0b3d6'}
     Plug 'easymotion/vim-easymotion', {'commit': 'b3cfab2a6302b3b39f53d9fd2cd997e1127d7878', 'on': '<Plug>(easymotion'}
 
@@ -428,9 +540,11 @@ function! s:DashboardFooter() abort
     endif
     let [l:loaded, l:total] = s:DashboardPluginStats()
     return l:total > 0
-        \ ? printf('⚡ Vim loaded %d/%d plugins in %.2fms',
+        \ ? printf('%s Vim loaded %d/%d plugins in %.2fms',
+        \     ChopsticksIcon('startup'),
         \     l:loaded, l:total, g:chopsticks_startup_ms)
-        \ : printf('⚡ Vim ready in %.2fms', g:chopsticks_startup_ms)
+        \ : printf('%s Vim ready in %.2fms',
+        \     ChopsticksIcon('startup'), g:chopsticks_startup_ms)
 endfunction
 
 function! s:DashboardEnter() abort
@@ -490,7 +604,8 @@ function! s:DashboardRender() abort
 
     for l:index in range(len(s:dashboard_items))
         let l:item = s:dashboard_items[l:index]
-        let l:body = l:item.icon . ' ' . l:item.label
+        let l:icon = ChopsticksIcon(l:item.icon)
+        let l:body = l:icon . '  ' . l:item.label
         let l:body .= repeat(' ', max([1,
             \ l:dashboard_width - strwidth(l:body) - strwidth(l:item.key)]))
         let l:body .= l:item.key
@@ -500,13 +615,13 @@ function! s:DashboardRender() abort
         let l:column = strlen(matchstr(l:line, '^ *')) + 1
         call add(l:item_matches, [l:line_number, l:column, strlen(l:body)])
         call add(l:icon_matches,
-            \ [l:line_number, l:column, strlen(l:item.icon)])
+            \ [l:line_number, l:column, strlen(l:icon)])
         call add(l:key_matches,
             \ [l:line_number, strlen(l:line) - strlen(l:item.key) + 1,
             \  strlen(l:item.key)])
         call add(l:item_lines, l:line_number)
         let l:desc_cols[string(l:line_number)] =
-            \ l:column + strlen(l:item.icon) + 1
+            \ l:column + strlen(l:icon) + 2
         let l:actions[string(l:line_number)] = l:item.key
         if l:gap && l:index + 1 < len(s:dashboard_items)
             call add(l:lines, '')
@@ -655,12 +770,35 @@ function! ChopsticksMode() abort
     return [' N ', 'ChopStatusNormal']
 endfunction
 
+let s:file_icon_cache = {}
+function! ChopsticksFileIcon(path) abort
+    if !ChopsticksIconsEnabled()
+        return ''
+    endif
+    let l:path = empty(a:path) ? '[No Name]' : a:path
+    if !has_key(s:file_icon_cache, l:path)
+        if empty(globpath(&runtimepath, 'autoload/nerdfont.vim'))
+            let s:file_icon_cache[l:path] = ChopsticksIcon('file')
+        else
+            try
+                let s:file_icon_cache[l:path] = nerdfont#find(
+                    \ l:path, isdirectory(l:path))
+            catch
+                let s:file_icon_cache[l:path] = ChopsticksIcon('file')
+            endtry
+        endif
+    endif
+    let l:icon = s:file_icon_cache[l:path]
+    return empty(l:icon) ? '' : l:icon . ' '
+endfunction
+
 function! ChopsticksGitBranch() abort
     if !exists('*FugitiveHead')
         return ''
     endif
     let l:branch = FugitiveHead()
-    return empty(l:branch) ? '' : '   ' . substitute(l:branch, '%', '%%', 'g') . ' '
+    return empty(l:branch) ? '' : '  ' . ChopsticksIcon('git_branch') . ' '
+        \ . substitute(l:branch, '%', '%%', 'g') . ' '
 endfunction
 
 function! ChopsticksDiagnostics() abort
@@ -672,16 +810,28 @@ function! ChopsticksDiagnostics() abort
     let l:warnings = l:count.warning + l:count.style_warning
     return l:errors == 0 && l:warnings == 0
         \ ? ''
-        \ : printf(' E:%d W:%d ', l:errors, l:warnings)
+        \ : printf(' %s %d  %s %d ', ChopsticksIcon('error'), l:errors,
+        \     ChopsticksIcon('warning'), l:warnings)
 endfunction
 
 function! ChopsticksWritingMode() abort
     let l:parts = []
     if &spell
-        call add(l:parts, 'SPELL')
+        call add(l:parts, ChopsticksIcon('spell'))
     endif
     if exists('*PencilMode') && !empty(PencilMode())
-        call add(l:parts, 'WRAP:' . PencilMode())
+        call add(l:parts, ChopsticksIcon('wrap') . ':' . PencilMode())
+    endif
+    return empty(l:parts) ? '' : ' ' . join(l:parts, ' ') . ' '
+endfunction
+
+function! ChopsticksBufferFlags() abort
+    let l:parts = []
+    if &modified
+        call add(l:parts, ChopsticksIcon('modified'))
+    endif
+    if &readonly
+        call add(l:parts, ChopsticksIcon('readonly'))
     endif
     return empty(l:parts) ? '' : ' ' . join(l:parts, ' ') . ' '
 endfunction
@@ -689,9 +839,10 @@ endfunction
 function! ChopsticksStatusline() abort
     let [l:label, l:group] = ChopsticksMode()
     let l:line = '%#' . l:group . '#' . l:label
-    let l:line .= '%#ChopStatusBody# %<%f '
-    let l:line .= '%#ChopStatusAccent#%m%r'
-    let l:line .= '%#ChopStatusAccent#' . ChopsticksWritingMode()
+    let l:line .= '%#ChopStatusBody# ' . ChopsticksFileIcon(expand('%:p'))
+        \ . '%<%f '
+    let l:line .= '%#ChopStatusAccent#' . ChopsticksBufferFlags()
+        \ . ChopsticksWritingMode()
     let l:line .= '%#ChopStatusBody#%='
     let l:line .= '%#ChopStatusAccent#' . ChopsticksDiagnostics()
     let l:line .= '%#ChopStatusGit#' . ChopsticksGitBranch()
@@ -708,14 +859,41 @@ function! ChopsticksTabline() abort
         let l:line .= l:buffer.bufnr == bufnr('%') ? '%#TabLineSel#' : '%#TabLine#'
         let l:name = fnamemodify(l:buffer.name, ':t')
         let l:name = empty(l:name) ? '[No Name]' : substitute(l:name, '%', '%%', 'g')
-        let l:changed = get(l:buffer, 'changed', 0) ? ' +' : ''
-        let l:line .= ' ' . l:buffer.bufnr . ' ' . l:name . l:changed . ' '
+        let l:icon = ChopsticksFileIcon(l:buffer.name)
+        let l:changed = get(l:buffer, 'changed', 0)
+            \ ? ' ' . ChopsticksIcon('modified') : ''
+        let l:line .= ' ' . l:buffer.bufnr . ' ' . l:icon
+            \ . l:name . l:changed . ' '
     endfor
     return l:line . '%#TabLineFill#%='
 endfunction
 
 set statusline=%!ChopsticksStatusline()
 set tabline=%!ChopsticksTabline()
+
+function! s:ApplyIconMode() abort
+    let g:fern#renderer = ChopsticksIconsEnabled() ? 'nerdfont' : 'default'
+    let g:fern#mark_symbol = ChopsticksIcon('marker')
+    let g:ale_sign_error = ChopsticksIcon('error')
+    let g:ale_sign_warning = ChopsticksIcon('warning')
+    let g:fzf_vim.gfiles_options =
+        \ ['--bind', s:fzf_abort_keys] + s:FzfVisualOptions()
+    let s:file_icon_cache = {}
+    if &filetype ==# 'chopsticks-dashboard'
+        call s:DashboardRender()
+    endif
+    redrawstatus!
+    redrawtabline
+endfunction
+
+function! s:ToggleIcons() abort
+    let g:chopsticks_icons = !ChopsticksIconsEnabled()
+    call s:ApplyIconMode()
+    echo 'icons: ' . (ChopsticksIconsEnabled() ? 'Nerd Font' : 'ASCII')
+        \ . ' (restart Vim to refresh Fern and key groups)'
+endfunction
+
+command! ChopsticksIconsToggle call s:ToggleIcons()
 
 augroup ChopsticksInterface
     autocmd!
@@ -773,8 +951,10 @@ function! s:FzfFiles(path, bang) abort
     let l:root = fnamemodify(l:root, ':p')
     let l:options = [
         \ '--bind', s:fzf_abort_keys,
-        \ '--header', 'ESC / CTRL-Q close · ENTER open',
+        \ '--header', ChopsticksIcon('quit')
+        \     . ' ESC / CTRL-Q close · ENTER open',
         \ ]
+    call extend(l:options, s:FzfVisualOptions())
     let l:spec = {'dir': l:root, 'options': l:options}
     let l:source = s:FzfFileSource()
     if empty(l:source)
@@ -829,14 +1009,38 @@ endfunction
 function! s:ExplorerWindow() abort
     for l:window in getwininfo()
         if l:window.tabnr == tabpagenr()
-            \ && getbufvar(l:window.bufnr, '&filetype') ==# 'netrw'
+            \ && index(['fern', 'netrw'],
+            \     getbufvar(l:window.bufnr, '&filetype')) >= 0
             return l:window.winid
         endif
     endfor
     return 0
 endfunction
 
+function! s:FernAvailable() abort
+    return get(g:, 'chopsticks_use_fern', 1)
+        \ && has('patch-8.2.5136') && exists(':Fern') == 2
+endfunction
+
+function! s:PathInside(path, directory) abort
+    let l:path = resolve(fnamemodify(a:path, ':p'))
+    let l:directory = substitute(
+        \ resolve(fnamemodify(a:directory, ':p')), '/\+$', '', '')
+    return l:path ==# l:directory || stridx(l:path, l:directory . '/') == 0
+endfunction
+
 function! s:ToggleExplorer(directory) abort
+    if s:FernAvailable()
+        let l:directory = fnamemodify(a:directory, ':p')
+        let l:command = 'Fern ' . fnameescape(l:directory)
+            \ . ' -drawer -toggle -width=' . g:fern#drawer_width
+        let l:current = expand('%:p')
+        if filereadable(l:current) && s:PathInside(l:current, l:directory)
+            let l:command .= ' -reveal=' . fnameescape(l:current)
+        endif
+        execute l:command
+        return
+    endif
     let l:explorer = s:ExplorerWindow()
     if l:explorer
         let l:origin = win_getid()
@@ -851,11 +1055,39 @@ function! s:ToggleExplorer(directory) abort
     execute 'Lexplore ' . fnameescape(a:directory)
 endfunction
 
+function! s:FernSetup() abort
+    setlocal nonumber norelativenumber signcolumn=no winfixwidth cursorline
+    nmap <silent><buffer> <CR> <Plug>(fern-action-open-or-expand)
+    nmap <silent><buffer> l <Plug>(fern-action-open-or-expand)
+    nmap <silent><buffer> h <Plug>(fern-action-collapse)
+    nmap <silent><buffer> o <Plug>(fern-action-open)
+    nmap <silent><buffer> s <Plug>(fern-action-open:split)
+    nmap <silent><buffer> v <Plug>(fern-action-open:vsplit)
+    nmap <silent><buffer> t <Plug>(fern-action-open:tabedit)
+    nmap <silent><buffer> N <Plug>(fern-action-new-path)
+    nmap <silent><buffer> r <Plug>(fern-action-rename)
+    nmap <silent><buffer> x <Plug>(fern-action-mark:toggle)
+    nmap <silent><buffer> . <Plug>(fern-action-hidden:toggle)
+    nmap <silent><buffer> R <Plug>(fern-action-reload:all)
+    nnoremap <silent><buffer> q :close<CR>
+    nnoremap <silent><buffer> <Esc> :close<CR>
+    if ChopsticksIconsEnabled()
+        try
+            call glyph_palette#apply()
+        catch /^Vim\%((\a\+)\)\=:E117/
+        endtry
+    endif
+endfunction
+
 function! s:ExploreRoot() abort
     call s:ToggleExplorer(s:ProjectRoot())
 endfunction
 
 function! s:ExploreHere() abort
+    if &filetype ==# 'fern'
+        call s:ToggleExplorer(getcwd())
+        return
+    endif
     let l:directory = empty(expand('%:p')) ? getcwd() : expand('%:p:h')
     call s:ToggleExplorer(l:directory)
 endfunction
@@ -950,6 +1182,16 @@ function! ChopsticksHealthLines() abort
         \ printf('[%s] +job +channel +timers +popupwin +terminal',
         \     has('job') && has('channel') && has('timers') && exists('*popup_create') && has('terminal') ? 'ok' : '!!'),
         \ '',
+        \ 'Interface',
+        \ printf('[%s] %-14s %s',
+        \     !ChopsticksIconsEnabled()
+        \         || strwidth(ChopsticksIcon('file')) == 1 ? 'ok' : '!!',
+        \     'icons', ChopsticksIconsEnabled()
+        \         ? 'Nerd Font (' . ChopsticksIcon('file') . ' sample)'
+        \         : 'ASCII fallback'),
+        \ printf('[ok] %-14s %s', 'explorer',
+        \     s:FernAvailable() ? 'Fern drawer' : 'netrw fallback'),
+        \ '',
         \ 'Tools',
         \ ]
     for l:tool in ['git', 'rg', 'fzf', 'fd', 'lazygit', 'marksman', 'markdownlint', 'prettier', 'glow', 'pandoc', 'pngpaste']
@@ -1003,7 +1245,7 @@ let s:key_group_order = [
     \ 'Editing', 'Navigation', 'Markdown',
     \ ]
 let g:which_key_map = {}
-let g:which_key_local_map = {'name': '+Markdown'}
+let g:which_key_local_map = {'name': s:WhichKeyGroup('Markdown')}
 
 function! s:Catalog(group, mode, keys, description) abort
     let l:id = a:mode . "\n" . a:keys
@@ -1046,9 +1288,9 @@ function! s:WhichKeyAdd(parts, group, description) abort
         for l:index in range(0, len(a:parts) - 2)
             let l:key = a:parts[l:index]
             if !has_key(l:node, l:key) || type(l:node[l:key]) != type({})
-                let l:node[l:key] = {'name': '+' . a:group}
+                let l:node[l:key] = {'name': s:WhichKeyGroup(a:group)}
             elseif !has_key(l:node[l:key], 'name')
-                let l:node[l:key].name = '+' . a:group
+                let l:node[l:key].name = s:WhichKeyGroup(a:group)
             endif
             let l:node = l:node[l:key]
         endfor
@@ -1113,7 +1355,7 @@ command! ChopsticksCheatsheet call s:Keys()
 " ── Markdown and prose ─────────────────────────────────────────────────────
 
 let g:which_key_local_map = {
-    \ 'name': '+Markdown',
+    \ 'name': s:WhichKeyGroup('Markdown'),
     \ '?': 'Markdown help',
     \ 'c': 'Toggle conceal',
     \ 'f': 'Format with Prettier',
@@ -1125,7 +1367,7 @@ let g:which_key_local_map = {
     \ 'p': 'Browser preview',
     \ 's': 'Toggle spelling',
     \ 't': {
-        \ 'name': '+Table',
+        \ 'name': s:WhichKeyGroup('Table'),
         \ 'c': 'Tableize selection',
         \ 'r': 'Realign table',
         \ 't': 'Toggle table mode',
@@ -1512,6 +1754,13 @@ call s:LeaderN(['u', 'r'], ':set relativenumber! relativenumber?<CR>', 'Toggles'
 call s:LeaderN(['u', 'l'], ':set list! list?<CR>', 'Toggles', 'Toggle invisible characters')
 call s:LeaderN(['u', 'w'], ':set wrap! wrap?<CR>', 'Toggles', 'Toggle wrapping')
 call s:LeaderN(['u', 's'], ':set spell! spell?<CR>', 'Toggles', 'Toggle spelling')
+call s:LeaderN(['u', 'i'], ':ChopsticksIconsToggle<CR>', 'Toggles', 'Toggle Nerd Font icons')
+
+call s:Catalog('Files', 'n*', 'Fern h / l', 'Collapse / open node')
+call s:Catalog('Files', 'n*', 'Fern s / v / t', 'Open in split / vsplit / tab')
+call s:Catalog('Files', 'n*', 'Fern N / r / x', 'New path / rename / mark')
+call s:Catalog('Files', 'n*', 'Fern . / R', 'Toggle hidden files / reload')
+call s:Catalog('Files', 'n*', 'Fern q / Esc', 'Close drawer')
 
 call s:LeaderN(['q', 'w'], ':confirm quit<CR>', 'Quit', 'Close window')
 call s:LeaderN(['q', 'q'], ':confirm qall<CR>', 'Quit', 'Quit Vim')
@@ -1634,6 +1883,7 @@ augroup Chopsticks
         \ setlocal syntax= | let b:ale_enabled = 0 | endif
     autocmd QuickFixCmdPost [^l]* cwindow
     autocmd QuickFixCmdPost l* lwindow
+    autocmd FileType fern call <SID>FernSetup()
     autocmd FileType netrw setlocal bufhidden=wipe
     autocmd FileType qf nnoremap <silent><buffer> q :close<CR>
     autocmd BufNewFile,BufRead *.mdx setfiletype markdown
@@ -1687,7 +1937,7 @@ let g:chopsticks_input_method_disable_on_ssh = get(g:,
 let g:chopsticks_input_method_filetypes = get(g:, 'chopsticks_input_method_filetypes', [])
 let g:chopsticks_input_method_ignore_filetypes = get(g:,
     \ 'chopsticks_input_method_ignore_filetypes',
-    \ ['chopsticks-dashboard', 'fzf', 'help', 'netrw', 'qf', 'startify'])
+    \ ['chopsticks-dashboard', 'fern', 'fzf', 'help', 'netrw', 'qf', 'startify'])
 let g:chopsticks_enable_input_method = get(g:, 'chopsticks_enable_input_method',
     \ has('macunix') && executable(g:chopsticks_input_method_cmd))
 let s:input_method_assumed = ''

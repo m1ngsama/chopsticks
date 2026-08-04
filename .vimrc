@@ -381,11 +381,11 @@ function! s:DefineInterfaceColors() abort
     highlight CursorLine        ctermbg=235 cterm=NONE guibg=#0c4452 gui=NONE
     highlight CursorLineNr      ctermbg=235 ctermfg=136 cterm=bold guibg=#0c4452 guifg=#b58900 gui=bold
     highlight SignColumn        ctermbg=234 guibg=#002b36
-    highlight ChopDashboardLogo   ctermfg=33  cterm=none guifg=#268bd2 gui=none
-    highlight ChopDashboardItem   ctermfg=37  cterm=none guifg=#2aa198 gui=none
-    highlight ChopDashboardIcon   ctermfg=37  cterm=bold guifg=#2aa198 gui=bold
-    highlight ChopDashboardKey    ctermfg=166 cterm=none guifg=#cb4b16 gui=none
-    highlight ChopDashboardFooter ctermfg=136 cterm=italic guifg=#b58900 gui=italic
+    highlight ChopDashboardLogo   ctermfg=33  cterm=none guifg=#268bd3 gui=none
+    highlight ChopDashboardItem   ctermfg=37  cterm=none guifg=#29a298 gui=none
+    highlight ChopDashboardIcon   ctermfg=37  cterm=bold guifg=#29a298 gui=bold
+    highlight ChopDashboardKey    ctermfg=166 cterm=none guifg=#c94c16 gui=none
+    highlight ChopDashboardFooter ctermfg=136 cterm=italic guifg=#b28500 gui=italic
     highlight ChopDashboardStatus ctermbg=235 ctermfg=235 guibg=#073642 guifg=#073642
     if g:chopsticks_transparent_background
         highlight Normal ctermbg=NONE guibg=NONE
@@ -398,6 +398,14 @@ endfunction
 
 function! s:DashboardCenter(text) abort
     return repeat(' ', max([0, (&columns - strwidth(a:text)) / 2])) . a:text
+endfunction
+
+function! s:DashboardLogoLine(text) abort
+    let l:pane_width = 60
+    let l:header = "\t" . a:text
+    let l:pane_column = (&columns - l:pane_width) / 2
+    let l:indent = l:pane_column - (strwidth(l:header) - l:pane_width) / 2
+    return repeat(' ', max([0, l:indent])) . l:header
 endfunction
 
 function! s:DashboardPluginStats() abort
@@ -430,9 +438,12 @@ function! s:DashboardEnter() abort
     if !exists('b:chopsticks_dashboard_showtabline')
         let b:chopsticks_dashboard_showtabline = &showtabline
     endif
-    set showtabline=0
+    if !exists('b:chopsticks_dashboard_laststatus')
+        let b:chopsticks_dashboard_laststatus = &laststatus
+    endif
+    set showtabline=0 laststatus=0
     setlocal nonumber norelativenumber nolist nocursorline signcolumn=no
-    setlocal nowrap nospell foldcolumn=0 colorcolumn=
+    setlocal nowrap nospell foldcolumn=0 colorcolumn= tabstop=2
     let &l:statusline = '%#ChopDashboardStatus#%='
 endfunction
 
@@ -441,18 +452,24 @@ function! s:DashboardLeave() abort
         let &showtabline = b:chopsticks_dashboard_showtabline
         unlet b:chopsticks_dashboard_showtabline
     endif
+    if exists('b:chopsticks_dashboard_laststatus')
+        let &laststatus = b:chopsticks_dashboard_laststatus
+        unlet b:chopsticks_dashboard_laststatus
+    endif
 endfunction
 
 function! s:DashboardRender() abort
     if &filetype !=# 'chopsticks-dashboard'
         return
     endif
-    let l:logo = &columns >= 100 ? s:dashboard_logo : s:dashboard_compact_logo
-    let l:gap = winheight(0) >= 28 ? 1 : 0
-    let l:label_width = min([50, max([20, &columns - 10])])
-    let l:content_height = len(l:logo) + 2 + len(s:dashboard_items)
+    let l:full_logo = &columns >= 100
+    let l:logo = l:full_logo ? s:dashboard_logo : s:dashboard_compact_logo
+    let l:height = winheight(0) + &cmdheight
+    let l:gap = l:height >= 28 ? 1 : 0
+    let l:dashboard_width = min([60, max([20, &columns - 4])])
+    let l:content_height = len(l:logo) + 3 + len(s:dashboard_items)
         \ + (len(s:dashboard_items) - 1) * l:gap + 2
-    let l:top = max([1, (winheight(0) - l:content_height) / 2])
+    let l:top = max([1, (l:height - l:content_height) / 2])
     let l:lines = repeat([''], l:top)
     let l:logo_matches = []
     let l:item_matches = []
@@ -463,18 +480,21 @@ function! s:DashboardRender() abort
     let l:actions = {}
 
     for l:text in l:logo
-        let l:line = s:DashboardCenter(l:text)
+        let l:line = l:full_logo
+            \ ? s:DashboardLogoLine(l:text)
+            \ : s:DashboardCenter(l:text)
         call add(l:lines, l:line)
-        let l:column = strlen(matchstr(l:line, '^ *')) + 1
+        let l:column = match(l:line, '\S') + 1
         call add(l:logo_matches, [len(l:lines), l:column, strlen(l:text)])
     endfor
-    call extend(l:lines, ['', ''])
+    call extend(l:lines, ['', '', ''])
 
     for l:index in range(len(s:dashboard_items))
         let l:item = s:dashboard_items[l:index]
-        let l:body = l:item.icon . l:item.label
-            \ . repeat(' ', max([1, l:label_width - strwidth(l:item.label)]))
-            \ . l:item.key
+        let l:body = l:item.icon . ' ' . l:item.label
+        let l:body .= repeat(' ', max([1,
+            \ l:dashboard_width - strwidth(l:body) - strwidth(l:item.key)]))
+        let l:body .= l:item.key
         let l:line = s:DashboardCenter(l:body)
         call add(l:lines, l:line)
         let l:line_number = len(l:lines)
@@ -486,7 +506,8 @@ function! s:DashboardRender() abort
             \ [l:line_number, strlen(l:line) - strlen(l:item.key) + 1,
             \  strlen(l:item.key)])
         call add(l:item_lines, l:line_number)
-        let l:desc_cols[string(l:line_number)] = l:column + strlen(l:item.icon)
+        let l:desc_cols[string(l:line_number)] =
+            \ l:column + strlen(l:item.icon) + 1
         let l:actions[string(l:line_number)] = l:item.key
         if l:gap && l:index + 1 < len(s:dashboard_items)
             call add(l:lines, '')

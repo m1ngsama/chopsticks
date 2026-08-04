@@ -19,8 +19,6 @@ jobs:
     name: Vim and Markdown
     runs-on: ubuntu-latest
     timeout-minutes: 12
-    env:
-      CHOPSTICKS_TEST_HOME: ${{ runner.temp }}/chopsticks-home
 
     steps:
       - uses: actions/checkout@v5
@@ -33,6 +31,8 @@ jobs:
           vim --version | head -1
 
       - name: Install pinned Vim plugins
+        env:
+          CHOPSTICKS_TEST_HOME: ${{ runner.temp }}/chopsticks-home
         run: |
           mkdir -p "$CHOPSTICKS_TEST_HOME/.vim/autoload"
           curl -fsSL \
@@ -43,6 +43,8 @@ jobs:
               '+PlugInstall --sync' '+qall!'
 
       - name: Check Vim startup and Markdown setup
+        env:
+          CHOPSTICKS_TEST_HOME: ${{ runner.temp }}/chopsticks-home
         run: |
           HOME="$CHOPSTICKS_TEST_HOME" \
             vim -Nu "$GITHUB_WORKSPACE/.vimrc" -n -es \

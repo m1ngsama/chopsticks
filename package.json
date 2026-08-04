@@ -1,0 +1,18 @@
+{
+  "name": "chopsticks",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "format": "prettier --write README.md package.json .github/workflows/check.yml",
+    "format:check": "prettier --check README.md package.json .github/workflows/check.yml",
+    "lint": "npm run format:check && npm run lint:markdown && npm run lint:actions && npm run lint:shell && npm run lint:vim",
+    "lint:actions": "go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12",
+    "lint:markdown": "markdownlint README.md",
+    "lint:shell": "shellcheck scripts/lint-vim.sh",
+    "lint:vim": "sh scripts/lint-vim.sh"
+  },
+  "devDependencies": {
+    "markdownlint-cli": "0.49.1",
+    "prettier": "3.9.6"
+  }
+}

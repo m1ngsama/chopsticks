@@ -1,6 +1,7 @@
-" chopsticks — a modern, Vim-only development and Markdown writing setup
-set nocompatible
+set encoding=utf-8
 scriptencoding utf-8
+
+" chopsticks — a modern, Vim-only development and Markdown writing setup
 
 let s:startup_started_at = reltime()
 let g:chopsticks_version = '0.1.0'
@@ -24,8 +25,8 @@ if empty($MYVIMRC)
     let $MYVIMRC = expand('<sfile>:p')
 endif
 
-let mapleader = "\<Space>"
-let maplocalleader = ','
+let g:mapleader = "\<Space>"
+let g:maplocalleader = ','
 
 let s:is_remote = !empty($SSH_CONNECTION) || !empty($SSH_CLIENT) || !empty($SSH_TTY)
 let s:is_rich_terminal = !s:is_remote && has('termguicolors')
@@ -263,7 +264,6 @@ syntax enable
 
 " ── Vim defaults ────────────────────────────────────────────────────────────
 
-set encoding=utf-8
 set number relativenumber cursorline
 set scrolloff=10 sidescrolloff=5 nowrap
 set incsearch hlsearch ignorecase smartcase
@@ -287,7 +287,7 @@ set autoindent textwidth=0
 set synmaxcol=300 lazyredraw updatetime=300
 set complete-=i
 set completeopt=menuone,noinsert,noselect
-if has('popupwin')
+if exists('*popup_create')
     set completeopt+=popup
 endif
 set pumheight=15
@@ -948,7 +948,7 @@ function! ChopsticksHealthLines() abort
         \ '',
         \ printf('[ok] Vim %d.%d (%s)', v:version / 100, v:version % 100, has('gui_running') ? 'GUI' : 'terminal'),
         \ printf('[%s] +job +channel +timers +popupwin +terminal',
-        \     has('job') && has('channel') && has('timers') && has('popupwin') && has('terminal') ? 'ok' : '!!'),
+        \     has('job') && has('channel') && has('timers') && exists('*popup_create') && has('terminal') ? 'ok' : '!!'),
         \ '',
         \ 'Tools',
         \ ]

@@ -21,13 +21,23 @@ jobs:
     timeout-minutes: 12
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: 24
+          cache: npm
+
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version: 1.25.x
+          cache: false
 
       - name: Install Vim and check tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y curl fzf ripgrep vim
-          npm install --global markdownlint-cli
+          sudo apt-get install -y curl fzf ripgrep shellcheck vim
+          npm ci --ignore-scripts
           vim --version | head -1
 
       - name: Install pinned Vim plugins
@@ -50,9 +60,11 @@ jobs:
             vim -Nu "$GITHUB_WORKSPACE/.vimrc" -n -es \
               -c 'edit README.md' \
               -c 'tnoremap <Esc><Esc> <C-\><C-n>' \
-              -c 'source $MYVIMRC' \
+              -c "source $GITHUB_WORKSPACE/.vimrc" \
+              -c 'let g:test_key_lines = ChopsticksKeyLines() | let g:test_input_autocmds = execute("autocmd ChopsticksInputMethod")' \
+              -c "source $GITHUB_WORKSPACE/.vimrc" \
               -c 'doautocmd VimEnter' \
-              -c 'call assert_equal("0.1.0", get(g:, "chopsticks_version", "")) | call assert_equal(2, exists(":ChopsticksHealth")) | call assert_equal(2, exists(":ChopsticksCheatsheet")) | call assert_equal(2, exists(":ChopsticksFindFiles")) | call assert_equal(2, exists(":MarkdownPasteImage")) | call assert_true(index(ChopsticksHealthLines(), "[ok] all declared plugins installed") >= 0) | call assert_equal("markdown", &filetype) | call assert_true(&l:wrap) | call assert_match("WhichKey", maparg("\<Space>", "n")) | call assert_match("WhichKey", maparg(",", "n")) | call assert_match("ExploreRoot", maparg("\<Space>e", "n")) | call assert_match("FindFiles", maparg(";f", "n")) | call assert_equal("", maparg("\<Esc>\<Esc>", "t")) | call assert_match("TableModeToggle", maparg(",tt", "n")) | call assert_true(len(ChopsticksKeyLines()) >= 100) | call assert_match("Esc / Ctrl-q", join(ChopsticksKeyLines(), "\n")) | call assert_true(has_key(ChopsticksInputMethodInfo(), "preserve_external")) | call assert_match("InputMethodDeactivate", execute("autocmd ChopsticksInputMethod FocusLost")) | call assert_match("InputMethodActivate", execute("autocmd ChopsticksInputMethod FocusGained")) | if !empty(v:errors) | cquit | endif | qall!'
+              -c 'call assert_equal("0.1.0", get(g:, "chopsticks_version", "")) | call assert_equal(2, exists(":ChopsticksHealth")) | call assert_equal(2, exists(":ChopsticksCheatsheet")) | call assert_equal(2, exists(":ChopsticksFindFiles")) | call assert_equal(2, exists(":MarkdownPasteImage")) | call assert_true(index(ChopsticksHealthLines(), "[ok] all declared plugins installed") >= 0) | call assert_equal("markdown", &filetype) | call assert_true(&l:wrap) | call assert_match("WhichKey", maparg("\<Space>", "n")) | call assert_match("WhichKey", maparg(",", "n")) | call assert_match("ExploreRoot", maparg("\<Space>e", "n")) | call assert_match("FindFiles", maparg(";f", "n")) | call assert_equal("", maparg("\<Esc>\<Esc>", "t")) | call assert_match("TableModeToggle", maparg(",tt", "n")) | call assert_equal(g:test_key_lines, ChopsticksKeyLines()) | call assert_equal(g:test_input_autocmds, execute("autocmd ChopsticksInputMethod")) | call assert_true(len(ChopsticksKeyLines()) >= 100) | call assert_match("Esc / Ctrl-q", join(ChopsticksKeyLines(), "\n")) | call assert_true(has_key(ChopsticksInputMethodInfo(), "preserve_external")) | call assert_match("InputMethodDeactivate", execute("autocmd ChopsticksInputMethod FocusLost")) | call assert_match("InputMethodActivate", execute("autocmd ChopsticksInputMethod FocusGained")) | if !empty(v:errors) | cquit | endif | qall!'
           HOME="$CHOPSTICKS_TEST_HOME" \
             vim -Nu "$GITHUB_WORKSPACE/.vimrc" -n -es README.md \
               -c 'set columns=100 lines=40' \
@@ -68,7 +80,7 @@ jobs:
               -c 'call feedkeys("\<Space>e", "xt")' \
               -c 'call assert_equal("markdown", &filetype) | call assert_equal(1, winnr("$")) | call assert_equal(content_window, win_getid()) | if !empty(v:errors) | cquit | endif | qall!'
 
-      - name: Check documentation and whitespace
+      - name: Lint source and configuration
         run: |
-          markdownlint README.md
+          npm run lint
           git diff --check

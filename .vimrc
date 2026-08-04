@@ -381,8 +381,9 @@ function! s:DefineInterfaceColors() abort
     highlight CursorLine        ctermbg=235 cterm=NONE guibg=#0c4452 gui=NONE
     highlight CursorLineNr      ctermbg=235 ctermfg=136 cterm=bold guibg=#0c4452 guifg=#b58900 gui=bold
     highlight SignColumn        ctermbg=234 guibg=#002b36
-    highlight ChopDashboardLogo   ctermfg=33  cterm=bold guifg=#268bd2 gui=bold
+    highlight ChopDashboardLogo   ctermfg=33  cterm=none guifg=#268bd2 gui=none
     highlight ChopDashboardItem   ctermfg=37  cterm=none guifg=#2aa198 gui=none
+    highlight ChopDashboardIcon   ctermfg=37  cterm=bold guifg=#2aa198 gui=bold
     highlight ChopDashboardKey    ctermfg=166 cterm=none guifg=#cb4b16 gui=none
     highlight ChopDashboardFooter ctermfg=136 cterm=italic guifg=#b58900 gui=italic
     highlight ChopDashboardStatus ctermbg=235 ctermfg=235 guibg=#073642 guifg=#073642
@@ -455,6 +456,7 @@ function! s:DashboardRender() abort
     let l:lines = repeat([''], l:top)
     let l:logo_matches = []
     let l:item_matches = []
+    let l:icon_matches = []
     let l:key_matches = []
     let l:item_lines = []
     let l:desc_cols = {}
@@ -478,6 +480,8 @@ function! s:DashboardRender() abort
         let l:line_number = len(l:lines)
         let l:column = strlen(matchstr(l:line, '^ *')) + 1
         call add(l:item_matches, [l:line_number, l:column, strlen(l:body)])
+        call add(l:icon_matches,
+            \ [l:line_number, l:column, strlen(l:item.icon)])
         call add(l:key_matches,
             \ [l:line_number, strlen(l:line) - strlen(l:item.key) + 1,
             \  strlen(l:item.key)])
@@ -502,6 +506,7 @@ function! s:DashboardRender() abort
     call clearmatches()
     call matchaddpos('ChopDashboardLogo', l:logo_matches, 10)
     call matchaddpos('ChopDashboardItem', l:item_matches, 10)
+    call matchaddpos('ChopDashboardIcon', l:icon_matches, 20)
     call matchaddpos('ChopDashboardKey', l:key_matches, 20)
     call matchaddpos('ChopDashboardFooter',
         \ [[len(l:lines), l:footer_column, strlen(l:footer)]], 10)
@@ -752,13 +757,38 @@ function! s:CopyPath(relative) abort
     echo 'copied: ' . l:path
 endfunction
 
+function! s:ExplorerWindow() abort
+    for l:window in getwininfo()
+        if l:window.tabnr == tabpagenr()
+            \ && getbufvar(l:window.bufnr, '&filetype') ==# 'netrw'
+            return l:window.winid
+        endif
+    endfor
+    return 0
+endfunction
+
+function! s:ToggleExplorer(directory) abort
+    let l:explorer = s:ExplorerWindow()
+    if l:explorer
+        let l:origin = win_getid()
+        if win_gotoid(l:explorer)
+            close
+        endif
+        if l:origin != l:explorer && win_id2win(l:origin) > 0
+            call win_gotoid(l:origin)
+        endif
+        return
+    endif
+    execute 'Lexplore ' . fnameescape(a:directory)
+endfunction
+
 function! s:ExploreRoot() abort
-    execute 'Lexplore ' . fnameescape(s:ProjectRoot())
+    call s:ToggleExplorer(s:ProjectRoot())
 endfunction
 
 function! s:ExploreHere() abort
     let l:directory = empty(expand('%:p')) ? getcwd() : expand('%:p:h')
-    execute 'Lexplore ' . fnameescape(l:directory)
+    call s:ToggleExplorer(l:directory)
 endfunction
 
 function! s:ToggleQuickfix() abort

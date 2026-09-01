@@ -626,8 +626,16 @@ set listchars=tab:→\ ,trail:·,extends:›,precedes:‹,nbsp:␣
 if has('patch-8.2.2508')
     execute 'set fillchars+=eob:\ '
 endif
+" has('termguicolors') only reports that Vim was built with the feature. The
+" Windows console rejects the option at assignment time with E954, so the
+" capability is only known once it has been set.
 if s:is_rich_terminal
-    set termguicolors
+    try
+        set termguicolors
+    catch /:E954:/
+        set notermguicolors
+        let s:is_rich_terminal = 0
+    endtry
 endif
 set background=dark
 

@@ -2,6 +2,15 @@
 set -eu
 umask 077
 
+# Git Bash rewrites arguments that look like POSIX paths when it starts a
+# native program. That mangles the Windows paths path_for_vim has already
+# produced: -V1C:/Users/... reached Vim as -V1C:C:/Program Files/Git/Users/...,
+# so the verbose log could not be opened and Vim reported E474 for the option.
+# Every path handed to Vim here is converted explicitly, so the extra pass is
+# redundant wherever it is not harmful. The variable is ignored elsewhere.
+MSYS2_ARG_CONV_EXCL='*'
+export MSYS2_ARG_CONV_EXCL
+
 vimlint_commit=cec40c28f119a5f4b92ceb0b6aae525122a81244
 vimlparser_commit=075a4fa4baf221fbbc788d9e8b8624c35c3e8876
 chopsticks_root=$(cd -- "$(dirname -- "$0")/.." && pwd)

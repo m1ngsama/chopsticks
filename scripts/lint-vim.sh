@@ -15,6 +15,15 @@ vimlint_commit=cec40c28f119a5f4b92ceb0b6aae525122a81244
 vimlparser_commit=075a4fa4baf221fbbc788d9e8b8624c35c3e8876
 chopsticks_root=$(cd -- "$(dirname -- "$0")/.." && pwd)
 test_root=$(mktemp -d "${TMPDIR:-/tmp}/chopsticks-vim-test.XXXXXX")
+# The runner's TEMP carries 8.3 components. Vim's ':p' resolves them only once
+# the directory exists, so a path built before mkdir and compared afterwards
+# spells the same directory two ways: RUNNER~1 against runneradmin. Resolve the
+# root here, where it does exist, and every derived path inherits the long form.
+case $(uname -s) in
+    CYGWIN* | MINGW* | MSYS*)
+        test_root=$(cygpath -u "$(cygpath -m -l "$test_root")")
+        ;;
+esac
 lint_cache=${CHOPSTICKS_LINT_CACHE:-$test_root/linters}
 disabled_git_hooks=$test_root/disabled-git-hooks
 vimlint_dir=$lint_cache/vim-vimlint
@@ -66,12 +75,7 @@ path_for_vim() {
             if [ -z "$1" ]; then
                 printf '\n'
             else
-                # -l resolves 8.3 components. The runner's TEMP carries them,
-                # and Vim expands such a path to its long form on its own, so
-                # without this the harness and Vim spell the same directory two
-                # ways and every path assertion compares RUNNER~1 to
-                # runneradmin.
-                cygpath -m -l "$1"
+                cygpath -m "$1"
             fi
             ;;
         *) printf '%s\n' "$1" ;;

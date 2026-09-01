@@ -36,7 +36,7 @@ distinguishes these failures from the intentionally plugin-free
 `isolated-core` profile.
 
 `--check` exits nonzero when a regression redline is crossed. When an explicit
-cold-cache command is supplied, it also enforces the 200 ms cold no-file
+cold-cache command is supplied, it also enforces the 500 ms cold no-file
 startup redline; override that independently with
 `--cold-startup-p95-budget-ms`. Other cold workloads remain informational. The
 JSON report records the commit and dirty state, Vim and Python versions, CPU
@@ -76,11 +76,11 @@ up to; hosted CI enforces the warm automated subset described below.
 
 | Metric                         |      Ideal | Regression redline |
 | ------------------------------ | ---------: | -----------------: |
-| No-file cold startup p95       |  <= 100 ms |           > 200 ms |
-| No-file warm startup p95       |   <= 50 ms |           > 100 ms |
-| Open representative 1 MiB file |  <= 150 ms |           > 300 ms |
-| Open 1 MiB long line           |  <= 150 ms |           > 300 ms |
-| Dense-fence stress case        |  <= 500 ms |           > 750 ms |
+| No-file cold startup p95       |  <= 100 ms |           > 500 ms |
+| No-file warm startup p95       |   <= 50 ms |           > 250 ms |
+| Open representative 1 MiB file |  <= 150 ms |           > 900 ms |
+| Open 1 MiB long line           |  <= 150 ms |           > 900 ms |
+| Dense-fence stress case        |  <= 500 ms |          > 1800 ms |
 | Normal key to redraw p99       | <= 16.7 ms |            > 33 ms |
 | Idle CPU                       |         0% |             > 0.5% |
 | Startup network requests       |          0 |                > 0 |
@@ -92,6 +92,14 @@ uploads the complete JSON report for 14 days. Twenty-one samples make
 nearest-rank p95 the twentieth result instead of making one outlier identical
 to p95. Hosted runners are noisy, so compare the artifact with earlier runs
 before changing a budget.
+
+The redlines sit near twice the slowest hosted measurement on purpose. Those
+runners differ by more than 1.6x between hosts: three consecutive runs of one
+commit reported 105 ms of warm no-file startup where an earlier run of the
+same commit reported 64 ms, and two attempts of a single run disagreed by more
+than half on the long-line workload. A redline tight enough to fail on the
+slower host reports the machine rather than the code. The ideal column is what
+a quiet local machine should reach, and is the number worth optimizing toward.
 
 Formatting, preview, and lint commands must remain user-initiated. Startup
 must stay offline, and a missing plugin or external tool must not prevent Vim

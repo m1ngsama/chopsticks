@@ -232,6 +232,16 @@ run_ui_test() {
         elif [ -s "$test_log" ]; then
             sed 's/^/  /' "$test_log" >&2
         fi
+        # An assertion on v:errmsg reports the message but not where it came
+        # from, which is the part that matters when a platform raises an error
+        # nothing else does. The verbose log keeps that context.
+        if [ -s "$test_log" ]; then
+            if grep -n 'E[0-9][0-9]*:' "$test_log" >/dev/null 2>&1; then
+                printf '  --- verbose log around the first Vim error ---\n' >&2
+                grep -n -B10 -m1 'E[0-9][0-9]*:' "$test_log" \
+                    | sed 's/^/  /' >&2
+            fi
+        fi
         return 1
     fi
 }

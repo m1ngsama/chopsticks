@@ -100,29 +100,36 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="exit non-zero when a regression budget is exceeded",
     )
+    # Redlines carry roughly twice the slowest measurement observed on hosted
+    # runners, because those runners differ by more than 1.6x between hosts:
+    # three consecutive runs of one commit read 105 ms of warm no-file startup
+    # where an earlier run of the same commit read 64 ms. Budgets tight enough
+    # to fail on the slower host cannot tell a regression from the machine.
+    # They stay tight enough for what they are for: the long-line regression
+    # this suite caught overshot its redline by a factor of 65.
     parser.add_argument(
         "--startup-p95-budget-ms",
         type=float,
-        default=100.0,
-        help="warm no-file startup p95 redline (default: 100 ms)",
+        default=250.0,
+        help="warm no-file startup p95 redline (default: 250 ms)",
     )
     parser.add_argument(
         "--cold-startup-p95-budget-ms",
         type=float,
-        default=200.0,
-        help="cold no-file startup p95 redline (default: 200 ms)",
+        default=500.0,
+        help="cold no-file startup p95 redline (default: 500 ms)",
     )
     parser.add_argument(
         "--markdown-p95-budget-ms",
         type=float,
-        default=300.0,
-        help="warm Markdown-open p95 redline (default: 300 ms)",
+        default=900.0,
+        help="warm Markdown-open p95 redline (default: 900 ms)",
     )
     parser.add_argument(
         "--pathological-p95-budget-ms",
         type=float,
-        default=750.0,
-        help="many-fence Markdown p95 redline (default: 750 ms)",
+        default=1800.0,
+        help="many-fence Markdown p95 redline (default: 1800 ms)",
     )
     parser.add_argument(
         "--runtime-bytes-budget",

@@ -70,7 +70,7 @@ class ArgumentTests(unittest.TestCase):
         ):
             overridden = benchmark.parse_args()
 
-        self.assertEqual(200.0, defaults.cold_startup_p95_budget_ms)
+        self.assertEqual(500.0, defaults.cold_startup_p95_budget_ms)
         self.assertEqual(275.5, overridden.cold_startup_p95_budget_ms)
 
     def test_collected_cold_startup_can_violate_its_redline(self) -> None:

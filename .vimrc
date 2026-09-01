@@ -45,10 +45,7 @@ function! s:NormalizeDirectory(value, fallback) abort
         \ ? a:value : a:fallback
     let l:directory = simplify(fnamemodify(expand(l:value), ':p'))
     if l:directory !~# '[/\\]$'
-        " ':p' appends the separator itself for a directory that exists. For
-        " one that does not, match the separator already in the path instead of
-        " mixing styles, which on Windows produced 'C:\dir\name/'.
-        let l:directory .= s:is_windows && l:directory =~# '\\' ? '\' : '/'
+        let l:directory .= '/'
     endif
     return l:directory
 endfunction

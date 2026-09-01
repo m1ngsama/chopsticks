@@ -152,6 +152,8 @@ jobs:
             test_log="${{ runner.temp }}/plugin-$test_case.log"
             if ! env \
               HOME="$CHOPSTICKS_TEST_HOME" \
+              COLORTERM=truecolor \
+              TERM=xterm-256color \
               CHOPSTICKS_TEST_CASE="$test_case" \
               CHOPSTICKS_TEST_ERRORS="$test_errors" \
               vim -Nu "$GITHUB_WORKSPACE/.vimrc" -i NONE -n -es \

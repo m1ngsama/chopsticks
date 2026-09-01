@@ -1,6 +1,10 @@
 scriptencoding utf-8
 
 let s:startup_errmsg = v:errmsg
+" v:errmsg carries the message without a location, which is the half that
+" matters when one platform raises an error no other does. The message history
+" keeps whatever was reported around it.
+let s:startup_messages = execute('messages')
 set nomore
 
 let s:case = $CHOPSTICKS_TEST_CASE
@@ -8,7 +12,10 @@ let s:root = fnamemodify(expand('<sfile>:p'), ':h:h')
 execute 'cd ' . fnameescape(s:root)
 
 function! s:AssertPublicInterface() abort
-    call assert_equal('', s:startup_errmsg)
+    if !empty(s:startup_errmsg)
+        call assert_report('startup error: ' . s:startup_errmsg . ' | messages: '
+            \ . substitute(trim(s:startup_messages), '\n', ' // ', 'g'))
+    endif
     call assert_equal(2, exists(':ChopsticksUiDensity'))
     call assert_equal(2, exists(':ChopsticksTransparencyToggle'))
     call assert_equal(2, exists(':ChopsticksDashboard'))

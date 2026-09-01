@@ -35,8 +35,8 @@ releases of the current line.
   for large files.
 - The vim-plug bootstrap is checksum-verified, plugins and Actions are
   commit-pinned, post-install download hooks are forbidden, and CI enforces the
-  pin policy. Dependabot and an isolated, verified Vim-lint cache keep those
-  dependencies maintainable.
+  pin policy. An isolated, verified Vim-lint cache keeps those dependencies
+  maintainable.
 - Plugins, local configuration, sessions, and generated state now derive from
   Vim's platform-native data root (`~/.vim` or `~/vimfiles`), with an explicit
   `g:chopsticks_data_dir` override.

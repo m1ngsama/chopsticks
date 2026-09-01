@@ -24,8 +24,8 @@
   "scripts": {
     "benchmark": "node scripts/run-python.cjs -B scripts/benchmark-vim.py",
     "demo": "vhs .github/demo.tape",
-    "format": "prettier --write README.md CONTRIBUTING.md CHANGELOG.md SECURITY.md docs/*.md .github/*.md .github/*.yml \".github/ISSUE_TEMPLATE/*.{md,yml}\" \".github/workflows/*.{yml,yaml}\" \"scripts/*.cjs\" \"tests/*.cjs\" .markdownlint.json package.json",
-    "format:check": "prettier --check README.md CONTRIBUTING.md CHANGELOG.md SECURITY.md docs/*.md .github/*.md .github/*.yml \".github/ISSUE_TEMPLATE/*.{md,yml}\" \".github/workflows/*.{yml,yaml}\" \"scripts/*.cjs\" \"tests/*.cjs\" .markdownlint.json package.json",
+    "format": "prettier --write README.md CONTRIBUTING.md CHANGELOG.md SECURITY.md docs/*.md .github/*.md \".github/ISSUE_TEMPLATE/*.{md,yml}\" \".github/workflows/*.{yml,yaml}\" \"scripts/*.cjs\" \"tests/*.cjs\" .markdownlint.json package.json",
+    "format:check": "prettier --check README.md CONTRIBUTING.md CHANGELOG.md SECURITY.md docs/*.md .github/*.md \".github/ISSUE_TEMPLATE/*.{md,yml}\" \".github/workflows/*.{yml,yaml}\" \"scripts/*.cjs\" \"tests/*.cjs\" .markdownlint.json package.json",
     "lint": "npm run format:check && npm run lint:markdown && npm run lint:dependencies && npm run lint:signatures && npm run lint:supply-chain && npm run lint:actions && npm run lint:node && npm run lint:shell && npm run lint:vim",
     "lint:actions": "go run github.com/rhysd/actionlint/cmd/actionlint@914e7df21a07ef503a81201c76d2b11c789d3fca",
     "lint:dependencies": "npm audit --audit-level=high",

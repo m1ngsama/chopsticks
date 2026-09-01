@@ -187,7 +187,9 @@ not a timing row: ignored
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             home = root / "home with spaces"
-            plugin_root = home / ".vim" / "plugged"
+            # The parser resolves the plugin root from Vim's native data
+            # directory, which is ~/vimfiles on Windows and ~/.vim elsewhere.
+            plugin_root = benchmark.vim_data_dir(home) / "plugged"
             alpha_plugin = plugin_root / "alpha" / "plugin" / "alpha.vim"
             alpha_autoload = plugin_root / "alpha" / "autoload" / "alpha.vim"
             beta_plugin = plugin_root / "beta" / "plugin" / "beta.vim"

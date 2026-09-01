@@ -633,7 +633,9 @@ if s:is_rich_terminal
     try
         set termguicolors
     catch /:E954:/
-        set notermguicolors
+        " The console rejects the assignment in either direction, so clearing
+        " the option explicitly raises E954 a second time. The failed set left
+        " it off already.
         let s:is_rich_terminal = 0
     endtry
 endif

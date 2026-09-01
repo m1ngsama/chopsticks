@@ -54,6 +54,7 @@ override either derived path independently.
 | `g:chopsticks_markdown_conceal`       | `0`                               | `0`, `1`                      | Conceals Markdown markup                 |
 | `g:chopsticks_markdown_image_dir`     | `assets`                          | Relative directory            | Stores images pasted with `,i`           |
 | `g:chopsticks_auto_lint`              | `0`                               | `0`, `1`                      | Lints automatically on enter and save    |
+| `g:chopsticks_long_line_threshold`    | `4096`                            | Columns, or `0` to disable    | Drops `breakindent` on very long lines   |
 
 For automatic switches, the strings `on`, `true`, and `yes` are also enabled
 values; `off`, `false`, and `no` are disabled values. The numeric forms are the

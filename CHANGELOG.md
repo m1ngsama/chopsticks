@@ -57,6 +57,12 @@ releases of the current line.
 - Session loading now refuses modified buffers and symlink or non-regular
   inputs, enforces private POSIX permissions, and respects the Windows profile
   ACL boundary.
+- Buffers holding a very long line no longer freeze a redraw. `breakindent` is
+  recomputed while laying out every wrapped screen line, so a 1 MiB single-line
+  Markdown file cost tens of seconds per redraw; it is now dropped for such
+  buffers, controlled by `g:chopsticks_long_line_threshold`.
+- The benchmark's plugin-parser test now derives the vim-plug root from Vim's
+  native data directory instead of assuming `~/.vim`, so it passes on Windows.
 
 ## [0.1.0] - 2026-08-04
 

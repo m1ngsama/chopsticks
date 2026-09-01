@@ -92,6 +92,8 @@ let g:chopsticks_markdown_spell = get(g:, 'chopsticks_markdown_spell', 1)
 let g:chopsticks_markdown_conceal = get(g:, 'chopsticks_markdown_conceal', 0)
 let g:chopsticks_markdown_image_dir = get(g:, 'chopsticks_markdown_image_dir', 'assets')
 let g:chopsticks_auto_lint = get(g:, 'chopsticks_auto_lint', 0)
+let g:chopsticks_long_line_threshold =
+    \ get(g:, 'chopsticks_long_line_threshold', 4096)
 let g:chopsticks_ui_density = get(g:, 'chopsticks_ui_density', 'balanced')
 let g:chopsticks_colorscheme = get(g:, 'chopsticks_colorscheme', 'everforest')
 let g:chopsticks_transparent_background = get(g:, 'chopsticks_transparent_background', 'auto')
@@ -2331,6 +2333,44 @@ function! s:MarkdownHelp() abort
         \ ])
 endfunction
 
+" Vim recomputes the break indent while laying out every wrapped screen line,
+" so one very long line degrades far worse than linearly: a 1 MiB single-line
+" Markdown file turns a single redraw into tens of seconds. The file-size
+" guard below does not catch this, because the cost follows line length rather
+" than total bytes. Drop the option on buffers that contain such a line.
+" Detection itself has to stay cheap, because this runs for every buffer that
+" reaches a window. A virtual-column search is not an option: computing screen
+" columns over an enormous line is slower than the problem it looks for.
+function! s:HasLongLine() abort
+    let l:lines = line('$')
+    if l:lines <= 0
+        return 0
+    endif
+    " Constant time, and decisive for the case that actually degrades: a buffer
+    " that is mostly one very long line.
+    let l:bytes = line2byte(l:lines + 1)
+    if l:bytes > 0 && l:bytes / l:lines > g:chopsticks_long_line_threshold
+        return 1
+    endif
+    " Exact, but only for buffers small enough that walking them costs well
+    " under a millisecond, so this guard never shows up in a startup budget.
+    " Larger buffers keep the constant-time answer above.
+    if l:lines > 2000
+        return 0
+    endif
+    return max(map(range(1, l:lines), 'col([v:val, "$"])'))
+        \ > g:chopsticks_long_line_threshold
+endfunction
+
+function! s:GuardLongLines() abort
+    if !exists('+breakindent') || g:chopsticks_long_line_threshold <= 0
+        return
+    endif
+    if s:HasLongLine()
+        setlocal nobreakindent
+    endif
+endfunction
+
 function! s:MarkdownSetup() abort
     setlocal wrap linebreak breakindent textwidth=0 colorcolumn=0
     setlocal norelativenumber nolist signcolumn=auto foldlevel=99
@@ -2380,6 +2420,7 @@ function! s:MarkdownSetup() abort
         nnoremap <silent><buffer> <localleader>l :ALELint<CR>
         nnoremap <silent><buffer> <localleader>f :ALEFix<CR>
     endif
+    call s:GuardLongLines()
 endfunction
 
 function! s:ProseSetup() abort
@@ -2391,6 +2432,7 @@ function! s:ProseSetup() abort
     if &filetype ==# 'gitcommit' || &filetype ==# 'mail'
         setlocal spell spelllang=en_us,cjk
     endif
+    call s:GuardLongLines()
 endfunction
 
 function! s:GoyoEnter() abort
@@ -2736,6 +2778,9 @@ augroup Chopsticks
     autocmd BufWritePre * call <SID>MakeParent(expand('<afile>'))
     autocmd BufReadPost * if getfsize(expand('<afile>')) > 10 * 1024 * 1024 |
         \ setlocal syntax= | let b:ale_enabled = 0 | endif
+    " 'breakindent' is global, so guard every buffer and not only prose ones.
+    " BufWinEnter runs after filetype setup, which is where it gets re-enabled.
+    autocmd BufWinEnter * call <SID>GuardLongLines()
     autocmd QuickFixCmdPost [^l]* cwindow
     autocmd QuickFixCmdPost l* lwindow
     autocmd FileType fern call <SID>FernSetup()

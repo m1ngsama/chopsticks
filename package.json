@@ -1,15 +1,43 @@
 {
   "name": "chopsticks",
-  "version": "0.1.0",
+  "version": "0.2.0",
+  "description": "A single-file Vim development and Markdown writing setup",
   "private": true,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/m1ngsama/chopsticks.git"
+  },
+  "bugs": {
+    "url": "https://github.com/m1ngsama/chopsticks/issues"
+  },
+  "homepage": "https://github.com/m1ngsama/chopsticks#readme",
+  "keywords": [
+    "vim",
+    "vimrc",
+    "developer-tools",
+    "markdown"
+  ],
+  "engines": {
+    "node": "^22.22.2 || ^24.15.0 || >=26.0.0"
+  },
   "scripts": {
-    "format": "prettier --write README.md package.json .github/workflows/check.yml",
-    "format:check": "prettier --check README.md package.json .github/workflows/check.yml",
-    "lint": "npm run format:check && npm run lint:markdown && npm run lint:actions && npm run lint:shell && npm run lint:vim",
-    "lint:actions": "go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12",
-    "lint:markdown": "markdownlint README.md",
-    "lint:shell": "shellcheck scripts/lint-vim.sh",
-    "lint:vim": "sh scripts/lint-vim.sh"
+    "benchmark": "node scripts/run-python.cjs -B scripts/benchmark-vim.py",
+    "demo": "vhs .github/demo.tape",
+    "format": "prettier --write README.md CONTRIBUTING.md CHANGELOG.md SECURITY.md docs/*.md .github/*.md .github/*.yml \".github/ISSUE_TEMPLATE/*.{md,yml}\" \".github/workflows/*.{yml,yaml}\" \"scripts/*.cjs\" \"tests/*.cjs\" .markdownlint.json package.json",
+    "format:check": "prettier --check README.md CONTRIBUTING.md CHANGELOG.md SECURITY.md docs/*.md .github/*.md .github/*.yml \".github/ISSUE_TEMPLATE/*.{md,yml}\" \".github/workflows/*.{yml,yaml}\" \"scripts/*.cjs\" \"tests/*.cjs\" .markdownlint.json package.json",
+    "lint": "npm run format:check && npm run lint:markdown && npm run lint:dependencies && npm run lint:signatures && npm run lint:supply-chain && npm run lint:actions && npm run lint:node && npm run lint:shell && npm run lint:vim",
+    "lint:actions": "go run github.com/rhysd/actionlint/cmd/actionlint@914e7df21a07ef503a81201c76d2b11c789d3fca",
+    "lint:dependencies": "npm audit --audit-level=high",
+    "lint:markdown": "markdownlint README.md CONTRIBUTING.md CHANGELOG.md SECURITY.md docs/*.md .github/*.md .github/ISSUE_TEMPLATE/*.md",
+    "lint:node": "node --check scripts/run-python.cjs && node --check tests/test_run_python.cjs",
+    "lint:shell": "shellcheck scripts/*.sh",
+    "lint:signatures": "npm audit signatures",
+    "lint:supply-chain": "sh scripts/check-pins.sh && sh tests/check-pins.sh",
+    "lint:vim": "sh scripts/lint-vim.sh",
+    "test": "npm run test:launcher && npm run test:benchmark && npm run lint:vim",
+    "test:benchmark": "node scripts/run-python.cjs -B -m unittest discover -s tests -p test_*.py",
+    "test:launcher": "node --test tests/test_run_python.cjs"
   },
   "devDependencies": {
     "markdownlint-cli": "0.49.1",

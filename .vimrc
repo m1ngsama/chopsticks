@@ -1488,7 +1488,9 @@ function! s:ProjectRoot() abort
         let l:separator = l:directory =~# '[/\\]$' ? '' : '/'
         let l:marker = l:directory . l:separator . '.git'
         if isdirectory(l:marker) || filereadable(l:marker)
-            return fnamemodify(l:marker, ':h')
+            " Directories here are canonical: absolute, simplified, and ending
+            " with a separator, the shape g:chopsticks_data_dir already has.
+            return s:NormalizeDirectory(fnamemodify(l:marker, ':h'), getcwd())
         endif
         let l:parent = fnamemodify(l:directory, ':h')
         if l:parent ==# l:directory
@@ -1497,7 +1499,7 @@ function! s:ProjectRoot() abort
         endif
         let l:directory = l:parent
     endwhile
-    return getcwd()
+    return s:NormalizeDirectory(getcwd(), getcwd())
 endfunction
 
 function! s:SessionRoot() abort

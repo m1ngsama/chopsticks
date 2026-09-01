@@ -1,0 +1,63 @@
+name: Bug report
+description: Report reproducible broken or unexpected behavior
+title: "bug: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. For sensitive security issues, stop here and follow the security policy link below the issue chooser without disclosing details publicly.
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened?
+      description: Describe the problem and its user-visible impact.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Minimal reproduction
+      description: List the smallest file, commands, and keystrokes that reproduce the problem.
+      placeholder: |
+        1. Start Vim with ...
+        2. Open ...
+        3. Press ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Include the chopsticks commit, OS, `vim --version | head -1`, terminal, and whether this is SSH. Neovim is not supported.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: health
+    attributes:
+      label: Health and messages
+      description: Paste `:ChopsticksHealth` and relevant `:messages` output after removing private paths or project data.
+      render: text
+  - type: textarea
+    id: config
+    attributes:
+      label: Local overrides
+      description: Paste the relevant part of `<data-dir>/chopsticks.local.vim` (`~/.vim` on Unix or `~/vimfiles` on Windows), with secrets and private paths removed.
+      render: vim
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I reproduced this with the latest `main` branch or explained why I could not.
+          required: true
+        - label: I searched existing issues for the same problem.
+          required: true

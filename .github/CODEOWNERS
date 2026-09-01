@@ -1,0 +1,14 @@
+# Keep executable and supply-chain changes under explicit maintainer review.
+/.github/ @m1ngsama
+/.gitattributes @m1ngsama
+/.npmrc @m1ngsama
+/.vimrc @m1ngsama
+/CONTRIBUTING.md @m1ngsama
+/README.md @m1ngsama
+/SECURITY.md @m1ngsama
+/docs/performance.md @m1ngsama
+/docs/releasing.md @m1ngsama
+/package.json @m1ngsama
+/package-lock.json @m1ngsama
+/scripts/ @m1ngsama
+/tests/ @m1ngsama

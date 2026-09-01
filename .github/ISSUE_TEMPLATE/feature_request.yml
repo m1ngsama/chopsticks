@@ -1,0 +1,48 @@
+name: Feature request
+description: Propose a focused improvement to the Vim-first workflow
+title: "feature: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What workflow is difficult today, and who encounters it?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: Describe the user-facing behavior, not only an implementation.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Include native Vim features, existing commands, or smaller changes you tried.
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Primary area
+      options:
+        - Editing and navigation
+        - Interface and discoverability
+        - LSP, linting, or formatting
+        - Git and project workflow
+        - Markdown and writing
+        - Installation or compatibility
+        - Documentation and tests
+    validations:
+      required: true
+  - type: checkboxes
+    id: contract
+    attributes:
+      label: Project fit
+      options:
+        - label: This can preserve Vim 8.2 support and offline startup.
+          required: true
+        - label: I searched existing issues and the cheat sheet for an existing solution.
+          required: true

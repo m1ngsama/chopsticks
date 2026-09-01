@@ -3,9 +3,12 @@ scriptencoding utf-8
 
 " chopsticks — a modern, Vim-only development and Markdown writing setup
 
-let s:startup_started_at = reltime()
+if !exists('s:startup_started_at')
+    let s:startup_started_at = reltime()
+endif
 let s:directory_startup_opened = 0
-let g:chopsticks_version = '0.1.0'
+let s:is_windows = has('win32') || has('win64')
+let g:chopsticks_version = '0.2.0'
 
 if has('nvim')
     echoerr 'chopsticks targets Vim, not Neovim'
@@ -13,6 +16,10 @@ if has('nvim')
 endif
 if v:version < 802
     echoerr 'chopsticks requires Vim 8.2 or newer'
+    finish
+endif
+if s:is_windows && !has('patch-9.1.1947')
+    echoerr 'chopsticks requires Vim 9.1.1947 or newer on Windows'
     finish
 endif
 
@@ -33,33 +40,147 @@ let s:is_remote = !empty($SSH_CONNECTION) || !empty($SSH_CLIENT) || !empty($SSH_
 let s:is_rich_terminal = !s:is_remote && has('termguicolors')
     \ && ($COLORTERM ==# 'truecolor' || $COLORTERM ==# '24bit')
 
+function! s:NormalizeDirectory(value, fallback) abort
+    let l:value = type(a:value) == type('') && !empty(a:value)
+        \ ? a:value : a:fallback
+    let l:directory = simplify(fnamemodify(expand(l:value), ':p'))
+    if l:directory !~# '[/\\]$'
+        let l:directory .= '/'
+    endif
+    return l:directory
+endfunction
+
+function! s:DirectoryFileType(path) abort
+    " getftype() follows a directory symlink when its name ends in a slash.
+    let l:path = substitute(a:path, '[/\\]$', '', '')
+    if empty(l:path)
+        let l:path = a:path
+    elseif s:is_windows && l:path =~? '^\a:$'
+        let l:path .= '/'
+    endif
+    return getftype(l:path)
+endfunction
+
+" Vim's native user runtime is ~/.vim on Unix and ~/vimfiles on Windows.
+" Keep generated state and optional plugins together under the same root.
+let s:default_data_dir = s:is_windows ? '~/vimfiles' : '~/.vim'
+let g:chopsticks_data_dir = s:NormalizeDirectory(
+    \ get(g:, 'chopsticks_data_dir', s:default_data_dir),
+    \ s:default_data_dir)
+
+" Keep machine-specific preferences outside this tracked configuration.  The
+" path is overridable so repeatable harnesses can opt out without changing a
+" user's file.
+let s:local_config = get(g:, 'chopsticks_local_config',
+    \ g:chopsticks_data_dir . 'chopsticks.local.vim')
+if type(s:local_config) == type('') && !empty(s:local_config)
+    let s:local_config = expand(s:local_config)
+    if filereadable(s:local_config)
+        execute 'source ' . fnameescape(s:local_config)
+    endif
+endif
+unlet s:local_config
+
+" A local config is executable code and may replace the public value.  Restore
+" the invariant before any path is derived from it.
+let g:chopsticks_data_dir = s:NormalizeDirectory(
+    \ get(g:, 'chopsticks_data_dir', s:default_data_dir),
+    \ s:default_data_dir)
+
 " Personal switches. Override these before sourcing this file when needed.
 let g:chopsticks_markdown_spell = get(g:, 'chopsticks_markdown_spell', 1)
 let g:chopsticks_markdown_conceal = get(g:, 'chopsticks_markdown_conceal', 0)
 let g:chopsticks_markdown_image_dir = get(g:, 'chopsticks_markdown_image_dir', 'assets')
-let g:chopsticks_transparent_background = get(g:, 'chopsticks_transparent_background', 1)
+let g:chopsticks_auto_lint = get(g:, 'chopsticks_auto_lint', 0)
+let g:chopsticks_ui_density = get(g:, 'chopsticks_ui_density', 'balanced')
+let g:chopsticks_colorscheme = get(g:, 'chopsticks_colorscheme', 'everforest')
+let g:chopsticks_transparent_background = get(g:, 'chopsticks_transparent_background', 'auto')
+let g:chopsticks_dashboard = get(g:, 'chopsticks_dashboard', 'auto')
+let g:chopsticks_bufferline = get(g:, 'chopsticks_bufferline', 'auto')
+let g:chopsticks_system_clipboard = get(g:, 'chopsticks_system_clipboard', 'auto')
+let s:default_session_dir = g:chopsticks_data_dir . '.sessions'
+let g:chopsticks_session_dir = get(g:, 'chopsticks_session_dir',
+    \ s:default_session_dir)
+let g:chopsticks_session_dir = s:NormalizeDirectory(
+    \ g:chopsticks_session_dir, s:default_session_dir)
 let g:chopsticks_icons = get(g:, 'chopsticks_icons', 'auto')
 let g:chopsticks_use_fern = get(g:, 'chopsticks_use_fern', 1)
+
+function! s:ResolveSwitch(value, automatic) abort
+    if type(a:value) == type(0)
+        return a:value != 0
+    elseif type(a:value) == type(v:true)
+        return a:value
+    elseif type(a:value) == type('')
+        let l:value = tolower(a:value)
+        if index(['0', 'off', 'false', 'no'], l:value) >= 0
+            return 0
+        elseif index(['1', 'on', 'true', 'yes'], l:value) >= 0
+            return 1
+        endif
+    endif
+    return a:automatic
+endfunction
+
+let g:chopsticks_auto_lint = s:ResolveSwitch(
+    \ g:chopsticks_auto_lint, 0)
+
+let s:clipboard_auto_enabled = !s:is_remote && has('clipboard')
+    \ && (has('macunix') || has('win32') || has('win64')
+    \     || !empty($DISPLAY) || !empty($WAYLAND_DISPLAY))
+if has('clipboard')
+    \ && s:ResolveSwitch(g:chopsticks_system_clipboard,
+    \     s:clipboard_auto_enabled)
+    \ && index(split(&clipboard, ','), 'unnamedplus') < 0
+    set clipboard+=unnamedplus
+endif
+unlet s:clipboard_auto_enabled
+
+function! ChopsticksSystemClipboardEnabled() abort
+    return has('clipboard')
+        \ && index(split(&clipboard, ','), 'unnamedplus') >= 0
+endfunction
+
+function! ChopsticksUiDensity() abort
+    let l:value = type(g:chopsticks_ui_density) == type('')
+        \ ? tolower(g:chopsticks_ui_density) : ''
+    return index(['minimal', 'balanced', 'rich'], l:value) >= 0
+        \ ? l:value : 'balanced'
+endfunction
+
+function! ChopsticksTransparencyEnabled() abort
+    " Terminals expose color depth, not whether their compositor is transparent.
+    return s:ResolveSwitch(g:chopsticks_transparent_background, 0)
+endfunction
+
+function! ChopsticksDashboardEnabled() abort
+    return s:ResolveSwitch(g:chopsticks_dashboard,
+        \ ChopsticksUiDensity() !=# 'minimal')
+endfunction
 
 let s:icon_auto_enabled = &encoding ==# 'utf-8' && !s:is_remote
     \ && $TERM !=# 'dumb'
     \ && (index(['iTerm.app', 'WezTerm', 'vscode'], $TERM_PROGRAM) >= 0
     \     || !empty($KITTY_WINDOW_ID) || !empty($WEZTERM_PANE)
-    \     || !empty($WT_SESSION) || $TERM =~# '\<\%(xterm-kitty\|wezterm\)\>')
+    \     || !empty($WT_SESSION) || !empty($GHOSTTY_RESOURCES_DIR)
+    \     || $TERM =~# '\<\%(xterm-kitty\|xterm-ghostty\|wezterm\)\>')
 let s:icons = {
     \ 'search': ['', '?'],
     \ 'new_file': ['', '+'],
     \ 'grep': ['', '/'],
     \ 'recent': ['', '~'],
-    \ 'config': ['', '#'],
+    \ 'config': ['', '#'],
     \ 'session': ['', '@'],
-    \ 'update': ['', '^'],
-    \ 'plugins': ['', '*'],
     \ 'quit': ['', 'q'],
     \ 'file': ['', '-'],
+    \ 'folder_open': ['', ''],
     \ 'git_branch': ['', 'git:'],
+    \ 'git_add': ['', '+'],
+    \ 'git_change': ['', '~'],
+    \ 'git_delete': ['', '-'],
     \ 'error': ['', 'E'],
     \ 'warning': ['', 'W'],
+    \ 'info': ['', 'I'],
     \ 'modified': ['●', '+'],
     \ 'readonly': ['', 'RO'],
     \ 'spell': ['󰓆', 'SPELL'],
@@ -126,12 +247,23 @@ function! s:WhichKeyGroup(group) abort
     return '+' . (empty(l:icon) ? '' : l:icon . ' ') . a:group
 endfunction
 
+function! s:WhichKeySetup() abort
+    " Modern which-key treats a group icon and its label as one semantic
+    " unit.  The Vim port's stock syntax only accepts ASCII immediately after
+    " '+', so teach it to include our optional Nerd Font prefix.
+    silent! syntax clear WhichKeyGroup
+    syntax match WhichKeyGroup
+        \ / +\%(\S\+\s\+\)\?[0-9A-Za-z_\/-]\+\%(\s\+[0-9A-Za-z_\/-]\+\)*/
+endfunction
+
 let g:fern#renderer = ChopsticksIconsEnabled() ? 'nerdfont' : 'default'
 let g:fern#renderer#nerdfont#indent_markers = 1
 let g:fern#renderer#nerdfont#leading = '  '
 let g:fern#renderer#nerdfont#padding = ' '
+let g:fern#renderer#nerdfont#root_symbol = ChopsticksIcon('folder_open')
 let g:fern#mark_symbol = ChopsticksIcon('marker')
 let g:fern#drawer_width = 34
+let g:fern#hide_cursor = 1
 let g:fern#default_hidden = 1
 let g:fern#default_exclude =
     \ '^\%(\.git\|node_modules\|\.venv\|__pycache__\|dist\|build\|target\)$'
@@ -164,7 +296,7 @@ let g:fzf_action = {
     \ 'ctrl-t': 'tab split',
     \ 'ctrl-x': 'split',
     \ 'ctrl-v': 'vsplit',
-    \ 'ctrl-o': 'Open',
+    \ 'ctrl-o': 'edit',
     \ }
 let s:fzf_abort_keys = 'esc:abort,ctrl-c:abort,ctrl-g:abort,ctrl-q:abort'
 let s:fzf_skip_dirs = [
@@ -207,16 +339,22 @@ let g:ale_fixers = {
     \ 'markdown': ['prettier'],
     \ }
 let g:ale_fix_on_save = 0
-let g:ale_lint_on_save = 1
-let g:ale_lint_on_enter = 1
+let g:ale_lint_on_save = g:chopsticks_auto_lint
+let g:ale_lint_on_enter = g:chopsticks_auto_lint
+let g:ale_lint_on_filetype_changed = g:chopsticks_auto_lint
 let g:ale_lint_on_insert_leave = 0
 let g:ale_lint_on_text_changed = 'never'
 let g:ale_virtualtext_cursor = 'disabled'
 let g:ale_echo_msg_format = '%severity%: %s'
 let g:ale_sign_error = ChopsticksIcon('error')
 let g:ale_sign_warning = ChopsticksIcon('warning')
+let g:ale_sign_info = ChopsticksIcon('info')
 
-let g:lsp_settings_lazyload = 1
+" vim-lsp-settings' VimEnter lazy path replays BufEnter for every loaded
+" buffer.  Initializing its lightweight filetype dispatcher while plugins are
+" sourced avoids parsing and sending an initial file twice, which matters for
+" large Markdown documents without changing when a language server starts.
+let g:lsp_settings_lazyload = 0
 let g:lsp_diagnostics_virtual_text_enabled = 0
 let g:lsp_diagnostics_highlights_enabled = !s:is_remote
 let g:lsp_document_highlight_enabled = !s:is_remote
@@ -267,7 +405,7 @@ let g:table_mode_corner = '|'
 let g:previm_enable_realtime = 1
 if has('macunix')
     let g:previm_open_cmd = '/usr/bin/open'
-elseif executable('xdg-open')
+elseif executable('xdg-open') == 1
     let g:previm_open_cmd = 'xdg-open'
 endif
 
@@ -277,16 +415,6 @@ let g:goyo_linenr = 0
 let g:limelight_default_coefficient = 0.7
 let g:limelight_paragraph_span = 1
 let g:limelight_priority = -1
-
-let g:startify_disable_at_vimenter = 1
-let g:startify_skiplist = [
-    \ '/\.git/', '/tmp/', '/\.vim/plugged/',
-    \ '/\.codex/auth\.json$', '/\.ssh/',
-    \ ]
-let g:startify_session_persistence = 1
-let g:startify_session_autoload = 1
-let g:startify_change_to_vcs_root = 1
-let g:startify_enable_special = 0
 
 let s:dashboard_logo = [
     \ '███╗   ███╗ ██╗███╗   ██╗ ██████╗ ███████╗ █████╗ ███╗   ███╗ █████╗',
@@ -304,22 +432,40 @@ let s:dashboard_compact_logo = [
 let s:dashboard_items = [
     \ {'key': 'f', 'icon': 'search', 'label': 'Find File', 'action': 'ChopsticksFindFiles'},
     \ {'key': 'n', 'icon': 'new_file', 'label': 'New File', 'action': 'enew | startinsert'},
-    \ {'key': 'g', 'icon': 'grep', 'label': 'Find Text', 'action': 'Rg'},
-    \ {'key': 'r', 'icon': 'recent', 'label': 'Recent Files', 'action': 'History'},
+    \ {'key': 'g', 'icon': 'grep', 'label': 'Find Text', 'action': 'ChopsticksProjectGrep'},
+    \ {'key': 'r', 'icon': 'recent', 'label': 'Recent Files', 'action': 'ChopsticksRecentFiles'},
     \ {'key': 'c', 'icon': 'config', 'label': 'Config', 'action': 'edit $MYVIMRC'},
-    \ {'key': 's', 'icon': 'session', 'label': 'Restore Session', 'action': 'SLoad!'},
-    \ {'key': 'x', 'icon': 'update', 'label': 'Plugin Update', 'action': 'PlugUpdate'},
-    \ {'key': 'l', 'icon': 'plugins', 'label': 'Plugins', 'action': 'PlugStatus'},
+    \ {'key': 's', 'icon': 'session', 'label': 'Restore Session', 'action': 'ChopsticksSessionLoad'},
     \ {'key': 'q', 'icon': 'quit', 'label': 'Quit', 'action': 'qall'},
     \ ]
 
-" vim-plug is optional. Startup never downloads software.
-if filereadable(expand('~/.vim/autoload/plug.vim'))
-    call plug#begin('~/.vim/plugged')
+function! s:DashboardItems(...) abort
+    let l:density = a:0 ? a:1 : ChopsticksUiDensity()
+    let l:keys = l:density ==# 'minimal' ? ['f', 'n', 'r', 'c', 'q']
+        \ : ['f', 'n', 'g', 'r', 'c', 's', 'q']
+    let l:items = filter(copy(s:dashboard_items),
+        \ 'index(l:keys, v:val.key) >= 0')
+    if exists(':Rg') != 2 || executable('rg') != 1
+        \ || executable('fzf') != 1
+        call filter(l:items, 'v:val.key !=# "g"')
+    endif
+    if !exists('*ChopsticksSessionPath')
+        \ || !filereadable(ChopsticksSessionPath())
+        call filter(l:items, 'v:val.key !=# "s"')
+    endif
+    return l:items
+endfunction
+
+" vim-plug is optional. Startup never downloads software. Source it directly
+" because a custom data directory is not necessarily on 'runtimepath'.
+let s:vim_plug = g:chopsticks_data_dir . 'autoload/plug.vim'
+if filereadable(s:vim_plug)
+    execute 'source ' . fnameescape(s:vim_plug)
+    call plug#begin(g:chopsticks_data_dir . 'plugged')
 
     " Find and navigate.
-    Plug 'junegunn/fzf', {'commit': '0eb2ae9f8bd57fed6242d76d2273df4a1be31cc8', 'do': { -> fzf#install() }}
-    Plug 'junegunn/fzf.vim', {'commit': '34a564c81f36047f50e593c1656f4580ff75ccca'}
+    Plug 'junegunn/fzf', {'commit': '3337be9d450cd349e99273a2d3985ceaf5f3753f'}
+    Plug 'junegunn/fzf.vim', {'commit': 'd2a59a992a2455f609c0fde2ebd84427ea8f919a'}
     if has('patch-8.2.5136')
         Plug 'lambdalisue/vim-fern', {'commit': '3bbca3c87a57cdc87495b91a695b8eda722a1de1'}
         Plug 'lambdalisue/vim-nerdfont', {'commit': '3a28b3f061a8b6de751175cc3f91f072d4bfc811'}
@@ -333,7 +479,7 @@ if filereadable(expand('~/.vim/autoload/plug.vim'))
     " Git and project commands.
     Plug 'tpope/vim-fugitive', {'commit': '3b753cf8c6a4dcde6edee8827d464ba9b8c4a6f0'}
     Plug 'tpope/vim-rhubarb', {'commit': '5496d7c94581c4c9ad7430357449bb57fc59f501'}
-    Plug 'airblade/vim-gitgutter', {'commit': '21c977e8597c468c7dc76001389b0b430d46a4b0'}
+    Plug 'airblade/vim-gitgutter', {'commit': '90b75207bd9b55d8ac4af15f72b4e935462014d0'}
     Plug 'tpope/vim-dispatch', {'commit': 'a2ff28abdb2d89725192db5b8562977d392a4d3f'}
 
     " Editing language.
@@ -348,9 +494,9 @@ if filereadable(expand('~/.vim/autoload/plug.vim'))
     Plug 'mbbill/undotree', {'commit': '6fa6b57cda8459e1e4b2ca34df702f55242f4e4d', 'on': 'UndotreeToggle'}
 
     " Diagnostics, formatting, LSP, completion.
-    Plug 'dense-analysis/ale', {'commit': 'ba8b9cbab95131e284c5be926642f803b2be0058'}
-    Plug 'prabirshrestha/vim-lsp', {'commit': '0c49560e5fbc97876e51bef6b993e48677cc15fc'}
-    Plug 'mattn/vim-lsp-settings', {'commit': 'a0ec2ee4e75a14f2471896a1192c1970d7be4258'}
+    Plug 'dense-analysis/ale', {'commit': '199a95d386cb856c27e5b90d4e3ea8bd45a58c23'}
+    Plug 'prabirshrestha/vim-lsp', {'commit': 'e10d186452743beb7b43d2b3427020832f930c2b'}
+    Plug 'mattn/vim-lsp-settings', {'commit': 'b0c9bacfe98ff6bc4c5f6b0fffdc085d252387e0'}
     Plug 'prabirshrestha/asyncomplete.vim', {'commit': '17b654a87a834d4e835fb7467e562b4421ad9310'}
     Plug 'prabirshrestha/asyncomplete-lsp.vim', {'commit': 'da23f4418a6301feac7b99e1728fb79acb243d69'}
 
@@ -360,17 +506,17 @@ if filereadable(expand('~/.vim/autoload/plug.vim'))
     Plug 'preservim/vim-pencil', {'commit': '6d70438a8886eaf933c38a7a43a61adb0a7815ed'}
     Plug 'bullets-vim/bullets.vim', {'commit': '81570b98ca44b4100b3ddcf8d9ca74b9a9b0c884', 'for': ['markdown', 'text', 'gitcommit']}
     Plug 'dhruvasagar/vim-table-mode', {'commit': 'bb025308a45c67c7c8f0763ba37bc2ee3f534df0', 'for': 'markdown'}
-    Plug 'previm/previm', {'commit': '2bccb5e2a14e9f344f2656578b815b0da5c37fe3', 'on': 'PrevimOpen'}
+    Plug 'previm/previm', {'commit': '29524dba1dfad1e77a8670b8c133af96f31582a7', 'on': 'PrevimOpen'}
     Plug 'junegunn/goyo.vim', {'commit': '9c72fdf2d202914318581f9f0dd09fd102f8504d', 'on': 'Goyo'}
     Plug 'junegunn/limelight.vim', {'commit': '617064e84e896f6f36b5e559f8e6486d632f68ed', 'on': 'Limelight'}
 
     " Interface.
-    Plug 'mhinz/vim-startify', {'commit': '4e089dffdad46f3f5593f34362d530e8fe823dcf'}
     Plug 'liuchengxu/vim-which-key', {'commit': '72a4267b46a76f541b3e9500a7503575575d4f57'}
-    Plug 'lifepillar/vim-solarized8', {'commit': '4433b4411de92b2446a4d32f0d8bf1b25c476bf9'}
+    Plug 'sainnhe/everforest', {'commit': '85a86eb62409e3ec88713bff3d1b9d7374e112e4'}
 
     call plug#end()
 endif
+unlet s:vim_plug
 
 filetype plugin indent on
 syntax enable
@@ -380,6 +526,7 @@ syntax enable
 set number relativenumber cursorline
 set scrolloff=10 sidescrolloff=5 nowrap
 set incsearch hlsearch ignorecase smartcase
+set noexrc nomodeline
 set showcmd showmatch wildmenu wildignorecase
 set wildmode=longest:full,full
 set wildignore=*.pyc
@@ -408,8 +555,8 @@ set shortmess+=cI
 set signcolumn=yes
 set title
 set noshowmode noruler
-set laststatus=2 showtabline=2
-set sessionoptions=blank,buffers,curdir,folds,help,tabpages,winsize,terminal
+set laststatus=2 showtabline=0
+set sessionoptions=blank,buffers,folds,tabpages,winsize
 set viewoptions=cursor,folds,slash,unix
 set switchbuf=useopen,usetab,newtab
 set tags=./tags;,tags;
@@ -431,7 +578,11 @@ if exists('+belloff')
     set belloff=all
 endif
 if exists('+wildoptions')
-    set wildoptions=pum,tagfile
+    if has('patch-8.2.4325')
+        set wildoptions=pum,tagfile
+    else
+        set wildoptions=tagfile
+    endif
 endif
 if exists('+spelloptions')
     set spelloptions+=camel
@@ -440,24 +591,28 @@ if exists('+editorconfig')
     set editorconfig
 endif
 
-if executable('rg')
+if executable('rg') == 1
     set grepprg=rg\ --vimgrep\ --smart-case
     set grepformat=%f:%l:%c:%m
 endif
 
 " Keep all recovery files out of projects.
 let s:state_dirs = {
-    \ 'backup': expand('~/.vim/.backup'),
-    \ 'swap': expand('~/.vim/.swap'),
-    \ 'undo': expand('~/.vim/.undo'),
-    \ 'view': expand('~/.vim/.view'),
+    \ 'backup': g:chopsticks_data_dir . '.backup',
+    \ 'swap': g:chopsticks_data_dir . '.swap',
+    \ 'undo': g:chopsticks_data_dir . '.undo',
+    \ 'view': g:chopsticks_data_dir . '.view',
+    \ 'session': g:chopsticks_session_dir,
     \ }
 for s:state_dir in values(s:state_dirs)
     silent! call mkdir(s:state_dir, 'p', 0700)
+    if exists('*setfperm') && s:DirectoryFileType(s:state_dir) ==# 'dir'
+        silent! call setfperm(s:state_dir, 'rwx------')
+    endif
 endfor
 set backup writebackup swapfile
 let &backupdir = s:state_dirs.backup . '//'
-let &directory = s:state_dirs.swap . '//,/tmp//'
+let &directory = s:state_dirs.swap . '//'
 let &viewdir = s:state_dirs.view
 if has('persistent_undo')
     let &undodir = s:state_dirs.undo
@@ -466,40 +621,87 @@ endif
 unlet s:state_dir
 
 set listchars=tab:→\ ,trail:·,extends:›,precedes:‹,nbsp:␣
-execute 'set fillchars+=eob:\ '
+if has('patch-8.2.2508')
+    execute 'set fillchars+=eob:\ '
+endif
 if s:is_rich_terminal
     set termguicolors
 endif
 set background=dark
-try
-    colorscheme solarized8
-catch /^Vim\%((\a\+)\)\=:E185/
-    colorscheme default
-endtry
+
+function! s:ApplyColorscheme() abort
+    let l:scheme = type(g:chopsticks_colorscheme) == type('')
+        \ && !empty(g:chopsticks_colorscheme)
+        \ ? g:chopsticks_colorscheme : 'everforest'
+    if l:scheme ==# 'everforest'
+        let g:everforest_background = get(g:, 'everforest_background', 'medium')
+        let g:everforest_better_performance = 1
+        let g:everforest_transparent_background =
+            \ ChopsticksTransparencyEnabled()
+    endif
+    try
+        execute 'colorscheme ' . fnameescape(l:scheme)
+    catch /^Vim\%((\a\+)\)\=:E185/
+        colorscheme default
+    endtry
+endfunction
+
+call s:ApplyColorscheme()
 
 " ── Interface: statusline and buffer tabline ───────────────────────────────
 
+function! s:HighlightColor(group, attribute, fallback) abort
+    let l:id = synIDtrans(hlID(a:group))
+    let l:value = synIDattr(l:id, a:attribute, 'gui')
+    return empty(l:value) || l:value ==# 'NONE' ? a:fallback : l:value
+endfunction
+
 function! s:DefineInterfaceColors() abort
-    highlight ChopStatusNormal  ctermbg=136 ctermfg=234 cterm=bold guibg=#b58900 guifg=#002b36 gui=bold
-    highlight ChopStatusInsert  ctermbg=33  ctermfg=234 cterm=bold guibg=#268bd2 guifg=#002b36 gui=bold
-    highlight ChopStatusVisual  ctermbg=125 ctermfg=234 cterm=bold guibg=#d33682 guifg=#002b36 gui=bold
-    highlight ChopStatusReplace ctermbg=160 ctermfg=234 cterm=bold guibg=#dc322f guifg=#002b36 gui=bold
-    highlight ChopStatusCommand ctermbg=37  ctermfg=234 cterm=bold guibg=#2aa198 guifg=#002b36 gui=bold
-    highlight ChopStatusBody    ctermbg=235 ctermfg=245 cterm=none guibg=#073642 guifg=#93a1a1
-    highlight ChopStatusAccent  ctermbg=235 ctermfg=136 cterm=none guibg=#073642 guifg=#b58900
-    highlight ChopStatusGit     ctermbg=235 ctermfg=37  cterm=none guibg=#073642 guifg=#2aa198
-    highlight ChopStatusMuted   ctermbg=235 ctermfg=240 cterm=none guibg=#073642 guifg=#586e75
-    highlight VertSplit         ctermbg=234 ctermfg=240 cterm=NONE guibg=#002b36 guifg=#586e75 gui=NONE
-    highlight CursorLine        ctermbg=235 cterm=NONE guibg=#0c4452 gui=NONE
-    highlight CursorLineNr      ctermbg=235 ctermfg=136 cterm=bold guibg=#0c4452 guifg=#b58900 gui=bold
-    highlight SignColumn        ctermbg=234 guibg=#002b36
-    highlight ChopDashboardLogo   ctermfg=33  cterm=none guifg=#268bd3 gui=none
-    highlight ChopDashboardItem   ctermfg=37  cterm=none guifg=#29a298 gui=none
-    highlight ChopDashboardIcon   ctermfg=37  cterm=bold guifg=#29a298 gui=bold
-    highlight ChopDashboardKey    ctermfg=166 cterm=none guifg=#c94c16 gui=none
-    highlight ChopDashboardFooter ctermfg=136 cterm=italic guifg=#b28500 gui=italic
-    highlight ChopDashboardStatus ctermbg=235 ctermfg=235 guibg=#073642 guifg=#073642
-    if g:chopsticks_transparent_background
+    let l:bg = s:HighlightColor('Normal', 'bg', '#2d353b')
+    let l:surface = s:HighlightColor('CursorLine', 'bg', '#343f44')
+    let l:fg = s:HighlightColor('Normal', 'fg', '#d3c6aa')
+    " Everforest exposes its palette as stable named highlight groups.  Other
+    " themes fall back to canonical syntax groups instead of hard-coded color
+    " assumptions.
+    let l:muted = s:HighlightColor('Grey', 'fg',
+        \ s:HighlightColor('Comment', 'fg', '#859289'))
+    let l:red = s:HighlightColor('Red', 'fg',
+        \ s:HighlightColor('ErrorMsg', 'fg', '#e67e80'))
+    let l:orange = s:HighlightColor('Orange', 'fg',
+        \ s:HighlightColor('Special', 'fg', '#e69875'))
+    let l:yellow = s:HighlightColor('Yellow', 'fg',
+        \ s:HighlightColor('WarningMsg', 'fg', '#dbbc7f'))
+    let l:green = s:HighlightColor('Green', 'fg',
+        \ s:HighlightColor('String', 'fg', '#a7c080'))
+    let l:aqua = s:HighlightColor('Aqua', 'fg',
+        \ s:HighlightColor('Identifier', 'fg', '#83c092'))
+    let l:blue = s:HighlightColor('Blue', 'fg',
+        \ s:HighlightColor('Function', 'fg', '#7fbbb3'))
+    let l:purple = s:HighlightColor('Purple', 'fg',
+        \ s:HighlightColor('Statement', 'fg', '#d699b6'))
+    execute 'highlight ChopStatusNormal ctermbg=106 ctermfg=234 cterm=bold guibg=' . l:green . ' guifg=' . l:bg . ' gui=bold'
+    execute 'highlight ChopStatusInsert ctermbg=109 ctermfg=234 cterm=bold guibg=' . l:blue . ' guifg=' . l:bg . ' gui=bold'
+    execute 'highlight ChopStatusVisual ctermbg=175 ctermfg=234 cterm=bold guibg=' . l:purple . ' guifg=' . l:bg . ' gui=bold'
+    execute 'highlight ChopStatusReplace ctermbg=174 ctermfg=234 cterm=bold guibg=' . l:red . ' guifg=' . l:bg . ' gui=bold'
+    execute 'highlight ChopStatusCommand ctermbg=108 ctermfg=234 cterm=bold guibg=' . l:aqua . ' guifg=' . l:bg . ' gui=bold'
+    execute 'highlight ChopStatusBody ctermbg=237 ctermfg=187 cterm=none guibg=' . l:surface . ' guifg=' . l:fg . ' gui=none'
+    execute 'highlight ChopStatusAccent ctermbg=237 ctermfg=180 cterm=none guibg=' . l:surface . ' guifg=' . l:yellow . ' gui=none'
+    execute 'highlight ChopStatusError ctermbg=237 ctermfg=174 cterm=bold guibg=' . l:surface . ' guifg=' . l:red . ' gui=bold'
+    execute 'highlight ChopStatusWarning ctermbg=237 ctermfg=180 cterm=bold guibg=' . l:surface . ' guifg=' . l:yellow . ' gui=bold'
+    execute 'highlight ChopStatusInfo ctermbg=237 ctermfg=109 cterm=bold guibg=' . l:surface . ' guifg=' . l:blue . ' gui=bold'
+    execute 'highlight ChopStatusGitAdd ctermbg=237 ctermfg=108 cterm=none guibg=' . l:surface . ' guifg=' . l:green . ' gui=none'
+    execute 'highlight ChopStatusGitChange ctermbg=237 ctermfg=180 cterm=none guibg=' . l:surface . ' guifg=' . l:yellow . ' gui=none'
+    execute 'highlight ChopStatusGitDelete ctermbg=237 ctermfg=174 cterm=none guibg=' . l:surface . ' guifg=' . l:red . ' gui=none'
+    execute 'highlight ChopStatusGit ctermbg=237 ctermfg=108 cterm=none guibg=' . l:surface . ' guifg=' . l:aqua . ' gui=none'
+    execute 'highlight ChopStatusMuted ctermbg=237 ctermfg=108 cterm=none guibg=' . l:surface . ' guifg=' . l:muted . ' gui=none'
+    execute 'highlight ChopDashboardLogo ctermfg=109 cterm=none guifg=' . l:blue . ' gui=none'
+    execute 'highlight ChopDashboardItem ctermfg=187 cterm=none guifg=' . l:fg . ' gui=none'
+    execute 'highlight ChopDashboardIcon ctermfg=108 cterm=bold guifg=' . l:aqua . ' gui=bold'
+    execute 'highlight ChopDashboardKey ctermfg=173 cterm=none guifg=' . l:orange . ' gui=none'
+    execute 'highlight ChopDashboardCurrent ctermbg=237 cterm=none guibg=' . l:surface . ' gui=none'
+    execute 'highlight ChopDashboardFooter ctermfg=180 cterm=italic guifg=' . l:yellow . ' gui=italic'
+    execute 'highlight ChopDashboardStatus ctermbg=237 ctermfg=237 guibg=' . l:surface . ' guifg=' . l:surface
+    if ChopsticksTransparencyEnabled()
         highlight Normal ctermbg=NONE guibg=NONE
         highlight NormalNC ctermbg=NONE guibg=NONE
         highlight NonText ctermbg=NONE guibg=NONE
@@ -508,16 +710,35 @@ function! s:DefineInterfaceColors() abort
     endif
 endfunction
 
-function! s:DashboardCenter(text) abort
-    return repeat(' ', max([0, (&columns - strwidth(a:text)) / 2])) . a:text
+function! s:TruncateText(text, width) abort
+    if a:width <= 0
+        return ''
+    elseif strwidth(a:text) <= a:width
+        return a:text
+    elseif a:width == 1
+        return '…'
+    endif
+    let l:result = ''
+    let l:index = 0
+    while l:index < strchars(a:text)
+        let l:character = strcharpart(a:text, l:index, 1)
+        if strwidth(l:result . l:character . '…') > a:width
+            break
+        endif
+        let l:result .= l:character
+        let l:index += 1
+    endwhile
+    return l:result . '…'
 endfunction
 
-function! s:DashboardLogoLine(text) abort
-    let l:pane_width = 60
-    let l:header = "\t" . a:text
-    let l:pane_column = (&columns - l:pane_width) / 2
-    let l:indent = l:pane_column - (strwidth(l:header) - l:pane_width) / 2
-    return repeat(' ', max([0, l:indent])) . l:header
+function! s:DashboardCenter(text) abort
+    return repeat(' ', max([0, (winwidth(0) - strwidth(a:text)) / 2]))
+        \ . a:text
+endfunction
+
+function! s:DashboardLogoLine(text, block_width) abort
+    let l:left = max([0, (winwidth(0) - a:block_width) / 2])
+    return repeat(' ', l:left) . a:text
 endfunction
 
 function! s:DashboardPluginStats() abort
@@ -533,17 +754,28 @@ function! s:DashboardPluginStats() abort
     return [l:loaded, len(l:plugs)]
 endfunction
 
-function! s:DashboardFooter() abort
+function! s:CaptureStartupTime() abort
     if !exists('g:chopsticks_startup_ms')
         let g:chopsticks_startup_ms = exists('*reltimefloat')
             \ ? reltimefloat(reltime(s:startup_started_at)) * 1000
             \ : str2float(reltimestr(reltime(s:startup_started_at))) * 1000
     endif
+endfunction
+
+function! s:DashboardFooter() abort
+    call s:CaptureStartupTime()
+    let l:density = ChopsticksUiDensity()
+    if l:density ==# 'minimal'
+        return '? keys  ·  h health'
+    elseif l:density ==# 'balanced'
+        return printf('%s ready in %.2fms  ·  ? keys  ·  h health',
+            \ ChopsticksIcon('startup'), g:chopsticks_startup_ms)
+    endif
     let [l:loaded, l:total] = s:DashboardPluginStats()
     return l:total > 0
         \ ? printf('%s Vim loaded %d/%d plugins in %.2fms',
-        \     ChopsticksIcon('startup'),
-        \     l:loaded, l:total, g:chopsticks_startup_ms)
+        \     ChopsticksIcon('startup'), l:loaded, l:total,
+        \     g:chopsticks_startup_ms)
         \ : printf('%s Vim ready in %.2fms',
         \     ChopsticksIcon('startup'), g:chopsticks_startup_ms)
 endfunction
@@ -556,8 +788,11 @@ function! s:DashboardEnter() abort
         let b:chopsticks_dashboard_laststatus = &laststatus
     endif
     set showtabline=0 laststatus=0
-    setlocal nonumber norelativenumber nolist nocursorline signcolumn=no
+    setlocal nonumber norelativenumber nolist cursorline signcolumn=no
     setlocal nowrap nospell foldcolumn=0 colorcolumn= tabstop=2
+    if exists('+winhighlight')
+        let &l:winhighlight = 'CursorLine:ChopDashboardCurrent'
+    endif
     let &l:statusline = '%#ChopDashboardStatus#%='
 endfunction
 
@@ -572,17 +807,45 @@ function! s:DashboardLeave() abort
     endif
 endfunction
 
+function! s:DashboardMapItems(items) abort
+    for l:item in s:dashboard_items
+        let l:mapping = maparg(l:item.key, 'n', 0, 1)
+        if !empty(l:mapping) && get(l:mapping, 'buffer', 0)
+            execute 'nunmap <buffer> ' . l:item.key
+        endif
+    endfor
+    for l:item in a:items
+        execute 'nnoremap <silent><nowait><buffer> ' . l:item.key
+            \ . ' :call <SID>DashboardRun(''' . l:item.key . ''')<CR>'
+    endfor
+endfunction
+
 function! s:DashboardRender() abort
     if &filetype !=# 'chopsticks-dashboard'
         return
     endif
-    let l:full_logo = &columns >= 100
-    let l:logo = l:full_logo ? s:dashboard_logo : s:dashboard_compact_logo
+    let l:width = winwidth(0)
     let l:height = winheight(0) + &cmdheight
-    let l:gap = l:height >= 28 ? 1 : 0
-    let l:dashboard_width = min([60, max([20, &columns - 4])])
-    let l:content_height = len(l:logo) + 3 + len(s:dashboard_items)
-        \ + (len(s:dashboard_items) - 1) * l:gap + 2
+    let l:density = ChopsticksUiDensity()
+    if l:height < 16 || l:width < 34
+        let l:density = 'minimal'
+    elseif l:density ==# 'rich' && (l:height < 24 || l:width < 80)
+        let l:density = 'balanced'
+    endif
+    let l:items = s:DashboardItems(l:density)
+    let l:full_logo = l:density ==# 'rich' && l:width >= 100
+        \ && l:height >= 24
+    let l:logo = l:full_logo ? s:dashboard_logo
+        \ : l:width >= 38 && l:height >= 12 ? s:dashboard_compact_logo
+        \ : [s:TruncateText('CHOPSTICKS', max([1, l:width - 2]))]
+    let l:logo_width = max(map(copy(l:logo), 'strwidth(v:val)'))
+    let l:gap = l:density ==# 'rich' && l:height >= 32 ? 1 : 0
+    let l:target_width = l:density ==# 'rich' ? 60
+        \ : l:density ==# 'balanced' ? 48 : 40
+    let l:dashboard_width = min([l:target_width, max([1, l:width - 2])])
+    let l:header_gap = l:density ==# 'rich' ? 3 : 1
+    let l:content_height = len(l:logo) + l:header_gap + len(l:items)
+        \ + (len(l:items) - 1) * l:gap + 2
     let l:top = max([1, (l:height - l:content_height) / 2])
     let l:lines = repeat([''], l:top)
     let l:logo_matches = []
@@ -594,43 +857,60 @@ function! s:DashboardRender() abort
     let l:actions = {}
 
     for l:text in l:logo
-        let l:line = l:full_logo
-            \ ? s:DashboardLogoLine(l:text)
-            \ : s:DashboardCenter(l:text)
+        let l:line = s:DashboardLogoLine(l:text, l:logo_width)
         call add(l:lines, l:line)
         let l:column = match(l:line, '\S') + 1
         call add(l:logo_matches, [len(l:lines), l:column, strlen(l:text)])
     endfor
-    call extend(l:lines, ['', '', ''])
+    call extend(l:lines, repeat([''], l:header_gap))
 
-    for l:index in range(len(s:dashboard_items))
-        let l:item = s:dashboard_items[l:index]
-        let l:icon = ChopsticksIcon(l:item.icon)
-        let l:body = l:icon . '  ' . l:item.label
-        let l:body .= repeat(' ', max([1,
-            \ l:dashboard_width - strwidth(l:body) - strwidth(l:item.key)]))
-        let l:body .= l:item.key
+    for l:index in range(len(l:items))
+        let l:item = l:items[l:index]
+        let l:icon = l:width < 20 ? '' : ChopsticksIcon(l:item.icon)
+        let l:key_text = l:width < 20
+            \ ? l:item.key : '[' . l:item.key . ']'
+        if l:width < 20
+            let l:body = l:key_text
+            if l:dashboard_width >= strwidth(l:item.key) + 2
+                let l:body .= ' ' . s:TruncateText(l:item.label,
+                    \ l:dashboard_width - strwidth(l:item.key) - 1)
+            endif
+            let l:key_offset = 0
+            let l:cursor_offset = 0
+        else
+            let l:label_width = max([1, l:dashboard_width
+                \ - strwidth(l:icon) - strwidth(l:key_text) - 4])
+            let l:label = s:TruncateText(l:item.label, l:label_width)
+            let l:body = l:icon . '  ' . l:label
+            let l:body .= repeat(' ', max([1, l:dashboard_width
+                \ - strwidth(l:body) - strwidth(l:key_text)]))
+            let l:body .= l:key_text
+            let l:key_offset = strlen(l:body) - strlen(l:key_text)
+            let l:cursor_offset = l:key_offset + 1
+        endif
         let l:line = s:DashboardCenter(l:body)
         call add(l:lines, l:line)
         let l:line_number = len(l:lines)
         let l:column = strlen(matchstr(l:line, '^ *')) + 1
         call add(l:item_matches, [l:line_number, l:column, strlen(l:body)])
-        call add(l:icon_matches,
-            \ [l:line_number, l:column, strlen(l:icon)])
+        if !empty(l:icon)
+            call add(l:icon_matches,
+                \ [l:line_number, l:column, strlen(l:icon)])
+        endif
         call add(l:key_matches,
-            \ [l:line_number, strlen(l:line) - strlen(l:item.key) + 1,
-            \  strlen(l:item.key)])
+            \ [l:line_number, l:column + l:key_offset,
+            \  strlen(l:key_text)])
         call add(l:item_lines, l:line_number)
         let l:desc_cols[string(l:line_number)] =
-            \ l:column + strlen(l:icon) + 2
+            \ l:column + l:cursor_offset
         let l:actions[string(l:line_number)] = l:item.key
-        if l:gap && l:index + 1 < len(s:dashboard_items)
+        if l:gap && l:index + 1 < len(l:items)
             call add(l:lines, '')
         endif
     endfor
 
     call add(l:lines, '')
-    let l:footer = s:DashboardFooter()
+    let l:footer = s:TruncateText(s:DashboardFooter(), max([1, l:width - 2]))
     let l:footer_line = s:DashboardCenter(l:footer)
     call add(l:lines, l:footer_line)
     let l:footer_column = strlen(matchstr(l:footer_line, '^ *')) + 1
@@ -642,13 +922,16 @@ function! s:DashboardRender() abort
     call clearmatches()
     call matchaddpos('ChopDashboardLogo', l:logo_matches, 10)
     call matchaddpos('ChopDashboardItem', l:item_matches, 10)
-    call matchaddpos('ChopDashboardIcon', l:icon_matches, 20)
+    if !empty(l:icon_matches)
+        call matchaddpos('ChopDashboardIcon', l:icon_matches, 20)
+    endif
     call matchaddpos('ChopDashboardKey', l:key_matches, 20)
     call matchaddpos('ChopDashboardFooter',
         \ [[len(l:lines), l:footer_column, strlen(l:footer)]], 10)
     let b:chopsticks_dashboard_item_lines = l:item_lines
     let b:chopsticks_dashboard_desc_cols = l:desc_cols
     let b:chopsticks_dashboard_actions = l:actions
+    call s:DashboardMapItems(l:items)
     call cursor(l:item_lines[0], l:desc_cols[string(l:item_lines[0])])
 endfunction
 
@@ -702,7 +985,7 @@ function! s:DashboardMove(delta) abort
 endfunction
 
 function! s:DashboardRun(key) abort
-    for l:item in s:dashboard_items
+    for l:item in s:DashboardItems()
         if l:item.key ==# a:key
             try
                 execute l:item.action
@@ -726,16 +1009,14 @@ endfunction
 
 function! s:OpenDashboard() abort
     if &filetype !=# 'chopsticks-dashboard'
+        let l:project_root = s:ProjectRoot()
         silent keepalt enew
         silent file [chopsticks]
         setlocal buftype=nofile bufhidden=wipe noswapfile nobuflisted
         setfiletype chopsticks-dashboard
+        let b:chopsticks_project_root = l:project_root
     endif
     call s:DashboardEnter()
-    for l:item in s:dashboard_items
-        execute 'nnoremap <silent><nowait><buffer> ' . l:item.key
-            \ . ' :call <SID>DashboardRun(''' . l:item.key . ''')<CR>'
-    endfor
     nnoremap <silent><buffer> <CR> :call <SID>DashboardRunCurrent()<CR>
     nnoremap <silent><buffer> j :call <SID>DashboardMove(1)<CR>
     nnoremap <silent><buffer> k :call <SID>DashboardMove(-1)<CR>
@@ -749,7 +1030,8 @@ function! s:OpenDashboard() abort
 endfunction
 
 function! s:MaybeOpenDashboard() abort
-    if argc() == 0 && bufname('%') ==# '' && &buftype ==# ''
+    if ChopsticksDashboardEnabled() && argc() == 0
+        \ && bufname('%') ==# '' && &buftype ==# ''
         \ && line('$') == 1 && getline(1) ==# '' && !&modified
         call s:OpenDashboard()
     endif
@@ -757,7 +1039,10 @@ endfunction
 
 command! ChopsticksDashboard call s:OpenDashboard()
 
-function! ChopsticksMode() abort
+function! ChopsticksMode(...) abort
+    if a:0 && !a:1
+        return [' - ', 'ChopStatusMuted']
+    endif
     let l:mode = mode(1)
     if l:mode =~# '^i'
         return [' I ', 'ChopStatusInsert']
@@ -793,90 +1078,304 @@ function! ChopsticksFileIcon(path) abort
     return empty(l:icon) ? '' : l:icon . ' '
 endfunction
 
-function! ChopsticksGitBranch() abort
+function! ChopsticksGitBranch(...) abort
     if !exists('*FugitiveHead')
         return ''
     endif
-    let l:branch = FugitiveHead()
+    let l:buffer = a:0 ? a:1 : bufnr('')
+    let l:branch = FugitiveHead(0, l:buffer)
     return empty(l:branch) ? '' : '  ' . ChopsticksIcon('git_branch') . ' '
         \ . substitute(l:branch, '%', '%%', 'g') . ' '
 endfunction
 
-function! ChopsticksDiagnostics() abort
-    if !exists('*ale#statusline#Count')
+function! ChopsticksGitDiff(...) abort
+    if !exists('*GitGutterGetHunkSummary')
         return ''
     endif
-    let l:count = ale#statusline#Count(bufnr(''))
-    let l:errors = l:count.error + l:count.style_error
-    let l:warnings = l:count.warning + l:count.style_warning
-    return l:errors == 0 && l:warnings == 0
-        \ ? ''
-        \ : printf(' %s %d  %s %d ', ChopsticksIcon('error'), l:errors,
-        \     ChopsticksIcon('warning'), l:warnings)
-endfunction
-
-function! ChopsticksWritingMode() abort
+    let l:buffer = a:0 ? a:1 : bufnr('')
+    let [l:added, l:changed, l:removed] =
+        \ gitgutter#hunk#summary(l:buffer)
     let l:parts = []
-    if &spell
-        call add(l:parts, ChopsticksIcon('spell'))
+    if l:added > 0
+        call add(l:parts, printf('%%#ChopStatusGitAdd#%s %d',
+            \ ChopsticksIcon('git_add'), l:added))
     endif
-    if exists('*PencilMode') && !empty(PencilMode())
-        call add(l:parts, ChopsticksIcon('wrap') . ':' . PencilMode())
+    if l:changed > 0
+        call add(l:parts, printf('%%#ChopStatusGitChange#%s %d',
+            \ ChopsticksIcon('git_change'), l:changed))
+    endif
+    if l:removed > 0
+        call add(l:parts, printf('%%#ChopStatusGitDelete#%s %d',
+            \ ChopsticksIcon('git_delete'), l:removed))
     endif
     return empty(l:parts) ? '' : ' ' . join(l:parts, ' ') . ' '
 endfunction
 
-function! ChopsticksBufferFlags() abort
+function! ChopsticksDiagnostics(...) abort
+    if !exists('*ale#statusline#Count')
+        return ''
+    endif
+    let l:buffer = a:0 ? a:1 : bufnr('')
+    let l:count = ale#statusline#Count(l:buffer)
+    let l:errors = l:count.error + l:count.style_error
+    let l:warnings = l:count.warning + l:count.style_warning
+    let l:info = get(l:count, 'info', 0)
     let l:parts = []
-    if &modified
+    if l:errors > 0
+        call add(l:parts, printf('%%#ChopStatusError# %s %d',
+            \ ChopsticksIcon('error'), l:errors))
+    endif
+    if l:warnings > 0
+        call add(l:parts, printf('%%#ChopStatusWarning# %s %d',
+            \ ChopsticksIcon('warning'), l:warnings))
+    endif
+    if l:info > 0
+        call add(l:parts, printf('%%#ChopStatusInfo# %s %d',
+            \ ChopsticksIcon('info'), l:info))
+    endif
+    return empty(l:parts) ? '' : join(l:parts, ' ') . ' '
+endfunction
+
+function! ChopsticksWritingMode(...) abort
+    let l:buffer = a:0 ? a:1 : bufnr('')
+    let l:window = a:0 > 1 ? a:2 : win_getid()
+    let l:window_number = win_id2win(l:window)
+    let l:parts = []
+    if l:window_number > 0 && getwinvar(l:window_number, '&spell')
+        call add(l:parts, ChopsticksIcon('spell'))
+    endif
+    let l:pencil = getbufvar(l:buffer, 'pencil_wrap_mode', 0)
+    if l:pencil == 2
+        call add(l:parts, ChopsticksIcon('wrap') . ':'
+            \ . get(get(g:, 'pencil#mode_indicators', {}), 'soft', 'S'))
+    elseif l:pencil == 1
+        let l:kind = getbufvar(l:buffer, '&formatoptions') =~# 'a'
+            \ ? 'auto' : 'hard'
+        call add(l:parts, ChopsticksIcon('wrap') . ':'
+            \ . get(get(g:, 'pencil#mode_indicators', {}), l:kind,
+            \     l:kind ==# 'auto' ? 'A' : 'H'))
+    endif
+    return empty(l:parts) ? '' : ' ' . join(l:parts, ' ') . ' '
+endfunction
+
+function! ChopsticksBufferFlags(...) abort
+    let l:buffer = a:0 ? a:1 : bufnr('')
+    let l:parts = []
+    if getbufvar(l:buffer, '&modified')
         call add(l:parts, ChopsticksIcon('modified'))
     endif
-    if &readonly
+    if getbufvar(l:buffer, '&readonly')
         call add(l:parts, ChopsticksIcon('readonly'))
     endif
     return empty(l:parts) ? '' : ' ' . join(l:parts, ' ') . ' '
 endfunction
 
+function! s:FileBufferCount() abort
+    let l:count = 0
+    for l:buffer in getbufinfo({'buflisted': 1})
+        if getbufvar(l:buffer.bufnr, '&buftype') ==# ''
+            let l:count += 1
+        endif
+    endfor
+    return l:count
+endfunction
+
+function! ChopsticksBufferlineEnabled() abort
+    let l:density = ChopsticksUiDensity()
+    return s:ResolveSwitch(g:chopsticks_bufferline,
+        \ l:density ==# 'rich'
+        \ || (l:density ==# 'balanced' && s:FileBufferCount() > 1))
+endfunction
+
+function! s:RefreshBufferline() abort
+    let &showtabline = &filetype ==# 'chopsticks-dashboard'
+        \ || exists('t:goyo_master')
+        \ ? 0 : (ChopsticksBufferlineEnabled() ? 2 : 0)
+    execute 'redrawtabline'
+endfunction
+
+function! s:RefreshBufferlineTimer(_timer) abort
+    if a:_timer >= 0
+        call s:RefreshBufferline()
+    endif
+endfunction
+
+function! s:ScheduleBufferlineRefresh() abort
+    if exists('*timer_start')
+        call timer_start(0, function('<SID>RefreshBufferlineTimer'))
+    else
+        call s:RefreshBufferline()
+    endif
+endfunction
+
+function! s:StatuslineContext() abort
+    let l:window = get(g:, 'statusline_winid', win_getid())
+    let l:info = getwininfo(l:window)
+    if empty(l:info)
+        let l:window = win_getid()
+        let l:info = getwininfo(l:window)
+    endif
+    return {
+        \ 'winid': l:window,
+        \ 'bufnr': empty(l:info) ? bufnr('') : l:info[0].bufnr,
+        \ 'width': empty(l:info) ? winwidth(0) : l:info[0].width,
+        \ 'active': l:window == win_getid(),
+        \ }
+endfunction
+
+function! s:EffectiveStatuslineDensity(width) abort
+    let l:density = ChopsticksUiDensity()
+    if a:width < 70
+        return 'minimal'
+    elseif l:density ==# 'rich' && a:width < 110
+        return 'balanced'
+    endif
+    return l:density
+endfunction
+
 function! ChopsticksStatusline() abort
-    let [l:label, l:group] = ChopsticksMode()
+    let l:context = s:StatuslineContext()
+    let [l:label, l:group] = ChopsticksMode(l:context.active)
+    let l:density = s:EffectiveStatuslineDensity(l:context.width)
     let l:line = '%#' . l:group . '#' . l:label
-    let l:line .= '%#ChopStatusBody# ' . ChopsticksFileIcon(expand('%:p'))
+    let l:line .= '%#ChopStatusBody# '
+        \ . (l:density ==# 'rich'
+        \     ? ChopsticksFileIcon(bufname(l:context.bufnr)) : '')
         \ . '%<%f '
-    let l:line .= '%#ChopStatusAccent#' . ChopsticksBufferFlags()
-        \ . ChopsticksWritingMode()
+    let l:line .= '%#ChopStatusAccent#'
+        \ . ChopsticksBufferFlags(l:context.bufnr)
+    if l:density !=# 'minimal'
+        let l:line .= ChopsticksWritingMode(
+            \ l:context.bufnr, l:context.winid)
+    endif
     let l:line .= '%#ChopStatusBody#%='
-    let l:line .= '%#ChopStatusAccent#' . ChopsticksDiagnostics()
-    let l:line .= '%#ChopStatusGit#' . ChopsticksGitBranch()
-    let l:line .= '%#ChopStatusMuted# %y  %l:%c  %P '
+    let l:line .= ChopsticksDiagnostics(l:context.bufnr)
+    if l:density ==# 'rich'
+        let l:line .= ChopsticksGitDiff(l:context.bufnr)
+    endif
+    if l:density !=# 'minimal'
+        let l:line .= '%#ChopStatusGit#'
+            \ . ChopsticksGitBranch(l:context.bufnr)
+    endif
+    let l:line .= '%#ChopStatusMuted# '
+    if l:density ==# 'rich'
+        let l:line .= '%y  '
+    endif
+    let l:line .= '%l:%c'
+    if l:density !=# 'minimal'
+        let l:line .= '  %P'
+    endif
+    let l:line .= ' '
     return l:line
 endfunction
 
 function! ChopsticksTabline() abort
-    let l:line = ''
+    let l:density = ChopsticksUiDensity()
+    let l:segments = []
+    let l:active = -1
     for l:buffer in getbufinfo({'buflisted': 1})
         if getbufvar(l:buffer.bufnr, '&buftype') !=# ''
             continue
         endif
-        let l:line .= l:buffer.bufnr == bufnr('%') ? '%#TabLineSel#' : '%#TabLine#'
         let l:name = fnamemodify(l:buffer.name, ':t')
-        let l:name = empty(l:name) ? '[No Name]' : substitute(l:name, '%', '%%', 'g')
+        let l:name = empty(l:name) ? '[No Name]' : l:name
+        let l:name = s:TruncateText(l:name, l:density ==# 'rich' ? 28 : 22)
         let l:icon = ChopsticksFileIcon(l:buffer.name)
         let l:changed = get(l:buffer, 'changed', 0)
             \ ? ' ' . ChopsticksIcon('modified') : ''
-        let l:line .= ' ' . l:buffer.bufnr . ' ' . l:icon
-            \ . l:name . l:changed . ' '
+        let l:number = l:density ==# 'rich' ? l:buffer.bufnr . ' ' : ''
+        if l:buffer.bufnr == bufnr('%')
+            let l:active = len(l:segments)
+        elseif l:active < 0 && l:buffer.bufnr == bufnr('#')
+            let l:active = len(l:segments)
+        endif
+        call add(l:segments, {
+            \ 'bufnr': l:buffer.bufnr,
+            \ 'text': ' ' . l:number . l:icon . l:name . l:changed . ' ',
+            \ })
     endfor
+    if empty(l:segments)
+        return '%#TabLineFill#%='
+    endif
+    let l:anchor = l:active >= 0 ? l:active : 0
+    let l:left = l:anchor
+    let l:right = l:anchor
+    let l:show_overflow = &columns >= 16
+    let l:budget = max([1, &columns - (l:show_overflow ? 10 : 0)])
+    let l:segments[l:anchor].text =
+        \ s:TruncateText(l:segments[l:anchor].text, l:budget)
+    let l:used = strwidth(l:segments[l:anchor].text)
+    while 1
+        let l:changed = 0
+        if l:left > 0
+            let l:width = strwidth(l:segments[l:left - 1].text)
+            if l:used + l:width <= l:budget
+                let l:left -= 1
+                let l:used += l:width
+                let l:changed = 1
+            endif
+        endif
+        if l:right + 1 < len(l:segments)
+            let l:width = strwidth(l:segments[l:right + 1].text)
+            if l:used + l:width <= l:budget
+                let l:right += 1
+                let l:used += l:width
+                let l:changed = 1
+            endif
+        endif
+        if !l:changed
+            break
+        endif
+    endwhile
+    let l:left_hint = l:show_overflow && l:left > 0
+        \ ? ' ‹' . l:left . ' ' : ''
+    let l:right_hint = l:show_overflow && l:right + 1 < len(l:segments)
+        \ ? ' ' . (len(l:segments) - l:right - 1) . '› ' : ''
+    let l:hint_width = strwidth(l:left_hint) + strwidth(l:right_hint)
+    if l:hint_width >= &columns
+        let l:show_overflow = 0
+        let l:left_hint = ''
+        let l:right_hint = ''
+        let l:left = l:anchor
+        let l:right = l:anchor
+        let l:segments[l:anchor].text =
+            \ s:TruncateText(l:segments[l:anchor].text, max([1, &columns]))
+    elseif l:used + l:hint_width > &columns
+        let l:left = l:anchor
+        let l:right = l:anchor
+        let l:left_hint = l:anchor > 0 ? ' ‹' . l:anchor . ' ' : ''
+        let l:right_hint = l:anchor + 1 < len(l:segments)
+            \ ? ' ' . (len(l:segments) - l:anchor - 1) . '› ' : ''
+        let l:hint_width = strwidth(l:left_hint) + strwidth(l:right_hint)
+        let l:segments[l:anchor].text = s:TruncateText(
+            \ l:segments[l:anchor].text,
+            \ max([1, &columns - l:hint_width]))
+    endif
+    let l:line = empty(l:left_hint)
+        \ ? '' : '%#TabLine#' . l:left_hint
+    for l:index in range(l:left, l:right)
+        let l:line .= l:index == l:active
+            \ ? '%#TabLineSel#' : '%#TabLine#'
+        let l:line .= substitute(l:segments[l:index].text, '%', '%%', 'g')
+    endfor
+    if !empty(l:right_hint)
+        let l:line .= '%#TabLine#' . l:right_hint
+    endif
     return l:line . '%#TabLineFill#%='
 endfunction
 
 set statusline=%!ChopsticksStatusline()
 set tabline=%!ChopsticksTabline()
+call s:RefreshBufferline()
 
 function! s:ApplyIconMode() abort
     let g:fern#renderer = ChopsticksIconsEnabled() ? 'nerdfont' : 'default'
+    let g:fern#renderer#nerdfont#root_symbol =
+        \ ChopsticksIcon('folder_open')
     let g:fern#mark_symbol = ChopsticksIcon('marker')
     let g:ale_sign_error = ChopsticksIcon('error')
     let g:ale_sign_warning = ChopsticksIcon('warning')
+    let g:ale_sign_info = ChopsticksIcon('info')
     let g:fzf_vim.gfiles_options =
         \ ['--bind', s:fzf_abort_keys] + s:FzfVisualOptions()
     let s:file_icon_cache = {}
@@ -884,7 +1383,7 @@ function! s:ApplyIconMode() abort
         call s:DashboardRender()
     endif
     redrawstatus!
-    redrawtabline
+    execute 'redrawtabline'
 endfunction
 
 function! s:ToggleIcons() abort
@@ -894,16 +1393,67 @@ function! s:ToggleIcons() abort
         \ . ' (restart Vim to refresh Fern and key groups)'
 endfunction
 
+function! s:SetTheme(name) abort
+    let g:chopsticks_colorscheme = a:name
+    call s:ApplyColorscheme()
+    call s:DefineInterfaceColors()
+    redraw!
+    echo 'theme: ' . get(g:, 'colors_name', 'default')
+endfunction
+
+function! s:ToggleTransparency() abort
+    let g:chopsticks_transparent_background =
+        \ !ChopsticksTransparencyEnabled()
+    call s:ApplyColorscheme()
+    call s:DefineInterfaceColors()
+    redraw!
+    echo 'background: ' . (ChopsticksTransparencyEnabled()
+        \ ? 'transparent' : 'opaque')
+endfunction
+
+function! s:SetUiDensity(value) abort
+    let l:modes = ['minimal', 'balanced', 'rich']
+    if empty(a:value)
+        let l:index = index(l:modes, ChopsticksUiDensity())
+        let g:chopsticks_ui_density = l:modes[(l:index + 1) % len(l:modes)]
+    elseif index(l:modes, tolower(a:value)) >= 0
+        let g:chopsticks_ui_density = tolower(a:value)
+    else
+        echohl WarningMsg
+        echom 'chopsticks: density must be minimal, balanced, or rich'
+        echohl None
+        return
+    endif
+    call s:RefreshBufferline()
+    if &filetype ==# 'chopsticks-dashboard'
+        call s:DashboardRender()
+    endif
+    redrawstatus!
+    echo 'UI density: ' . ChopsticksUiDensity()
+endfunction
+
 command! ChopsticksIconsToggle call s:ToggleIcons()
+command! ChopsticksTransparencyToggle call s:ToggleTransparency()
+command! -nargs=1 -complete=color ChopsticksTheme call s:SetTheme(<q-args>)
+command! -nargs=? ChopsticksUiDensity call s:SetUiDensity(<q-args>)
+
+function! s:HandleResize() abort
+    wincmd =
+    if &filetype ==# 'chopsticks-dashboard'
+        call s:DashboardRender()
+    endif
+endfunction
 
 augroup ChopsticksInterface
     autocmd!
     autocmd ColorScheme * call s:DefineInterfaceColors()
     autocmd BufEnter * if &filetype ==# 'chopsticks-dashboard' | call s:DashboardEnter() | call s:DashboardRender() | endif
     autocmd BufLeave * if &filetype ==# 'chopsticks-dashboard' | call s:DashboardLeave() | endif
+    autocmd BufEnter,BufAdd,BufWinEnter * call s:RefreshBufferline()
+    autocmd BufDelete,BufWipeout * call s:ScheduleBufferlineRefresh()
     autocmd CursorMoved * if &filetype ==# 'chopsticks-dashboard' | call s:DashboardLockCursor() | endif
     autocmd FocusGained * if &filetype ==# 'chopsticks-dashboard' | call s:DashboardLockCursor() | redraw! | endif
-    autocmd VimResized * if &filetype ==# 'chopsticks-dashboard' | call s:DashboardRender() | endif
+    autocmd VimResized * call s:HandleResize()
 augroup END
 call s:DefineInterfaceColors()
 
@@ -921,22 +1471,210 @@ endfunction
 
 function! s:ProjectRoot() abort
     let l:start = empty(expand('%:p')) ? getcwd() : expand('%:p:h')
-    let l:marker = finddir('.git', l:start . ';')
-    if empty(l:marker)
-        let l:marker = findfile('.git', l:start . ';')
-    endif
-    return empty(l:marker) ? getcwd() : fnamemodify(l:marker, ':h')
+    let l:directory = simplify(fnamemodify(l:start, ':p'))
+    while !empty(l:directory)
+        let l:separator = l:directory =~# '[/\\]$' ? '' : '/'
+        let l:marker = l:directory . l:separator . '.git'
+        if isdirectory(l:marker) || filereadable(l:marker)
+            return fnamemodify(l:marker, ':h')
+        endif
+        let l:parent = fnamemodify(l:directory, ':h')
+        if l:parent ==# l:directory
+            \ || (s:is_windows && l:parent ==? l:directory)
+            break
+        endif
+        let l:directory = l:parent
+    endwhile
+    return getcwd()
 endfunction
 
+function! s:SessionRoot() abort
+    let l:root = get(b:, 'chopsticks_project_root', s:ProjectRoot())
+    return resolve(fnamemodify(l:root, ':p'))
+endfunction
+
+function! s:SessionDigest(value) abort
+    let l:first = 5381
+    let l:second = 52711
+    for l:character in str2list(a:value)
+        let l:first = and(l:first * 33 + l:character, 0x7fffffff)
+        let l:second = and(l:second * 65599 + l:character, 0x7fffffff)
+    endfor
+    return printf('%08x%08x', l:first, l:second)
+endfunction
+
+function! ChopsticksSessionPath() abort
+    let l:root = s:SessionRoot()
+    let l:name = substitute(fnamemodify(l:root, ':t'),
+        \ '[^A-Za-z0-9_.-]', '-', 'g')
+    let l:name = empty(l:name) ? 'workspace' : l:name
+    let l:name = strpart(l:name, 0, 64)
+    let l:filename = printf('%s-%s-vim%d.vim', l:name,
+        \ s:SessionDigest(l:root), v:version)
+    return simplify(g:chopsticks_session_dir . l:filename)
+endfunction
+
+function! s:SessionPermissionsAreSafe(path) abort
+    if s:is_windows || !exists('*getfperm')
+        return 1
+    endif
+    let l:permissions = getfperm(a:path)
+    return !empty(l:permissions)
+        \ && (strpart(l:permissions, 4, 1) !=# 'w'
+        \     && strpart(l:permissions, 7, 1) !=# 'w')
+endfunction
+
+function! s:SessionDirectoryIsSafe() abort
+    return s:DirectoryFileType(g:chopsticks_session_dir) ==# 'dir'
+        \ && s:SessionPermissionsAreSafe(g:chopsticks_session_dir)
+endfunction
+
+function! s:SessionPathIsSafe(path) abort
+    if getftype(a:path) !=# 'file' || !s:SessionDirectoryIsSafe()
+        return 0
+    endif
+    " Windows access is governed by ACLs; its getfperm() owner/group/other
+    " string is not an authority boundary. The regular-file and trusted-root
+    " checks still apply there.
+    return s:SessionPermissionsAreSafe(a:path)
+endfunction
+
+function! s:SessionSave() abort
+    if &filetype ==# 'chopsticks-dashboard'
+        echohl WarningMsg
+        echom 'chopsticks: open a project buffer before saving a session'
+        echohl None
+        return
+    endif
+    call mkdir(g:chopsticks_session_dir, 'p', 0700)
+    if s:DirectoryFileType(g:chopsticks_session_dir) !=# 'dir'
+        echohl ErrorMsg
+        echom 'chopsticks: session directory is not a regular directory'
+        echohl None
+        return
+    endif
+    if exists('*setfperm')
+        call setfperm(g:chopsticks_session_dir, 'rwx------')
+    endif
+    if !s:SessionDirectoryIsSafe()
+        echohl ErrorMsg
+        echom 'chopsticks: refusing an unsafe session directory'
+        echohl None
+        return
+    endif
+    let l:path = ChopsticksSessionPath()
+    let l:temporary = l:path . '.tmp-' . getpid()
+    if !empty(getftype(l:temporary))
+        echohl ErrorMsg
+        echom 'chopsticks: refusing an existing session temporary path'
+        echohl None
+        return
+    endif
+    try
+        execute 'silent mksession! ' . fnameescape(l:temporary)
+        if getftype(l:temporary) !=# 'file'
+            throw 'temporary session is not a regular file'
+        endif
+        if exists('*setfperm')
+            call setfperm(l:temporary, 'rw-------')
+        endif
+        if (has('win32') || has('win64')) && filereadable(l:path)
+            let l:backup = l:path . '.bak-' . getpid()
+            if rename(l:path, l:backup) != 0
+                throw 'could not stage the previous session'
+            endif
+            if rename(l:temporary, l:path) != 0
+                call rename(l:backup, l:path)
+                throw 'could not move the new session into place'
+            endif
+            call delete(l:backup)
+        elseif rename(l:temporary, l:path) != 0
+            throw 'could not move the new session into place'
+        endif
+        if exists('*setfperm')
+            call setfperm(l:path, 'rw-------')
+        endif
+    catch
+        call delete(l:temporary)
+        echohl ErrorMsg
+        echom 'chopsticks: could not save session: ' . v:exception
+        echohl None
+        return
+    endtry
+    echo 'session saved: ' . fnamemodify(l:path, ':t')
+    let l:modified = filter(getbufinfo({'buflisted': 1}),
+        \ 'get(v:val, "changed", 0)')
+    if !empty(l:modified)
+        echohl WarningMsg
+        echom printf('chopsticks: %d modified buffer(s) are not stored in the session',
+            \ len(l:modified))
+        echohl None
+    endif
+endfunction
+
+function! s:SessionLoad(force) abort
+    let l:path = ChopsticksSessionPath()
+    let l:file_type = getftype(l:path)
+    if empty(l:file_type)
+        echohl WarningMsg
+        echom 'chopsticks: no session for ' . s:SessionRoot()
+        echohl None
+        return
+    endif
+    if l:file_type !=# 'file'
+        echohl ErrorMsg
+        echom 'chopsticks: refusing a non-regular session file'
+        echohl None
+        return
+    endif
+    if !filereadable(l:path)
+        echohl ErrorMsg
+        echom 'chopsticks: session file is not readable'
+        echohl None
+        return
+    endif
+    if !s:SessionPathIsSafe(l:path)
+        echohl ErrorMsg
+        echom 'chopsticks: refusing a session writable by other users'
+        echohl None
+        return
+    endif
+    let l:modified = filter(getbufinfo({'buflisted': 1}),
+        \ 'get(v:val, "changed", 0)')
+    if !a:force && !empty(l:modified)
+        echohl WarningMsg
+        echom printf('chopsticks: refusing to restore with %d modified listed buffer(s); write them or use :ChopsticksSessionLoad! to load anyway',
+            \ len(l:modified))
+        echohl None
+        return
+    endif
+    let l:shortmess = &shortmess
+    try
+        execute 'cd ' . fnameescape(s:SessionRoot())
+        execute 'silent source ' . fnameescape(l:path)
+        echo 'session restored: ' . fnamemodify(l:path, ':t')
+    catch
+        echohl ErrorMsg
+        echom 'chopsticks: could not restore session: ' . v:exception
+        echohl None
+    finally
+        let &shortmess = l:shortmess
+        unlet! g:SessionLoad
+    endtry
+endfunction
+
+command! -bar ChopsticksSessionSave call s:SessionSave()
+command! -bar -bang ChopsticksSessionLoad call s:SessionLoad(<bang>0)
+
 function! s:FzfFileSource() abort
-    if executable('fd')
+    if executable('fd') == 1
         let l:parts = ['fd', '--type', 'f', '--hidden', '--color', 'never']
         for l:directory in s:fzf_skip_dirs
             call extend(l:parts, ['--exclude', shellescape(l:directory)])
         endfor
         return join(l:parts, ' ')
     endif
-    if executable('rg')
+    if executable('rg') == 1
         let l:parts = ['rg', '--files', '--hidden', '--color', 'never']
         for l:directory in s:fzf_skip_dirs
             call extend(l:parts,
@@ -958,36 +1696,82 @@ function! s:FzfFiles(path, bang) abort
     call extend(l:options, s:FzfVisualOptions())
     let l:spec = {'dir': l:root, 'options': l:options}
     let l:source = s:FzfFileSource()
-    if empty(l:source)
-        call extend(l:options, [
-            \ '--walker', 'file,hidden',
-            \ '--walker-skip', join(s:fzf_skip_dirs, ','),
-            \ ])
-    else
+    if !empty(l:source)
         let l:spec.source = l:source
     endif
     call fzf#vim#files(l:root, fzf#vim#with_preview(l:spec), a:bang)
 endfunction
 
+function! s:ProjectFzfSpec() abort
+    return {'dir': s:ProjectRoot()}
+endfunction
+
+function! s:ProjectGrep(query, bang) abort
+    if exists(':Rg') != 2 || executable('rg') != 1
+        \ || executable('fzf') != 1
+        echohl WarningMsg | echom 'chopsticks: project grep needs fzf.vim and rg' | echohl None
+        return
+    endif
+    let l:command = 'rg --column --line-number --no-heading '
+        \ . '--color=always --smart-case -- ' . fzf#shellescape(a:query)
+    call fzf#vim#grep(
+        \ l:command, fzf#vim#with_preview(s:ProjectFzfSpec()), a:bang)
+endfunction
+
+command! -bang -nargs=* ChopsticksProjectGrep
+    \ call s:ProjectGrep(<q-args>, <bang>0)
+
+function! s:ProjectGitFiles() abort
+    if exists(':GFiles') != 2 || executable('git') != 1
+        \ || executable('fzf') != 1
+        echohl WarningMsg | echom 'chopsticks: Git file search needs Git and fzf.vim' | echohl None
+        return
+    endif
+    let l:root = s:ProjectRoot()
+    call system('git -C ' . shellescape(l:root) . ' rev-parse --is-inside-work-tree')
+    if v:shell_error != 0
+        echohl WarningMsg | echom 'chopsticks: current buffer is outside a Git worktree' | echohl None
+        return
+    endif
+    call fzf#vim#gitfiles(
+        \ '', fzf#vim#with_preview(s:ProjectFzfSpec()), 0)
+endfunction
+
 function! s:FindFiles() abort
-    if exists(':GFiles') == 2 && executable('git')
+    if executable('fzf') == 1 && exists(':GFiles') == 2
+        \ && executable('git') == 1
         let l:root = s:ProjectRoot()
         call system('git -C ' . shellescape(l:root) . ' rev-parse --is-inside-work-tree')
         if v:shell_error == 0
-            execute 'lcd ' . fnameescape(l:root)
-            GFiles
+            call s:ProjectGitFiles()
             return
         endif
     endif
-    if exists(':Files') == 2
+    if executable('fzf') == 1 && exists(':Files') == 2
         execute 'Files ' . fnameescape(s:ProjectRoot())
+        return
     endif
+    execute 'edit ' . fnameescape(s:ProjectRoot())
 endfunction
 
 command! ChopsticksFindFiles call s:FindFiles()
 
+function! s:RecentFiles() abort
+    if executable('fzf') == 1 && exists(':History') == 2
+        History
+    elseif !empty(v:oldfiles)
+        browse oldfiles
+    else
+        echohl WarningMsg
+        echom 'chopsticks: no recent files yet'
+        echohl None
+    endif
+endfunction
+
+command! ChopsticksRecentFiles call s:RecentFiles()
+
 function! s:DefineFzfCommands() abort
-    if exists(':Files') == 2
+    if executable('fzf') == 1 && exists(':Files') == 2
         command! -bang -nargs=? -complete=dir Files
             \ call s:FzfFiles(<q-args>, <bang>0)
     endif
@@ -1025,9 +1809,20 @@ endfunction
 
 function! s:PathInside(path, directory) abort
     let l:path = resolve(fnamemodify(a:path, ':p'))
-    let l:directory = substitute(
-        \ resolve(fnamemodify(a:directory, ':p')), '/\+$', '', '')
-    return l:path ==# l:directory || stridx(l:path, l:directory . '/') == 0
+    let l:directory = resolve(fnamemodify(a:directory, ':p'))
+    if s:is_windows
+        let l:path = substitute(l:path, '\\', '/', 'g')
+        let l:directory = substitute(l:directory, '\\', '/', 'g')
+        let l:path = substitute(l:path, '/\+$', '', '')
+        let l:directory = substitute(l:directory, '/\+$', '', '')
+        return l:path ==? l:directory
+            \ || stridx(tolower(l:path),
+            \     tolower(l:directory . '/')) == 0
+    endif
+    let l:path = substitute(l:path, '/\+$', '', '')
+    let l:directory = substitute(l:directory, '/\+$', '', '')
+    return l:path ==# l:directory
+        \ || stridx(l:path, l:directory . '/') == 0
 endfunction
 
 function! s:ToggleExplorer(directory) abort
@@ -1058,9 +1853,23 @@ endfunction
 
 function! s:FernSetup() abort
     setlocal nonumber norelativenumber signcolumn=no winfixwidth cursorline
-    nmap <silent><buffer> <CR> <Plug>(fern-action-open-or-expand)
-    nmap <silent><buffer> l <Plug>(fern-action-open-or-expand)
-    nmap <silent><buffer> h <Plug>(fern-action-collapse)
+    " Match the reversible node interaction used by mature file trees: the
+    " same key opens a file, expands a closed directory, and collapses an
+    " open directory.  expand:stay keeps the cursor on the directory so the
+    " second press can close it again.
+    nmap <buffer><silent><expr> <Plug>(chopsticks-fern-toggle-node)
+        \ fern#smart#leaf(
+        \ "\<Plug>(fern-action-open)",
+        \ "\<Plug>(fern-action-expand:stay)",
+        \ "\<Plug>(fern-action-collapse)")
+    nmap <silent><buffer> <CR> <Plug>(chopsticks-fern-toggle-node)
+    nmap <silent><buffer> l <Plug>(chopsticks-fern-toggle-node)
+    nmap <buffer><silent><expr> <Plug>(chopsticks-fern-parent-or-collapse)
+        \ fern#smart#leaf(
+        \ "\<Plug>(fern-action-focus:parent)",
+        \ "\<Plug>(fern-action-focus:parent)",
+        \ "\<Plug>(fern-action-collapse)")
+    nmap <silent><buffer> h <Plug>(chopsticks-fern-parent-or-collapse)
     nmap <silent><buffer> o <Plug>(fern-action-open)
     nmap <silent><buffer> s <Plug>(fern-action-open:split)
     nmap <silent><buffer> v <Plug>(fern-action-open:vsplit)
@@ -1173,7 +1982,7 @@ function! s:OpenTerminal(command, position) abort
 endfunction
 
 function! s:OpenLazygit() abort
-    if !executable('lazygit')
+    if executable('lazygit') != 1
         echohl WarningMsg | echom 'chopsticks: lazygit is not installed' | echohl None
         return
     endif
@@ -1195,6 +2004,9 @@ function! s:OpenScratch(name, lines) abort
 endfunction
 
 function! ChopsticksHealthLines() abort
+    let l:requested_theme = type(g:chopsticks_colorscheme) == type('')
+        \ && !empty(g:chopsticks_colorscheme)
+        \ ? g:chopsticks_colorscheme : 'everforest'
     let l:lines = [
         \ 'chopsticks ' . g:chopsticks_version . ' health',
         \ '',
@@ -1211,13 +2023,38 @@ function! ChopsticksHealthLines() abort
         \         : 'ASCII fallback'),
         \ printf('[ok] %-14s %s', 'explorer',
         \     s:FernAvailable() ? 'Fern drawer' : 'netrw fallback'),
+        \ printf('[ok] %-14s %s', 'UI density', ChopsticksUiDensity()),
+        \ printf('[ok] %-14s %s', 'theme',
+        \     get(g:, 'colors_name', 'default')
+        \     . (get(g:, 'colors_name', 'default') ==# l:requested_theme
+        \         ? '' : ' (fallback from ' . l:requested_theme . ')')),
+        \ printf('[ok] %-14s %s', 'background',
+        \     ChopsticksTransparencyEnabled() ? 'transparent' : 'opaque'),
+        \ printf('[ok] %-14s %s', 'dashboard',
+        \     ChopsticksDashboardEnabled() ? 'enabled' : 'disabled'),
+        \ printf('[ok] %-14s %s', 'bufferline',
+        \     ChopsticksBufferlineEnabled() ? 'visible' : 'adaptive / hidden'),
+        \ printf('[ok] %-14s %s', 'linting',
+        \     g:chopsticks_auto_lint
+        \         ? 'automatic on enter and save'
+        \         : 'manual (,l / :ALELint)'),
+        \ printf('[%s] %-14s %s',
+        \     ChopsticksSystemClipboardEnabled() ? 'ok' : '--',
+        \     'clipboard', !has('clipboard') ? 'Vim lacks +clipboard'
+        \         : ChopsticksSystemClipboardEnabled()
+        \             ? 'system register' : 'Vim registers only'),
+        \ printf('[%s] %-14s %s',
+        \     filereadable(ChopsticksSessionPath()) ? 'ok' : '--',
+        \     'session', filereadable(ChopsticksSessionPath())
+        \         ? fnamemodify(ChopsticksSessionPath(), ':t') : 'not saved'),
         \ '',
         \ 'Tools',
         \ ]
     for l:tool in ['git', 'rg', 'fzf', 'fd', 'lazygit', 'marksman', 'markdownlint', 'prettier', 'glow', 'pandoc', 'pngpaste']
+        let l:available = executable(l:tool) == 1
         call add(l:lines, printf('[%s] %-14s %s',
-            \ executable(l:tool) ? 'ok' : '--', l:tool,
-            \ executable(l:tool) ? exepath(l:tool) : 'optional / missing'))
+            \ l:available ? 'ok' : '--', l:tool,
+            \ l:available ? exepath(l:tool) : 'optional / missing'))
     endfor
     call extend(l:lines, ['', 'Plugins'])
     if exists('g:plugs')
@@ -1233,16 +2070,6 @@ function! ChopsticksHealthLines() abort
             \ : '[!!] missing: ' . join(l:missing, ', '))
     else
         call add(l:lines, '[--] vim-plug is not installed')
-    endif
-    if exists('*ChopsticksInputMethodInfo')
-        let l:input_method = ChopsticksInputMethodInfo()
-        call extend(l:lines, [
-            \ '',
-            \ 'Input method',
-            \ printf('[%s] %-14s %s',
-            \     l:input_method.available ? 'ok' : '--',
-            \     'im-select', l:input_method.reason),
-            \ ])
     endif
     call extend(l:lines, [
         \ '',
@@ -1423,7 +2250,7 @@ function! s:MarkdownToggleConceal() abort
 endfunction
 
 function! s:MarkdownGlow() abort
-    if !executable('glow')
+    if executable('glow') != 1
         echohl WarningMsg | echom 'chopsticks: install glow for terminal Markdown preview' | echohl None
         return
     endif
@@ -1436,7 +2263,7 @@ function! s:MarkdownGlow() abort
 endfunction
 
 function! s:MarkdownPasteImage(name) abort
-    if !executable('pngpaste')
+    if executable('pngpaste') != 1
         echohl WarningMsg
         echom 'chopsticks: Markdown image paste needs pngpaste (brew install pngpaste)'
         echohl None
@@ -1571,12 +2398,14 @@ function! s:GoyoEnter() abort
         silent Limelight
     endif
     setlocal wrap linebreak
+    call s:RefreshBufferline()
 endfunction
 
 function! s:GoyoLeave() abort
     if exists(':Limelight') == 2
-        silent! Limelight!
+        silent! execute 'Limelight!'
     endif
+    call s:RefreshBufferline()
 endfunction
 
 command! -nargs=? -complete=file MarkdownPasteImage call s:MarkdownPasteImage(<q-args>)
@@ -1775,6 +2604,8 @@ call s:LeaderN(['u', 'l'], ':set list! list?<CR>', 'Toggles', 'Toggle invisible 
 call s:LeaderN(['u', 'w'], ':set wrap! wrap?<CR>', 'Toggles', 'Toggle wrapping')
 call s:LeaderN(['u', 's'], ':set spell! spell?<CR>', 'Toggles', 'Toggle spelling')
 call s:LeaderN(['u', 'i'], ':ChopsticksIconsToggle<CR>', 'Toggles', 'Toggle Nerd Font icons')
+call s:LeaderN(['u', 'b'], ':ChopsticksTransparencyToggle<CR>', 'Toggles', 'Toggle background transparency')
+call s:LeaderN(['u', 'd'], ':ChopsticksUiDensity<CR>', 'Toggles', 'Cycle UI density')
 
 call s:Catalog('Files', 'n*', 'Fern h / l', 'Collapse / open node')
 call s:Catalog('Files', 'n*', 'Fern s / v / t', 'Open in split / vsplit / tab')
@@ -1784,11 +2615,15 @@ call s:Catalog('Files', 'n*', 'Fern q / Esc', 'Close drawer')
 
 call s:LeaderN(['q', 'w'], ':confirm quit<CR>', 'Quit', 'Close window')
 call s:LeaderN(['q', 'q'], ':confirm qall<CR>', 'Quit', 'Quit Vim')
+call s:LeaderN(['q', 's'], ':ChopsticksSessionSave<CR>', 'Quit', 'Save project session')
+call s:LeaderN(['q', 'l'], ':ChopsticksSessionLoad<CR>', 'Quit', 'Restore project session')
 
 if has('terminal')
     call s:LeaderN(['t', 't'], ':call <SID>OpenTerminal([], ''tab'')<CR>', 'Terminal', 'Terminal in new tab')
     call s:LeaderN(['t', 's'], ':call <SID>OpenTerminal([], ''split'')<CR>', 'Terminal', 'Terminal below')
-    silent! tunmap <Esc><Esc>
+    if !empty(maparg("\<Esc>\<Esc>", 't'))
+        execute 'tunmap <Esc><Esc>'
+    endif
     call s:Catalog('Terminal', 't', 'Ctrl-w N', 'Leave terminal mode')
 endif
 
@@ -1805,12 +2640,12 @@ call s:LeaderN(['g', 'g'], ':call <SID>OpenLazygit()<CR>', 'Git', 'Lazygit at pr
 " ── Plugin mappings ────────────────────────────────────────────────────────
 
 function! s:PluginMaps() abort
-    if exists(':Files') == 2 && executable('fzf')
+    if exists(':Files') == 2 && executable('fzf') == 1
         call s:Catalog('Fast find', 't', 'Esc / Ctrl-q', 'Close finder')
         call s:LeaderN(['<Space>'], ':Buffers<CR>', 'Buffers', 'Find open buffers')
         call s:LeaderN([','], ':Buffers<CR>', 'Buffers', 'Find open buffers')
         call s:LeaderN(['f', 'f'], ':call <SID>FindFiles()<CR>', 'Files', 'Find files')
-        call s:LeaderN(['f', 'g'], ':GFiles<CR>', 'Files', 'Find Git files')
+        call s:LeaderN(['f', 'g'], ':call <SID>ProjectGitFiles()<CR>', 'Files', 'Find Git files')
         call s:LeaderN(['f', 'r'], ':History<CR>', 'Files', 'Recent files')
         call s:LeaderN(['/'], ':BLines<CR>', 'Search', 'Search current buffer')
         call s:LeaderN(['s', 'b'], ':BLines<CR>', 'Search', 'Search current buffer')
@@ -1825,12 +2660,13 @@ function! s:PluginMaps() abort
         call s:DirectN(';h', ':Helptags<CR>', ';h', 'Fast find', 'Search Vim help')
         call s:DirectN('<Bslash>', ':Buffers<CR>', '\', 'Fast find', 'Find open buffers')
     endif
-    if exists(':Rg') == 2 && executable('rg')
-        call s:LeaderN(['s', 'g'], ':Rg<CR>', 'Search', 'Grep project')
-        call s:LeaderN(['s', 'w'], ':Rg <C-r><C-w><CR>', 'Search', 'Grep word under cursor')
-        call s:DirectN(';r', ':Rg<CR>', ';r', 'Fast find', 'Grep project')
+    if exists(':Rg') == 2 && executable('rg') == 1
+        \ && executable('fzf') == 1
+        call s:LeaderN(['s', 'g'], ':ChopsticksProjectGrep<CR>', 'Search', 'Grep project')
+        call s:LeaderN(['s', 'w'], ':ChopsticksProjectGrep <C-r><C-w><CR>', 'Search', 'Grep word under cursor')
+        call s:DirectN(';r', ':ChopsticksProjectGrep<CR>', ';r', 'Fast find', 'Grep project')
     endif
-    if exists(':Git') == 2 && executable('git')
+    if exists(':Git') == 2 && executable('git') == 1
         call s:LeaderN(['g', 's'], ':Git status<CR>', 'Git', 'Git status')
         call s:LeaderN(['g', 'd'], ':Gdiffsplit<CR>', 'Git', 'Diff current file')
         call s:LeaderN(['g', 'b'], ':Git blame<CR>', 'Git', 'Blame current file')
@@ -1889,7 +2725,6 @@ call s:RegisterWhichKey()
 
 augroup Chopsticks
     autocmd!
-    autocmd VimResized * wincmd =
     autocmd FocusGained,BufEnter * silent! checktime
     autocmd InsertLeave * set nopaste
     autocmd FileType * setlocal formatoptions-=c formatoptions-=r
@@ -1904,6 +2739,7 @@ augroup Chopsticks
     autocmd QuickFixCmdPost [^l]* cwindow
     autocmd QuickFixCmdPost l* lwindow
     autocmd FileType fern call <SID>FernSetup()
+    autocmd FileType which_key call <SID>WhichKeySetup()
     autocmd FileType netrw setlocal bufhidden=wipe
     autocmd FileType qf nnoremap <silent><buffer> q :close<CR>
     autocmd BufNewFile,BufRead *.mdx setfiletype markdown
@@ -1934,315 +2770,17 @@ augroup END
 
 augroup ChopsticksDashboard
     autocmd!
+    autocmd VimEnter * call <SID>CaptureStartupTime()
     autocmd VimEnter * call <SID>MaybeOpenDashboard()
 augroup END
 
 if v:vim_did_enter
     call s:PluginMaps()
     call s:RegisterWhichKey()
-    if &filetype ==# 'markdown'
-        call s:MarkdownSetup()
-    endif
 endif
-
-" ── Input method (final integration) ───────────────────────────────────────
-
-let s:input_method_default_command = executable('im-select') && exists('*exepath')
-    \ ? exepath('im-select')
-    \ : 'im-select'
-let g:chopsticks_input_method_cmd = get(g:, 'chopsticks_input_method_cmd',
-    \ s:input_method_default_command)
-let g:chopsticks_input_method_default = get(g:, 'chopsticks_input_method_default',
-    \ has('macunix') ? 'com.apple.keylayout.ABC' : '')
-let g:chopsticks_input_method_restore = get(g:, 'chopsticks_input_method_restore', 1)
-let g:chopsticks_input_method_preserve_external = get(g:,
-    \ 'chopsticks_input_method_preserve_external', 1)
-let g:chopsticks_input_method_disable_on_ssh = get(g:,
-    \ 'chopsticks_input_method_disable_on_ssh', 1)
-let g:chopsticks_input_method_filetypes = get(g:, 'chopsticks_input_method_filetypes', [])
-let g:chopsticks_input_method_ignore_filetypes = get(g:,
-    \ 'chopsticks_input_method_ignore_filetypes',
-    \ ['chopsticks-dashboard', 'fern', 'fzf', 'help', 'netrw', 'qf', 'startify'])
-let g:chopsticks_enable_input_method = get(g:, 'chopsticks_enable_input_method',
-    \ has('macunix') && executable(g:chopsticks_input_method_cmd))
-let s:input_method_assumed = ''
-if !exists('g:chopsticks_input_method_state')
-    \ || type(g:chopsticks_input_method_state) != type({})
-    let g:chopsticks_input_method_state = {}
-endif
-let s:input_method_state = g:chopsticks_input_method_state
-let s:input_method_state.active = get(s:input_method_state, 'active', 0)
-let s:input_method_state.external = get(s:input_method_state, 'external', '')
-
-function! s:InputMethodList(value) abort
-    if type(a:value) == type([])
-        return a:value
-    endif
-    return type(a:value) == type('') && !empty(a:value) ? [a:value] : []
-endfunction
-
-function! s:InputMethodBaseInfo() abort
-    let l:enabled = get(g:, 'chopsticks_enable_input_method', 0)
-    let l:remote_blocked = s:is_remote
-        \ && get(g:, 'chopsticks_input_method_disable_on_ssh', 1)
-    if !l:enabled
-        return {'available': 0, 'reason': 'disabled'}
-    elseif l:remote_blocked
-        return {'available': 0, 'reason': 'disabled on SSH'}
-    elseif empty(g:chopsticks_input_method_cmd)
-        return {'available': 0, 'reason': 'command is empty'}
-    elseif !executable(g:chopsticks_input_method_cmd)
-        return {'available': 0, 'reason': 'missing: ' . g:chopsticks_input_method_cmd}
-    elseif empty(g:chopsticks_input_method_default)
-        return {'available': 0, 'reason': 'default input source is empty'}
-    endif
-    return {'available': 1, 'reason': 'ready'}
-endfunction
-
-function! s:InputMethodBufferInfo() abort
-    let l:base = s:InputMethodBaseInfo()
-    if !l:base.available
-        return {'enabled': 0, 'reason': l:base.reason}
-    elseif &buftype !=# ''
-        return {'enabled': 0, 'reason': 'buffer type: ' . &buftype}
-    elseif empty(bufname('%')) && empty(&filetype)
-        return {'enabled': 0, 'reason': 'unnamed buffer'}
-    endif
-    let l:allowed = s:InputMethodList(g:chopsticks_input_method_filetypes)
-    let l:ignored = s:InputMethodList(g:chopsticks_input_method_ignore_filetypes)
-    if !empty(l:allowed) && index(l:allowed, &filetype) < 0
-        return {'enabled': 0, 'reason': 'filetype not allowed: ' . &filetype}
-    elseif index(l:ignored, &filetype) >= 0
-        return {'enabled': 0, 'reason': 'filetype ignored: ' . &filetype}
-    endif
-    return {'enabled': 1, 'reason': 'ready'}
-endfunction
-
-function! ChopsticksInputMethodInfo() abort
-    let l:base = s:InputMethodBaseInfo()
-    let l:buffer = s:InputMethodBufferInfo()
-    return {
-        \ 'enabled': get(g:, 'chopsticks_enable_input_method', 0),
-        \ 'available': l:base.available,
-        \ 'reason': l:base.reason,
-        \ 'command': g:chopsticks_input_method_cmd,
-        \ 'default': g:chopsticks_input_method_default,
-        \ 'restore': get(g:, 'chopsticks_input_method_restore', 1),
-        \ 'preserve_external': get(g:,
-        \     'chopsticks_input_method_preserve_external', 1),
-        \ 'remote': s:is_remote,
-        \ 'vim_active': s:input_method_state.active,
-        \ 'external': s:input_method_state.external,
-        \ 'buffer_enabled': l:buffer.enabled,
-        \ 'buffer_reason': l:buffer.reason,
-        \ 'saved': get(b:, 'chopsticks_input_method_saved', ''),
-        \ 'last': get(b:, 'chopsticks_input_method_last', ''),
-        \ }
-endfunction
-
-function! s:InputMethodRun(arguments) abort
-    let l:command = shellescape(g:chopsticks_input_method_cmd)
-    for l:argument in a:arguments
-        let l:command .= ' ' . shellescape(l:argument)
-    endfor
-    let l:output = system(l:command . ' 2>/dev/null')
-    return v:shell_error == 0
-        \ ? substitute(l:output, '[\r\n]\+$', '', '')
-        \ : ''
-endfunction
-
-function! s:InputMethodCurrent() abort
-    let l:current = s:InputMethodRun([])
-    if !empty(l:current)
-        let s:input_method_assumed = l:current
-    endif
-    return l:current
-endfunction
-
-function! s:InputMethodSelect(input_source) abort
-    if !empty(a:input_source)
-        call s:InputMethodRun([a:input_source])
-        let s:input_method_assumed = a:input_source
-    endif
-endfunction
-
-function! s:InputMethodRemember(input_source) abort
-    let b:chopsticks_input_method_saved = a:input_source
-endfunction
-
-function! s:InputMethodIsInsertLike() abort
-    " Replace mode and Insert's one-command Normal mode still accept text with
-    " the buffer's Insert preference when control returns to the editor.
-    return mode(1) =~# '^\%(i\|R\|ni[IR]\)'
-endfunction
-
-" Used when leaving Insert mode. Choosing ABC while inserting is treated as
-" an intentional preference change, so the previously saved CJK source clears.
-function! s:InputMethodSwitchToDefault() abort
-    if !s:input_method_state.active || !s:InputMethodBufferInfo().enabled
-        return
-    endif
-    let l:current = s:InputMethodCurrent()
-    if empty(l:current)
-        return
-    endif
-    let b:chopsticks_input_method_last = l:current
-    if l:current ==# g:chopsticks_input_method_default
-        unlet! b:chopsticks_input_method_saved
-        return
-    endif
-    call s:InputMethodRemember(l:current)
-    call s:InputMethodSelect(g:chopsticks_input_method_default)
-endfunction
-
-" Used when entering a normal-mode buffer or returning focus to Vim. It keeps
-" an existing per-buffer preference when the system is already on ABC.
-function! s:InputMethodEnsureDefault() abort
-    if !s:input_method_state.active || s:InputMethodIsInsertLike()
-        \ || !s:InputMethodBufferInfo().enabled
-        return
-    endif
-    if s:input_method_assumed ==# g:chopsticks_input_method_default
-        return
-    endif
-    let l:current = s:InputMethodCurrent()
-    if empty(l:current) || l:current ==# g:chopsticks_input_method_default
-        return
-    endif
-    let b:chopsticks_input_method_last = l:current
-    call s:InputMethodRemember(l:current)
-    call s:InputMethodSelect(g:chopsticks_input_method_default)
-endfunction
-
-function! s:InputMethodRestore() abort
-    if !s:input_method_state.active || !s:InputMethodBufferInfo().enabled
-        return
-    endif
-    let l:target = get(b:, 'chopsticks_input_method_saved', '')
-    if get(g:, 'chopsticks_input_method_restore', 1)
-        \ && !empty(l:target)
-        \ && l:target !=# g:chopsticks_input_method_default
-        call s:InputMethodSelect(l:target)
-    endif
-endfunction
-
-" Save the current Insert-mode preference without changing the system source.
-" This is important on FocusLost: selecting ABC there would leak Vim's Normal
-" mode preference into the application receiving focus.
-function! s:InputMethodRememberInsert() abort
-    if !s:InputMethodIsInsertLike() || !s:InputMethodBufferInfo().enabled
-        return
-    endif
-    let l:current = s:InputMethodCurrent()
-    if empty(l:current)
-        return
-    endif
-    let b:chopsticks_input_method_last = l:current
-    if l:current ==# g:chopsticks_input_method_default
-        unlet! b:chopsticks_input_method_saved
-    else
-        call s:InputMethodRemember(l:current)
-    endif
-endfunction
-
-" im-select changes macOS's process-independent current input source. Emulate
-" application-local state by bracketing Vim focus: capture the outside source,
-" apply Vim's mode preference, then restore the captured source on focus loss.
-function! s:InputMethodActivate() abort
-    if s:input_method_state.active || !s:InputMethodBaseInfo().available
-        return
-    endif
-    let l:external = s:InputMethodCurrent()
-    if empty(l:external)
-        return
-    endif
-    let s:input_method_state.external = l:external
-    let s:input_method_state.active = 1
-    if s:InputMethodIsInsertLike()
-        call s:InputMethodRestore()
-    elseif s:InputMethodBufferInfo().enabled
-        \ && l:external !=# g:chopsticks_input_method_default
-        call s:InputMethodSelect(g:chopsticks_input_method_default)
-    endif
-endfunction
-
-function! s:InputMethodDeactivate() abort
-    if !s:input_method_state.active
-        return
-    endif
-    call s:InputMethodRememberInsert()
-    let l:target = s:input_method_state.external
-    let l:current = s:InputMethodCurrent()
-    if get(g:, 'chopsticks_input_method_preserve_external', 1)
-        \ && !empty(l:target) && l:current !=# l:target
-        call s:InputMethodSelect(l:target)
-    endif
-    let s:input_method_state.active = 0
-    let s:input_method_state.external = ''
-    let s:input_method_assumed = ''
-endfunction
-
-function! s:InputMethodStatus() abort
-    let l:info = ChopsticksInputMethodInfo()
-    echo 'input method: ' . (l:info.enabled ? 'enabled' : 'disabled')
-    echo 'available: ' . (l:info.available ? 'yes' : 'no') . ' (' . l:info.reason . ')'
-    echo 'buffer: ' . (l:info.buffer_enabled ? 'enabled' : 'disabled')
-        \ . ' (' . l:info.buffer_reason . ')'
-    echo 'remote: ' . (l:info.remote ? 'yes' : 'no')
-    echo 'Vim focus: ' . (l:info.vim_active ? 'active' : 'inactive')
-    echo 'outside source: ' . (empty(l:info.external) ? '(not captured)' : l:info.external)
-    echo 'preserve outside: ' . (l:info.preserve_external ? 'yes' : 'no')
-    echo 'command: ' . l:info.command
-    echo 'default: ' . l:info.default
-    echo 'saved: ' . l:info.saved
-    echo 'last: ' . l:info.last
-endfunction
-
-function! s:InputMethodEnable() abort
-    let g:chopsticks_enable_input_method = 1
-    let l:info = ChopsticksInputMethodInfo()
-    if l:info.available
-        call s:InputMethodActivate()
-        echo 'chopsticks input method enabled'
-    else
-        echohl WarningMsg
-        echom 'chopsticks input method enabled, but ' . l:info.reason
-        echohl None
-    endif
-endfunction
-
-function! s:InputMethodDisable() abort
-    call s:InputMethodDeactivate()
-    let g:chopsticks_enable_input_method = 0
-    echo 'chopsticks input method disabled'
-endfunction
-
-function! s:InputMethodToggle() abort
-    if get(g:, 'chopsticks_enable_input_method', 0)
-        call s:InputMethodDisable()
-    else
-        call s:InputMethodEnable()
-    endif
-endfunction
-
-command! ChopsticksInputMethodStatus call s:InputMethodStatus()
-command! ChopsticksInputMethodEnable call s:InputMethodEnable()
-command! ChopsticksInputMethodDisable call s:InputMethodDisable()
-command! ChopsticksInputMethodToggle call s:InputMethodToggle()
-
-augroup ChopsticksInputMethod
-    autocmd!
-    autocmd VimEnter * call <SID>InputMethodActivate()
-    autocmd BufEnter * call <SID>InputMethodEnsureDefault()
-    autocmd InsertLeave * call <SID>InputMethodSwitchToDefault()
-    autocmd InsertEnter * call <SID>InputMethodRestore()
-    autocmd FocusLost * call <SID>InputMethodDeactivate()
-    autocmd FocusGained * call <SID>InputMethodActivate()
-    autocmd VimLeavePre * call <SID>InputMethodDeactivate()
-augroup END
-
-" :source $MYVIMRC runs after VimEnter. The global state survives reloads so
-" the original outside input source is not accidentally replaced with ABC.
-if v:vim_did_enter
-    call s:InputMethodActivate()
+" A command-line :source can run after the first file was read but before
+" VimEnter.  Reapply buffer-local writing defaults without relying on an LSP
+" plugin to replay FileType as a side effect.
+if &filetype ==# 'markdown'
+    call s:MarkdownSetup()
 endif

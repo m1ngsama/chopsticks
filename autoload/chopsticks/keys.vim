@@ -17,6 +17,7 @@ vim9script
 # edits, and it belongs beside the functions those keys call.
 
 import autoload 'chopsticks/ui/icons.vim'
+import autoload 'chopsticks/ui/window.vim'
 
 # Cheatsheet section order. A group with no entries is skipped, so this can
 # list groups that only appear under some configurations.
@@ -137,4 +138,12 @@ export def Setup()
   var pattern = ' +\%(\S\+\s\+\)\?[0-9A-Za-z_\/-]\+\%(\s\+[0-9A-Za-z_\/-]\+\)*'
   silent! syntax clear WhichKeyGroup
   execute 'syntax match WhichKeyGroup /' .. pattern .. '/'
+enddef
+
+# The cheatsheet itself, as a scratch buffer. Its own filetype so a
+# colorscheme can highlight the key columns, and 'cursorline' because the
+# sheet is read by scanning down it.
+export def Show()
+  window.Scratch('[chopsticks-cheatsheet]', Lines())
+  setlocal filetype=chopsticks-cheatsheet cursorline
 enddef

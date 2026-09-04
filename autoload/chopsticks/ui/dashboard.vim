@@ -73,7 +73,12 @@ def Items(requested_density: string = ''): list<dict<string>>
   if exists(':Rg') != 2 || executable('rg') != 1 || executable('fzf') != 1
     filter(items, (_, item) => item.key !=# 'g')
   endif
-  if !exists('*ChopsticksSessionPath') || !filereadable(g:ChopsticksSessionPath())
+  # g:, not a bare name: in Vim9script a bare function name is the
+  # script-local one, so this guard would be false forever and the entry
+  # would never appear. The call below already spells it g: because a bare
+  # name there fails loudly at compile time; the guard fails silently.
+  if !exists('*g:ChopsticksSessionPath')
+      || !filereadable(g:ChopsticksSessionPath())
     filter(items, (_, item) => item.key !=# 's')
   endif
   return items

@@ -273,6 +273,30 @@ if [ "$vim9_failed" -ne 0 ]; then
     exit 1
 fi
 
+# :defcompile above cannot see this one. exists('*Name') for a global written
+# without its g: prefix compiles cleanly and simply answers 0 forever, so the
+# guarded feature never turns on and nothing reports anything.
+exists_errors=$test_root/vim9-exists.errors
+rm -f "$exists_errors"
+exists_root_for_vim=$(path_for_vim "$chopsticks_root")
+exists_errors_for_vim=$(path_for_vim "$exists_errors")
+exists_script_for_vim=$(path_for_vim "$chopsticks_root/tests/vim9-exists.vim")
+# shellcheck disable=SC2016
+if ! env \
+    CHOPSTICKS_ROOT="$exists_root_for_vim" \
+    CHOPSTICKS_ERRORS="$exists_errors_for_vim" \
+    CHOPSTICKS_EXISTS_SCRIPT="$exists_script_for_vim" \
+    "$test_vim" \
+        -u NONE -i NONE -n -es \
+        -c 'execute "source " . fnameescape($CHOPSTICKS_EXISTS_SCRIPT)'
+then
+    printf 'vim9 exists() guards are unreachable:\n' >&2
+    if [ -s "$exists_errors" ]; then
+        sed 's/^/  /' "$exists_errors" >&2
+    fi
+    exit 1
+fi
+
 run_ui_test() {
     test_case=$1
     shift

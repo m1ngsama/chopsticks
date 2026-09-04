@@ -13,9 +13,23 @@ vim9script
 # autocommand, or mapping — cannot be moved behind this shim without also
 # moving that call site, or startup fails with E117 (unknown function) at
 # the point .vimrc reaches it, before this file has ever loaded.
-# ChopsticksIconsEnabled() and ChopsticksIcon() are the current examples:
-# .vimrc calls both at top level to build g:fern#renderer, g:ale_sign_error,
-# and friends.
+# ChopsticksIconsEnabled() and ChopsticksIcon() are exactly that: .vimrc
+# calls both at top level to build g:fern#renderer, g:ale_sign_error, and
+# friends. It reaches the icon and theme modules there through Vim's classic
+# dotted autoload name instead (chopsticks#ui#icons#..., which resolves
+# against 'runtimepath' the moment it is referenced, with no shim and no
+# `import` needed) rather than through the g:ChopsticksIcon()-style globals
+# declared below; see .vimrc's own comment next to those call sites for why.
+# An earlier version of this file instead had .vimrc `:source` this file
+# itself, early, so those globals would already exist by the time .vimrc's
+# top level reached them: that broke `import autoload` for every shim below,
+# not just the icon/theme ones, because a Vim9 script's lazily-imported
+# autoload bindings do not survive being sourced by a nested `:source` from
+# inside another script's own execution (verified against Vim 9.2; reached
+# from an entirely separate, later script, calling the importing script's
+# own exported def failed with E1001 "variable not found"). Whatever calls
+# a Chopsticks* global from .vimrc's own top level, in some later task, needs
+# the classic dotted name too — not this trick.
 #
 # Shims declared here return `number`, not Vim9 `bool`, wherever a caller in
 # tests/ui.vim or .vimrc compares the result against a value produced by
@@ -34,9 +48,23 @@ g:loaded_chopsticks = true
 import autoload 'chopsticks/clipboard.vim'
 import autoload 'chopsticks/session.vim'
 import autoload 'chopsticks/health.vim'
+import autoload 'chopsticks/ui/icons.vim'
+import autoload 'chopsticks/ui/theme.vim'
 
 def g:ChopsticksSystemClipboardEnabled(): number
   return clipboard.Enabled()
+enddef
+
+def g:ChopsticksIcon(name: string): string
+  return icons.Get(name)
+enddef
+
+def g:ChopsticksIconsEnabled(): number
+  return icons.Enabled()
+enddef
+
+def g:ChopsticksTransparencyEnabled(): number
+  return theme.TransparencyEnabled()
 enddef
 
 def g:ChopsticksSessionPath(): string
@@ -63,3 +91,6 @@ enddef
 command! -bar ChopsticksSessionSave session.Save()
 command! -bar -bang ChopsticksSessionLoad session.Load(<bang>0)
 command! ChopsticksHealth health.Show()
+command! ChopsticksIconsToggle icons.Toggle()
+command! ChopsticksTransparencyToggle theme.ToggleTransparency()
+command! -nargs=1 -complete=color ChopsticksTheme theme.Set(<q-args>)

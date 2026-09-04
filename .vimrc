@@ -14,12 +14,8 @@ if has('nvim')
     echoerr 'chopsticks targets Vim, not Neovim'
     finish
 endif
-if v:version < 802
-    echoerr 'chopsticks requires Vim 8.2 or newer'
-    finish
-endif
-if s:is_windows && !has('patch-9.1.1947')
-    echoerr 'chopsticks requires Vim 9.1.1947 or newer on Windows'
+if !has('patch-9.1.1947')
+    echoerr 'chopsticks requires Vim 9.1.1947 or newer'
     finish
 endif
 
@@ -468,13 +464,11 @@ if filereadable(s:vim_plug)
     " Find and navigate.
     Plug 'junegunn/fzf', {'commit': '3337be9d450cd349e99273a2d3985ceaf5f3753f'}
     Plug 'junegunn/fzf.vim', {'commit': 'd2a59a992a2455f609c0fde2ebd84427ea8f919a'}
-    if has('patch-8.2.5136')
-        Plug 'lambdalisue/vim-fern', {'commit': '3bbca3c87a57cdc87495b91a695b8eda722a1de1'}
-        Plug 'lambdalisue/vim-nerdfont', {'commit': '3a28b3f061a8b6de751175cc3f91f072d4bfc811'}
-        Plug 'lambdalisue/vim-fern-renderer-nerdfont', {'commit': '325629c68eb543229715b68920fbcb92b206beb6'}
-        Plug 'lambdalisue/vim-glyph-palette', {'commit': '675f0ad64e2c4b823bffc1907d469deefaf6e3bd'}
-        Plug 'lambdalisue/vim-fern-git-status', {'commit': '151336335d3b6975153dad77e60049ca7111da8e'}
-    endif
+    Plug 'lambdalisue/vim-fern', {'commit': '3bbca3c87a57cdc87495b91a695b8eda722a1de1'}
+    Plug 'lambdalisue/vim-nerdfont', {'commit': '3a28b3f061a8b6de751175cc3f91f072d4bfc811'}
+    Plug 'lambdalisue/vim-fern-renderer-nerdfont', {'commit': '325629c68eb543229715b68920fbcb92b206beb6'}
+    Plug 'lambdalisue/vim-glyph-palette', {'commit': '675f0ad64e2c4b823bffc1907d469deefaf6e3bd'}
+    Plug 'lambdalisue/vim-fern-git-status', {'commit': '151336335d3b6975153dad77e60049ca7111da8e'}
     Plug 'tpope/vim-vinegar', {'commit': 'bb1bcddf43cfebe05eb565a84ab069b357d0b3d6'}
     Plug 'easymotion/vim-easymotion', {'commit': 'b3cfab2a6302b3b39f53d9fd2cd997e1127d7878', 'on': '<Plug>(easymotion'}
 
@@ -580,11 +574,7 @@ if exists('+belloff')
     set belloff=all
 endif
 if exists('+wildoptions')
-    if has('patch-8.2.4325')
-        set wildoptions=pum,tagfile
-    else
-        set wildoptions=tagfile
-    endif
+    set wildoptions=pum,tagfile
 endif
 if exists('+spelloptions')
     set spelloptions+=camel
@@ -623,9 +613,7 @@ endif
 unlet s:state_dir
 
 set listchars=tab:→\ ,trail:·,extends:›,precedes:‹,nbsp:␣
-if has('patch-8.2.2508')
-    execute 'set fillchars+=eob:\ '
-endif
+execute 'set fillchars+=eob:\ '
 " has('termguicolors') only reports that Vim was built with the feature. The
 " Windows console rejects the option at assignment time with E954, so the
 " capability is only known once it has been set.
@@ -1818,7 +1806,7 @@ endfunction
 
 function! s:FernAvailable() abort
     return get(g:, 'chopsticks_use_fern', 1)
-        \ && has('patch-8.2.5136') && exists(':Fern') == 2
+        \ && exists(':Fern') == 2
 endfunction
 
 function! s:PathInside(path, directory) abort

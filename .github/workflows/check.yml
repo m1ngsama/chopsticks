@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   vim-minimum:
-    name: Vim 8.2 baseline
+    name: Vim 9.1.1947 baseline
     runs-on: ubuntu-24.04
     timeout-minutes: 12
 
@@ -28,7 +28,7 @@ jobs:
       - uses: rhysd/action-setup-vim@febef33995d6649302e9d88dda81e071b68f16a7 # v1.6.1
         id: vim
         with:
-          version: v8.2.0000
+          version: v9.1.1947
 
       - name: Check the minimum supported Vim
         env:

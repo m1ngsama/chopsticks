@@ -132,8 +132,16 @@ export def Enter()
   set showtabline=0 laststatus=0
   setlocal nonumber norelativenumber nolist cursorline signcolumn=no
   setlocal nowrap nospell foldcolumn=0 colorcolumn= tabstop=2
+  # Through :execute, and the exists() guard alone is not enough. Vim9
+  # resolves an OPTION name when the :def is compiled, exactly as it
+  # resolves a plain function name or a command name, so naming an option
+  # this Vim does not have makes the whole module fail to compile (E113)
+  # before the guard can run. 'winhighlight' is missing from builds older
+  # than the developer's, which is how this reached CI rather than a local
+  # run. Same rule that sends FugitiveHead() through call() in
+  # ui/statusline.vim and :Limelight through :execute in markdown.vim.
   if exists('+winhighlight')
-    &l:winhighlight = 'CursorLine:ChopDashboardCurrent'
+    execute 'setlocal winhighlight=CursorLine:ChopDashboardCurrent'
   endif
   &l:statusline = '%#ChopDashboardStatus#%='
 enddef

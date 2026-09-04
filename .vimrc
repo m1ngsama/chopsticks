@@ -170,13 +170,6 @@ if has('clipboard')
 endif
 unlet s:clipboard_auto_enabled
 
-function! ChopsticksUiDensity() abort
-    let l:value = type(g:chopsticks_ui_density) == type('')
-        \ ? tolower(g:chopsticks_ui_density) : ''
-    return index(['minimal', 'balanced', 'rich'], l:value) >= 0
-        \ ? l:value : 'balanced'
-endfunction
-
 function! ChopsticksDashboardEnabled() abort
     return s:ResolveSwitch(g:chopsticks_dashboard,
         \ ChopsticksUiDensity() !=# 'minimal')
@@ -574,334 +567,75 @@ call chopsticks#ui#theme#Apply()
 
 " ── Interface: statusline and buffer tabline ───────────────────────────────
 
-function! ChopsticksMode(...) abort
-    if a:0 && !a:1
-        return [' - ', 'ChopStatusMuted']
-    endif
-    let l:mode = mode(1)
-    if l:mode =~# '^i'
-        return [' I ', 'ChopStatusInsert']
-    elseif l:mode =~# '^[vV\x16]'
-        return [' V ', 'ChopStatusVisual']
-    elseif l:mode =~# '^R'
-        return [' R ', 'ChopStatusReplace']
-    elseif l:mode =~# '^[c!t]'
-        return [toupper(' ' . l:mode[0] . ' '), 'ChopStatusCommand']
-    endif
-    return [' N ', 'ChopStatusNormal']
+" These wrappers stay in this file rather than moving to
+" plugin/chopsticks.vim, which declares every other Chopsticks* global.
+" 'statusline' and 'tabline' name two of them, and the `redrawtabline` a few
+" lines below evaluates 'tabline' immediately, during this file's own
+" execution -- long before Vim's plugin-loading pass has sourced
+" plugin/chopsticks.vim. A global that does not exist yet at that moment
+" fails startup with E117. The bodies live in
+" autoload/chopsticks/ui/statusline.vim and bufferline.vim; these are the
+" names Vim and tests/ui.vim know them by.
+"
+" ChopsticksWritingMode() takes two optional arguments and the rest take one,
+" matching the legacy signatures exactly: tests/plugins.vim calls
+" ChopsticksDiagnostics() and ChopsticksGitDiff() WITH a buffer argument
+" while tests/ui.vim calls ChopsticksWritingMode() with none, so neither a
+" fixed arity nor a dropped argument would do.
+function! ChopsticksUiDensity() abort
+    return chopsticks#ui#statusline#UiDensity()
 endfunction
 
-let s:file_icon_cache = {}
+function! ChopsticksStatusline() abort
+    return chopsticks#ui#statusline#Render()
+endfunction
+
+function! ChopsticksTabline() abort
+    return chopsticks#ui#bufferline#Render()
+endfunction
+
 function! ChopsticksFileIcon(path) abort
-    if !chopsticks#ui#icons#Enabled()
-        return ''
-    endif
-    let l:path = empty(a:path) ? '[No Name]' : a:path
-    if !has_key(s:file_icon_cache, l:path)
-        if empty(globpath(&runtimepath, 'autoload/nerdfont.vim'))
-            let s:file_icon_cache[l:path] = chopsticks#ui#icons#Get('file')
-        else
-            try
-                let s:file_icon_cache[l:path] = nerdfont#find(
-                    \ l:path, isdirectory(l:path))
-            catch
-                let s:file_icon_cache[l:path] = chopsticks#ui#icons#Get('file')
-            endtry
-        endif
-    endif
-    let l:icon = s:file_icon_cache[l:path]
-    return empty(l:icon) ? '' : l:icon . ' '
+    return chopsticks#ui#icons#FileIcon(a:path)
+endfunction
+
+function! ChopsticksMode(...) abort
+    return call('chopsticks#ui#statusline#Mode', a:000)
 endfunction
 
 function! ChopsticksGitBranch(...) abort
-    if !exists('*FugitiveHead')
-        return ''
-    endif
-    let l:buffer = a:0 ? a:1 : bufnr('')
-    let l:branch = FugitiveHead(0, l:buffer)
-    return empty(l:branch) ? '' : '  ' . chopsticks#ui#icons#Get('git_branch') . ' '
-        \ . substitute(l:branch, '%', '%%', 'g') . ' '
+    return call('chopsticks#ui#statusline#GitBranch', a:000)
 endfunction
 
 function! ChopsticksGitDiff(...) abort
-    if !exists('*GitGutterGetHunkSummary')
-        return ''
-    endif
-    let l:buffer = a:0 ? a:1 : bufnr('')
-    let [l:added, l:changed, l:removed] =
-        \ gitgutter#hunk#summary(l:buffer)
-    let l:parts = []
-    if l:added > 0
-        call add(l:parts, printf('%%#ChopStatusGitAdd#%s %d',
-            \ chopsticks#ui#icons#Get('git_add'), l:added))
-    endif
-    if l:changed > 0
-        call add(l:parts, printf('%%#ChopStatusGitChange#%s %d',
-            \ chopsticks#ui#icons#Get('git_change'), l:changed))
-    endif
-    if l:removed > 0
-        call add(l:parts, printf('%%#ChopStatusGitDelete#%s %d',
-            \ chopsticks#ui#icons#Get('git_delete'), l:removed))
-    endif
-    return empty(l:parts) ? '' : ' ' . join(l:parts, ' ') . ' '
+    return call('chopsticks#ui#statusline#GitDiff', a:000)
 endfunction
 
 function! ChopsticksDiagnostics(...) abort
-    if !exists('*ale#statusline#Count')
-        return ''
-    endif
-    let l:buffer = a:0 ? a:1 : bufnr('')
-    let l:count = ale#statusline#Count(l:buffer)
-    let l:errors = l:count.error + l:count.style_error
-    let l:warnings = l:count.warning + l:count.style_warning
-    let l:info = get(l:count, 'info', 0)
-    let l:parts = []
-    if l:errors > 0
-        call add(l:parts, printf('%%#ChopStatusError# %s %d',
-            \ chopsticks#ui#icons#Get('error'), l:errors))
-    endif
-    if l:warnings > 0
-        call add(l:parts, printf('%%#ChopStatusWarning# %s %d',
-            \ chopsticks#ui#icons#Get('warning'), l:warnings))
-    endif
-    if l:info > 0
-        call add(l:parts, printf('%%#ChopStatusInfo# %s %d',
-            \ chopsticks#ui#icons#Get('info'), l:info))
-    endif
-    return empty(l:parts) ? '' : join(l:parts, ' ') . ' '
+    return call('chopsticks#ui#statusline#Diagnostics', a:000)
 endfunction
 
 function! ChopsticksWritingMode(...) abort
-    let l:buffer = a:0 ? a:1 : bufnr('')
-    let l:window = a:0 > 1 ? a:2 : win_getid()
-    let l:window_number = win_id2win(l:window)
-    let l:parts = []
-    if l:window_number > 0 && getwinvar(l:window_number, '&spell')
-        call add(l:parts, chopsticks#ui#icons#Get('spell'))
-    endif
-    let l:pencil = getbufvar(l:buffer, 'pencil_wrap_mode', 0)
-    if l:pencil == 2
-        call add(l:parts, chopsticks#ui#icons#Get('wrap') . ':'
-            \ . get(get(g:, 'pencil#mode_indicators', {}), 'soft', 'S'))
-    elseif l:pencil == 1
-        let l:kind = getbufvar(l:buffer, '&formatoptions') =~# 'a'
-            \ ? 'auto' : 'hard'
-        call add(l:parts, chopsticks#ui#icons#Get('wrap') . ':'
-            \ . get(get(g:, 'pencil#mode_indicators', {}), l:kind,
-            \     l:kind ==# 'auto' ? 'A' : 'H'))
-    endif
-    return empty(l:parts) ? '' : ' ' . join(l:parts, ' ') . ' '
+    return call('chopsticks#ui#statusline#WritingMode', a:000)
 endfunction
 
 function! ChopsticksBufferFlags(...) abort
-    let l:buffer = a:0 ? a:1 : bufnr('')
-    let l:parts = []
-    if getbufvar(l:buffer, '&modified')
-        call add(l:parts, chopsticks#ui#icons#Get('modified'))
-    endif
-    if getbufvar(l:buffer, '&readonly')
-        call add(l:parts, chopsticks#ui#icons#Get('readonly'))
-    endif
-    return empty(l:parts) ? '' : ' ' . join(l:parts, ' ') . ' '
+    return call('chopsticks#ui#statusline#BufferFlags', a:000)
 endfunction
 
-function! s:FileBufferCount() abort
-    let l:count = 0
-    for l:buffer in getbufinfo({'buflisted': 1})
-        if getbufvar(l:buffer.bufnr, '&buftype') ==# ''
-            let l:count += 1
-        endif
-    endfor
-    return l:count
-endfunction
-
+" Stays here because it is the only one of these that needs s:ResolveSwitch(),
+" which resolves the 'auto' form of every g:chopsticks_* switch and is still
+" this file's own.
 function! ChopsticksBufferlineEnabled() abort
     let l:density = ChopsticksUiDensity()
     return s:ResolveSwitch(g:chopsticks_bufferline,
         \ l:density ==# 'rich'
-        \ || (l:density ==# 'balanced' && s:FileBufferCount() > 1))
-endfunction
-
-function! s:RefreshBufferline() abort
-    let &showtabline = &filetype ==# 'chopsticks-dashboard'
-        \ || exists('t:goyo_master')
-        \ ? 0 : (ChopsticksBufferlineEnabled() ? 2 : 0)
-    execute 'redrawtabline'
-endfunction
-
-function! s:RefreshBufferlineTimer(_timer) abort
-    if a:_timer >= 0
-        call s:RefreshBufferline()
-    endif
-endfunction
-
-function! s:ScheduleBufferlineRefresh() abort
-    if exists('*timer_start')
-        call timer_start(0, function('<SID>RefreshBufferlineTimer'))
-    else
-        call s:RefreshBufferline()
-    endif
-endfunction
-
-function! s:StatuslineContext() abort
-    let l:window = get(g:, 'statusline_winid', win_getid())
-    let l:info = getwininfo(l:window)
-    if empty(l:info)
-        let l:window = win_getid()
-        let l:info = getwininfo(l:window)
-    endif
-    return {
-        \ 'winid': l:window,
-        \ 'bufnr': empty(l:info) ? bufnr('') : l:info[0].bufnr,
-        \ 'width': empty(l:info) ? winwidth(0) : l:info[0].width,
-        \ 'active': l:window == win_getid(),
-        \ }
-endfunction
-
-function! s:EffectiveStatuslineDensity(width) abort
-    let l:density = ChopsticksUiDensity()
-    if a:width < 70
-        return 'minimal'
-    elseif l:density ==# 'rich' && a:width < 110
-        return 'balanced'
-    endif
-    return l:density
-endfunction
-
-function! ChopsticksStatusline() abort
-    let l:context = s:StatuslineContext()
-    let [l:label, l:group] = ChopsticksMode(l:context.active)
-    let l:density = s:EffectiveStatuslineDensity(l:context.width)
-    let l:line = '%#' . l:group . '#' . l:label
-    let l:line .= '%#ChopStatusBody# '
-        \ . (l:density ==# 'rich'
-        \     ? ChopsticksFileIcon(bufname(l:context.bufnr)) : '')
-        \ . '%<%f '
-    let l:line .= '%#ChopStatusAccent#'
-        \ . ChopsticksBufferFlags(l:context.bufnr)
-    if l:density !=# 'minimal'
-        let l:line .= ChopsticksWritingMode(
-            \ l:context.bufnr, l:context.winid)
-    endif
-    let l:line .= '%#ChopStatusBody#%='
-    let l:line .= ChopsticksDiagnostics(l:context.bufnr)
-    if l:density ==# 'rich'
-        let l:line .= ChopsticksGitDiff(l:context.bufnr)
-    endif
-    if l:density !=# 'minimal'
-        let l:line .= '%#ChopStatusGit#'
-            \ . ChopsticksGitBranch(l:context.bufnr)
-    endif
-    let l:line .= '%#ChopStatusMuted# '
-    if l:density ==# 'rich'
-        let l:line .= '%y  '
-    endif
-    let l:line .= '%l:%c'
-    if l:density !=# 'minimal'
-        let l:line .= '  %P'
-    endif
-    let l:line .= ' '
-    return l:line
-endfunction
-
-function! ChopsticksTabline() abort
-    let l:density = ChopsticksUiDensity()
-    let l:segments = []
-    let l:active = -1
-    for l:buffer in getbufinfo({'buflisted': 1})
-        if getbufvar(l:buffer.bufnr, '&buftype') !=# ''
-            continue
-        endif
-        let l:name = fnamemodify(l:buffer.name, ':t')
-        let l:name = empty(l:name) ? '[No Name]' : l:name
-        let l:name = chopsticks#ui#text#Truncate(l:name, l:density ==# 'rich' ? 28 : 22)
-        let l:icon = ChopsticksFileIcon(l:buffer.name)
-        let l:changed = get(l:buffer, 'changed', 0)
-            \ ? ' ' . chopsticks#ui#icons#Get('modified') : ''
-        let l:number = l:density ==# 'rich' ? l:buffer.bufnr . ' ' : ''
-        if l:buffer.bufnr == bufnr('%')
-            let l:active = len(l:segments)
-        elseif l:active < 0 && l:buffer.bufnr == bufnr('#')
-            let l:active = len(l:segments)
-        endif
-        call add(l:segments, {
-            \ 'bufnr': l:buffer.bufnr,
-            \ 'text': ' ' . l:number . l:icon . l:name . l:changed . ' ',
-            \ })
-    endfor
-    if empty(l:segments)
-        return '%#TabLineFill#%='
-    endif
-    let l:anchor = l:active >= 0 ? l:active : 0
-    let l:left = l:anchor
-    let l:right = l:anchor
-    let l:show_overflow = &columns >= 16
-    let l:budget = max([1, &columns - (l:show_overflow ? 10 : 0)])
-    let l:segments[l:anchor].text =
-        \ chopsticks#ui#text#Truncate(l:segments[l:anchor].text, l:budget)
-    let l:used = strwidth(l:segments[l:anchor].text)
-    while 1
-        let l:changed = 0
-        if l:left > 0
-            let l:width = strwidth(l:segments[l:left - 1].text)
-            if l:used + l:width <= l:budget
-                let l:left -= 1
-                let l:used += l:width
-                let l:changed = 1
-            endif
-        endif
-        if l:right + 1 < len(l:segments)
-            let l:width = strwidth(l:segments[l:right + 1].text)
-            if l:used + l:width <= l:budget
-                let l:right += 1
-                let l:used += l:width
-                let l:changed = 1
-            endif
-        endif
-        if !l:changed
-            break
-        endif
-    endwhile
-    let l:left_hint = l:show_overflow && l:left > 0
-        \ ? ' ‹' . l:left . ' ' : ''
-    let l:right_hint = l:show_overflow && l:right + 1 < len(l:segments)
-        \ ? ' ' . (len(l:segments) - l:right - 1) . '› ' : ''
-    let l:hint_width = strwidth(l:left_hint) + strwidth(l:right_hint)
-    if l:hint_width >= &columns
-        let l:show_overflow = 0
-        let l:left_hint = ''
-        let l:right_hint = ''
-        let l:left = l:anchor
-        let l:right = l:anchor
-        let l:segments[l:anchor].text =
-            \ chopsticks#ui#text#Truncate(l:segments[l:anchor].text, max([1, &columns]))
-    elseif l:used + l:hint_width > &columns
-        let l:left = l:anchor
-        let l:right = l:anchor
-        let l:left_hint = l:anchor > 0 ? ' ‹' . l:anchor . ' ' : ''
-        let l:right_hint = l:anchor + 1 < len(l:segments)
-            \ ? ' ' . (len(l:segments) - l:anchor - 1) . '› ' : ''
-        let l:hint_width = strwidth(l:left_hint) + strwidth(l:right_hint)
-        let l:segments[l:anchor].text = chopsticks#ui#text#Truncate(
-            \ l:segments[l:anchor].text,
-            \ max([1, &columns - l:hint_width]))
-    endif
-    let l:line = empty(l:left_hint)
-        \ ? '' : '%#TabLine#' . l:left_hint
-    for l:index in range(l:left, l:right)
-        let l:line .= l:index == l:active
-            \ ? '%#TabLineSel#' : '%#TabLine#'
-        let l:line .= substitute(l:segments[l:index].text, '%', '%%', 'g')
-    endfor
-    if !empty(l:right_hint)
-        let l:line .= '%#TabLine#' . l:right_hint
-    endif
-    return l:line . '%#TabLineFill#%='
+        \ || (l:density ==# 'balanced'
+        \     && chopsticks#ui#bufferline#FileBufferCount() > 1))
 endfunction
 
 set statusline=%!ChopsticksStatusline()
 set tabline=%!ChopsticksTabline()
-call s:RefreshBufferline()
+call chopsticks#ui#bufferline#Refresh()
 
 " icons.vim's own Toggle()/Apply() (see plugin/chopsticks.vim) now own the
 " fern/ALE icon variables an icon toggle re-applies. The rest of what a live
@@ -926,28 +660,7 @@ function! s:RefreshIconDependents() abort
     execute 'redrawtabline'
 endfunction
 
-function! s:SetUiDensity(value) abort
-    let l:modes = ['minimal', 'balanced', 'rich']
-    if empty(a:value)
-        let l:index = index(l:modes, ChopsticksUiDensity())
-        let g:chopsticks_ui_density = l:modes[(l:index + 1) % len(l:modes)]
-    elseif index(l:modes, tolower(a:value)) >= 0
-        let g:chopsticks_ui_density = tolower(a:value)
-    else
-        echohl WarningMsg
-        echom 'chopsticks: density must be minimal, balanced, or rich'
-        echohl None
-        return
-    endif
-    call s:RefreshBufferline()
-    if &filetype ==# 'chopsticks-dashboard'
-        call chopsticks#ui#dashboard#Render()
-    endif
-    redrawstatus!
-    echo 'UI density: ' . ChopsticksUiDensity()
-endfunction
-
-command! -nargs=? ChopsticksUiDensity call s:SetUiDensity(<q-args>)
+command! -nargs=? ChopsticksUiDensity call chopsticks#ui#statusline#SetUiDensity(<q-args>)
 
 function! s:HandleResize() abort
     wincmd =
@@ -970,8 +683,8 @@ augroup ChopsticksInterface
     autocmd User ChopsticksIconsToggled call s:RefreshIconDependents()
     autocmd BufEnter * if &filetype ==# 'chopsticks-dashboard' | call chopsticks#ui#dashboard#Enter() | call chopsticks#ui#dashboard#Render() | endif
     autocmd BufLeave * if &filetype ==# 'chopsticks-dashboard' | call chopsticks#ui#dashboard#Leave() | endif
-    autocmd BufEnter,BufAdd,BufWinEnter * call s:RefreshBufferline()
-    autocmd BufDelete,BufWipeout * call s:ScheduleBufferlineRefresh()
+    autocmd BufEnter,BufAdd,BufWinEnter * call chopsticks#ui#bufferline#Refresh()
+    autocmd BufDelete,BufWipeout * call chopsticks#ui#bufferline#ScheduleRefresh()
     autocmd CursorMoved * if &filetype ==# 'chopsticks-dashboard' | call chopsticks#ui#dashboard#LockCursor() | endif
     autocmd FocusGained * if &filetype ==# 'chopsticks-dashboard' | call chopsticks#ui#dashboard#LockCursor() | redraw! | endif
     autocmd VimResized * call s:HandleResize()
@@ -1692,14 +1405,14 @@ function! s:GoyoEnter() abort
         silent Limelight
     endif
     setlocal wrap linebreak
-    call s:RefreshBufferline()
+    call chopsticks#ui#bufferline#Refresh()
 endfunction
 
 function! s:GoyoLeave() abort
     if exists(':Limelight') == 2
         silent! execute 'Limelight!'
     endif
-    call s:RefreshBufferline()
+    call chopsticks#ui#bufferline#Refresh()
 endfunction
 
 command! -nargs=? -complete=file MarkdownPasteImage call s:MarkdownPasteImage(<q-args>)

@@ -126,7 +126,36 @@ export def Group(group: string): string
   return Get(get(group_glyphs, group, ''))
 enddef
 
+# Per-path filetype glyph, for the statusline and the buffer tabline.
+#
+# Cached because both surfaces ask for the same handful of paths on every
+# redraw, and nerdfont#find() is a pattern walk. The cache is cleared by
+# Apply() below, so an icon-mode change cannot leave stale glyphs behind;
+# nothing outside this module has to remember to do that.
+var file_icon_cache = {}
+
+export def FileIcon(path: string): string
+  if !Enabled()
+    return ''
+  endif
+  var key = empty(path) ? '[No Name]' : path
+  if !has_key(file_icon_cache, key)
+    if empty(globpath(&runtimepath, 'autoload/nerdfont.vim'))
+      file_icon_cache[key] = Get('file')
+    else
+      try
+        file_icon_cache[key] = nerdfont#find(key, isdirectory(key))
+      catch
+        file_icon_cache[key] = Get('file')
+      endtry
+    endif
+  endif
+  var icon = file_icon_cache[key]
+  return empty(icon) ? '' : icon .. ' '
+enddef
+
 export def Apply(): void
+  file_icon_cache = {}
   g:fern#renderer = Enabled() ? 'nerdfont' : 'default'
   g:fern#renderer#nerdfont#root_symbol = Get('folder_open')
   g:fern#mark_symbol = Get('marker')

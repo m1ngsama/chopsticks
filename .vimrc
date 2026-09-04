@@ -711,13 +711,8 @@ function! ChopsticksKeyLines() abort
     return chopsticks#keys#Lines()
 endfunction
 
-function! s:Keys() abort
-    call chopsticks#ui#window#Scratch('[chopsticks-cheatsheet]', ChopsticksKeyLines())
-    setlocal filetype=chopsticks-cheatsheet cursorline
-endfunction
-
-command! ChopsticksKeys call s:Keys()
-command! ChopsticksCheatsheet call s:Keys()
+command! ChopsticksKeys call chopsticks#keys#Show()
+command! ChopsticksCheatsheet call chopsticks#keys#Show()
 
 " ── Markdown and prose ─────────────────────────────────────────────────────
 
@@ -770,66 +765,8 @@ command! MarkdownHelp call chopsticks#markdown#Help()
 
 " ── LSP and completion ─────────────────────────────────────────────────────
 
-function! s:LspMaps() abort
-    if !exists('*lsp#complete')
-        return
-    endif
-    setlocal omnifunc=lsp#complete
-    nmap <silent><buffer> gd <Plug>(lsp-definition)
-    nmap <silent><buffer> gr <Plug>(lsp-references)
-    nmap <silent><buffer> gI <Plug>(lsp-implementation)
-    nmap <silent><buffer> gy <Plug>(lsp-type-definition)
-    nmap <silent><buffer> K <Plug>(lsp-hover)
-    nmap <silent><buffer> [d <Plug>(lsp-previous-diagnostic)
-    nmap <silent><buffer> ]d <Plug>(lsp-next-diagnostic)
-    nmap <silent><buffer> <leader>ca <Plug>(lsp-code-action)
-    nmap <silent><buffer> <leader>cr <Plug>(lsp-rename)
-    nmap <silent><buffer> <leader>cf <Plug>(lsp-document-format)
-    xmap <silent><buffer> <leader>cf <Plug>(lsp-document-range-format)
-    nmap <silent><buffer> <leader>co <Plug>(lsp-document-symbol-search)
-    nmap <silent><buffer> <leader>cS <Plug>(lsp-workspace-symbol-search)
-    nnoremap <silent><buffer> <leader>ci :LspStatus<CR>
-    for l:item in [
-        \ [['c', 'a'], 'Code action'],
-        \ [['c', 'f'], 'Format document'],
-        \ [['c', 'i'], 'LSP status'],
-        \ [['c', 'o'], 'Document symbols'],
-        \ [['c', 'r'], 'Rename symbol'],
-        \ [['c', 'S'], 'Workspace symbols'],
-        \ ]
-        call chopsticks#keys#WhichKeyAdd(l:item[0], 'Code', l:item[1])
-        call chopsticks#keys#Catalog('Code', 'n*', chopsticks#keys#LeaderLabel(l:item[0]), l:item[1])
-    endfor
-    for l:item in [
-        \ ['gd', 'Go to definition'], ['gr', 'Find references'],
-        \ ['gI', 'Go to implementation'], ['gy', 'Go to type definition'],
-        \ ['K', 'Hover documentation'], ['[d / ]d', 'Previous / next LSP diagnostic'],
-        \ ]
-        call chopsticks#keys#Catalog('Code', 'n*', l:item[0], l:item[1])
-    endfor
-endfunction
-
-function! s:CheckBackspace() abort
-    let l:column = col('.') - 1
-    return !l:column || getline('.')[l:column - 1] =~# '\s'
-endfunction
-
-function! s:CompletionTab() abort
-    if pumvisible()
-        return "\<C-n>"
-    endif
-    if s:CheckBackspace() || !exists('*asyncomplete#force_refresh')
-        return "\<Tab>"
-    endif
-    return asyncomplete#force_refresh()
-endfunction
-
-function! s:CompletionBackTab() abort
-    return pumvisible() ? "\<C-p>" : "\<C-h>"
-endfunction
-
-inoremap <silent><expr> <Tab> <SID>CompletionTab()
-inoremap <silent><expr> <S-Tab> <SID>CompletionBackTab()
+inoremap <silent><expr> <Tab> chopsticks#lsp#CompletionTab()
+inoremap <silent><expr> <S-Tab> chopsticks#lsp#CompletionBackTab()
 
 " ── Core mappings ──────────────────────────────────────────────────────────
 
@@ -1112,7 +1049,7 @@ augroup Chopsticks
     autocmd FileType html,css,yaml,json,dockerfile setlocal expandtab shiftwidth=2 tabstop=2 softtabstop=2
     autocmd FileType sh setlocal expandtab shiftwidth=2 tabstop=2 softtabstop=2 textwidth=80
     autocmd FileType make setlocal noexpandtab shiftwidth=8 tabstop=8 softtabstop=0
-    autocmd User lsp_buffer_enabled call <SID>LspMaps()
+    autocmd User lsp_buffer_enabled call chopsticks#lsp#Maps()
     autocmd User GoyoEnter nested call chopsticks#markdown#GoyoEnter()
     autocmd User GoyoLeave nested call chopsticks#markdown#GoyoLeave()
 augroup END

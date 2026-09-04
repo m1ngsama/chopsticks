@@ -20,7 +20,8 @@ releases of the current line.
 - Project-scoped native Vim sessions stored with private permissions.
 - Machine-local overrides through `~/.vim/chopsticks.local.vim` on Unix and
   `~/vimfiles/chopsticks.local.vim` on Windows.
-- Headless UI coverage, plugin integration scenarios, a Vim 8.2 baseline job,
+- Headless UI coverage, plugin integration scenarios, a minimum-supported-Vim
+  baseline job,
   and a native Windows Vim smoke job.
 - A reproducible offline benchmark with 1 MiB Markdown workloads, regression
   budgets, plugin profiles, and per-commit JSON artifacts in CI.
@@ -42,10 +43,29 @@ releases of the current line.
   `g:chopsticks_data_dir` override.
 - fzf is an explicit system prerequisite; startup no longer invokes the
   plugin's unverified release downloader.
-- Windows now requires Vim 9.1.1947 or newer.
+- Vim 9.1.1947 or newer is required on every platform, not only Windows. The
+  reason is unchanged -- older builds carry an upstream executable search-path
+  vulnerability -- but the floor is no longer split by platform.
+- Configuration and behavior are separated. `.vimrc` keeps the bootstrap and
+  the settings a person edits; the code those settings drive moved into
+  Vim9script modules under `autoload/chopsticks/`, which Vim does not read
+  until one of their functions is called. Starting Vim on a file no longer
+  sources the dashboard, session, health, Markdown, or cheatsheet code.
 
 ### Fixed
 
+- The documented symlink install works. `.vimrc` derived its own directory
+  from `$MYVIMRC`, which names the symlink rather than this repository, so a
+  README-following install silently added `$HOME` to `'runtimepath'` instead.
+  A regression test now performs that install.
+- The session directory is created with the intended private permissions.
+  Its mode was written as `0700`, which Vim9 reads as decimal 700 rather than
+  octal 448.
+- `autoload/chopsticks/session.vim` is tracked. A `Session.vim` ignore rule
+  matched it on case-insensitive filesystems.
+- A UI test case that quits part-way through is reported instead of passing.
+  Failures are recorded as the script runs but reported from its last line,
+  so an early exit discarded them and the case reported success.
 - Directory startup now opens the selected project in a stable two-pane
   explorer layout.
 - File search cancellation consistently returns to Vim.

@@ -18,7 +18,13 @@ Changes should preserve these properties:
   manager.
 - Graceful fallback: optional tools and rich terminal features may improve the
   experience, but their absence must not prevent editing.
-- One-file runtime: user-facing behavior remains understandable from `.vimrc`.
+- Configuration in `.vimrc`, behavior in `autoload/chopsticks/`: what a person
+  edits — bindings, filetype settings, plugin options — stays in `.vimrc`, and
+  the code those settings drive lives in a module. `.vimrc` stays legacy Vim
+  script; modules are Vim9script.
+- Lazy by default: a module is not sourced until one of its functions runs.
+  Adding a call at `.vimrc`'s top level to something that need not run at
+  startup gives that cost back.
 - Discoverability: public commands and mappings stay represented in
   `:ChopsticksHealth`, `:ChopsticksCheatsheet`, tests, or documentation as
   appropriate.

@@ -96,6 +96,7 @@ function! s:AssertPublicInterface() abort
     call assert_true(exists('*ChopsticksStatusline'))
     call assert_true(exists('*ChopsticksTabline'))
     call assert_true(exists('*ChopsticksSessionPath'))
+    call assert_true(exists('*ChopsticksProjectRoot'))
     call assert_equal(type(''), type(g:chopsticks_data_dir))
     call assert_match('[/\\]$', g:chopsticks_data_dir)
     call assert_equal(g:chopsticks_data_dir,

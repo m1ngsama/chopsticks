@@ -549,6 +549,13 @@ function! s:AssertSession() abort
     call assert_true(index(l:names, 'package.json') >= 0)
 endfunction
 
+function! s:AssertHealth() abort
+    let l:lines = ChopsticksHealthLines()
+    call assert_equal(type([]), type(l:lines))
+    call assert_true(len(l:lines) > 0)
+    call assert_equal(2, exists(':ChopsticksHealth'))
+endfunction
+
 function! s:IsTransparent(group) abort
     let l:id = hlID(a:group)
     let l:gui = synIDattr(l:id, 'bg', 'gui')
@@ -696,6 +703,8 @@ function! s:RunCase() abort
         call s:AssertFzfFallback()
     elseif s:case ==# 'session'
         call s:AssertSession()
+    elseif s:case ==# 'health'
+        call s:AssertHealth()
     elseif s:case ==# 'symlink-install'
         call s:AssertRuntimepathContainsRoot()
     else

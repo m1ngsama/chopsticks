@@ -36,7 +36,7 @@ all_ui_test_cases='default minimal rich density status-context tabline-width
 transparent opaque theme-valid theme-fallback dashboard-off dashboard-on
 dashboard-wide bufferline-off bufferline-on data-dir-override
 data-dir-invalid-type data-dir-empty path-overrides fzf-unavailable session
-symlink-install'
+health symlink-install'
 mkdir -p "$disabled_git_hooks"
 
 case "$skip_vimlint" in
@@ -505,6 +505,7 @@ run_ui_test fzf-unavailable \
 run_ui_test session \
     --cmd "let g:chopsticks_session_dir = '~/.chopsticks-session-tests'" \
     --cmd 'let g:chopsticks_dashboard = 0'
+run_ui_test health
 run_symlink_ui_test
 
 if [ "$ui_test_count" -eq 0 ]; then

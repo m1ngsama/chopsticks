@@ -11,11 +11,45 @@ let s:case = $CHOPSTICKS_TEST_CASE
 let s:root = fnamemodify(expand('<sfile>:p'), ':h:h')
 execute 'cd ' . fnameescape(s:root)
 
+function! s:AssertClipboardModuleLazy() abort
+    " autoload/chopsticks/clipboard.vim backs ChopsticksSystemClipboardEnabled()
+    " through `import autoload` in plugin/chopsticks.vim, which must not read
+    " the module until something actually calls it -- that laziness is the
+    " reason this architecture was chosen. Nothing above this point in
+    " startup calls the shim, so this must still hold here. If a later
+    " change makes the import eager, or adds module top-level code that runs
+    " at source time, this fails right here, before any case gets a chance
+    " to call the shim itself and mask the regression.
+    let l:info = getscriptinfo(
+        \ {'name': 'chopsticks[\/]clipboard\.vim$'})
+    call assert_equal(1, len(l:info),
+        \ 'autoload/chopsticks/clipboard.vim is not a known script: '
+        \ . string(l:info))
+    if len(l:info) == 1
+        call assert_true(l:info[0].autoload,
+            \ 'autoload/chopsticks/clipboard.vim was already sourced')
+    endif
+endfunction
+
+function! s:AssertRuntimepathContainsRoot() abort
+    " README.md's documented install symlinks .vimrc into $HOME (and, on
+    " Windows, sources it from a separate _vimrc). $MYVIMRC then names the
+    " symlink or launcher, not this repository, so .vimrc must find its own
+    " real directory without relying on $MYVIMRC when it adds itself to
+    " 'runtimepath' -- otherwise plugin/chopsticks.vim silently never loads.
+    " The 'symlink-install' case starts Vim the way the README install does
+    " (a real ~/.vimrc symlink, not -u pointing straight at this file), so
+    " this only passes when .vimrc resolves its own location correctly.
+    call assert_true(index(split(&runtimepath, ','), s:root) >= 0,
+        \ 'chopsticks root missing from runtimepath: ' . &runtimepath)
+endfunction
+
 function! s:AssertPublicInterface() abort
     if !empty(s:startup_errmsg)
         call assert_report('startup error: ' . s:startup_errmsg . ' | messages: '
             \ . substitute(trim(s:startup_messages), '\n', ' // ', 'g'))
     endif
+    call s:AssertClipboardModuleLazy()
     call assert_equal(2, exists(':ChopsticksUiDensity'))
     call assert_equal(2, exists(':ChopsticksTransparencyToggle'))
     call assert_equal(2, exists(':ChopsticksDashboard'))
@@ -662,6 +696,8 @@ function! s:RunCase() abort
         call s:AssertFzfFallback()
     elseif s:case ==# 'session'
         call s:AssertSession()
+    elseif s:case ==# 'symlink-install'
+        call s:AssertRuntimepathContainsRoot()
     else
         call assert_report('unknown UI test case: ' . s:case)
     endif

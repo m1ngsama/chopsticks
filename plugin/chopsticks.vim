@@ -1,10 +1,25 @@
 vim9script
 
-# THE RULE, in one line: if ANY call path reaches a module before Vim's
-# plugin-loading pass runs, .vimrc calls that whole module by its classic
-# dotted name (chopsticks#ui#icons#Get()); everything else goes through a
-# g:Chopsticks* shim declared here. Per module, not per call site — see the
-# icon/theme discussion below for why the per-call-site version is a trap.
+# THE RULE, in two lines:
+#   .vimrc reaches every module by its classic dotted name
+#   (chopsticks#ui#icons#Get()). This file declares only the PUBLIC
+#   contract: what tests/ui.vim asserts, what 'statusline' and 'tabline'
+#   evaluate, and the user-facing commands.
+#
+# The dotted name is correct from anywhere — it resolves against
+# 'runtimepath' the moment it is referenced — so .vimrc never has to prove
+# whether a given call site runs before or after Vim's plugin-loading pass.
+# That question is genuinely hard to answer by inspection: a `redraw`,
+# `redrawstatus!`, or `redrawtabline` forces 'statusline'/'tabline' to
+# evaluate right where it appears, so a call that looks safely deferred
+# inside a function can still run during .vimrc's own execution. Getting it
+# wrong fails at startup with E117, before this file has loaded at all.
+# Using one convention for the whole of .vimrc removes the question.
+#
+# It also keeps this file honest: a global here means something outside
+# Chopsticks depends on the name. g:ChopsticksProjectRoot() is the one
+# exception, and it is asserted by tests/ui.vim precisely so it stays
+# visible rather than drifting into a private helper.
 #
 # Public interface. Every Chopsticks* global is declared here and delegates to
 # an autoload module, which Vim does not read until the first call. Names in
@@ -80,6 +95,7 @@ import autoload 'chopsticks/session.vim'
 import autoload 'chopsticks/health.vim'
 import autoload 'chopsticks/ui/icons.vim'
 import autoload 'chopsticks/ui/theme.vim'
+import autoload 'chopsticks/ui/dashboard.vim'
 
 def g:ChopsticksSystemClipboardEnabled(): number
   return clipboard.Enabled()
@@ -125,6 +141,7 @@ enddef
 command! -bar ChopsticksSessionSave session.Save()
 command! -bar -bang ChopsticksSessionLoad session.Load(<bang>0)
 command! ChopsticksHealth health.Show()
+command! ChopsticksDashboard dashboard.Open()
 command! ChopsticksIconsToggle icons.Toggle()
 command! ChopsticksTransparencyToggle theme.ToggleTransparency()
 command! -nargs=1 -complete=color ChopsticksTheme theme.Set(<q-args>)

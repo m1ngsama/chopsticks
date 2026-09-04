@@ -3,8 +3,12 @@ scriptencoding utf-8
 
 " chopsticks — a modern, Vim-only development and Markdown writing setup
 
-if !exists('s:startup_started_at')
-    let s:startup_started_at = reltime()
+" Global rather than script-local because the dashboard's footer reports the
+" startup time and now lives in autoload/chopsticks/ui/dashboard.vim, which
+" cannot see this file's s: scope. It has to be captured here, in the first
+" lines, so the figure covers the whole of startup.
+if !exists('g:chopsticks_startup_started_at')
+    let g:chopsticks_startup_started_at = reltime()
 endif
 let s:directory_startup_opened = 0
 let s:is_windows = has('win32') || has('win64')
@@ -380,46 +384,6 @@ let g:limelight_default_coefficient = 0.7
 let g:limelight_paragraph_span = 1
 let g:limelight_priority = -1
 
-let s:dashboard_logo = [
-    \ '███╗   ███╗ ██╗███╗   ██╗ ██████╗ ███████╗ █████╗ ███╗   ███╗ █████╗',
-    \ '████╗ ████║███║████╗  ██║██╔════╝ ██╔════╝██╔══██╗████╗ ████║██╔══██╗',
-    \ '██╔████╔██║╚██║██╔██╗ ██║██║  ███╗███████╗███████║██╔████╔██║███████║',
-    \ '██║╚██╔╝██║ ██║██║╚██╗██║██║   ██║╚════██║██╔══██║██║╚██╔╝██║██╔══██║',
-    \ '██║ ╚═╝ ██║ ██║██║ ╚████║╚██████╔╝███████║██║  ██║██║ ╚═╝ ██║██║  ██║',
-    \ '╚═╝     ╚═╝ ╚═╝╚═╝  ╚═══╝ ╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝╚═╝  ╚═╝',
-    \ ]
-let s:dashboard_compact_logo = [
-    \ '╭────────────────────────────────╮',
-    \ '│           CHOPSTICKS           │',
-    \ '╰────────────────────────────────╯',
-    \ ]
-let s:dashboard_items = [
-    \ {'key': 'f', 'icon': 'search', 'label': 'Find File', 'action': 'ChopsticksFindFiles'},
-    \ {'key': 'n', 'icon': 'new_file', 'label': 'New File', 'action': 'enew | startinsert'},
-    \ {'key': 'g', 'icon': 'grep', 'label': 'Find Text', 'action': 'ChopsticksProjectGrep'},
-    \ {'key': 'r', 'icon': 'recent', 'label': 'Recent Files', 'action': 'ChopsticksRecentFiles'},
-    \ {'key': 'c', 'icon': 'config', 'label': 'Config', 'action': 'edit $MYVIMRC'},
-    \ {'key': 's', 'icon': 'session', 'label': 'Restore Session', 'action': 'ChopsticksSessionLoad'},
-    \ {'key': 'q', 'icon': 'quit', 'label': 'Quit', 'action': 'qall'},
-    \ ]
-
-function! s:DashboardItems(...) abort
-    let l:density = a:0 ? a:1 : ChopsticksUiDensity()
-    let l:keys = l:density ==# 'minimal' ? ['f', 'n', 'r', 'c', 'q']
-        \ : ['f', 'n', 'g', 'r', 'c', 's', 'q']
-    let l:items = filter(copy(s:dashboard_items),
-        \ 'index(l:keys, v:val.key) >= 0')
-    if exists(':Rg') != 2 || executable('rg') != 1
-        \ || executable('fzf') != 1
-        call filter(l:items, 'v:val.key !=# "g"')
-    endif
-    if !exists('*ChopsticksSessionPath')
-        \ || !filereadable(ChopsticksSessionPath())
-        call filter(l:items, 'v:val.key !=# "s"')
-    endif
-    return l:items
-endfunction
-
 " vim-plug is optional. Startup never downloads software. Source it directly
 " because a custom data directory is not necessarily on 'runtimepath'.
 let s:vim_plug = g:chopsticks_data_dir . 'autoload/plug.vim'
@@ -604,335 +568,6 @@ set background=dark
 call chopsticks#ui#theme#Apply()
 
 " ── Interface: statusline and buffer tabline ───────────────────────────────
-
-function! s:TruncateText(text, width) abort
-    if a:width <= 0
-        return ''
-    elseif strwidth(a:text) <= a:width
-        return a:text
-    elseif a:width == 1
-        return '…'
-    endif
-    let l:result = ''
-    let l:index = 0
-    while l:index < strchars(a:text)
-        let l:character = strcharpart(a:text, l:index, 1)
-        if strwidth(l:result . l:character . '…') > a:width
-            break
-        endif
-        let l:result .= l:character
-        let l:index += 1
-    endwhile
-    return l:result . '…'
-endfunction
-
-function! s:DashboardCenter(text) abort
-    return repeat(' ', max([0, (winwidth(0) - strwidth(a:text)) / 2]))
-        \ . a:text
-endfunction
-
-function! s:DashboardLogoLine(text, block_width) abort
-    let l:left = max([0, (winwidth(0) - a:block_width) / 2])
-    return repeat(' ', l:left) . a:text
-endfunction
-
-function! s:DashboardPluginStats() abort
-    let l:plugs = get(g:, 'plugs', {})
-    let l:runtime = map(split(&runtimepath, ','),
-        \ 'resolve(fnamemodify(v:val, ":p"))')
-    let l:loaded = 0
-    for l:plug in values(l:plugs)
-        if index(l:runtime, resolve(fnamemodify(l:plug.dir, ':p'))) >= 0
-            let l:loaded += 1
-        endif
-    endfor
-    return [l:loaded, len(l:plugs)]
-endfunction
-
-function! s:CaptureStartupTime() abort
-    if !exists('g:chopsticks_startup_ms')
-        let g:chopsticks_startup_ms = exists('*reltimefloat')
-            \ ? reltimefloat(reltime(s:startup_started_at)) * 1000
-            \ : str2float(reltimestr(reltime(s:startup_started_at))) * 1000
-    endif
-endfunction
-
-function! s:DashboardFooter() abort
-    call s:CaptureStartupTime()
-    let l:density = ChopsticksUiDensity()
-    if l:density ==# 'minimal'
-        return '? keys  ·  h health'
-    elseif l:density ==# 'balanced'
-        return printf('%s ready in %.2fms  ·  ? keys  ·  h health',
-            \ chopsticks#ui#icons#Get('startup'), g:chopsticks_startup_ms)
-    endif
-    let [l:loaded, l:total] = s:DashboardPluginStats()
-    return l:total > 0
-        \ ? printf('%s Vim loaded %d/%d plugins in %.2fms',
-        \     chopsticks#ui#icons#Get('startup'), l:loaded, l:total,
-        \     g:chopsticks_startup_ms)
-        \ : printf('%s Vim ready in %.2fms',
-        \     chopsticks#ui#icons#Get('startup'), g:chopsticks_startup_ms)
-endfunction
-
-function! s:DashboardEnter() abort
-    if !exists('b:chopsticks_dashboard_showtabline')
-        let b:chopsticks_dashboard_showtabline = &showtabline
-    endif
-    if !exists('b:chopsticks_dashboard_laststatus')
-        let b:chopsticks_dashboard_laststatus = &laststatus
-    endif
-    set showtabline=0 laststatus=0
-    setlocal nonumber norelativenumber nolist cursorline signcolumn=no
-    setlocal nowrap nospell foldcolumn=0 colorcolumn= tabstop=2
-    if exists('+winhighlight')
-        let &l:winhighlight = 'CursorLine:ChopDashboardCurrent'
-    endif
-    let &l:statusline = '%#ChopDashboardStatus#%='
-endfunction
-
-function! s:DashboardLeave() abort
-    if exists('b:chopsticks_dashboard_showtabline')
-        let &showtabline = b:chopsticks_dashboard_showtabline
-        unlet b:chopsticks_dashboard_showtabline
-    endif
-    if exists('b:chopsticks_dashboard_laststatus')
-        let &laststatus = b:chopsticks_dashboard_laststatus
-        unlet b:chopsticks_dashboard_laststatus
-    endif
-endfunction
-
-function! s:DashboardMapItems(items) abort
-    for l:item in s:dashboard_items
-        let l:mapping = maparg(l:item.key, 'n', 0, 1)
-        if !empty(l:mapping) && get(l:mapping, 'buffer', 0)
-            execute 'nunmap <buffer> ' . l:item.key
-        endif
-    endfor
-    for l:item in a:items
-        execute 'nnoremap <silent><nowait><buffer> ' . l:item.key
-            \ . ' :call <SID>DashboardRun(''' . l:item.key . ''')<CR>'
-    endfor
-endfunction
-
-function! s:DashboardRender() abort
-    if &filetype !=# 'chopsticks-dashboard'
-        return
-    endif
-    let l:width = winwidth(0)
-    let l:height = winheight(0) + &cmdheight
-    let l:density = ChopsticksUiDensity()
-    if l:height < 16 || l:width < 34
-        let l:density = 'minimal'
-    elseif l:density ==# 'rich' && (l:height < 24 || l:width < 80)
-        let l:density = 'balanced'
-    endif
-    let l:items = s:DashboardItems(l:density)
-    let l:full_logo = l:density ==# 'rich' && l:width >= 100
-        \ && l:height >= 24
-    let l:logo = l:full_logo ? s:dashboard_logo
-        \ : l:width >= 38 && l:height >= 12 ? s:dashboard_compact_logo
-        \ : [s:TruncateText('CHOPSTICKS', max([1, l:width - 2]))]
-    let l:logo_width = max(map(copy(l:logo), 'strwidth(v:val)'))
-    let l:gap = l:density ==# 'rich' && l:height >= 32 ? 1 : 0
-    let l:target_width = l:density ==# 'rich' ? 60
-        \ : l:density ==# 'balanced' ? 48 : 40
-    let l:dashboard_width = min([l:target_width, max([1, l:width - 2])])
-    let l:header_gap = l:density ==# 'rich' ? 3 : 1
-    let l:content_height = len(l:logo) + l:header_gap + len(l:items)
-        \ + (len(l:items) - 1) * l:gap + 2
-    let l:top = max([1, (l:height - l:content_height) / 2])
-    let l:lines = repeat([''], l:top)
-    let l:logo_matches = []
-    let l:item_matches = []
-    let l:icon_matches = []
-    let l:key_matches = []
-    let l:item_lines = []
-    let l:desc_cols = {}
-    let l:actions = {}
-
-    for l:text in l:logo
-        let l:line = s:DashboardLogoLine(l:text, l:logo_width)
-        call add(l:lines, l:line)
-        let l:column = match(l:line, '\S') + 1
-        call add(l:logo_matches, [len(l:lines), l:column, strlen(l:text)])
-    endfor
-    call extend(l:lines, repeat([''], l:header_gap))
-
-    for l:index in range(len(l:items))
-        let l:item = l:items[l:index]
-        let l:icon = l:width < 20 ? '' : chopsticks#ui#icons#Get(l:item.icon)
-        let l:key_text = l:width < 20
-            \ ? l:item.key : '[' . l:item.key . ']'
-        if l:width < 20
-            let l:body = l:key_text
-            if l:dashboard_width >= strwidth(l:item.key) + 2
-                let l:body .= ' ' . s:TruncateText(l:item.label,
-                    \ l:dashboard_width - strwidth(l:item.key) - 1)
-            endif
-            let l:key_offset = 0
-            let l:cursor_offset = 0
-        else
-            let l:label_width = max([1, l:dashboard_width
-                \ - strwidth(l:icon) - strwidth(l:key_text) - 4])
-            let l:label = s:TruncateText(l:item.label, l:label_width)
-            let l:body = l:icon . '  ' . l:label
-            let l:body .= repeat(' ', max([1, l:dashboard_width
-                \ - strwidth(l:body) - strwidth(l:key_text)]))
-            let l:body .= l:key_text
-            let l:key_offset = strlen(l:body) - strlen(l:key_text)
-            let l:cursor_offset = l:key_offset + 1
-        endif
-        let l:line = s:DashboardCenter(l:body)
-        call add(l:lines, l:line)
-        let l:line_number = len(l:lines)
-        let l:column = strlen(matchstr(l:line, '^ *')) + 1
-        call add(l:item_matches, [l:line_number, l:column, strlen(l:body)])
-        if !empty(l:icon)
-            call add(l:icon_matches,
-                \ [l:line_number, l:column, strlen(l:icon)])
-        endif
-        call add(l:key_matches,
-            \ [l:line_number, l:column + l:key_offset,
-            \  strlen(l:key_text)])
-        call add(l:item_lines, l:line_number)
-        let l:desc_cols[string(l:line_number)] =
-            \ l:column + l:cursor_offset
-        let l:actions[string(l:line_number)] = l:item.key
-        if l:gap && l:index + 1 < len(l:items)
-            call add(l:lines, '')
-        endif
-    endfor
-
-    call add(l:lines, '')
-    let l:footer = s:TruncateText(s:DashboardFooter(), max([1, l:width - 2]))
-    let l:footer_line = s:DashboardCenter(l:footer)
-    call add(l:lines, l:footer_line)
-    let l:footer_column = strlen(matchstr(l:footer_line, '^ *')) + 1
-
-    setlocal modifiable
-    silent keepjumps %delete _
-    call setline(1, l:lines)
-    setlocal nomodified nomodifiable
-    call clearmatches()
-    call matchaddpos('ChopDashboardLogo', l:logo_matches, 10)
-    call matchaddpos('ChopDashboardItem', l:item_matches, 10)
-    if !empty(l:icon_matches)
-        call matchaddpos('ChopDashboardIcon', l:icon_matches, 20)
-    endif
-    call matchaddpos('ChopDashboardKey', l:key_matches, 20)
-    call matchaddpos('ChopDashboardFooter',
-        \ [[len(l:lines), l:footer_column, strlen(l:footer)]], 10)
-    let b:chopsticks_dashboard_item_lines = l:item_lines
-    let b:chopsticks_dashboard_desc_cols = l:desc_cols
-    let b:chopsticks_dashboard_actions = l:actions
-    call s:DashboardMapItems(l:items)
-    call cursor(l:item_lines[0], l:desc_cols[string(l:item_lines[0])])
-endfunction
-
-function! s:DashboardSelectNearest() abort
-    let l:lines = get(b:, 'chopsticks_dashboard_item_lines', [])
-    if empty(l:lines)
-        return
-    endif
-    let l:current = line('.')
-    let l:target = l:lines[0]
-    let l:distance = abs(l:target - l:current)
-    for l:candidate in l:lines[1:]
-        if abs(l:candidate - l:current) < l:distance
-            let l:target = l:candidate
-            let l:distance = abs(l:candidate - l:current)
-        endif
-    endfor
-    call cursor(l:target, get(b:chopsticks_dashboard_desc_cols,
-        \ string(l:target), 1))
-endfunction
-
-function! s:DashboardLockCursor() abort
-    if &filetype !=# 'chopsticks-dashboard'
-        return
-    endif
-    let l:lines = get(b:, 'chopsticks_dashboard_item_lines', [])
-    if index(l:lines, line('.')) < 0
-        call s:DashboardSelectNearest()
-        return
-    endif
-    let l:column = get(b:chopsticks_dashboard_desc_cols, string(line('.')), 1)
-    if col('.') != l:column
-        call cursor(line('.'), l:column)
-    endif
-endfunction
-
-function! s:DashboardMove(delta) abort
-    let l:lines = get(b:, 'chopsticks_dashboard_item_lines', [])
-    if empty(l:lines)
-        return
-    endif
-    let l:index = index(l:lines, line('.'))
-    if l:index < 0
-        call s:DashboardSelectNearest()
-        let l:index = index(l:lines, line('.'))
-    endif
-    let l:index = (l:index + a:delta + len(l:lines)) % len(l:lines)
-    let l:target = l:lines[l:index]
-    call cursor(l:target, get(b:chopsticks_dashboard_desc_cols,
-        \ string(l:target), 1))
-endfunction
-
-function! s:DashboardRun(key) abort
-    for l:item in s:DashboardItems()
-        if l:item.key ==# a:key
-            try
-                execute l:item.action
-            catch
-                echohl ErrorMsg
-                echom 'Dashboard: ' . v:exception
-                echohl None
-            endtry
-            return
-        endif
-    endfor
-endfunction
-
-function! s:DashboardRunCurrent() abort
-    let l:key = get(get(b:, 'chopsticks_dashboard_actions', {}),
-        \ string(line('.')), '')
-    if !empty(l:key)
-        call s:DashboardRun(l:key)
-    endif
-endfunction
-
-function! s:OpenDashboard() abort
-    if &filetype !=# 'chopsticks-dashboard'
-        let l:project_root = ChopsticksProjectRoot()
-        silent keepalt enew
-        silent file [chopsticks]
-        setlocal buftype=nofile bufhidden=wipe noswapfile nobuflisted
-        setfiletype chopsticks-dashboard
-        let b:chopsticks_project_root = l:project_root
-    endif
-    call s:DashboardEnter()
-    nnoremap <silent><buffer> <CR> :call <SID>DashboardRunCurrent()<CR>
-    nnoremap <silent><buffer> j :call <SID>DashboardMove(1)<CR>
-    nnoremap <silent><buffer> k :call <SID>DashboardMove(-1)<CR>
-    nnoremap <silent><buffer> <Down> :call <SID>DashboardMove(1)<CR>
-    nnoremap <silent><buffer> <Up> :call <SID>DashboardMove(-1)<CR>
-    nnoremap <silent><buffer> <Tab> :call <SID>DashboardMove(1)<CR>
-    nnoremap <silent><buffer> <S-Tab> :call <SID>DashboardMove(-1)<CR>
-    nnoremap <silent><nowait><buffer> ? :ChopsticksCheatsheet<CR>
-    nnoremap <silent><nowait><buffer> h :ChopsticksHealth<CR>
-    call s:DashboardRender()
-endfunction
-
-function! s:MaybeOpenDashboard() abort
-    if ChopsticksDashboardEnabled() && argc() == 0
-        \ && bufname('%') ==# '' && &buftype ==# ''
-        \ && line('$') == 1 && getline(1) ==# '' && !&modified
-        call s:OpenDashboard()
-    endif
-endfunction
-
-command! ChopsticksDashboard call s:OpenDashboard()
 
 function! ChopsticksMode(...) abort
     if a:0 && !a:1
@@ -1174,7 +809,7 @@ function! ChopsticksTabline() abort
         endif
         let l:name = fnamemodify(l:buffer.name, ':t')
         let l:name = empty(l:name) ? '[No Name]' : l:name
-        let l:name = s:TruncateText(l:name, l:density ==# 'rich' ? 28 : 22)
+        let l:name = chopsticks#ui#text#Truncate(l:name, l:density ==# 'rich' ? 28 : 22)
         let l:icon = ChopsticksFileIcon(l:buffer.name)
         let l:changed = get(l:buffer, 'changed', 0)
             \ ? ' ' . chopsticks#ui#icons#Get('modified') : ''
@@ -1198,7 +833,7 @@ function! ChopsticksTabline() abort
     let l:show_overflow = &columns >= 16
     let l:budget = max([1, &columns - (l:show_overflow ? 10 : 0)])
     let l:segments[l:anchor].text =
-        \ s:TruncateText(l:segments[l:anchor].text, l:budget)
+        \ chopsticks#ui#text#Truncate(l:segments[l:anchor].text, l:budget)
     let l:used = strwidth(l:segments[l:anchor].text)
     while 1
         let l:changed = 0
@@ -1234,7 +869,7 @@ function! ChopsticksTabline() abort
         let l:left = l:anchor
         let l:right = l:anchor
         let l:segments[l:anchor].text =
-            \ s:TruncateText(l:segments[l:anchor].text, max([1, &columns]))
+            \ chopsticks#ui#text#Truncate(l:segments[l:anchor].text, max([1, &columns]))
     elseif l:used + l:hint_width > &columns
         let l:left = l:anchor
         let l:right = l:anchor
@@ -1242,7 +877,7 @@ function! ChopsticksTabline() abort
         let l:right_hint = l:anchor + 1 < len(l:segments)
             \ ? ' ' . (len(l:segments) - l:anchor - 1) . '› ' : ''
         let l:hint_width = strwidth(l:left_hint) + strwidth(l:right_hint)
-        let l:segments[l:anchor].text = s:TruncateText(
+        let l:segments[l:anchor].text = chopsticks#ui#text#Truncate(
             \ l:segments[l:anchor].text,
             \ max([1, &columns - l:hint_width]))
     endif
@@ -1268,8 +903,9 @@ call s:RefreshBufferline()
 " toggle always also refreshed -- fzf's gfiles options, the statusline's
 " file-icon cache, a dashboard re-render, and the status/tabline redraw --
 " is not an icon concern and stays here, since Vim9 script-local names
-" cannot cross files (s:fzf_abort_keys, s:FzfVisualOptions(),
-" s:file_icon_cache, and s:DashboardRender() are all local to this file).
+" cannot cross files (s:fzf_abort_keys, s:FzfVisualOptions(), and
+" s:file_icon_cache are all local to this file; the dashboard re-render
+" reaches its own module by the classic dotted name).
 " icons.vim's Toggle() fires a guarded `User ChopsticksIconsToggled`
 " autocommand right after it applies (see the augroup below) so this still
 " runs in the same order it always has, without plugin/chopsticks.vim
@@ -1279,7 +915,7 @@ function! s:RefreshIconDependents() abort
         \ ['--bind', s:fzf_abort_keys] + s:FzfVisualOptions()
     let s:file_icon_cache = {}
     if &filetype ==# 'chopsticks-dashboard'
-        call s:DashboardRender()
+        call chopsticks#ui#dashboard#Render()
     endif
     redrawstatus!
     execute 'redrawtabline'
@@ -1300,7 +936,7 @@ function! s:SetUiDensity(value) abort
     endif
     call s:RefreshBufferline()
     if &filetype ==# 'chopsticks-dashboard'
-        call s:DashboardRender()
+        call chopsticks#ui#dashboard#Render()
     endif
     redrawstatus!
     echo 'UI density: ' . ChopsticksUiDensity()
@@ -1311,7 +947,7 @@ command! -nargs=? ChopsticksUiDensity call s:SetUiDensity(<q-args>)
 function! s:HandleResize() abort
     wincmd =
     if &filetype ==# 'chopsticks-dashboard'
-        call s:DashboardRender()
+        call chopsticks#ui#dashboard#Render()
     endif
 endfunction
 
@@ -1327,12 +963,12 @@ augroup ChopsticksInterface
     " works there too, so one call site covers both.
     autocmd ColorScheme * call chopsticks#ui#theme#DefineInterfaceColors()
     autocmd User ChopsticksIconsToggled call s:RefreshIconDependents()
-    autocmd BufEnter * if &filetype ==# 'chopsticks-dashboard' | call s:DashboardEnter() | call s:DashboardRender() | endif
-    autocmd BufLeave * if &filetype ==# 'chopsticks-dashboard' | call s:DashboardLeave() | endif
+    autocmd BufEnter * if &filetype ==# 'chopsticks-dashboard' | call chopsticks#ui#dashboard#Enter() | call chopsticks#ui#dashboard#Render() | endif
+    autocmd BufLeave * if &filetype ==# 'chopsticks-dashboard' | call chopsticks#ui#dashboard#Leave() | endif
     autocmd BufEnter,BufAdd,BufWinEnter * call s:RefreshBufferline()
     autocmd BufDelete,BufWipeout * call s:ScheduleBufferlineRefresh()
-    autocmd CursorMoved * if &filetype ==# 'chopsticks-dashboard' | call s:DashboardLockCursor() | endif
-    autocmd FocusGained * if &filetype ==# 'chopsticks-dashboard' | call s:DashboardLockCursor() | redraw! | endif
+    autocmd CursorMoved * if &filetype ==# 'chopsticks-dashboard' | call chopsticks#ui#dashboard#LockCursor() | endif
+    autocmd FocusGained * if &filetype ==# 'chopsticks-dashboard' | call chopsticks#ui#dashboard#LockCursor() | redraw! | endif
     autocmd VimResized * call s:HandleResize()
 augroup END
 call chopsticks#ui#theme#DefineInterfaceColors()
@@ -2426,8 +2062,8 @@ augroup END
 
 augroup ChopsticksDashboard
     autocmd!
-    autocmd VimEnter * call <SID>CaptureStartupTime()
-    autocmd VimEnter * call <SID>MaybeOpenDashboard()
+    autocmd VimEnter * call chopsticks#startup#CaptureMs()
+    autocmd VimEnter * call chopsticks#startup#MaybeOpenDashboard()
 augroup END
 
 if v:vim_did_enter

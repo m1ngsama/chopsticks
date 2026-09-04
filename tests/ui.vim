@@ -365,9 +365,18 @@ function! s:AssertTablineWidth() abort
     call assert_true(strwidth(l:visible) <= &columns)
 endfunction
 
+" Must match .vimrc's s:NormalizeDirectory() and
+" autoload/chopsticks/session.vim's NormalizeDirectory() exactly, including
+" which separator is appended. When these three disagreed, fixing the
+" production copy alone only moved the Windows failure from one assertion to
+" another.
 function! s:NormalizedDirectory(path) abort
     let l:directory = simplify(fnamemodify(expand(a:path), ':p'))
-    return l:directory =~# '[/\\]$' ? l:directory : l:directory . '/'
+    if l:directory =~# '[/\\]$'
+        return l:directory
+    endif
+    let l:windows = has('win32') || has('win64')
+    return l:directory . (l:windows && l:directory =~# '\\' ? '\' : '/')
 endfunction
 
 function! s:DefaultDataDirectory() abort

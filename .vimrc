@@ -76,7 +76,16 @@ function! s:NormalizeDirectory(value, fallback) abort
         \ ? a:value : a:fallback
     let l:directory = simplify(fnamemodify(expand(l:value), ':p'))
     if l:directory !~# '[/\\]$'
-        let l:directory .= '/'
+        " ':p' appends the separator itself, but only for a directory that
+        " already exists, so this branch runs for one that does not -- which
+        " on Windows is how 'C:\dir\name/' used to appear. Match the
+        " separator the path already uses.
+        "
+        " tests/ui.vim's s:NormalizedDirectory() and
+        " autoload/chopsticks/session.vim's NormalizeDirectory() repeat this
+        " rule. All three must agree: fixing one alone moves the failure to
+        " whichever comparison the other two feed.
+        let l:directory .= s:is_windows && l:directory =~# '\\' ? '\' : '/'
     endif
     return l:directory
 endfunction

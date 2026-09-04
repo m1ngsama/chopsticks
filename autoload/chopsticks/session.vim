@@ -32,7 +32,12 @@ def NormalizeDirectory(value: string, fallback: string): string
   var chosen = empty(value) ? fallback : value
   var directory = simplify(fnamemodify(expand(chosen), ':p'))
   if directory !~# '[/\\]$'
-    directory ..= '/'
+    # Match the separator the path already uses. ':p' supplies one itself for
+    # a directory that exists, so this runs only for one that does not, and
+    # a hardcoded '/' produced 'C:\dir\name/' on Windows. .vimrc's
+    # s:NormalizeDirectory() and tests/ui.vim's s:NormalizedDirectory()
+    # repeat this rule and all three must agree.
+    directory ..= IsWindows && directory =~# '\\' ? '\' : '/'
   endif
   return directory
 enddef

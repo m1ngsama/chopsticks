@@ -911,4 +911,14 @@ if !empty(v:errors)
     endif
     cquit
 endif
+
+" Record that this script ran all the way here. run_ui_test refuses a case
+" that exits 0 without leaving this behind, because Vim can be made to quit
+" early -- by a stray :qall in a mapping a case triggers, for instance --
+" and an early quit looks exactly like a pass: silent, exit 0, no assertions
+" recorded. Without this marker such a case reports success while having
+" tested nothing.
+if !empty($CHOPSTICKS_TEST_COMPLETED)
+    call writefile(['completed: ' . s:case], $CHOPSTICKS_TEST_COMPLETED)
+endif
 qall!

@@ -62,6 +62,48 @@ function! s:AssertHealthModuleLazy() abort
     endif
 endfunction
 
+function! s:AssertIconsModuleLoaded() abort
+    " Unlike clipboard.vim/session.vim/health.vim, icons.vim cannot still be
+    " pending here. .vimrc calls the classic dotted autoload name
+    " chopsticks#ui#icons#Enabled() (and friends) at its own script top
+    " level (Fern, ALE sign, and which-key setup) -- not the
+    " g:ChopsticksIcon()-style shim, which does not exist that early; see
+    " plugin/chopsticks.vim's own comment -- well before this test ever
+    " runs, so by now this module must already be loaded:
+    " getscriptinfo()'s 'autoload' flag flips from true (still a pending
+    " reference) to false once a script is actually sourced. This is the
+    " deliberate, necessary result of solving startup's E117 hazard without
+    " moving those top-level call sites; it does not mean autoload loading
+    " became eager in general -- nothing sources this file merely because
+    " plugin/chopsticks.vim also imports it (see s:AssertClipboardModuleLazy()
+    " for a module that really does stay pending here).
+    let l:info = getscriptinfo(
+        \ {'name': 'chopsticks[\/]ui[\/]icons\.vim$'})
+    call assert_equal(1, len(l:info),
+        \ 'autoload/chopsticks/ui/icons.vim is not a known script: '
+        \ . string(l:info))
+    if len(l:info) == 1
+        call assert_false(l:info[0].autoload,
+            \ 'autoload/chopsticks/ui/icons.vim was not sourced yet')
+    endif
+endfunction
+
+function! s:AssertThemeModuleLoaded() abort
+    " See s:AssertIconsModuleLoaded(): .vimrc's top-level colorscheme setup
+    " calls the classic dotted names chopsticks#ui#theme#Apply() and
+    " chopsticks#ui#theme#DefineInterfaceColors() before this test ever
+    " runs, so theme.vim must already be loaded by now too.
+    let l:info = getscriptinfo(
+        \ {'name': 'chopsticks[\/]ui[\/]theme\.vim$'})
+    call assert_equal(1, len(l:info),
+        \ 'autoload/chopsticks/ui/theme.vim is not a known script: '
+        \ . string(l:info))
+    if len(l:info) == 1
+        call assert_false(l:info[0].autoload,
+            \ 'autoload/chopsticks/ui/theme.vim was not sourced yet')
+    endif
+endfunction
+
 function! s:AssertRuntimepathContainsRoot() abort
     " README.md's documented install symlinks .vimrc into $HOME (and, on
     " Windows, sources it from a separate _vimrc). $MYVIMRC then names the
@@ -83,8 +125,12 @@ function! s:AssertPublicInterface() abort
     call s:AssertClipboardModuleLazy()
     call s:AssertSessionModuleLazy()
     call s:AssertHealthModuleLazy()
+    call s:AssertIconsModuleLoaded()
+    call s:AssertThemeModuleLoaded()
     call assert_equal(2, exists(':ChopsticksUiDensity'))
     call assert_equal(2, exists(':ChopsticksTransparencyToggle'))
+    call assert_equal(2, exists(':ChopsticksIconsToggle'))
+    call assert_equal(2, exists(':ChopsticksTheme'))
     call assert_equal(2, exists(':ChopsticksDashboard'))
     call assert_equal(2, exists(':ChopsticksSessionSave'))
     call assert_equal(2, exists(':ChopsticksSessionLoad'))

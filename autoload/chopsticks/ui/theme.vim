@@ -1,0 +1,138 @@
+vim9script
+
+# Colorscheme and statusline highlight setup, backing
+# ChopsticksTransparencyEnabled() (a documented public global, see
+# plugin/chopsticks.vim), the :ChopsticksTheme and
+# :ChopsticksTransparencyToggle commands, and the highlight colors the
+# statusline and dashboard draw with.
+#
+# .vimrc calls Apply() and DefineInterfaceColors() at its own script top
+# level, once plugins and 'termguicolors' are ready, and again (through the
+# same top-level `ColorScheme` autocommand both a startup colorscheme change
+# and :ChopsticksTheme / :ChopsticksTransparencyToggle trigger) later on. The
+# top-level calls run well before Vim's automatic plugin-loading pass sources
+# plugin/chopsticks.vim and defines the g:ChopsticksTransparencyEnabled()
+# shim (which Apply() and DefineInterfaceColors() both need), so .vimrc
+# reaches Apply() and DefineInterfaceColors() there through Vim's classic
+# dotted autoload name instead (chopsticks#ui#theme#Apply(), etc.), which
+# needs no shim; see .vimrc's own comment next to those call sites, and
+# plugin/chopsticks.vim's comment on why sourcing that shim early is not a
+# usable fix. As with icons.vim, that means this module loads (on first
+# call) early in every startup rather than staying unloaded until a user
+# action, unlike clipboard.vim/session.vim/health.vim; the classic dotted
+# name is just as lazy, it is only reached this early by necessity.
+#
+# ResolveSwitch reproduces .vimrc's own s:ResolveSwitch(): Vim9 script-local
+# names cannot cross files, and this is the only piece of it
+# TransparencyEnabled() needs, so it is duplicated here rather than pulling
+# .vimrc's switch-handling wholesale into this module. It returns `number`,
+# not `bool`, for the same reason autoload/chopsticks/clipboard.vim does:
+# tests/ui.vim compares ChopsticksTransparencyEnabled() against a Number
+# with assert_equal(), and Vim's assert_equal() does not treat 0/1 and
+# v:false/v:true as equal.
+
+def ResolveSwitch(value: any, automatic: number): number
+  if type(value) == v:t_number
+    return value != 0 ? 1 : 0
+  elseif type(value) == v:t_bool
+    return value ? 1 : 0
+  elseif type(value) == v:t_string
+    var lowered = tolower(value)
+    if index(['0', 'off', 'false', 'no'], lowered) >= 0
+      return 0
+    elseif index(['1', 'on', 'true', 'yes'], lowered) >= 0
+      return 1
+    endif
+  endif
+  return automatic
+enddef
+
+export def TransparencyEnabled(): number
+  # Terminals expose color depth, not whether their compositor is
+  # transparent.
+  return ResolveSwitch(g:chopsticks_transparent_background, 0)
+enddef
+
+export def Apply(): void
+  var scheme = type(g:chopsticks_colorscheme) == v:t_string
+    && !empty(g:chopsticks_colorscheme)
+    ? g:chopsticks_colorscheme : 'everforest'
+  if scheme ==# 'everforest'
+    g:everforest_background = get(g:, 'everforest_background', 'medium')
+    g:everforest_better_performance = 1
+    g:everforest_transparent_background = TransparencyEnabled()
+  endif
+  try
+    execute 'colorscheme ' .. fnameescape(scheme)
+  catch /^Vim\%((\a\+)\)\=:E185/
+    colorscheme default
+  endtry
+enddef
+
+export def HighlightColor(group: string, attribute: string, fallback: string): string
+  var id = synIDtrans(hlID(group))
+  var value = synIDattr(id, attribute, 'gui')
+  return empty(value) || value ==# 'NONE' ? fallback : value
+enddef
+
+export def DefineInterfaceColors(): void
+  var bg = HighlightColor('Normal', 'bg', '#2d353b')
+  var surface = HighlightColor('CursorLine', 'bg', '#343f44')
+  var fg = HighlightColor('Normal', 'fg', '#d3c6aa')
+  # Everforest exposes its palette as stable named highlight groups.  Other
+  # themes fall back to canonical syntax groups instead of hard-coded color
+  # assumptions.
+  var muted = HighlightColor('Grey', 'fg', HighlightColor('Comment', 'fg', '#859289'))
+  var red = HighlightColor('Red', 'fg', HighlightColor('ErrorMsg', 'fg', '#e67e80'))
+  var orange = HighlightColor('Orange', 'fg', HighlightColor('Special', 'fg', '#e69875'))
+  var yellow = HighlightColor('Yellow', 'fg', HighlightColor('WarningMsg', 'fg', '#dbbc7f'))
+  var green = HighlightColor('Green', 'fg', HighlightColor('String', 'fg', '#a7c080'))
+  var aqua = HighlightColor('Aqua', 'fg', HighlightColor('Identifier', 'fg', '#83c092'))
+  var blue = HighlightColor('Blue', 'fg', HighlightColor('Function', 'fg', '#7fbbb3'))
+  var purple = HighlightColor('Purple', 'fg', HighlightColor('Statement', 'fg', '#d699b6'))
+  execute 'highlight ChopStatusNormal ctermbg=106 ctermfg=234 cterm=bold guibg=' .. green .. ' guifg=' .. bg .. ' gui=bold'
+  execute 'highlight ChopStatusInsert ctermbg=109 ctermfg=234 cterm=bold guibg=' .. blue .. ' guifg=' .. bg .. ' gui=bold'
+  execute 'highlight ChopStatusVisual ctermbg=175 ctermfg=234 cterm=bold guibg=' .. purple .. ' guifg=' .. bg .. ' gui=bold'
+  execute 'highlight ChopStatusReplace ctermbg=174 ctermfg=234 cterm=bold guibg=' .. red .. ' guifg=' .. bg .. ' gui=bold'
+  execute 'highlight ChopStatusCommand ctermbg=108 ctermfg=234 cterm=bold guibg=' .. aqua .. ' guifg=' .. bg .. ' gui=bold'
+  execute 'highlight ChopStatusBody ctermbg=237 ctermfg=187 cterm=none guibg=' .. surface .. ' guifg=' .. fg .. ' gui=none'
+  execute 'highlight ChopStatusAccent ctermbg=237 ctermfg=180 cterm=none guibg=' .. surface .. ' guifg=' .. yellow .. ' gui=none'
+  execute 'highlight ChopStatusError ctermbg=237 ctermfg=174 cterm=bold guibg=' .. surface .. ' guifg=' .. red .. ' gui=bold'
+  execute 'highlight ChopStatusWarning ctermbg=237 ctermfg=180 cterm=bold guibg=' .. surface .. ' guifg=' .. yellow .. ' gui=bold'
+  execute 'highlight ChopStatusInfo ctermbg=237 ctermfg=109 cterm=bold guibg=' .. surface .. ' guifg=' .. blue .. ' gui=bold'
+  execute 'highlight ChopStatusGitAdd ctermbg=237 ctermfg=108 cterm=none guibg=' .. surface .. ' guifg=' .. green .. ' gui=none'
+  execute 'highlight ChopStatusGitChange ctermbg=237 ctermfg=180 cterm=none guibg=' .. surface .. ' guifg=' .. yellow .. ' gui=none'
+  execute 'highlight ChopStatusGitDelete ctermbg=237 ctermfg=174 cterm=none guibg=' .. surface .. ' guifg=' .. red .. ' gui=none'
+  execute 'highlight ChopStatusGit ctermbg=237 ctermfg=108 cterm=none guibg=' .. surface .. ' guifg=' .. aqua .. ' gui=none'
+  execute 'highlight ChopStatusMuted ctermbg=237 ctermfg=108 cterm=none guibg=' .. surface .. ' guifg=' .. muted .. ' gui=none'
+  execute 'highlight ChopDashboardLogo ctermfg=109 cterm=none guifg=' .. blue .. ' gui=none'
+  execute 'highlight ChopDashboardItem ctermfg=187 cterm=none guifg=' .. fg .. ' gui=none'
+  execute 'highlight ChopDashboardIcon ctermfg=108 cterm=bold guifg=' .. aqua .. ' gui=bold'
+  execute 'highlight ChopDashboardKey ctermfg=173 cterm=none guifg=' .. orange .. ' gui=none'
+  execute 'highlight ChopDashboardCurrent ctermbg=237 cterm=none guibg=' .. surface .. ' gui=none'
+  execute 'highlight ChopDashboardFooter ctermfg=180 cterm=italic guifg=' .. yellow .. ' gui=italic'
+  execute 'highlight ChopDashboardStatus ctermbg=237 ctermfg=237 guibg=' .. surface .. ' guifg=' .. surface
+  if TransparencyEnabled()
+    highlight Normal ctermbg=NONE guibg=NONE
+    highlight NormalNC ctermbg=NONE guibg=NONE
+    highlight NonText ctermbg=NONE guibg=NONE
+    highlight EndOfBuffer ctermbg=NONE guibg=NONE
+    highlight SignColumn ctermbg=NONE guibg=NONE
+  endif
+enddef
+
+export def Set(name: string): void
+  g:chopsticks_colorscheme = name
+  Apply()
+  DefineInterfaceColors()
+  redraw!
+  echo 'theme: ' .. get(g:, 'colors_name', 'default')
+enddef
+
+export def ToggleTransparency(): void
+  g:chopsticks_transparent_background = TransparencyEnabled() ? 0 : 1
+  Apply()
+  DefineInterfaceColors()
+  redraw!
+  echo 'background: ' .. (TransparencyEnabled() ? 'transparent' : 'opaque')
+enddef

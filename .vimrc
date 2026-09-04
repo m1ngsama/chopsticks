@@ -53,6 +53,7 @@ let s:chopsticks_root = fnamemodify(resolve(expand('<sfile>:p')), ':h')
 if index(split(&runtimepath, ','), s:chopsticks_root) < 0
     execute 'set runtimepath^=' . fnameescape(s:chopsticks_root)
 endif
+
 unlet s:chopsticks_root
 
 let g:mapleader = "\<Space>"
@@ -167,102 +168,39 @@ function! ChopsticksUiDensity() abort
         \ ? l:value : 'balanced'
 endfunction
 
-function! ChopsticksTransparencyEnabled() abort
-    " Terminals expose color depth, not whether their compositor is transparent.
-    return s:ResolveSwitch(g:chopsticks_transparent_background, 0)
-endfunction
-
 function! ChopsticksDashboardEnabled() abort
     return s:ResolveSwitch(g:chopsticks_dashboard,
         \ ChopsticksUiDensity() !=# 'minimal')
 endfunction
 
-let s:icon_auto_enabled = &encoding ==# 'utf-8' && !s:is_remote
-    \ && $TERM !=# 'dumb'
-    \ && (index(['iTerm.app', 'WezTerm', 'vscode'], $TERM_PROGRAM) >= 0
-    \     || !empty($KITTY_WINDOW_ID) || !empty($WEZTERM_PANE)
-    \     || !empty($WT_SESSION) || !empty($GHOSTTY_RESOURCES_DIR)
-    \     || $TERM =~# '\<\%(xterm-kitty\|xterm-ghostty\|wezterm\)\>')
-let s:icons = {
-    \ 'search': ['', '?'],
-    \ 'new_file': ['', '+'],
-    \ 'grep': ['', '/'],
-    \ 'recent': ['', '~'],
-    \ 'config': ['', '#'],
-    \ 'session': ['', '@'],
-    \ 'quit': ['', 'q'],
-    \ 'file': ['', '-'],
-    \ 'folder_open': ['', ''],
-    \ 'git_branch': ['', 'git:'],
-    \ 'git_add': ['', '+'],
-    \ 'git_change': ['', '~'],
-    \ 'git_delete': ['', '-'],
-    \ 'error': ['', 'E'],
-    \ 'warning': ['', 'W'],
-    \ 'info': ['', 'I'],
-    \ 'modified': ['●', '+'],
-    \ 'readonly': ['', 'RO'],
-    \ 'spell': ['󰓆', 'SPELL'],
-    \ 'wrap': ['󰖶', 'WRAP'],
-    \ 'startup': ['', '*'],
-    \ 'pointer': ['', '>'],
-    \ 'marker': ['', '*'],
-    \ 'group_home': ['', ''],
-    \ 'group_find': ['', ''],
-    \ 'group_buffer': ['󰓩', ''],
-    \ 'group_window': ['', ''],
-    \ 'group_file': ['󰈔', ''],
-    \ 'group_git': ['', ''],
-    \ 'group_code': ['', ''],
-    \ 'group_check': ['󰒡', ''],
-    \ 'group_run': ['', ''],
-    \ 'group_term': ['', ''],
-    \ 'group_toggle': ['', ''],
-    \ 'group_edit': ['', ''],
-    \ 'group_nav': ['', ''],
-    \ 'group_markdown': ['', ''],
-    \ 'group_table': ['', ''],
-    \ 'group_quit': ['', ''],
-    \ }
-let s:group_icons = {
-    \ 'Essentials': 'group_home', 'Fast find': 'group_find',
-    \ 'Buffers': 'group_buffer', 'Windows': 'group_window',
-    \ 'Files': 'group_file', 'Search': 'group_find', 'Quit': 'group_quit',
-    \ 'Git': 'group_git', 'Code': 'group_code',
-    \ 'Diagnostics': 'group_check', 'Run': 'group_run',
-    \ 'Terminal': 'group_term', 'Tabs': 'group_buffer',
-    \ 'Toggles': 'group_toggle', 'Editing': 'group_edit',
-    \ 'Navigation': 'group_nav', 'Markdown': 'group_markdown',
-    \ 'Table': 'group_table',
-    \ }
-
-function! ChopsticksIconsEnabled() abort
-    if type(g:chopsticks_icons) == type(0)
-        return g:chopsticks_icons != 0
-    elseif type(g:chopsticks_icons) == type(v:true)
-        return g:chopsticks_icons
-    elseif type(g:chopsticks_icons) == type('')
-        let l:value = tolower(g:chopsticks_icons)
-        if index(['0', 'off', 'false', 'ascii'], l:value) >= 0
-            return 0
-        elseif index(['1', 'on', 'true', 'nerd'], l:value) >= 0
-            return 1
-        endif
-    endif
-    return s:icon_auto_enabled
-endfunction
-
-function! ChopsticksIcon(name) abort
-    let l:icon = get(s:icons, a:name, ['', ''])
-    return l:icon[ChopsticksIconsEnabled() ? 0 : 1]
-endfunction
-
-function! s:GroupIcon(group) abort
-    return ChopsticksIcon(get(s:group_icons, a:group, ''))
-endfunction
-
+" From here down, this file reaches autoload/chopsticks/ui/icons.vim and
+" autoload/chopsticks/ui/theme.vim through Vim's classic dotted autoload
+" names (chopsticks#ui#icons#Get(), chopsticks#ui#icons#Enabled(),
+" chopsticks#ui#icons#Group(), chopsticks#ui#theme#Apply(),
+" chopsticks#ui#theme#DefineInterfaceColors()) instead of the
+" g:ChopsticksIcon()-style shim plugin/chopsticks.vim declares for the same
+" functions. This file's own icon, ALE-sign, which-key, colorscheme, and
+" statusline/tabline setup all run from its own script top level, several of
+" them behind an immediate `redraw`/`redrawstatus!`/`redrawtabline` (which
+" forces 'statusline'/'tabline' to evaluate right there, not lazily) -- all
+" of that is well before Vim's automatic plugin-loading pass would source
+" plugin/chopsticks.vim and define that shim, so calling it would fail with
+" E117. The classic dotted name needs no shim and no `import`: Vim resolves
+" it against 'runtimepath' (already set above) the moment it is first
+" referenced, the same way g:ChopsticksIcon() eventually will, just without
+" waiting for plugin/chopsticks.vim. Every function below that touches an
+" icon or the theme keeps using the classic name even where it looks safely
+" deferred (a mapping's RHS, an autocommand): several of them are reachable
+" from both an early top-level redraw and a later, genuinely deferred one,
+" and the classic name works correctly either way, so one calling
+" convention here removes the need to prove which case applies at each call
+" site. tests/ui.vim and autoload/chopsticks/health.vim are the only
+" callers that go through the g:ChopsticksIcon()-style shim, since both
+" only ever run once Vim has fully started. See plugin/chopsticks.vim's own
+" comment on ChopsticksIcon() and ChopsticksIconsEnabled() for why sourcing
+" that shim early, instead, is not a usable fix.
 function! s:WhichKeyGroup(group) abort
-    let l:icon = s:GroupIcon(a:group)
+    let l:icon = chopsticks#ui#icons#Group(a:group)
     return '+' . (empty(l:icon) ? '' : l:icon . ' ') . a:group
 endfunction
 
@@ -275,12 +213,13 @@ function! s:WhichKeySetup() abort
         \ / +\%(\S\+\s\+\)\?[0-9A-Za-z_\/-]\+\%(\s\+[0-9A-Za-z_\/-]\+\)*/
 endfunction
 
-let g:fern#renderer = ChopsticksIconsEnabled() ? 'nerdfont' : 'default'
+let g:fern#renderer = chopsticks#ui#icons#Enabled() ? 'nerdfont' : 'default'
 let g:fern#renderer#nerdfont#indent_markers = 1
 let g:fern#renderer#nerdfont#leading = '  '
 let g:fern#renderer#nerdfont#padding = ' '
-let g:fern#renderer#nerdfont#root_symbol = ChopsticksIcon('folder_open')
-let g:fern#mark_symbol = ChopsticksIcon('marker')
+let g:fern#renderer#nerdfont#root_symbol =
+    \ chopsticks#ui#icons#Get('folder_open')
+let g:fern#mark_symbol = chopsticks#ui#icons#Get('marker')
 let g:fern#drawer_width = 34
 let g:fern#hide_cursor = 1
 let g:fern#default_hidden = 1
@@ -323,11 +262,14 @@ let s:fzf_skip_dirs = [
     \ '.bun', '.codex', 'Library', 'node_modules', 'plugged',
     \ '.venv', 'venv', '__pycache__', 'build', 'dist', 'target', 'vendor',
     \ ]
+" See the comment on s:WhichKeyGroup() above: this function runs both from
+" this file's own top level immediately below (building g:fzf_vim) and
+" later from s:RefreshIconDependents(), when icons are toggled.
 function! s:FzfVisualOptions() abort
     return [
-        \ '--prompt', ChopsticksIcon('search') . ' ',
-        \ '--pointer', ChopsticksIcon('pointer'),
-        \ '--marker', ChopsticksIcon('marker'),
+        \ '--prompt', chopsticks#ui#icons#Get('search') . ' ',
+        \ '--pointer', chopsticks#ui#icons#Get('pointer'),
+        \ '--marker', chopsticks#ui#icons#Get('marker'),
         \ ]
 endfunction
 let g:fzf_vim = {
@@ -365,9 +307,12 @@ let g:ale_lint_on_insert_leave = 0
 let g:ale_lint_on_text_changed = 'never'
 let g:ale_virtualtext_cursor = 'disabled'
 let g:ale_echo_msg_format = '%severity%: %s'
-let g:ale_sign_error = ChopsticksIcon('error')
-let g:ale_sign_warning = ChopsticksIcon('warning')
-let g:ale_sign_info = ChopsticksIcon('info')
+" chopsticks#ui#icons#Get(), not g:ChopsticksIcon(): this file's own script
+" top level, before plugin/chopsticks.vim's shim exists. See the comment on
+" s:WhichKeyGroup() above.
+let g:ale_sign_error = chopsticks#ui#icons#Get('error')
+let g:ale_sign_warning = chopsticks#ui#icons#Get('warning')
+let g:ale_sign_info = chopsticks#ui#icons#Get('info')
 
 " vim-lsp-settings' VimEnter lazy path replays BufEnter for every loaded
 " buffer.  Initializing its lightweight filetype dispatcher while plugins are
@@ -650,86 +595,15 @@ if s:is_rich_terminal
 endif
 set background=dark
 
-function! s:ApplyColorscheme() abort
-    let l:scheme = type(g:chopsticks_colorscheme) == type('')
-        \ && !empty(g:chopsticks_colorscheme)
-        \ ? g:chopsticks_colorscheme : 'everforest'
-    if l:scheme ==# 'everforest'
-        let g:everforest_background = get(g:, 'everforest_background', 'medium')
-        let g:everforest_better_performance = 1
-        let g:everforest_transparent_background =
-            \ ChopsticksTransparencyEnabled()
-    endif
-    try
-        execute 'colorscheme ' . fnameescape(l:scheme)
-    catch /^Vim\%((\a\+)\)\=:E185/
-        colorscheme default
-    endtry
-endfunction
-
-call s:ApplyColorscheme()
+" chopsticks#ui#theme#Apply(), Vim's classic dotted autoload name for
+" autoload/chopsticks/ui/theme.vim's exported Apply(): this call is still
+" this file's own script top level (after plug#end(), but well before Vim's
+" automatic plugin-loading pass sources plugin/chopsticks.vim and defines
+" its g:ChopsticksTransparencyEnabled()-style shim), so it cannot go through
+" that shim; see s:WhichKeyGroup()'s comment above for the full rationale.
+call chopsticks#ui#theme#Apply()
 
 " ── Interface: statusline and buffer tabline ───────────────────────────────
-
-function! s:HighlightColor(group, attribute, fallback) abort
-    let l:id = synIDtrans(hlID(a:group))
-    let l:value = synIDattr(l:id, a:attribute, 'gui')
-    return empty(l:value) || l:value ==# 'NONE' ? a:fallback : l:value
-endfunction
-
-function! s:DefineInterfaceColors() abort
-    let l:bg = s:HighlightColor('Normal', 'bg', '#2d353b')
-    let l:surface = s:HighlightColor('CursorLine', 'bg', '#343f44')
-    let l:fg = s:HighlightColor('Normal', 'fg', '#d3c6aa')
-    " Everforest exposes its palette as stable named highlight groups.  Other
-    " themes fall back to canonical syntax groups instead of hard-coded color
-    " assumptions.
-    let l:muted = s:HighlightColor('Grey', 'fg',
-        \ s:HighlightColor('Comment', 'fg', '#859289'))
-    let l:red = s:HighlightColor('Red', 'fg',
-        \ s:HighlightColor('ErrorMsg', 'fg', '#e67e80'))
-    let l:orange = s:HighlightColor('Orange', 'fg',
-        \ s:HighlightColor('Special', 'fg', '#e69875'))
-    let l:yellow = s:HighlightColor('Yellow', 'fg',
-        \ s:HighlightColor('WarningMsg', 'fg', '#dbbc7f'))
-    let l:green = s:HighlightColor('Green', 'fg',
-        \ s:HighlightColor('String', 'fg', '#a7c080'))
-    let l:aqua = s:HighlightColor('Aqua', 'fg',
-        \ s:HighlightColor('Identifier', 'fg', '#83c092'))
-    let l:blue = s:HighlightColor('Blue', 'fg',
-        \ s:HighlightColor('Function', 'fg', '#7fbbb3'))
-    let l:purple = s:HighlightColor('Purple', 'fg',
-        \ s:HighlightColor('Statement', 'fg', '#d699b6'))
-    execute 'highlight ChopStatusNormal ctermbg=106 ctermfg=234 cterm=bold guibg=' . l:green . ' guifg=' . l:bg . ' gui=bold'
-    execute 'highlight ChopStatusInsert ctermbg=109 ctermfg=234 cterm=bold guibg=' . l:blue . ' guifg=' . l:bg . ' gui=bold'
-    execute 'highlight ChopStatusVisual ctermbg=175 ctermfg=234 cterm=bold guibg=' . l:purple . ' guifg=' . l:bg . ' gui=bold'
-    execute 'highlight ChopStatusReplace ctermbg=174 ctermfg=234 cterm=bold guibg=' . l:red . ' guifg=' . l:bg . ' gui=bold'
-    execute 'highlight ChopStatusCommand ctermbg=108 ctermfg=234 cterm=bold guibg=' . l:aqua . ' guifg=' . l:bg . ' gui=bold'
-    execute 'highlight ChopStatusBody ctermbg=237 ctermfg=187 cterm=none guibg=' . l:surface . ' guifg=' . l:fg . ' gui=none'
-    execute 'highlight ChopStatusAccent ctermbg=237 ctermfg=180 cterm=none guibg=' . l:surface . ' guifg=' . l:yellow . ' gui=none'
-    execute 'highlight ChopStatusError ctermbg=237 ctermfg=174 cterm=bold guibg=' . l:surface . ' guifg=' . l:red . ' gui=bold'
-    execute 'highlight ChopStatusWarning ctermbg=237 ctermfg=180 cterm=bold guibg=' . l:surface . ' guifg=' . l:yellow . ' gui=bold'
-    execute 'highlight ChopStatusInfo ctermbg=237 ctermfg=109 cterm=bold guibg=' . l:surface . ' guifg=' . l:blue . ' gui=bold'
-    execute 'highlight ChopStatusGitAdd ctermbg=237 ctermfg=108 cterm=none guibg=' . l:surface . ' guifg=' . l:green . ' gui=none'
-    execute 'highlight ChopStatusGitChange ctermbg=237 ctermfg=180 cterm=none guibg=' . l:surface . ' guifg=' . l:yellow . ' gui=none'
-    execute 'highlight ChopStatusGitDelete ctermbg=237 ctermfg=174 cterm=none guibg=' . l:surface . ' guifg=' . l:red . ' gui=none'
-    execute 'highlight ChopStatusGit ctermbg=237 ctermfg=108 cterm=none guibg=' . l:surface . ' guifg=' . l:aqua . ' gui=none'
-    execute 'highlight ChopStatusMuted ctermbg=237 ctermfg=108 cterm=none guibg=' . l:surface . ' guifg=' . l:muted . ' gui=none'
-    execute 'highlight ChopDashboardLogo ctermfg=109 cterm=none guifg=' . l:blue . ' gui=none'
-    execute 'highlight ChopDashboardItem ctermfg=187 cterm=none guifg=' . l:fg . ' gui=none'
-    execute 'highlight ChopDashboardIcon ctermfg=108 cterm=bold guifg=' . l:aqua . ' gui=bold'
-    execute 'highlight ChopDashboardKey ctermfg=173 cterm=none guifg=' . l:orange . ' gui=none'
-    execute 'highlight ChopDashboardCurrent ctermbg=237 cterm=none guibg=' . l:surface . ' gui=none'
-    execute 'highlight ChopDashboardFooter ctermfg=180 cterm=italic guifg=' . l:yellow . ' gui=italic'
-    execute 'highlight ChopDashboardStatus ctermbg=237 ctermfg=237 guibg=' . l:surface . ' guifg=' . l:surface
-    if ChopsticksTransparencyEnabled()
-        highlight Normal ctermbg=NONE guibg=NONE
-        highlight NormalNC ctermbg=NONE guibg=NONE
-        highlight NonText ctermbg=NONE guibg=NONE
-        highlight EndOfBuffer ctermbg=NONE guibg=NONE
-        highlight SignColumn ctermbg=NONE guibg=NONE
-    endif
-endfunction
 
 function! s:TruncateText(text, width) abort
     if a:width <= 0
@@ -790,15 +664,15 @@ function! s:DashboardFooter() abort
         return '? keys  ·  h health'
     elseif l:density ==# 'balanced'
         return printf('%s ready in %.2fms  ·  ? keys  ·  h health',
-            \ ChopsticksIcon('startup'), g:chopsticks_startup_ms)
+            \ chopsticks#ui#icons#Get('startup'), g:chopsticks_startup_ms)
     endif
     let [l:loaded, l:total] = s:DashboardPluginStats()
     return l:total > 0
         \ ? printf('%s Vim loaded %d/%d plugins in %.2fms',
-        \     ChopsticksIcon('startup'), l:loaded, l:total,
+        \     chopsticks#ui#icons#Get('startup'), l:loaded, l:total,
         \     g:chopsticks_startup_ms)
         \ : printf('%s Vim ready in %.2fms',
-        \     ChopsticksIcon('startup'), g:chopsticks_startup_ms)
+        \     chopsticks#ui#icons#Get('startup'), g:chopsticks_startup_ms)
 endfunction
 
 function! s:DashboardEnter() abort
@@ -887,7 +761,7 @@ function! s:DashboardRender() abort
 
     for l:index in range(len(l:items))
         let l:item = l:items[l:index]
-        let l:icon = l:width < 20 ? '' : ChopsticksIcon(l:item.icon)
+        let l:icon = l:width < 20 ? '' : chopsticks#ui#icons#Get(l:item.icon)
         let l:key_text = l:width < 20
             \ ? l:item.key : '[' . l:item.key . ']'
         if l:width < 20
@@ -1079,19 +953,19 @@ endfunction
 
 let s:file_icon_cache = {}
 function! ChopsticksFileIcon(path) abort
-    if !ChopsticksIconsEnabled()
+    if !chopsticks#ui#icons#Enabled()
         return ''
     endif
     let l:path = empty(a:path) ? '[No Name]' : a:path
     if !has_key(s:file_icon_cache, l:path)
         if empty(globpath(&runtimepath, 'autoload/nerdfont.vim'))
-            let s:file_icon_cache[l:path] = ChopsticksIcon('file')
+            let s:file_icon_cache[l:path] = chopsticks#ui#icons#Get('file')
         else
             try
                 let s:file_icon_cache[l:path] = nerdfont#find(
                     \ l:path, isdirectory(l:path))
             catch
-                let s:file_icon_cache[l:path] = ChopsticksIcon('file')
+                let s:file_icon_cache[l:path] = chopsticks#ui#icons#Get('file')
             endtry
         endif
     endif
@@ -1105,7 +979,7 @@ function! ChopsticksGitBranch(...) abort
     endif
     let l:buffer = a:0 ? a:1 : bufnr('')
     let l:branch = FugitiveHead(0, l:buffer)
-    return empty(l:branch) ? '' : '  ' . ChopsticksIcon('git_branch') . ' '
+    return empty(l:branch) ? '' : '  ' . chopsticks#ui#icons#Get('git_branch') . ' '
         \ . substitute(l:branch, '%', '%%', 'g') . ' '
 endfunction
 
@@ -1119,15 +993,15 @@ function! ChopsticksGitDiff(...) abort
     let l:parts = []
     if l:added > 0
         call add(l:parts, printf('%%#ChopStatusGitAdd#%s %d',
-            \ ChopsticksIcon('git_add'), l:added))
+            \ chopsticks#ui#icons#Get('git_add'), l:added))
     endif
     if l:changed > 0
         call add(l:parts, printf('%%#ChopStatusGitChange#%s %d',
-            \ ChopsticksIcon('git_change'), l:changed))
+            \ chopsticks#ui#icons#Get('git_change'), l:changed))
     endif
     if l:removed > 0
         call add(l:parts, printf('%%#ChopStatusGitDelete#%s %d',
-            \ ChopsticksIcon('git_delete'), l:removed))
+            \ chopsticks#ui#icons#Get('git_delete'), l:removed))
     endif
     return empty(l:parts) ? '' : ' ' . join(l:parts, ' ') . ' '
 endfunction
@@ -1144,15 +1018,15 @@ function! ChopsticksDiagnostics(...) abort
     let l:parts = []
     if l:errors > 0
         call add(l:parts, printf('%%#ChopStatusError# %s %d',
-            \ ChopsticksIcon('error'), l:errors))
+            \ chopsticks#ui#icons#Get('error'), l:errors))
     endif
     if l:warnings > 0
         call add(l:parts, printf('%%#ChopStatusWarning# %s %d',
-            \ ChopsticksIcon('warning'), l:warnings))
+            \ chopsticks#ui#icons#Get('warning'), l:warnings))
     endif
     if l:info > 0
         call add(l:parts, printf('%%#ChopStatusInfo# %s %d',
-            \ ChopsticksIcon('info'), l:info))
+            \ chopsticks#ui#icons#Get('info'), l:info))
     endif
     return empty(l:parts) ? '' : join(l:parts, ' ') . ' '
 endfunction
@@ -1163,16 +1037,16 @@ function! ChopsticksWritingMode(...) abort
     let l:window_number = win_id2win(l:window)
     let l:parts = []
     if l:window_number > 0 && getwinvar(l:window_number, '&spell')
-        call add(l:parts, ChopsticksIcon('spell'))
+        call add(l:parts, chopsticks#ui#icons#Get('spell'))
     endif
     let l:pencil = getbufvar(l:buffer, 'pencil_wrap_mode', 0)
     if l:pencil == 2
-        call add(l:parts, ChopsticksIcon('wrap') . ':'
+        call add(l:parts, chopsticks#ui#icons#Get('wrap') . ':'
             \ . get(get(g:, 'pencil#mode_indicators', {}), 'soft', 'S'))
     elseif l:pencil == 1
         let l:kind = getbufvar(l:buffer, '&formatoptions') =~# 'a'
             \ ? 'auto' : 'hard'
-        call add(l:parts, ChopsticksIcon('wrap') . ':'
+        call add(l:parts, chopsticks#ui#icons#Get('wrap') . ':'
             \ . get(get(g:, 'pencil#mode_indicators', {}), l:kind,
             \     l:kind ==# 'auto' ? 'A' : 'H'))
     endif
@@ -1183,10 +1057,10 @@ function! ChopsticksBufferFlags(...) abort
     let l:buffer = a:0 ? a:1 : bufnr('')
     let l:parts = []
     if getbufvar(l:buffer, '&modified')
-        call add(l:parts, ChopsticksIcon('modified'))
+        call add(l:parts, chopsticks#ui#icons#Get('modified'))
     endif
     if getbufvar(l:buffer, '&readonly')
-        call add(l:parts, ChopsticksIcon('readonly'))
+        call add(l:parts, chopsticks#ui#icons#Get('readonly'))
     endif
     return empty(l:parts) ? '' : ' ' . join(l:parts, ' ') . ' '
 endfunction
@@ -1303,7 +1177,7 @@ function! ChopsticksTabline() abort
         let l:name = s:TruncateText(l:name, l:density ==# 'rich' ? 28 : 22)
         let l:icon = ChopsticksFileIcon(l:buffer.name)
         let l:changed = get(l:buffer, 'changed', 0)
-            \ ? ' ' . ChopsticksIcon('modified') : ''
+            \ ? ' ' . chopsticks#ui#icons#Get('modified') : ''
         let l:number = l:density ==# 'rich' ? l:buffer.bufnr . ' ' : ''
         if l:buffer.bufnr == bufnr('%')
             let l:active = len(l:segments)
@@ -1389,14 +1263,18 @@ set statusline=%!ChopsticksStatusline()
 set tabline=%!ChopsticksTabline()
 call s:RefreshBufferline()
 
-function! s:ApplyIconMode() abort
-    let g:fern#renderer = ChopsticksIconsEnabled() ? 'nerdfont' : 'default'
-    let g:fern#renderer#nerdfont#root_symbol =
-        \ ChopsticksIcon('folder_open')
-    let g:fern#mark_symbol = ChopsticksIcon('marker')
-    let g:ale_sign_error = ChopsticksIcon('error')
-    let g:ale_sign_warning = ChopsticksIcon('warning')
-    let g:ale_sign_info = ChopsticksIcon('info')
+" icons.vim's own Toggle()/Apply() (see plugin/chopsticks.vim) now own the
+" fern/ALE icon variables an icon toggle re-applies. The rest of what a live
+" toggle always also refreshed -- fzf's gfiles options, the statusline's
+" file-icon cache, a dashboard re-render, and the status/tabline redraw --
+" is not an icon concern and stays here, since Vim9 script-local names
+" cannot cross files (s:fzf_abort_keys, s:FzfVisualOptions(),
+" s:file_icon_cache, and s:DashboardRender() are all local to this file).
+" icons.vim's Toggle() fires a guarded `User ChopsticksIconsToggled`
+" autocommand right after it applies (see the augroup below) so this still
+" runs in the same order it always has, without plugin/chopsticks.vim
+" needing a second global just to reach it.
+function! s:RefreshIconDependents() abort
     let g:fzf_vim.gfiles_options =
         \ ['--bind', s:fzf_abort_keys] + s:FzfVisualOptions()
     let s:file_icon_cache = {}
@@ -1405,31 +1283,6 @@ function! s:ApplyIconMode() abort
     endif
     redrawstatus!
     execute 'redrawtabline'
-endfunction
-
-function! s:ToggleIcons() abort
-    let g:chopsticks_icons = !ChopsticksIconsEnabled()
-    call s:ApplyIconMode()
-    echo 'icons: ' . (ChopsticksIconsEnabled() ? 'Nerd Font' : 'ASCII')
-        \ . ' (restart Vim to refresh Fern and key groups)'
-endfunction
-
-function! s:SetTheme(name) abort
-    let g:chopsticks_colorscheme = a:name
-    call s:ApplyColorscheme()
-    call s:DefineInterfaceColors()
-    redraw!
-    echo 'theme: ' . get(g:, 'colors_name', 'default')
-endfunction
-
-function! s:ToggleTransparency() abort
-    let g:chopsticks_transparent_background =
-        \ !ChopsticksTransparencyEnabled()
-    call s:ApplyColorscheme()
-    call s:DefineInterfaceColors()
-    redraw!
-    echo 'background: ' . (ChopsticksTransparencyEnabled()
-        \ ? 'transparent' : 'opaque')
 endfunction
 
 function! s:SetUiDensity(value) abort
@@ -1453,9 +1306,6 @@ function! s:SetUiDensity(value) abort
     echo 'UI density: ' . ChopsticksUiDensity()
 endfunction
 
-command! ChopsticksIconsToggle call s:ToggleIcons()
-command! ChopsticksTransparencyToggle call s:ToggleTransparency()
-command! -nargs=1 -complete=color ChopsticksTheme call s:SetTheme(<q-args>)
 command! -nargs=? ChopsticksUiDensity call s:SetUiDensity(<q-args>)
 
 function! s:HandleResize() abort
@@ -1467,7 +1317,16 @@ endfunction
 
 augroup ChopsticksInterface
     autocmd!
-    autocmd ColorScheme * call s:DefineInterfaceColors()
+    " chopsticks#ui#theme#DefineInterfaceColors(), not the g: shim: the
+    " `:colorscheme` command chopsticks#ui#theme#Apply() runs above triggers
+    " this ColorScheme autocommand synchronously, at this file's own top
+    " level, before plugin/chopsticks.vim's shim exists -- the same reason
+    " Apply() itself is reached through the classic dotted name (see the
+    " comment above it). :ChopsticksTheme and :ChopsticksTransparencyToggle
+    " also trigger this event, well after startup, but the classic name
+    " works there too, so one call site covers both.
+    autocmd ColorScheme * call chopsticks#ui#theme#DefineInterfaceColors()
+    autocmd User ChopsticksIconsToggled call s:RefreshIconDependents()
     autocmd BufEnter * if &filetype ==# 'chopsticks-dashboard' | call s:DashboardEnter() | call s:DashboardRender() | endif
     autocmd BufLeave * if &filetype ==# 'chopsticks-dashboard' | call s:DashboardLeave() | endif
     autocmd BufEnter,BufAdd,BufWinEnter * call s:RefreshBufferline()
@@ -1476,7 +1335,7 @@ augroup ChopsticksInterface
     autocmd FocusGained * if &filetype ==# 'chopsticks-dashboard' | call s:DashboardLockCursor() | redraw! | endif
     autocmd VimResized * call s:HandleResize()
 augroup END
-call s:DefineInterfaceColors()
+call chopsticks#ui#theme#DefineInterfaceColors()
 
 " ── Shared actions ─────────────────────────────────────────────────────────
 
@@ -1493,8 +1352,8 @@ endfunction
 " Project-root resolution, session save/load, and their permission checks now
 " live in autoload/chopsticks/session.vim (Vim9 script). ChopsticksProjectRoot()
 " and ChopsticksSessionPath() (see plugin/chopsticks.vim) delegate to it, the
-" same lazy-loading shim ChopsticksIconsEnabled() and friends already use --
-" a Vim9 `:import` statement cannot be used here: vimlint's legacy-script
+" same shim shape ChopsticksIconsEnabled() and friends already use -- a
+" Vim9 `:import` statement cannot be used here: vimlint's legacy-script
 " parser (vim-vimlparser) does not understand `import autoload` syntax and
 " fails to parse this file if one is added.
 
@@ -1522,7 +1381,7 @@ function! s:FzfFiles(path, bang) abort
     let l:root = fnamemodify(l:root, ':p')
     let l:options = [
         \ '--bind', s:fzf_abort_keys,
-        \ '--header', ChopsticksIcon('quit')
+        \ '--header', chopsticks#ui#icons#Get('quit')
         \     . ' ESC / CTRL-Q close · ENTER open',
         \ ]
     call extend(l:options, s:FzfVisualOptions())
@@ -1713,7 +1572,7 @@ function! s:FernSetup() abort
     nmap <silent><buffer> R <Plug>(fern-action-reload:all)
     nnoremap <silent><buffer> q :close<CR>
     nnoremap <silent><buffer> <Esc> :close<CR>
-    if ChopsticksIconsEnabled()
+    if chopsticks#ui#icons#Enabled()
         try
             call glyph_palette#apply()
         catch /^Vim\%((\a\+)\)\=:E117/

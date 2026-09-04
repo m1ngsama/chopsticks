@@ -4,8 +4,8 @@
 
 ![chopsticks rich Vim workflow][demo]
 
-A single-file configuration for Vim 8.2/9.x, focused on development and
-Markdown writing. Windows requires Vim 9.1.1947+ because older builds have an
+A single-file configuration for Vim 9.1.1947+, focused on development and
+Markdown writing. The floor is 9.1.1947 because older builds have an
 [upstream executable search-path vulnerability](https://github.com/vim/vim/security/advisories/GHSA-g77q-xrww-p834).
 Neovim is not supported. Startup never uses the network.
 
@@ -18,7 +18,7 @@ Neovim is not supported. Startup never uses the network.
 
 ## Install
 
-Requires Vim 8.2+ (Vim 9.1.1947+ on Windows), Git, a system `fzf` executable,
+Requires Vim 9.1.1947+, Git, a system `fzf` executable,
 and [vim-plug](https://github.com/junegunn/vim-plug). Install the executable
 prerequisites first:
 
@@ -262,7 +262,7 @@ sessions from a directory you trust.
 
 ## Design lineage
 
-Chopsticks ports established interaction patterns to Vim 8.2 instead of
+Chopsticks ports established interaction patterns to Vim 9.1.1947 instead of
 recreating a Neovim runtime:
 
 - Dashboard actions and semantic icons follow

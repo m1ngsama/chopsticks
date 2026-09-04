@@ -10,8 +10,7 @@ Security reports do not belong in public issues. Follow
 
 Changes should preserve these properties:
 
-- Vim only: support Vim 8.2 and 9.x, not Neovim. Windows support starts at
-  Vim 9.1.1947.
+- Vim only: support Vim 9.1.1947 or newer, not Neovim.
 - Offline startup: opening Vim must never download or update software.
 - Reproducible plugins: every `Plug` declaration stays pinned to a full commit.
 - Non-executing plugin installation: plugin declarations do not use

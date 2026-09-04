@@ -77,8 +77,16 @@ enddef
 # autoload-style name (ale#statusline#Count, gitgutter#hunk#summary) is
 # exempt: Vim assumes those resolve later, which is why they appear
 # literally below. call() defers the lookup to run time for the rest.
+#
+# The exists() guards have the same root cause and a nastier symptom. In
+# Vim9script a bare function name means the SCRIPT-local one, so
+# exists('*FugitiveHead') asks whether this file defines it -- and answers
+# 0 forever, however many plugins define the global. Nothing errors; the
+# feature just never appears. Builtins are exempt (they are not script
+# names) and so are autoload names, but every global from a legacy plugin,
+# and every global of ours defined in .vimrc, must be spelled g:Name here.
 def GitBranch(buffer: number = -1): string
-  if !exists('*FugitiveHead')
+  if !exists('*g:FugitiveHead')
     return ''
   endif
   var target = buffer < 0 ? bufnr('') : buffer
@@ -94,7 +102,7 @@ enddef
 # "not given". No caller passes one; buffer numbers come from getwininfo()
 # and getbufinfo().
 export def GitDiff(buffer: number = -1): string
-  if !exists('*GitGutterGetHunkSummary')
+  if !exists('*g:GitGutterGetHunkSummary')
     return ''
   endif
   var target = buffer < 0 ? bufnr('') : buffer

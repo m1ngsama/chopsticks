@@ -69,10 +69,10 @@ function! s:RunStartup(expected_auto_lint) abort
     call assert_equal(a:expected_auto_lint, exists('#ALEEvents#FileType'))
     call assert_match('WhichKey', maparg("\<Space>", 'n'))
     call assert_match('WhichKey', maparg(',', 'n'))
-    call assert_match('ExploreRoot', maparg("\<Space>e", 'n'))
+    call assert_match('chopsticks#explorer#Root', maparg("\<Space>e", 'n'))
     call assert_match('FindFiles', maparg(';f', 'n'))
     call assert_match('ChopsticksProjectGrep', maparg(';r', 'n'))
-    call assert_match('ProjectGitFiles', maparg("\<Space>fg", 'n'))
+    call assert_match('chopsticks#find#GitFiles', maparg("\<Space>fg", 'n'))
     call assert_equal('edit', get(g:fzf_action, 'ctrl-o', ''))
     call assert_equal('', maparg("\<Esc>\<Esc>", 't'))
     call assert_match('TableModeToggle', maparg(',tt', 'n'))
@@ -85,6 +85,7 @@ function! s:RunStartup(expected_auto_lint) abort
     call s:AssertEverforestSemanticColors()
     call s:AssertDiagnosticsPresentation()
     call s:AssertGitDiffPresentation()
+    call s:AssertGitBranchPresentation()
 endfunction
 
 function! s:GuiColor(group, attribute) abort
@@ -165,6 +166,24 @@ function! s:AssertGitDiffPresentation() abort
     call assert_notmatch('ChopStatusGitChange', l:summary)
     call assert_match('%#ChopStatusGitDelete#.*4', l:summary)
     call setbufvar(l:buffer, 'gitgutter', l:saved)
+endfunction
+
+" The branch segment had no assertion at all until the guard behind it was
+" found stuck false, so nothing would have noticed it going quiet. This
+" checks the rendered statusline, not just the helper, because that is the
+" surface a person actually sees.
+function! s:AssertGitBranchPresentation() abort
+    call assert_true(exists('*FugitiveHead'), 'fugitive is expected here')
+    " A CI checkout is usually on a detached HEAD, where fugitive reports no
+    " branch and an absent segment is correct. Only the presence of a name
+    " makes this assertable, so the empty case checks the rendering path
+    " runs at all rather than asserting a segment that should not be there.
+    let l:branch = FugitiveHead(0, bufnr(''))
+    if empty(l:branch)
+        call assert_true(type(ChopsticksStatusline()) == type(''))
+        return
+    endif
+    call assert_match(l:branch, ChopsticksStatusline())
 endfunction
 
 function! s:AssertFernNodeToggle(key) abort

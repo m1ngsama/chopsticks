@@ -23,8 +23,15 @@ Changes should preserve these properties:
   the code those settings drive lives in a module. `.vimrc` stays legacy Vim
   script; modules are Vim9script.
 - Lazy by default: a module is not sourced until one of its functions runs.
-  Adding a call at `.vimrc`'s top level to something that need not run at
-  startup gives that cost back.
+  Adding a call at `.vimrc`'s top level, or an unguarded autocommand, gives
+  that back. `:echo filter(getscriptinfo(), {_, i -> i.name =~# 'chopsticks/'})`
+  shows what a given start actually loaded; `autoload: v:true` means declared
+  but not read.
+- Two small directory helpers, `s:NormalizeDirectory` and
+  `s:DirectoryFileType`, are duplicated between `.vimrc` and
+  `autoload/chopsticks/session.vim` rather than shared. `.vimrc` needs them
+  before `'runtimepath'` names this repository, so it cannot call a module to
+  get them. Keep the two copies in step.
 - Discoverability: public commands and mappings stay represented in
   `:ChopsticksHealth`, `:ChopsticksCheatsheet`, tests, or documentation as
   appropriate.
@@ -32,6 +39,29 @@ Changes should preserve these properties:
 Avoid adding a plugin when Vim already provides a clear, maintainable solution.
 When a plugin is justified, prefer a focused Vimscript dependency with a stable
 upstream and a lazy-loading path.
+
+## Known test-suite gaps
+
+`sh scripts/lint-vim.sh` prints these on every run, and they are expected:
+
+```text
+warning: UI test default-dashboard quit early (known)
+warning: UI test rich quit early (known)
+```
+
+Both cases open the dashboard a second time, on a buffer that is already one,
+and Vim terminates there — uncatchably, with no assertion recorded. It
+predates the move to `autoload/`: the same two cases die the same way against
+the single-file `.vimrc` that came before it. Under silent Ex mode Vim exits
+0 while dying, which is why it went unnoticed for so long.
+
+Everything those two cases assert is therefore unverified. `default` was
+split so that only its dashboard half is affected; the rest of it runs.
+
+A case that starts quitting early **without** being listed in
+`known_incomplete_ui_tests` still fails the suite. Do not add to that list to
+make a red suite green — the list exists to bound a known defect, not to
+absorb new ones.
 
 ## Development setup
 

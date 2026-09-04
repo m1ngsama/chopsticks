@@ -7,6 +7,11 @@ scriptencoding utf-8
 " startup time and now lives in autoload/chopsticks/ui/dashboard.vim, which
 " cannot see this file's s: scope. It has to be captured here, in the first
 " lines, so the figure covers the whole of startup.
+"
+" Being a global does mean a user could set it before this file runs and
+" skew the reported figure. That is a cosmetic number on the dashboard
+" footer, not something Chopsticks decides anything from, so the guard below
+" deliberately honours an existing value rather than overwriting it.
 if !exists('g:chopsticks_startup_started_at')
     let g:chopsticks_startup_started_at = reltime()
 endif

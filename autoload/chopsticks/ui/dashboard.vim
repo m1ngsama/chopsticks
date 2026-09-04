@@ -3,12 +3,27 @@ vim9script
 # The startup dashboard: the buffer Vim opens when it starts with no file
 # argument. Rendering, cursor locking, and the item actions all live here.
 #
-# This module is reached through the g:ChopsticksDashboardEnabled() shim and
-# the :ChopsticksDashboard command in plugin/chopsticks.vim, never through
-# .vimrc's script top level, so it does not need the classic dotted-name
-# convention the icon and theme modules use. Its one startup entry point,
-# MaybeOpen(), runs from a VimEnter autocommand, well after Vim's
-# plugin-loading pass.
+# Entry points, and who calls them:
+#   Open()       :ChopsticksDashboard, and chopsticks#startup#MaybeOpenDashboard()
+#   Render()     .vimrc, on an icon/theme/density change and on BufEnter
+#   Enter()      .vimrc, on BufEnter into a dashboard buffer
+#   Leave()      .vimrc, on BufLeave out of one
+#   LockCursor() .vimrc, on CursorMoved and FocusGained
+#
+# .vimrc reaches all of those by the classic dotted name
+# (chopsticks#ui#dashboard#Render()), the same as every other module; see
+# plugin/chopsticks.vim's header for why that is the rule everywhere rather
+# than a special case here.
+#
+# What is NOT here, deliberately: the VimEnter decision about whether this
+# start should land on a dashboard at all. That lives in
+# autoload/chopsticks/startup.vim, so that a start which opens a file never
+# sources this file. See that module's own comment.
+#
+# This module depends on .vimrc for two values it does not own —
+# g:ChopsticksUiDensity() and g:ChopsticksDashboardEnabled() — and on
+# plugin/chopsticks.vim for g:ChopsticksProjectRoot() and
+# g:ChopsticksSessionPath().
 
 import autoload 'chopsticks/ui/text.vim'
 import autoload 'chopsticks/ui/icons.vim'
@@ -42,6 +57,12 @@ const ITEMS = [
 # The item list depends on what is actually available, not only on density:
 # the grep entry needs fzf.vim's :Rg plus both binaries, and the session entry
 # needs a session file that already exists for this project.
+#
+# The legacy version took an optional argument and branched on arity; this
+# branches on emptiness instead. No caller passes an empty density —
+# g:ChopsticksUiDensity() only ever returns minimal, balanced, or rich — so
+# the two agree today, but they are not the same contract. Pass a real
+# density or nothing.
 def Items(requested_density: string = ''): list<dict<string>>
   var density = empty(requested_density)
     ? g:ChopsticksUiDensity() : requested_density
@@ -130,6 +151,16 @@ enddef
 
 # Clear every item key this buffer might still hold from a previous render at
 # a different density, then map only the keys the current item list uses.
+# The unmap loop walks the full ITEMS list, not the filtered one, precisely
+# so a key that existed at the previous density is removed at this one.
+#
+# The right-hand sides use <ScriptCmd> where the legacy version used
+# `:call <SID>Name()<CR>`. <SID> cannot reach a Vim9 module's script-local
+# functions from a mapping, and <ScriptCmd> runs in the defining script's
+# context, which is what makes these private functions reachable at all. It
+# also does not enter command-line mode, so unlike the legacy form it leaves
+# @: alone and fires no CmdlineEnter/CmdlineLeave — a small, deliberate
+# improvement rather than an accident.
 def MapItems(items: list<dict<string>>)
   for item in ITEMS
     var mapping = maparg(item.key, 'n', 0, 1)
@@ -346,4 +377,3 @@ export def Open()
   nnoremap <silent><nowait><buffer> h :ChopsticksHealth<CR>
   Render()
 enddef
-

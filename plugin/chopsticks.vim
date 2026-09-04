@@ -16,10 +16,13 @@ vim9script
 # wrong fails at startup with E117, before this file has loaded at all.
 # Using one convention for the whole of .vimrc removes the question.
 #
-# It also keeps this file honest: a global here means something outside
-# Chopsticks depends on the name. g:ChopsticksProjectRoot() is the one
-# exception, and it is asserted by tests/ui.vim precisely so it stays
-# visible rather than drifting into a private helper.
+# Most globals here are the outward-facing contract: tests/ui.vim asserts
+# them, or 'statusline' and 'tabline' evaluate them. Two are not, and are
+# here for a different reason — g:ChopsticksProjectRoot() and
+# g:ChopsticksSessionPath() are how one module reaches another's value
+# without importing it, which .vimrc's own call sites also need. Both are
+# asserted by tests/ui.vim anyway, so that a cross-module dependency stays
+# visible instead of drifting into a private helper.
 #
 # Public interface. Every Chopsticks* global is declared here and delegates to
 # an autoload module, which Vim does not read until the first call. Names in

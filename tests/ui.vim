@@ -465,13 +465,17 @@ function! s:AssertProjectRootSpecialCharacters() abort
 endfunction
 
 function! s:AssertProjectCommandsStayRooted() abort
-    let l:definition = execute('function /ProjectFzfSpec')
-    let l:name = matchstr(l:definition, '<SNR>\d\+_ProjectFzfSpec')
-    call assert_false(empty(l:name))
-    if empty(l:name)
-        return
-    endif
-    let l:ProjectFzfSpec = function(l:name)
+    " The spec builder used to be a script-local function in .vimrc, found
+    " here by searching :function output for its <SNR> name. It is now
+    " chopsticks#find#ProjectSpec() and is called directly below.
+    "
+    " Two ways of writing this are silently vacuous, and both were tried
+    " here. Searching :function output finds nothing once the name changes,
+    " and exists('*chopsticks#find#ProjectSpec') is 0 until something has
+    " already loaded the module -- exists() does not trigger autoloading. A
+    " guard on either one turns the whole assertion into an early return
+    " that reports success. Calling the function is what loads it, so this
+    " calls it and lets a genuine failure raise.
     let l:outside = tempname() . '-outside-project'
     let l:previous = getcwd()
     call mkdir(l:outside, 'p')
@@ -479,7 +483,7 @@ function! s:AssertProjectCommandsStayRooted() abort
         execute 'silent edit ' . fnameescape(s:root . '/README.md')
         execute 'cd ' . fnameescape(l:outside)
         call assert_equal(0, haslocaldir())
-        let l:spec = call(l:ProjectFzfSpec, [])
+        let l:spec = chopsticks#find#ProjectSpec()
         call assert_equal(fnamemodify(s:root, ':p'),
             \ fnamemodify(l:spec.dir, ':p'))
         call assert_equal(fnamemodify(l:outside, ':p'),

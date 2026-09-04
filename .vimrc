@@ -577,11 +577,19 @@ call chopsticks#ui#theme#Apply()
 " autoload/chopsticks/ui/statusline.vim and bufferline.vim; these are the
 " names Vim and tests/ui.vim know them by.
 "
-" ChopsticksWritingMode() takes two optional arguments and the rest take one,
-" matching the legacy signatures exactly: tests/plugins.vim calls
-" ChopsticksDiagnostics() and ChopsticksGitDiff() WITH a buffer argument
-" while tests/ui.vim calls ChopsticksWritingMode() with none, so neither a
-" fixed arity nor a dropped argument would do.
+" Only the globals something outside these modules actually calls are here.
+" ChopsticksUiDensity(), ChopsticksStatusline(), and ChopsticksTabline() are
+" asserted by tests/ui.vim and named by 'statusline'/'tabline'. The three
+" variadic ones are called from tests/plugins.vim and tests/ui.vim. The
+" statusline's other segments -- the mode, the git branch, the file icon,
+" the buffer flags -- had globals too, but nothing outside the statusline
+" ever called them, so they are now private to their module rather than
+" being kept alive as dead public names.
+"
+" The variadic signatures match the legacy ones exactly, and have to:
+" tests/plugins.vim calls ChopsticksDiagnostics() and ChopsticksGitDiff()
+" WITH a buffer argument while tests/ui.vim calls ChopsticksWritingMode()
+" with none, so neither a fixed arity nor a dropped argument would do.
 function! ChopsticksUiDensity() abort
     return chopsticks#ui#statusline#UiDensity()
 endfunction
@@ -594,18 +602,6 @@ function! ChopsticksTabline() abort
     return chopsticks#ui#bufferline#Render()
 endfunction
 
-function! ChopsticksFileIcon(path) abort
-    return chopsticks#ui#icons#FileIcon(a:path)
-endfunction
-
-function! ChopsticksMode(...) abort
-    return call('chopsticks#ui#statusline#Mode', a:000)
-endfunction
-
-function! ChopsticksGitBranch(...) abort
-    return call('chopsticks#ui#statusline#GitBranch', a:000)
-endfunction
-
 function! ChopsticksGitDiff(...) abort
     return call('chopsticks#ui#statusline#GitDiff', a:000)
 endfunction
@@ -616,10 +612,6 @@ endfunction
 
 function! ChopsticksWritingMode(...) abort
     return call('chopsticks#ui#statusline#WritingMode', a:000)
-endfunction
-
-function! ChopsticksBufferFlags(...) abort
-    return call('chopsticks#ui#statusline#BufferFlags', a:000)
 endfunction
 
 " Stays here because it is the only one of these that needs s:ResolveSwitch(),
@@ -639,12 +631,13 @@ call chopsticks#ui#bufferline#Refresh()
 
 " icons.vim's own Toggle()/Apply() (see plugin/chopsticks.vim) now own the
 " fern/ALE icon variables an icon toggle re-applies. The rest of what a live
-" toggle always also refreshed -- fzf's gfiles options, the statusline's
-" file-icon cache, a dashboard re-render, and the status/tabline redraw --
-" is not an icon concern and stays here, since Vim9 script-local names
-" cannot cross files (s:fzf_abort_keys, s:FzfVisualOptions(), and
-" s:file_icon_cache are all local to this file; the dashboard re-render
-" reaches its own module by the classic dotted name).
+" toggle always also refreshed -- fzf's gfiles options, a dashboard
+" re-render, and the status/tabline redraw -- is not an icon concern and
+" stays here, since Vim9 script-local names cannot cross files
+" (s:fzf_abort_keys and s:FzfVisualOptions() are local to this file; the
+" dashboard re-render reaches its own module by the classic dotted name).
+" The file-icon cache used to be cleared here too; it now lives in icons.vim
+" beside the glyphs it caches, and Apply() clears it.
 " icons.vim's Toggle() fires a guarded `User ChopsticksIconsToggled`
 " autocommand right after it applies (see the augroup below) so this still
 " runs in the same order it always has, without plugin/chopsticks.vim
@@ -652,7 +645,6 @@ call chopsticks#ui#bufferline#Refresh()
 function! s:RefreshIconDependents() abort
     let g:fzf_vim.gfiles_options =
         \ ['--bind', s:fzf_abort_keys] + s:FzfVisualOptions()
-    let s:file_icon_cache = {}
     if &filetype ==# 'chopsticks-dashboard'
         call chopsticks#ui#dashboard#Render()
     endif

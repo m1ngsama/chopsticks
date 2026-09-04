@@ -34,11 +34,26 @@ endif
 " plugin/**/*.vim from directories already on 'runtimepath', and starting
 " Vim with -u pointing at this file does not add its own directory to
 " 'runtimepath' automatically, so it is added explicitly before that pass
-" runs. The guard keeps a manual :source $MYVIMRC from duplicating the entry.
-let s:chopsticks_root = fnamemodify($MYVIMRC, ':h')
+" runs.
+"
+" $MYVIMRC cannot be used to find that directory: the documented install
+" (README.md) symlinks this file to ~/.vimrc, so $MYVIMRC names the symlink,
+" and fnamemodify(..., ':h') on it gives $HOME, not this repository. The
+" documented Windows install instead sources this file from a separate
+" _vimrc, so there $MYVIMRC names a different file in a different directory
+" entirely. resolve(expand('<sfile>:p')) gives this file's own real location
+" in both cases. Vim9 modules under plugin/ and autoload/ must not depend on
+" their own path (the linter sources a copy from a temporary directory), but
+" that rule does not apply to this legacy script: it is always sourced from
+" its real location, never copied, so <sfile> here is safe and correct.
+"
+" The guard keeps a manual reload (:source $MYVIMRC) from duplicating the
+" 'runtimepath' entry.
+let s:chopsticks_root = fnamemodify(resolve(expand('<sfile>:p')), ':h')
 if index(split(&runtimepath, ','), s:chopsticks_root) < 0
     execute 'set runtimepath^=' . fnameescape(s:chopsticks_root)
 endif
+unlet s:chopsticks_root
 
 let g:mapleader = "\<Space>"
 let g:maplocalleader = ','

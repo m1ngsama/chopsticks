@@ -15,7 +15,7 @@
 - [ ] `npm run lint`
 - [ ] `npm test`
 - [ ] `git diff --check`
-- [ ] Relevant behavior was tested in Vim 8.2 or compatibility was
+- [ ] Relevant behavior was tested in Vim 9.1.1947 or compatibility was
       reviewed
 - [ ] ASCII mode and affected UI densities were checked when applicable
 - [ ] Public commands, mappings, and configuration are documented and tested

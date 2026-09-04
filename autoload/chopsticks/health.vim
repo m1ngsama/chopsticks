@@ -27,19 +27,16 @@ vim9script
 # coerce any Number or String to a boolean without erroring (a String is
 # truthy iff str2nr() on it is nonzero, matching .vimrc's own && exactly);
 # Vim9's `&&`, `||`, and `if`/`?:` raise E1023 (Number) or E1135 (String) on
-# anything that is not already exactly 0, 1, true, or false. LegacyTruthy()
+# anything that is not already exactly 0, 1, true, or false. switch.Truthy()
 # reproduces the legacy coercion so a value that s:FernAvailable() and this
 # function must keep agreeing on (say, 2 or 'no') is handled the same way
 # here as there, instead of throwing.
 
 import autoload 'chopsticks/ui/window.vim'
-
-def LegacyTruthy(value: any): bool
-  return type(value) == v:t_string ? str2nr(value) != 0 : !!value
-enddef
+import autoload 'chopsticks/switch.vim'
 
 def FernAvailable(): bool
-  return LegacyTruthy(get(g:, 'chopsticks_use_fern', 1))
+  return switch.Truthy(get(g:, 'chopsticks_use_fern', 1))
     && exists(':Fern') == 2
 enddef
 

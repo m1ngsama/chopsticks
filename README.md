@@ -7,9 +7,8 @@
 A Vim 9.1.1947+ configuration focused on development and Markdown writing.
 The floor is 9.1.1947 because older builds have an
 [upstream executable search-path vulnerability](https://github.com/vim/vim/security/advisories/GHSA-g77q-xrww-p834).
-Neovim is not supported. Startup never uses the network, every plugin is
-pinned to a commit, and nothing is loaded until it is used: opening a file
-sources neither the dashboard nor the session, Markdown, or health code.
+Neovim is not supported. Startup never uses the network and every plugin is
+pinned to a commit.
 
 [Configuration](docs/configuration.md) ·
 [Performance](docs/performance.md) ·
@@ -271,19 +270,35 @@ autoload/chopsticks/      behaviour, in Vim9script, loaded on first use
 ```
 
 `.vimrc` holds what a person edits: which key does what, which filetype gets
-which indent, what each plugin is told. It stays legacy Vim script, because
-it runs before `'runtimepath'` names this repository and because vimlint's
-parser — which checks it on every commit — cannot read Vim9 `import`.
+which indent, what each plugin is told. It stays legacy Vim script because
+vimlint — the linter that checks it on every commit — cannot parse Vim9
+`import`, and `.vimrc` is the one file vimlint still covers. Its own first
+job is to add this repository to `'runtimepath'`, since nothing below can
+reach a module before that.
 
 Everything those settings drive lives under `autoload/chopsticks/` in
 Vim9script, and Vim does not read a module until one of its functions is
-called. Starting Vim on a file leaves the dashboard, session, health,
-Markdown, and cheatsheet modules declared but unsourced.
+called. Starting Vim on an ordinary file leaves the dashboard, session,
+health, clipboard, and scratch-window modules declared but unsourced; the
+rest load because something on the startup path genuinely uses them — the
+statusline and tabline draw, the key catalogue is built, and a
+`BufWinEnter` guard checks every buffer for a line long enough to make
+'breakindent' expensive.
 
-A handful of `Chopsticks*` functions are declared in `.vimrc` rather than in
-`plugin/`, because `'statusline'` and `'tabline'` name them and a redraw can
-evaluate them while `.vimrc` is still executing — before Vim sources anything
-under `plugin/`. Each is a one-line delegation to its module.
+To see it for a given file:
+
+```vim
+:echo filter(getscriptinfo(), {_, i -> i.name =~# 'chopsticks/'})
+```
+
+An entry with `autoload: v:true` is declared but has not been read.
+
+Seven `Chopsticks*` functions are declared in `.vimrc` rather than in
+`plugin/`. `'statusline'` and `'tabline'` name two of them, and a redraw can
+evaluate those while `.vimrc` is still executing — before Vim sources
+anything under `plugin/`, so a definition there would be too late. The other
+five are reachable from those two, or from `.vimrc`'s own top level, and are
+declared alongside them for the same reason.
 
 ## Design lineage
 

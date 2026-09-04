@@ -58,9 +58,6 @@ releases of the current line.
   from `$MYVIMRC`, which names the symlink rather than this repository, so a
   README-following install silently added `$HOME` to `'runtimepath'` instead.
   A regression test now performs that install.
-- The session directory is created with the intended private permissions.
-  Its mode was written as `0700`, which Vim9 reads as decimal 700 rather than
-  octal 448.
 - `autoload/chopsticks/session.vim` is tracked. A `Session.vim` ignore rule
   matched it on case-insensitive filesystems.
 - A UI test case that quits part-way through is reported instead of passing.

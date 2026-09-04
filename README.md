@@ -4,10 +4,12 @@
 
 ![chopsticks rich Vim workflow][demo]
 
-A single-file configuration for Vim 9.1.1947+, focused on development and
-Markdown writing. The floor is 9.1.1947 because older builds have an
+A Vim 9.1.1947+ configuration focused on development and Markdown writing.
+The floor is 9.1.1947 because older builds have an
 [upstream executable search-path vulnerability](https://github.com/vim/vim/security/advisories/GHSA-g77q-xrww-p834).
-Neovim is not supported. Startup never uses the network.
+Neovim is not supported. Startup never uses the network, every plugin is
+pinned to a commit, and nothing is loaded until it is used: opening a file
+sources neither the dashboard nor the session, Markdown, or health code.
 
 [Configuration](docs/configuration.md) ·
 [Performance](docs/performance.md) ·
@@ -259,6 +261,29 @@ explicit opt-in. On POSIX, Chopsticks writes private modes and refuses session
 directories or files writable by another group/user. Windows relies on the
 user-profile ACL. Every platform rejects non-regular session input; only load
 sessions from a directory you trust.
+
+## Layout
+
+```text
+.vimrc                    bootstrap and configuration
+plugin/chopsticks.vim     the public Chopsticks* commands and functions
+autoload/chopsticks/      behaviour, in Vim9script, loaded on first use
+```
+
+`.vimrc` holds what a person edits: which key does what, which filetype gets
+which indent, what each plugin is told. It stays legacy Vim script, because
+it runs before `'runtimepath'` names this repository and because vimlint's
+parser — which checks it on every commit — cannot read Vim9 `import`.
+
+Everything those settings drive lives under `autoload/chopsticks/` in
+Vim9script, and Vim does not read a module until one of its functions is
+called. Starting Vim on a file leaves the dashboard, session, health,
+Markdown, and cheatsheet modules declared but unsourced.
+
+A handful of `Chopsticks*` functions are declared in `.vimrc` rather than in
+`plugin/`, because `'statusline'` and `'tabline'` name them and a redraw can
+evaluate them while `.vimrc` is still executing — before Vim sources anything
+under `plugin/`. Each is a one-line delegation to its module.
 
 ## Design lineage
 

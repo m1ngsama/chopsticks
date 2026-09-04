@@ -12,10 +12,14 @@ vim9script
 # clobber a modified listed buffer unless the bang form opts in.
 #
 # ProjectRoot() is exported because .vimrc's own fern/terminal/fzf helpers
-# need the same project-root resolution outside any session action; .vimrc
-# reaches it through `import autoload 'chopsticks/session.vim'` and
-# `s:session.ProjectRoot()`, the same lazy-import mechanism this file's own
-# doc comment on plugin/chopsticks.vim describes for Vim9 callers.
+# need the same project-root resolution outside any session action. .vimrc
+# cannot reach it with a Vim9 `import autoload` statement the way this file
+# itself, plugin/chopsticks.vim, and tests/ui.vim do: vimlint's legacy-script
+# parser (vim-vimlparser) does not understand that syntax and fails to parse
+# .vimrc if one is added there. .vimrc instead calls the plain global
+# g:ChopsticksProjectRoot() (see plugin/chopsticks.vim), the same shim shape
+# it already uses for ChopsticksIconsEnabled() and
+# ChopsticksSystemClipboardEnabled().
 #
 # IsWindows, NormalizeDirectory, and DirectoryFileType duplicate small,
 # self-contained pieces of .vimrc's own s:is_windows / s:NormalizeDirectory /

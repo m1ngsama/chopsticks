@@ -19,9 +19,26 @@ vim9script
 # it stays in .vimrc; Vim9 script-local names cannot cross files, so the
 # small amount of logic actually needed here is reproduced instead of
 # reaching back into .vimrc.
+#
+# g:chopsticks_use_fern is read raw here, exactly like .vimrc's own
+# s:FernAvailable() reads it: .vimrc never runs it through s:ResolveSwitch()
+# (unlike g:chopsticks_auto_lint, g:chopsticks_dashboard, and friends), so it
+# holds whatever type and value the user last assigned. Legacy `&&`/`if`
+# coerce any Number or String to a boolean without erroring (a String is
+# truthy iff str2nr() on it is nonzero, matching .vimrc's own && exactly);
+# Vim9's `&&`, `||`, and `if`/`?:` raise E1023 (Number) or E1135 (String) on
+# anything that is not already exactly 0, 1, true, or false. LegacyTruthy()
+# reproduces the legacy coercion so a value that s:FernAvailable() and this
+# function must keep agreeing on (say, 2 or 'no') is handled the same way
+# here as there, instead of throwing.
+
+def LegacyTruthy(value: any): bool
+  return type(value) == v:t_string ? str2nr(value) != 0 : !!value
+enddef
 
 def FernAvailable(): bool
-  return get(g:, 'chopsticks_use_fern', 1) && exists(':Fern') == 2
+  return LegacyTruthy(get(g:, 'chopsticks_use_fern', 1))
+    && exists(':Fern') == 2
 enddef
 
 export def Lines(): list<string>

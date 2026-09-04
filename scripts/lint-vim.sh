@@ -195,21 +195,34 @@ fi
 # every error in it. Copying the module and appending the directive to the
 # copy puts :defcompile inside the module's own script context, where it
 # actually checks it.
+vim9_copy_counter=0
 lint_vim9_file() {
     vim9_source=$1
-    vim9_copy=$test_root/vim9-$(printf '%s' "$vim9_source" |
-        tr '/.' '__').vim
+    vim9_copy_counter=$((vim9_copy_counter + 1))
+    vim9_copy=$test_root/vim9-$vim9_copy_counter.vim
     cp "$vim9_source" "$vim9_copy"
     printf '\ndefcompile\n' >>"$vim9_copy"
     vim9_copy_for_vim=$(path_for_vim "$vim9_copy")
     vim9_root_for_vim=$(path_for_vim "$chopsticks_root")
     vim9_log=$vim9_copy.log
-    if ! "$test_vim" \
-        -Nu NONE -i NONE -n -N -es \
-        -V1"$vim9_log" \
-        --cmd "set runtimepath^=$vim9_root_for_vim" \
-        -c "try | source $vim9_copy_for_vim | catch | cquit | endtry" \
-        -c 'qall!' >/dev/null 2>&1
+    vim9_log_for_vim=$(path_for_vim "$vim9_log")
+    # The dollar-prefixed names below are Vim environment lookups, not shell
+    # expansions, so the single quotes are intentional. Paths travel through
+    # the environment and are escaped with fnameescape() inside Vim, as the
+    # vimlint invocation above does, rather than being spliced into the
+    # command strings: :set and :source both split unescaped arguments on
+    # whitespace, and this repo's own test fixtures include a
+    # space-containing path.
+    # shellcheck disable=SC2016
+    if ! env \
+        CHOPSTICKS_VIM9_ROOT="$vim9_root_for_vim" \
+        CHOPSTICKS_VIM9_FILE="$vim9_copy_for_vim" \
+        "$test_vim" \
+            -Nu NONE -i NONE -n -N -es \
+            -V1"$vim9_log_for_vim" \
+            --cmd 'execute "set runtimepath^=" . fnameescape($CHOPSTICKS_VIM9_ROOT)' \
+            -c 'try | execute "source " . fnameescape($CHOPSTICKS_VIM9_FILE) | catch | cquit | endtry' \
+            -c 'qall!' >/dev/null 2>&1
     then
         printf 'vim9 compile failed: %s\n' "$vim9_source" >&2
         sed 's/^/  /' "$vim9_log" >&2

@@ -25,9 +25,11 @@ vim9script
 # them, or 'statusline' and 'tabline' evaluate them. Two are not, and are
 # here for a different reason — g:ChopsticksProjectRoot() and
 # g:ChopsticksSessionPath() are how one module reaches another's value
-# without importing it, which .vimrc's own call sites also need. Both are
-# asserted by tests/ui.vim anyway, so that a cross-module dependency stays
-# visible instead of drifting into a private helper.
+# without importing it. find.vim, explorer.vim, actions.vim, health.vim and
+# dashboard.vim all call one or both; .vimrc itself no longer calls either,
+# since the call sites that once did moved into those modules. Both stay
+# asserted by tests/ui.vim so a cross-module dependency stays visible
+# instead of drifting into a private helper.
 #
 # Public interface. Every Chopsticks* global is declared here and delegates to
 # an autoload module, which Vim does not read until the first call. Names in

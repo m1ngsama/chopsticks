@@ -605,10 +605,11 @@ call chopsticks#ui#bufferline#Refresh()
 " icons.vim's own Toggle()/Apply() (see plugin/chopsticks.vim) now own the
 " fern/ALE icon variables an icon toggle re-applies. The rest of what a live
 " toggle always also refreshed -- fzf's gfiles options, a dashboard
-" re-render, and the status/tabline redraw -- is not an icon concern and
-" stays here, since Vim9 script-local names cannot cross files
-" (chopsticks#find#AbortKeys() and chopsticks#find#VisualOptions() are local to this file; the
-" dashboard re-render reaches its own module by the classic dotted name).
+" re-render, and the status/tabline redraw -- is not an icon concern, so it
+" stays here rather than in icons.vim. g:fzf_vim is this file's to own; the
+" values that go into it come back from autoload/chopsticks/find.vim through
+" chopsticks#find#AbortKeys() and chopsticks#find#VisualOptions(), and the
+" dashboard re-render reaches its own module by the classic dotted name.
 " The file-icon cache used to be cleared here too; it now lives in icons.vim
 " beside the glyphs it caches, and Apply() clears it.
 " icons.vim's Toggle() fires a guarded `User ChopsticksIconsToggled`

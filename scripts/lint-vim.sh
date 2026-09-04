@@ -32,7 +32,7 @@ test_vim=${CHOPSTICKS_TEST_VIM:-${VIMLINT_VIM:-vim}}
 skip_vimlint=${CHOPSTICKS_TEST_SKIP_VIMLINT:-0}
 ui_test_cases=${CHOPSTICKS_TEST_UI_CASES:-all}
 ui_test_count=0
-all_ui_test_cases='default minimal rich density status-context tabline-width
+all_ui_test_cases='default default-dashboard minimal rich density status-context tabline-width
 transparent opaque theme-valid theme-fallback dashboard-off dashboard-on
 dashboard-wide bufferline-off bufferline-on data-dir-override
 data-dir-invalid-type data-dir-empty path-overrides fzf-unavailable session
@@ -49,7 +49,7 @@ health keys markdown symlink-install'
 # They are warned about rather than failed so the suite stays usable as a gate
 # for the other 22 cases. A case that starts quitting early WITHOUT being
 # listed here still fails, which is the property worth keeping.
-known_incomplete_ui_tests='default rich'
+known_incomplete_ui_tests='default-dashboard rich'
 mkdir -p "$disabled_git_hooks"
 
 case "$skip_vimlint" in
@@ -294,6 +294,10 @@ run_ui_test() {
     # cases that open one run with --not-a-term instead, which is headless
     # without silent Ex mode's early exit. The completion marker below is
     # what makes a regression here visible rather than silent.
+    # -es is silent Ex mode, and a case that opens the dashboard dies there
+    # with status 0 -- silently, before tests/ui.vim reaches the end where it
+    # would report anything v:errors had collected. Cases that open one run
+    # with --not-a-term instead, which is headless without that behaviour.
     test_mode=-es
     if [ "$test_case" = dashboard-wide ]; then
         test_mode=--not-a-term
@@ -461,6 +465,7 @@ run_symlink_ui_test() {
 }
 
 run_ui_test default
+run_ui_test default-dashboard
 run_ui_test minimal \
     --cmd "let g:chopsticks_ui_density = 'minimal'"
 run_ui_test rich \

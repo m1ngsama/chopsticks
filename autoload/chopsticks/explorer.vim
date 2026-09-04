@@ -8,11 +8,17 @@ vim9script
 # not calls into this module at all.
 
 import autoload 'chopsticks/ui/icons.vim'
+import autoload 'chopsticks/switch.vim'
 
 const IS_WINDOWS = has('win32') || has('win64')
 
 # Set once, the first time a directory argument is turned into a drawer, so
 # that reopening a buffer later does not re-trigger the startup behaviour.
+#
+# Module state outlives a `:source $MYVIMRC`, where the script-local flag it
+# replaced did not. Re-sourcing therefore no longer re-arms this, which is
+# the more defensible behaviour anyway: the directory argument belongs to
+# the Vim session that started, not to the last time the config was reloaded.
 var directory_startup_opened = false
 
 def ExplorerWindow(): number
@@ -25,8 +31,13 @@ def ExplorerWindow(): number
   return 0
 enddef
 
+# g:chopsticks_use_fern is never normalised by .vimrc, so it holds whatever
+# the user assigned. Read through switch.Truthy(): a Vim9 && raises E1135 on
+# a String and E1023 on a Number that is not 0 or 1, where legacy coerced --
+# and a throw here escapes Toggle(), so SPC e would error out instead of
+# falling back to netrw. health.vim reads the same switch the same way.
 export def FernAvailable(): bool
-  return get(g:, 'chopsticks_use_fern', 1) && exists(':Fern') == 2
+  return switch.Truthy(get(g:, 'chopsticks_use_fern', 1)) && exists(':Fern') == 2
 enddef
 
 # Whether `path` is `directory` or sits under it. Compares resolved paths, so

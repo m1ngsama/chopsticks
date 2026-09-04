@@ -31,6 +31,37 @@ function! s:AssertClipboardModuleLazy() abort
     endif
 endfunction
 
+function! s:AssertSessionModuleLazy() abort
+    " autoload/chopsticks/session.vim backs ChopsticksSessionPath() and
+    " ChopsticksProjectRoot() through `import autoload` in
+    " plugin/chopsticks.vim. See s:AssertClipboardModuleLazy() for why this
+    " must still hold here.
+    let l:info = getscriptinfo(
+        \ {'name': 'chopsticks[\/]session\.vim$'})
+    call assert_equal(1, len(l:info),
+        \ 'autoload/chopsticks/session.vim is not a known script: '
+        \ . string(l:info))
+    if len(l:info) == 1
+        call assert_true(l:info[0].autoload,
+            \ 'autoload/chopsticks/session.vim was already sourced')
+    endif
+endfunction
+
+function! s:AssertHealthModuleLazy() abort
+    " autoload/chopsticks/health.vim backs ChopsticksHealthLines() through
+    " `import autoload` in plugin/chopsticks.vim. See
+    " s:AssertClipboardModuleLazy() for why this must still hold here.
+    let l:info = getscriptinfo(
+        \ {'name': 'chopsticks[\/]health\.vim$'})
+    call assert_equal(1, len(l:info),
+        \ 'autoload/chopsticks/health.vim is not a known script: '
+        \ . string(l:info))
+    if len(l:info) == 1
+        call assert_true(l:info[0].autoload,
+            \ 'autoload/chopsticks/health.vim was already sourced')
+    endif
+endfunction
+
 function! s:AssertRuntimepathContainsRoot() abort
     " README.md's documented install symlinks .vimrc into $HOME (and, on
     " Windows, sources it from a separate _vimrc). $MYVIMRC then names the
@@ -50,6 +81,8 @@ function! s:AssertPublicInterface() abort
             \ . substitute(trim(s:startup_messages), '\n', ' // ', 'g'))
     endif
     call s:AssertClipboardModuleLazy()
+    call s:AssertSessionModuleLazy()
+    call s:AssertHealthModuleLazy()
     call assert_equal(2, exists(':ChopsticksUiDensity'))
     call assert_equal(2, exists(':ChopsticksTransparencyToggle'))
     call assert_equal(2, exists(':ChopsticksDashboard'))
@@ -362,13 +395,12 @@ function! s:AssertPathContainment() abort
 endfunction
 
 function! s:AssertProjectRootSpecialCharacters() abort
-    let l:definition = execute('function /ProjectRoot')
-    let l:name = matchstr(l:definition, '<SNR>\d\+_ProjectRoot')
-    call assert_false(empty(l:name))
-    if empty(l:name)
-        return
-    endif
-    let l:ProjectRoot = function(l:name)
+    " ProjectRoot() moved into autoload/chopsticks/session.vim (Vim9 script)
+    " and is reached through the public ChopsticksProjectRoot() global (see
+    " plugin/chopsticks.vim) instead of the <SNR> function-name reflection
+    " used elsewhere in this file for .vimrc's own private legacy helpers:
+    " that reflection only works on legacy `function!` definitions, not a
+    " Vim9 `def`.
     let l:test_root = tempname() . '-project,with;markers'
     let l:nested = l:test_root . '/nested'
     let l:previous_directory = getcwd()
@@ -377,7 +409,7 @@ function! s:AssertProjectRootSpecialCharacters() abort
     try
         execute 'silent edit ' . fnameescape(l:nested . '/note.md')
         call assert_equal(fnamemodify(l:test_root, ':p'),
-            \ call(l:ProjectRoot, []))
+            \ ChopsticksProjectRoot())
     finally
         silent! bwipeout!
         execute 'lcd ' . fnameescape(l:previous_directory)

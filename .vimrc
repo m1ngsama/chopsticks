@@ -1030,7 +1030,7 @@ endfunction
 
 function! s:OpenDashboard() abort
     if &filetype !=# 'chopsticks-dashboard'
-        let l:project_root = s:ProjectRoot()
+        let l:project_root = ChopsticksProjectRoot()
         silent keepalt enew
         silent file [chopsticks]
         setlocal buftype=nofile bufhidden=wipe noswapfile nobuflisted
@@ -1490,204 +1490,13 @@ function! s:MakeParent(path) abort
     endif
 endfunction
 
-function! s:ProjectRoot() abort
-    let l:start = empty(expand('%:p')) ? getcwd() : expand('%:p:h')
-    let l:directory = simplify(fnamemodify(l:start, ':p'))
-    while !empty(l:directory)
-        let l:separator = l:directory =~# '[/\\]$' ? '' : '/'
-        let l:marker = l:directory . l:separator . '.git'
-        if isdirectory(l:marker) || filereadable(l:marker)
-            " Directories here are canonical: absolute, simplified, and ending
-            " with a separator, the shape g:chopsticks_data_dir already has.
-            return s:NormalizeDirectory(fnamemodify(l:marker, ':h'), getcwd())
-        endif
-        let l:parent = fnamemodify(l:directory, ':h')
-        if l:parent ==# l:directory
-            \ || (s:is_windows && l:parent ==? l:directory)
-            break
-        endif
-        let l:directory = l:parent
-    endwhile
-    return s:NormalizeDirectory(getcwd(), getcwd())
-endfunction
-
-function! s:SessionRoot() abort
-    let l:root = get(b:, 'chopsticks_project_root', s:ProjectRoot())
-    return resolve(fnamemodify(l:root, ':p'))
-endfunction
-
-function! s:SessionDigest(value) abort
-    let l:first = 5381
-    let l:second = 52711
-    for l:character in str2list(a:value)
-        let l:first = and(l:first * 33 + l:character, 0x7fffffff)
-        let l:second = and(l:second * 65599 + l:character, 0x7fffffff)
-    endfor
-    return printf('%08x%08x', l:first, l:second)
-endfunction
-
-function! ChopsticksSessionPath() abort
-    let l:root = s:SessionRoot()
-    let l:name = substitute(fnamemodify(l:root, ':t'),
-        \ '[^A-Za-z0-9_.-]', '-', 'g')
-    let l:name = empty(l:name) ? 'workspace' : l:name
-    let l:name = strpart(l:name, 0, 64)
-    let l:filename = printf('%s-%s-vim%d.vim', l:name,
-        \ s:SessionDigest(l:root), v:version)
-    return simplify(g:chopsticks_session_dir . l:filename)
-endfunction
-
-function! s:SessionPermissionsAreSafe(path) abort
-    if s:is_windows || !exists('*getfperm')
-        return 1
-    endif
-    let l:permissions = getfperm(a:path)
-    return !empty(l:permissions)
-        \ && (strpart(l:permissions, 4, 1) !=# 'w'
-        \     && strpart(l:permissions, 7, 1) !=# 'w')
-endfunction
-
-function! s:SessionDirectoryIsSafe() abort
-    return s:DirectoryFileType(g:chopsticks_session_dir) ==# 'dir'
-        \ && s:SessionPermissionsAreSafe(g:chopsticks_session_dir)
-endfunction
-
-function! s:SessionPathIsSafe(path) abort
-    if getftype(a:path) !=# 'file' || !s:SessionDirectoryIsSafe()
-        return 0
-    endif
-    " Windows access is governed by ACLs; its getfperm() owner/group/other
-    " string is not an authority boundary. The regular-file and trusted-root
-    " checks still apply there.
-    return s:SessionPermissionsAreSafe(a:path)
-endfunction
-
-function! s:SessionSave() abort
-    if &filetype ==# 'chopsticks-dashboard'
-        echohl WarningMsg
-        echom 'chopsticks: open a project buffer before saving a session'
-        echohl None
-        return
-    endif
-    call mkdir(g:chopsticks_session_dir, 'p', 0700)
-    if s:DirectoryFileType(g:chopsticks_session_dir) !=# 'dir'
-        echohl ErrorMsg
-        echom 'chopsticks: session directory is not a regular directory'
-        echohl None
-        return
-    endif
-    if exists('*setfperm')
-        call setfperm(g:chopsticks_session_dir, 'rwx------')
-    endif
-    if !s:SessionDirectoryIsSafe()
-        echohl ErrorMsg
-        echom 'chopsticks: refusing an unsafe session directory'
-        echohl None
-        return
-    endif
-    let l:path = ChopsticksSessionPath()
-    let l:temporary = l:path . '.tmp-' . getpid()
-    if !empty(getftype(l:temporary))
-        echohl ErrorMsg
-        echom 'chopsticks: refusing an existing session temporary path'
-        echohl None
-        return
-    endif
-    try
-        execute 'silent mksession! ' . fnameescape(l:temporary)
-        if getftype(l:temporary) !=# 'file'
-            throw 'temporary session is not a regular file'
-        endif
-        if exists('*setfperm')
-            call setfperm(l:temporary, 'rw-------')
-        endif
-        if (has('win32') || has('win64')) && filereadable(l:path)
-            let l:backup = l:path . '.bak-' . getpid()
-            if rename(l:path, l:backup) != 0
-                throw 'could not stage the previous session'
-            endif
-            if rename(l:temporary, l:path) != 0
-                call rename(l:backup, l:path)
-                throw 'could not move the new session into place'
-            endif
-            call delete(l:backup)
-        elseif rename(l:temporary, l:path) != 0
-            throw 'could not move the new session into place'
-        endif
-        if exists('*setfperm')
-            call setfperm(l:path, 'rw-------')
-        endif
-    catch
-        call delete(l:temporary)
-        echohl ErrorMsg
-        echom 'chopsticks: could not save session: ' . v:exception
-        echohl None
-        return
-    endtry
-    echo 'session saved: ' . fnamemodify(l:path, ':t')
-    let l:modified = filter(getbufinfo({'buflisted': 1}),
-        \ 'get(v:val, "changed", 0)')
-    if !empty(l:modified)
-        echohl WarningMsg
-        echom printf('chopsticks: %d modified buffer(s) are not stored in the session',
-            \ len(l:modified))
-        echohl None
-    endif
-endfunction
-
-function! s:SessionLoad(force) abort
-    let l:path = ChopsticksSessionPath()
-    let l:file_type = getftype(l:path)
-    if empty(l:file_type)
-        echohl WarningMsg
-        echom 'chopsticks: no session for ' . s:SessionRoot()
-        echohl None
-        return
-    endif
-    if l:file_type !=# 'file'
-        echohl ErrorMsg
-        echom 'chopsticks: refusing a non-regular session file'
-        echohl None
-        return
-    endif
-    if !filereadable(l:path)
-        echohl ErrorMsg
-        echom 'chopsticks: session file is not readable'
-        echohl None
-        return
-    endif
-    if !s:SessionPathIsSafe(l:path)
-        echohl ErrorMsg
-        echom 'chopsticks: refusing a session writable by other users'
-        echohl None
-        return
-    endif
-    let l:modified = filter(getbufinfo({'buflisted': 1}),
-        \ 'get(v:val, "changed", 0)')
-    if !a:force && !empty(l:modified)
-        echohl WarningMsg
-        echom printf('chopsticks: refusing to restore with %d modified listed buffer(s); write them or use :ChopsticksSessionLoad! to load anyway',
-            \ len(l:modified))
-        echohl None
-        return
-    endif
-    let l:shortmess = &shortmess
-    try
-        execute 'cd ' . fnameescape(s:SessionRoot())
-        execute 'silent source ' . fnameescape(l:path)
-        echo 'session restored: ' . fnamemodify(l:path, ':t')
-    catch
-        echohl ErrorMsg
-        echom 'chopsticks: could not restore session: ' . v:exception
-        echohl None
-    finally
-        let &shortmess = l:shortmess
-        unlet! g:SessionLoad
-    endtry
-endfunction
-
-command! -bar ChopsticksSessionSave call s:SessionSave()
-command! -bar -bang ChopsticksSessionLoad call s:SessionLoad(<bang>0)
+" Project-root resolution, session save/load, and their permission checks now
+" live in autoload/chopsticks/session.vim (Vim9 script). ChopsticksProjectRoot()
+" and ChopsticksSessionPath() (see plugin/chopsticks.vim) delegate to it, the
+" same lazy-loading shim ChopsticksIconsEnabled() and friends already use --
+" a Vim9 `:import` statement cannot be used here: vimlint's legacy-script
+" parser (vim-vimlparser) does not understand `import autoload` syntax and
+" fails to parse this file if one is added.
 
 function! s:FzfFileSource() abort
     if executable('fd') == 1
@@ -1709,7 +1518,7 @@ function! s:FzfFileSource() abort
 endfunction
 
 function! s:FzfFiles(path, bang) abort
-    let l:root = empty(a:path) ? s:ProjectRoot() : expand(a:path)
+    let l:root = empty(a:path) ? ChopsticksProjectRoot() : expand(a:path)
     let l:root = fnamemodify(l:root, ':p')
     let l:options = [
         \ '--bind', s:fzf_abort_keys,
@@ -1726,7 +1535,7 @@ function! s:FzfFiles(path, bang) abort
 endfunction
 
 function! s:ProjectFzfSpec() abort
-    return {'dir': s:ProjectRoot()}
+    return {'dir': ChopsticksProjectRoot()}
 endfunction
 
 function! s:ProjectGrep(query, bang) abort
@@ -1750,7 +1559,7 @@ function! s:ProjectGitFiles() abort
         echohl WarningMsg | echom 'chopsticks: Git file search needs Git and fzf.vim' | echohl None
         return
     endif
-    let l:root = s:ProjectRoot()
+    let l:root = ChopsticksProjectRoot()
     call system('git -C ' . shellescape(l:root) . ' rev-parse --is-inside-work-tree')
     if v:shell_error != 0
         echohl WarningMsg | echom 'chopsticks: current buffer is outside a Git worktree' | echohl None
@@ -1763,7 +1572,7 @@ endfunction
 function! s:FindFiles() abort
     if executable('fzf') == 1 && exists(':GFiles') == 2
         \ && executable('git') == 1
-        let l:root = s:ProjectRoot()
+        let l:root = ChopsticksProjectRoot()
         call system('git -C ' . shellescape(l:root) . ' rev-parse --is-inside-work-tree')
         if v:shell_error == 0
             call s:ProjectGitFiles()
@@ -1771,10 +1580,10 @@ function! s:FindFiles() abort
         endif
     endif
     if executable('fzf') == 1 && exists(':Files') == 2
-        execute 'Files ' . fnameescape(s:ProjectRoot())
+        execute 'Files ' . fnameescape(ChopsticksProjectRoot())
         return
     endif
-    execute 'edit ' . fnameescape(s:ProjectRoot())
+    execute 'edit ' . fnameescape(ChopsticksProjectRoot())
 endfunction
 
 command! ChopsticksFindFiles call s:FindFiles()
@@ -1913,7 +1722,7 @@ function! s:FernSetup() abort
 endfunction
 
 function! s:ExploreRoot() abort
-    call s:ToggleExplorer(s:ProjectRoot())
+    call s:ToggleExplorer(ChopsticksProjectRoot())
 endfunction
 
 function! s:ExploreHere() abort
@@ -2009,7 +1818,7 @@ function! s:OpenLazygit() abort
         echohl WarningMsg | echom 'chopsticks: lazygit is not installed' | echohl None
         return
     endif
-    call s:OpenTerminal(['lazygit', '--path', s:ProjectRoot()], 'tab')
+    call s:OpenTerminal(['lazygit', '--path', ChopsticksProjectRoot()], 'tab')
 endfunction
 
 function! s:OpenScratch(name, lines) abort
@@ -2026,86 +1835,9 @@ function! s:OpenScratch(name, lines) abort
     normal! gg
 endfunction
 
-function! ChopsticksHealthLines() abort
-    let l:requested_theme = type(g:chopsticks_colorscheme) == type('')
-        \ && !empty(g:chopsticks_colorscheme)
-        \ ? g:chopsticks_colorscheme : 'everforest'
-    let l:lines = [
-        \ 'chopsticks ' . g:chopsticks_version . ' health',
-        \ '',
-        \ printf('[ok] Vim %d.%d (%s)', v:version / 100, v:version % 100, has('gui_running') ? 'GUI' : 'terminal'),
-        \ printf('[%s] +job +channel +timers +popupwin +terminal',
-        \     has('job') && has('channel') && has('timers') && exists('*popup_create') && has('terminal') ? 'ok' : '!!'),
-        \ '',
-        \ 'Interface',
-        \ printf('[%s] %-14s %s',
-        \     !ChopsticksIconsEnabled()
-        \         || strwidth(ChopsticksIcon('file')) == 1 ? 'ok' : '!!',
-        \     'icons', ChopsticksIconsEnabled()
-        \         ? 'Nerd Font (' . ChopsticksIcon('file') . ' sample)'
-        \         : 'ASCII fallback'),
-        \ printf('[ok] %-14s %s', 'explorer',
-        \     s:FernAvailable() ? 'Fern drawer' : 'netrw fallback'),
-        \ printf('[ok] %-14s %s', 'UI density', ChopsticksUiDensity()),
-        \ printf('[ok] %-14s %s', 'theme',
-        \     get(g:, 'colors_name', 'default')
-        \     . (get(g:, 'colors_name', 'default') ==# l:requested_theme
-        \         ? '' : ' (fallback from ' . l:requested_theme . ')')),
-        \ printf('[ok] %-14s %s', 'background',
-        \     ChopsticksTransparencyEnabled() ? 'transparent' : 'opaque'),
-        \ printf('[ok] %-14s %s', 'dashboard',
-        \     ChopsticksDashboardEnabled() ? 'enabled' : 'disabled'),
-        \ printf('[ok] %-14s %s', 'bufferline',
-        \     ChopsticksBufferlineEnabled() ? 'visible' : 'adaptive / hidden'),
-        \ printf('[ok] %-14s %s', 'linting',
-        \     g:chopsticks_auto_lint
-        \         ? 'automatic on enter and save'
-        \         : 'manual (,l / :ALELint)'),
-        \ printf('[%s] %-14s %s',
-        \     ChopsticksSystemClipboardEnabled() ? 'ok' : '--',
-        \     'clipboard', !has('clipboard') ? 'Vim lacks +clipboard'
-        \         : ChopsticksSystemClipboardEnabled()
-        \             ? 'system register' : 'Vim registers only'),
-        \ printf('[%s] %-14s %s',
-        \     filereadable(ChopsticksSessionPath()) ? 'ok' : '--',
-        \     'session', filereadable(ChopsticksSessionPath())
-        \         ? fnamemodify(ChopsticksSessionPath(), ':t') : 'not saved'),
-        \ '',
-        \ 'Tools',
-        \ ]
-    for l:tool in ['git', 'rg', 'fzf', 'fd', 'lazygit', 'marksman', 'markdownlint', 'prettier', 'glow', 'pandoc', 'pngpaste']
-        let l:available = executable(l:tool) == 1
-        call add(l:lines, printf('[%s] %-14s %s',
-            \ l:available ? 'ok' : '--', l:tool,
-            \ l:available ? exepath(l:tool) : 'optional / missing'))
-    endfor
-    call extend(l:lines, ['', 'Plugins'])
-    if exists('g:plugs')
-        let l:missing = []
-        for l:name in sort(keys(g:plugs))
-            let l:dir = get(g:plugs[l:name], 'dir', '')
-            if empty(l:dir) || !isdirectory(l:dir)
-                call add(l:missing, l:name)
-            endif
-        endfor
-        call add(l:lines, empty(l:missing)
-            \ ? '[ok] all declared plugins installed'
-            \ : '[!!] missing: ' . join(l:missing, ', '))
-    else
-        call add(l:lines, '[--] vim-plug is not installed')
-    endif
-    call extend(l:lines, [
-        \ '',
-        \ 'Run :PlugInstall for missing plugins.',
-        \ 'Run :LspStatus in a source buffer to inspect language servers.',
-        \ 'Press q to close.',
-        \ ])
-    return l:lines
-endfunction
-
-function! s:Health() abort
-    call s:OpenScratch('[chopsticks-health]', ChopsticksHealthLines())
-endfunction
+" ChopsticksHealthLines()/:ChopsticksHealth now live in
+" autoload/chopsticks/health.vim (Vim9 script); see plugin/chopsticks.vim for
+" the ChopsticksHealthLines() global and the :ChopsticksHealth command.
 
 let s:key_catalog = []
 let s:key_catalog_index = {}
@@ -2218,7 +1950,6 @@ function! s:Keys() abort
     setlocal filetype=chopsticks-cheatsheet cursorline
 endfunction
 
-command! ChopsticksHealth call s:Health()
 command! ChopsticksKeys call s:Keys()
 command! ChopsticksCheatsheet call s:Keys()
 

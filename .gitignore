@@ -3,4 +3,4 @@
 .DS_Store
 __pycache__/
 node_modules/
-Session.vim
+/Session.vim

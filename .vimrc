@@ -29,6 +29,17 @@ if empty($MYVIMRC)
     let $MYVIMRC = expand('<sfile>:p')
 endif
 
+" plugin/ and autoload/ hold the Vim9 modules this file delegates public
+" Chopsticks* globals to. Vim's automatic plugin-loading pass only sources
+" plugin/**/*.vim from directories already on 'runtimepath', and starting
+" Vim with -u pointing at this file does not add its own directory to
+" 'runtimepath' automatically, so it is added explicitly before that pass
+" runs. The guard keeps a manual :source $MYVIMRC from duplicating the entry.
+let s:chopsticks_root = fnamemodify($MYVIMRC, ':h')
+if index(split(&runtimepath, ','), s:chopsticks_root) < 0
+    execute 'set runtimepath^=' . fnameescape(s:chopsticks_root)
+endif
+
 let g:mapleader = "\<Space>"
 let g:maplocalleader = ','
 
@@ -133,11 +144,6 @@ if has('clipboard')
     set clipboard+=unnamedplus
 endif
 unlet s:clipboard_auto_enabled
-
-function! ChopsticksSystemClipboardEnabled() abort
-    return has('clipboard')
-        \ && index(split(&clipboard, ','), 'unnamedplus') >= 0
-endfunction
 
 function! ChopsticksUiDensity() abort
     let l:value = type(g:chopsticks_ui_density) == type('')

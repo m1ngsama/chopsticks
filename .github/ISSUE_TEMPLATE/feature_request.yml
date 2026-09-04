@@ -42,7 +42,7 @@ body:
     attributes:
       label: Project fit
       options:
-        - label: This can preserve Vim 8.2 support and offline startup.
+        - label: This can preserve Vim 9.1.1947 support and offline startup.
           required: true
         - label: I searched existing issues and the cheat sheet for an existing solution.
           required: true

@@ -12,8 +12,8 @@ Vim-first release. The repository was rebooted at `v0.1.0`; older `v1.x` and
 | Latest Vim-first release        | Yes       |
 | Earlier and historical releases | No        |
 
-Windows users must run Vim 9.1.1947 or newer because older builds are affected
-by the upstream executable search-path vulnerability
+Chopsticks requires Vim 9.1.1947 or newer on every platform because older
+builds are affected by the upstream executable search-path vulnerability
 [GHSA-g77q-xrww-p834](https://github.com/vim/vim/security/advisories/GHSA-g77q-xrww-p834).
 
 ## Reporting a vulnerability

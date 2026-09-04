@@ -66,8 +66,9 @@ hides it in `minimal`. Clipboard auto-detection requires a local desktop Vim
 with `+clipboard`; remote sessions keep Vim registers isolated. Transparency is
 opaque by default because terminals cannot report compositor transparency.
 
-Fern requires Vim patch 8.2.5136 or newer. Older supported Vim versions and
-`g:chopsticks_use_fern = 0` use netrw without breaking the explorer mapping.
+Fern is used when the `vim-fern` plugin is installed. Setting
+`g:chopsticks_use_fern = 0`, or leaving the plugin uninstalled, uses netrw
+instead without breaking the explorer mapping.
 
 ## Live interface commands
 

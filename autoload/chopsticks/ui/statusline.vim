@@ -145,7 +145,10 @@ export def WritingMode(buffer: number = -1, window: number = -1): string
   if window_number > 0 && getwinvar(window_number, '&spell')
     add(parts, icons.Get('spell'))
   endif
-  var pencil = getbufvar(target, 'pencil_wrap_mode', 0)
+  # getbufvar() returns `any`, and a Vim9 comparison against a Number
+  # raises E1030 if a plugin ever sets this to a String. Pencil sets a
+  # Number today; str2nr() keeps that from mattering.
+  var pencil = str2nr(string(getbufvar(target, 'pencil_wrap_mode', 0)))
   if pencil == 2
     add(parts, icons.Get('wrap') .. ':'
       .. get(get(g:, 'pencil#mode_indicators', {}), 'soft', 'S'))

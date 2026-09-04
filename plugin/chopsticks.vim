@@ -1,10 +1,15 @@
 vim9script
 
 # THE RULE, in two lines:
-#   .vimrc reaches every module by its classic dotted name
-#   (chopsticks#ui#icons#Get()). This file declares only the PUBLIC
-#   contract: what tests/ui.vim asserts, what 'statusline' and 'tabline'
-#   evaluate, and the user-facing commands.
+#   .vimrc reaches a module either by its classic dotted name
+#   (chopsticks#ui#icons#Get()) or through a g:Chopsticks* shim declared
+#   here. The dotted name always works; a shim is for names something
+#   OUTSIDE Chopsticks depends on -- tests/ui.vim, 'statusline', 'tabline',
+#   a user command -- plus a few that exist so one module can reach
+#   another's value without importing it.
+#
+# Prefer the dotted name for a new .vimrc call site. Add a shim only when
+# the name has to be visible from outside.
 #
 # The dotted name is correct from anywhere — it resolves against
 # 'runtimepath' the moment it is referenced — so .vimrc never has to prove

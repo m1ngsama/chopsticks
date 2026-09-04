@@ -293,11 +293,11 @@ To see it for a given file:
 
 An entry with `autoload: v:true` is declared but has not been read.
 
-Seven `Chopsticks*` functions are declared in `.vimrc` rather than in
+Nine `Chopsticks*` functions are declared in `.vimrc` rather than in
 `plugin/`. `'statusline'` and `'tabline'` name two of them, and a redraw can
 evaluate those while `.vimrc` is still executing — before Vim sources
-anything under `plugin/`, so a definition there would be too late. The other
-five are reachable from those two, or from `.vimrc`'s own top level, and are
+anything under `plugin/`, so a definition there would be too late. The rest
+are reachable from those two, or from `.vimrc`'s own top level, and are
 declared alongside them for the same reason.
 
 ## Design lineage

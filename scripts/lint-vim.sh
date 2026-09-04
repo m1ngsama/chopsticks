@@ -287,13 +287,6 @@ run_ui_test() {
         "${CHOPSTICKS_TEST_SESSION_DIR:-}")
     test_local_config_for_vim=$(path_for_vim \
         "${CHOPSTICKS_TEST_LOCAL_CONFIG:-}")
-    # -es is silent Ex mode. A case that opens the dashboard buffer exits
-    # there with status 0, before tests/ui.vim reaches its own end -- so any
-    # assertion failure already recorded is discarded and the case reports
-    # success having tested only the part before the dashboard. The three
-    # cases that open one run with --not-a-term instead, which is headless
-    # without silent Ex mode's early exit. The completion marker below is
-    # what makes a regression here visible rather than silent.
     # -es is silent Ex mode, and a case that opens the dashboard dies there
     # with status 0 -- silently, before tests/ui.vim reaches the end where it
     # would report anything v:errors had collected. Cases that open one run
@@ -401,6 +394,9 @@ run_symlink_ui_test() {
         esac
     fi
     test_home=$test_root/home-$test_case
+    test_completed=$test_root/$test_case.completed
+    rm -f "$test_completed"
+    test_completed_for_vim=$(path_for_vim "$test_completed")
     test_errors=$test_root/$test_case.errors
     test_log=$test_root/$test_case.log
     test_screen=$test_root/$test_case.screen
@@ -439,6 +435,7 @@ run_symlink_ui_test() {
         SSH_TTY= \
         CHOPSTICKS_TEST_CASE="$test_case" \
         CHOPSTICKS_TEST_ERRORS="$test_errors_for_vim" \
+        CHOPSTICKS_TEST_COMPLETED="$test_completed_for_vim" \
         "$test_vim" \
             -N \
             -i NONE \
@@ -460,6 +457,14 @@ run_symlink_ui_test() {
                     | sed 's/^/  /' >&2
             fi
         fi
+        return 1
+    fi
+    # Same reasoning as run_ui_test: exiting 0 is not proof the case ran,
+    # and this is the case that guards the documented symlink install, so
+    # it is the last one that should be allowed to pass by quitting early.
+    if [ ! -s "$test_completed" ]; then
+        printf 'headless UI test never completed: %s\n' "$test_case" >&2
+        printf '  tests/ui.vim exited before its completion marker.\n' >&2
         return 1
     fi
 }

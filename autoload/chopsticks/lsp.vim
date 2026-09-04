@@ -58,9 +58,16 @@ enddef
 
 # True when there is nothing but whitespace behind the cursor, where Tab
 # should indent rather than complete.
+#
+# strpart(), not str[i]. col() is a BYTE offset, and the two dialects index
+# strings differently: legacy str[i] takes byte i, Vim9 str[i] takes
+# character i. With a multibyte character before the cursor the Vim9 form
+# reads past the end and returns an empty string, which matches no
+# whitespace, so Tab would open the completion menu where it used to indent.
+# strpart() is byte-based in both.
 def AfterWhitespace(): bool
   var column = col('.') - 1
-  return column == 0 || getline('.')[column - 1] =~# '\s'
+  return column == 0 || strpart(getline('.'), column - 1, 1) =~# '\s'
 enddef
 
 # Tab cycles the completion menu when one is open, indents at the start of a

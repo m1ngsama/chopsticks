@@ -701,11 +701,6 @@ function! s:DirectN(lhs, rhs, label, group, description) abort
     call chopsticks#keys#Catalog(a:group, 'n', a:label, a:description)
 endfunction
 
-function! s:DirectX(lhs, rhs, label, group, description) abort
-    execute 'xnoremap <silent> ' . a:lhs . ' ' . a:rhs
-    call chopsticks#keys#Catalog(a:group, 'x', a:label, a:description)
-endfunction
-
 " tests/ui.vim asserts this global, and it is the one piece of the key
 " catalogue anything outside these files reads.
 function! ChopsticksKeyLines() abort

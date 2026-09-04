@@ -26,13 +26,18 @@ export def Truthy(value: any): bool
 enddef
 
 # Legacy numeric reading, for a switch compared against a number rather than
-# tested for truth. A String goes through str2nr() as legacy arithmetic did;
-# anything that is not a Number or String falls back rather than throwing.
+# tested for truth. A String goes through str2nr() and a Float through
+# float2nr(), as legacy arithmetic did; anything else falls back rather than
+# throwing.
 export def Number(value: any, fallback: number): number
   if type(value) == v:t_number
     return value
   elseif type(value) == v:t_string
     return str2nr(value)
+  elseif type(value) == v:t_float
+    # Legacy arithmetic accepted a Float and truncated it; falling back here
+    # would silently disable whatever the number gates.
+    return float2nr(value)
   endif
   return fallback
 enddef

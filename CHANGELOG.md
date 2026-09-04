@@ -49,8 +49,9 @@ releases of the current line.
 - Configuration and behavior are separated. `.vimrc` keeps the bootstrap and
   the settings a person edits; the code those settings drive moved into
   Vim9script modules under `autoload/chopsticks/`, which Vim does not read
-  until one of their functions is called. Starting Vim on a file no longer
-  sources the dashboard, session, health, Markdown, or cheatsheet code.
+  until one of their functions is called. Starting Vim on an ordinary file
+  leaves the dashboard, session, health, clipboard, and scratch-window
+  modules unread.
 
 ### Fixed
 

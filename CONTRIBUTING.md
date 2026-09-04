@@ -29,9 +29,11 @@ Changes should preserve these properties:
   but not read.
 - Two small directory helpers, `s:NormalizeDirectory` and
   `s:DirectoryFileType`, are duplicated between `.vimrc` and
-  `autoload/chopsticks/session.vim` rather than shared. `.vimrc` needs them
-  before `'runtimepath'` names this repository, so it cannot call a module to
-  get them. Keep the two copies in step.
+  `autoload/chopsticks/session.vim` rather than shared. Nothing forces this:
+  `.vimrc` sets `'runtimepath'` before its first call and could reach a
+  module. They are duplicated because both copies are a handful of lines and
+  sharing them would mean a module, or a global, existing only for that.
+  Keep the two copies in step, and collapse them if a third caller appears.
 - Discoverability: public commands and mappings stay represented in
   `:ChopsticksHealth`, `:ChopsticksCheatsheet`, tests, or documentation as
   appropriate.

@@ -201,20 +201,6 @@ endfunction
 " only ever run once Vim has fully started. See plugin/chopsticks.vim's own
 " comment on ChopsticksIcon() and ChopsticksIconsEnabled() for why sourcing
 " that shim early, instead, is not a usable fix.
-function! s:WhichKeyGroup(group) abort
-    let l:icon = chopsticks#ui#icons#Group(a:group)
-    return '+' . (empty(l:icon) ? '' : l:icon . ' ') . a:group
-endfunction
-
-function! s:WhichKeySetup() abort
-    " Modern which-key treats a group icon and its label as one semantic
-    " unit.  The Vim port's stock syntax only accepts ASCII immediately after
-    " '+', so teach it to include our optional Nerd Font prefix.
-    silent! syntax clear WhichKeyGroup
-    syntax match WhichKeyGroup
-        \ / +\%(\S\+\s\+\)\?[0-9A-Za-z_\/-]\+\%(\s\+[0-9A-Za-z_\/-]\+\)*/
-endfunction
-
 let g:fern#renderer = chopsticks#ui#icons#Enabled() ? 'nerdfont' : 'default'
 let g:fern#renderer#nerdfont#indent_markers = 1
 let g:fern#renderer#nerdfont#leading = '  '
@@ -264,7 +250,7 @@ let s:fzf_skip_dirs = [
     \ '.bun', '.codex', 'Library', 'node_modules', 'plugged',
     \ '.venv', 'venv', '__pycache__', 'build', 'dist', 'target', 'vendor',
     \ ]
-" See the comment on s:WhichKeyGroup() above: this function runs both from
+" See the comment on chopsticks#keys#Group() above: this function runs both from
 " this file's own top level immediately below (building g:fzf_vim) and
 " later from s:RefreshIconDependents(), when icons are toggled.
 function! s:FzfVisualOptions() abort
@@ -311,7 +297,7 @@ let g:ale_virtualtext_cursor = 'disabled'
 let g:ale_echo_msg_format = '%severity%: %s'
 " chopsticks#ui#icons#Get(), not g:ChopsticksIcon(): this file's own script
 " top level, before plugin/chopsticks.vim's shim exists. See the comment on
-" s:WhichKeyGroup() above.
+" chopsticks#keys#Group() above.
 let g:ale_sign_error = chopsticks#ui#icons#Get('error')
 let g:ale_sign_warning = chopsticks#ui#icons#Get('warning')
 let g:ale_sign_info = chopsticks#ui#icons#Get('info')
@@ -562,7 +548,7 @@ set background=dark
 " this file's own script top level (after plug#end(), but well before Vim's
 " automatic plugin-loading pass sources plugin/chopsticks.vim and defines
 " its g:ChopsticksTransparencyEnabled()-style shim), so it cannot go through
-" that shim; see s:WhichKeyGroup()'s comment above for the full rationale.
+" that shim; see chopsticks#keys#Group()'s comment above for the full rationale.
 call chopsticks#ui#theme#Apply()
 
 " ── Interface: statusline and buffer tabline ───────────────────────────────
@@ -1000,158 +986,51 @@ function! s:DeleteOtherBuffers() abort
     echo printf('buffers: deleted %d, kept %d modified', l:deleted, l:kept)
 endfunction
 
-function! s:OpenTerminal(command, position) abort
-    if !has('terminal')
-        echohl ErrorMsg | echom 'chopsticks: this Vim has no +terminal' | echohl None
-        return
-    endif
-    if a:position ==# 'tab'
-        tabnew
-    else
-        botright 12new
-    endif
-    if empty(a:command)
-        call term_start(&shell, {'curwin': 1})
-    else
-        call term_start(a:command, {'curwin': 1, 'term_finish': 'close'})
-    endif
-    startinsert
-endfunction
-
 function! s:OpenLazygit() abort
     if executable('lazygit') != 1
         echohl WarningMsg | echom 'chopsticks: lazygit is not installed' | echohl None
         return
     endif
-    call s:OpenTerminal(['lazygit', '--path', ChopsticksProjectRoot()], 'tab')
-endfunction
-
-function! s:OpenScratch(name, lines) abort
-    botright new
-    execute 'file ' . fnameescape(a:name)
-    setlocal buftype=nofile bufhidden=wipe nobuflisted noswapfile
-    setlocal nowrap nonumber norelativenumber signcolumn=no
-    setlocal modifiable
-    silent %delete _
-    call setline(1, a:lines)
-    setlocal nomodifiable nomodified
-    nnoremap <silent><buffer> q :close<CR>
-    nnoremap <silent><buffer> <Esc> :close<CR>
-    normal! gg
+    call chopsticks#ui#window#Terminal(['lazygit', '--path', ChopsticksProjectRoot()], 'tab')
 endfunction
 
 " ChopsticksHealthLines()/:ChopsticksHealth now live in
 " autoload/chopsticks/health.vim (Vim9 script); see plugin/chopsticks.vim for
 " the ChopsticksHealthLines() global and the :ChopsticksHealth command.
 
-let s:key_catalog = []
-let s:key_catalog_index = {}
-let s:key_group_order = [
-    \ 'Essentials', 'Fast find', 'Buffers', 'Windows', 'Files', 'Search', 'Quit',
-    \ 'Git', 'Code', 'Diagnostics', 'Run', 'Terminal', 'Tabs', 'Toggles',
-    \ 'Editing', 'Navigation', 'Markdown',
-    \ ]
 let g:which_key_map = {}
-let g:which_key_local_map = {'name': s:WhichKeyGroup('Markdown')}
-
-function! s:Catalog(group, mode, keys, description) abort
-    let l:id = a:mode . "\n" . a:keys
-    let l:entry = {
-        \ 'group': a:group,
-        \ 'mode': a:mode,
-        \ 'keys': a:keys,
-        \ 'description': a:description,
-        \ }
-    if has_key(s:key_catalog_index, l:id)
-        let s:key_catalog[s:key_catalog_index[l:id]] = l:entry
-    else
-        let s:key_catalog_index[l:id] = len(s:key_catalog)
-        call add(s:key_catalog, l:entry)
-    endif
-endfunction
-
-function! s:LeaderLabel(parts) abort
-    let l:tokens = []
-    for l:token in a:parts
-        if l:token ==# '<Space>'
-            call add(l:tokens, 'SPC ')
-        elseif l:token ==# '<Tab>'
-            call add(l:tokens, 'TAB ')
-        elseif l:token ==# '<Bar>'
-            call add(l:tokens, '|')
-        else
-            call add(l:tokens, l:token)
-        endif
-    endfor
-    return 'SPC ' . trim(join(l:tokens, ''))
-endfunction
-
-function! s:WhichKeyAdd(parts, group, description) abort
-    if empty(a:parts)
-        return
-    endif
-    let l:node = g:which_key_map
-    if len(a:parts) > 1
-        for l:index in range(0, len(a:parts) - 2)
-            let l:key = a:parts[l:index]
-            if !has_key(l:node, l:key) || type(l:node[l:key]) != type({})
-                let l:node[l:key] = {'name': s:WhichKeyGroup(a:group)}
-            elseif !has_key(l:node[l:key], 'name')
-                let l:node[l:key].name = s:WhichKeyGroup(a:group)
-            endif
-            let l:node = l:node[l:key]
-        endfor
-    endif
-    let l:node[a:parts[len(a:parts) - 1]] = a:description
-endfunction
+let g:which_key_local_map = {'name': chopsticks#keys#Group('Markdown')}
 
 function! s:LeaderN(parts, rhs, group, description) abort
     execute 'nnoremap <silent> <leader>' . join(a:parts, '') . ' ' . a:rhs
-    call s:WhichKeyAdd(a:parts, a:group, a:description)
-    call s:Catalog(a:group, 'n', s:LeaderLabel(a:parts), a:description)
+    call chopsticks#keys#WhichKeyAdd(a:parts, a:group, a:description)
+    call chopsticks#keys#Catalog(a:group, 'n', chopsticks#keys#LeaderLabel(a:parts), a:description)
 endfunction
 
 function! s:LeaderX(parts, rhs, group, description) abort
     execute 'xnoremap <silent> <leader>' . join(a:parts, '') . ' ' . a:rhs
-    call s:WhichKeyAdd(a:parts, a:group, a:description)
-    call s:Catalog(a:group, 'x', s:LeaderLabel(a:parts), a:description)
+    call chopsticks#keys#WhichKeyAdd(a:parts, a:group, a:description)
+    call chopsticks#keys#Catalog(a:group, 'x', chopsticks#keys#LeaderLabel(a:parts), a:description)
 endfunction
 
 function! s:DirectN(lhs, rhs, label, group, description) abort
     execute 'nnoremap <silent> ' . a:lhs . ' ' . a:rhs
-    call s:Catalog(a:group, 'n', a:label, a:description)
+    call chopsticks#keys#Catalog(a:group, 'n', a:label, a:description)
 endfunction
 
 function! s:DirectX(lhs, rhs, label, group, description) abort
     execute 'xnoremap <silent> ' . a:lhs . ' ' . a:rhs
-    call s:Catalog(a:group, 'x', a:label, a:description)
+    call chopsticks#keys#Catalog(a:group, 'x', a:label, a:description)
 endfunction
 
+" tests/ui.vim asserts this global, and it is the one piece of the key
+" catalogue anything outside these files reads.
 function! ChopsticksKeyLines() abort
-    let l:lines = [
-        \ 'chopsticks ' . g:chopsticks_version . ' cheatsheet',
-        \ '',
-        \ 'SPC = Leader   , = Markdown LocalLeader',
-        \ 'Pause after SPC or , for the contextual key guide.',
-        \ 'Use / to search this sheet, n/N to move, and q to close.',
-        \ 'Modes: n normal · x visual · i insert · t terminal · * buffer-local',
-        \ ]
-    for l:group in s:key_group_order
-        let l:entries = filter(copy(s:key_catalog), 'v:val.group ==# l:group')
-        if empty(l:entries)
-            continue
-        endif
-        call extend(l:lines, ['', l:group])
-        for l:entry in l:entries
-            call add(l:lines, printf('  %-15s %-2s  %s',
-                \ l:entry.keys, l:entry.mode, l:entry.description))
-        endfor
-    endfor
-    return l:lines
+    return chopsticks#keys#Lines()
 endfunction
 
 function! s:Keys() abort
-    call s:OpenScratch('[chopsticks-cheatsheet]', ChopsticksKeyLines())
+    call chopsticks#ui#window#Scratch('[chopsticks-cheatsheet]', ChopsticksKeyLines())
     setlocal filetype=chopsticks-cheatsheet cursorline
 endfunction
 
@@ -1161,7 +1040,7 @@ command! ChopsticksCheatsheet call s:Keys()
 " ── Markdown and prose ─────────────────────────────────────────────────────
 
 let g:which_key_local_map = {
-    \ 'name': s:WhichKeyGroup('Markdown'),
+    \ 'name': chopsticks#keys#Group('Markdown'),
     \ '?': 'Markdown help',
     \ 'c': 'Toggle conceal',
     \ 'f': 'Format with Prettier',
@@ -1173,7 +1052,7 @@ let g:which_key_local_map = {
     \ 'p': 'Browser preview',
     \ 's': 'Toggle spelling',
     \ 't': {
-        \ 'name': s:WhichKeyGroup('Table'),
+        \ 'name': chopsticks#keys#Group('Table'),
         \ 'c': 'Tableize selection',
         \ 'r': 'Realign table',
         \ 't': 'Toggle table mode',
@@ -1199,217 +1078,13 @@ for s:markdown_key in [
     \ ['n*', ',x', 'Toggle task checkbox'],
     \ ['n*', ',z', 'Focus mode'],
     \ ]
-    call s:Catalog('Markdown', s:markdown_key[0], s:markdown_key[1], s:markdown_key[2])
+    call chopsticks#keys#Catalog('Markdown', s:markdown_key[0], s:markdown_key[1], s:markdown_key[2])
 endfor
 unlet s:markdown_key
 
-function! s:MarkdownToggleConceal() abort
-    let &l:conceallevel = &l:conceallevel == 0 ? 2 : 0
-    echo 'Markdown conceal: ' . (&l:conceallevel ? 'ON' : 'OFF')
-endfunction
-
-function! s:MarkdownGlow() abort
-    if executable('glow') != 1
-        echohl WarningMsg | echom 'chopsticks: install glow for terminal Markdown preview' | echohl None
-        return
-    endif
-    if empty(expand('%:p'))
-        echohl WarningMsg | echom 'chopsticks: save the Markdown file before previewing it' | echohl None
-        return
-    endif
-    silent update
-    call s:OpenTerminal(['glow', '-p', expand('%:p')], 'split')
-endfunction
-
-function! s:MarkdownPasteImage(name) abort
-    if executable('pngpaste') != 1
-        echohl WarningMsg
-        echom 'chopsticks: Markdown image paste needs pngpaste (brew install pngpaste)'
-        echohl None
-        return
-    endif
-    if empty(expand('%:p'))
-        echohl WarningMsg | echom 'chopsticks: save the Markdown file before pasting an image' | echohl None
-        return
-    endif
-    let l:name = empty(a:name) ? 'image-' . strftime('%Y%m%d-%H%M%S') : a:name
-    let l:name = substitute(l:name, '[/\\:[:cntrl:]]', '-', 'g')
-    if l:name !~? '\.png$'
-        let l:name .= '.png'
-    endif
-    let l:relative_dir = g:chopsticks_markdown_image_dir
-    let l:absolute_dir = expand('%:p:h') . '/' . l:relative_dir
-    let l:absolute_path = l:absolute_dir . '/' . l:name
-    if filereadable(l:absolute_path)
-        echohl ErrorMsg | echom 'chopsticks: image already exists: ' . l:absolute_path | echohl None
-        return
-    endif
-    call mkdir(l:absolute_dir, 'p')
-    call system(shellescape(exepath('pngpaste')) . ' ' . shellescape(l:absolute_path))
-    if v:shell_error != 0 || !filereadable(l:absolute_path)
-        silent! call delete(l:absolute_path)
-        echohl ErrorMsg | echom 'chopsticks: clipboard does not contain a PNG image' | echohl None
-        return
-    endif
-    let l:alt = fnamemodify(l:name, ':r')
-    let l:link = '![' . l:alt . '](' . l:relative_dir . '/' . l:name . ')'
-    if empty(getline('.'))
-        call setline('.', l:link)
-    else
-        call append('.', l:link)
-        normal! j
-    endif
-    echo 'saved: ' . l:relative_dir . '/' . l:name
-endfunction
-
-function! s:MarkdownHelp() abort
-    call s:OpenScratch('[chopsticks-markdown]', [
-        \ 'chopsticks Markdown',
-        \ '',
-        \ 'Writing',
-        \ '  ,z       focus mode (Goyo + Limelight)',
-        \ '  ,s       toggle spelling; ]s/[s navigate, z= choose',
-        \ '  ,c       toggle syntax conceal',
-        \ '  gqap     format paragraph; g<C-g> word count',
-        \ '',
-        \ 'Structure',
-        \ '  ,x       toggle task checkbox (parents follow children)',
-        \ '  gN       renumber list',
-        \ '  ]] / [[  next / previous heading; ]u parent heading',
-        \ '  ,o       heading outline; ,O insert table of contents',
-        \ '  ,tt      table mode; ,tr realign; visual ,tc tableize',
-        \ '',
-        \ 'Links and output',
-        \ '  gx / ge  open URL in browser / edit linked Markdown',
-        \ '  ,p       live browser preview (Previm)',
-        \ '  ,g       terminal preview (Glow)',
-        \ '  ,i       paste clipboard PNG into assets/',
-        \ '  ,l / ,f  lint now / format with Prettier',
-        \ '',
-        \ 'Press q to close.',
-        \ ])
-endfunction
-
-" Vim recomputes the break indent while laying out every wrapped screen line,
-" so one very long line degrades far worse than linearly: a 1 MiB single-line
-" Markdown file turns a single redraw into tens of seconds. The file-size
-" guard below does not catch this, because the cost follows line length rather
-" than total bytes. Drop the option on buffers that contain such a line.
-" Detection itself has to stay cheap, because this runs for every buffer that
-" reaches a window. A virtual-column search is not an option: computing screen
-" columns over an enormous line is slower than the problem it looks for.
-function! s:HasLongLine() abort
-    let l:lines = line('$')
-    if l:lines <= 0
-        return 0
-    endif
-    " Constant time, and decisive for the case that actually degrades: a buffer
-    " that is mostly one very long line.
-    let l:bytes = line2byte(l:lines + 1)
-    if l:bytes > 0 && l:bytes / l:lines > g:chopsticks_long_line_threshold
-        return 1
-    endif
-    " Exact, but only for buffers small enough that walking them costs well
-    " under a millisecond, so this guard never shows up in a startup budget.
-    " Larger buffers keep the constant-time answer above.
-    if l:lines > 2000
-        return 0
-    endif
-    return max(map(range(1, l:lines), 'col([v:val, "$"])'))
-        \ > g:chopsticks_long_line_threshold
-endfunction
-
-function! s:GuardLongLines() abort
-    if !exists('+breakindent') || g:chopsticks_long_line_threshold <= 0
-        return
-    endif
-    if s:HasLongLine()
-        setlocal nobreakindent
-    endif
-endfunction
-
-function! s:MarkdownSetup() abort
-    setlocal wrap linebreak breakindent textwidth=0 colorcolumn=0
-    setlocal norelativenumber nolist signcolumn=auto foldlevel=99
-    let &l:conceallevel = g:chopsticks_markdown_conceal ? 2 : 0
-    if g:chopsticks_markdown_spell
-        setlocal spell spelllang=en_us,cjk
-    else
-        setlocal nospell
-    endif
-    if exists(':Pencil') == 2
-        call pencil#init({'wrap': 'soft'})
-        let &l:conceallevel = g:chopsticks_markdown_conceal ? 2 : 0
-    endif
-
-    if !empty(maparg('<Plug>(bullets-newline)', 'i'))
-        imap <silent><buffer> <CR> <Plug>(bullets-newline)
-        nmap <silent><buffer> o <Plug>(bullets-newline)
-        nmap <silent><buffer> gN <Plug>(bullets-renumber)
-        xmap <silent><buffer> gN <Plug>(bullets-renumber)
-        nmap <silent><buffer> <localleader>x <Plug>(bullets-toggle-checkbox)
-    endif
-    if exists(':Toc') == 2
-        nnoremap <silent><buffer> <localleader>o :Toc<CR>
-        nnoremap <silent><buffer> <localleader>O :InsertToc 3<CR>
-    endif
-    if exists(':TableModeToggle') == 2
-        nnoremap <silent><buffer> <localleader>tt :TableModeToggle<CR>
-        nnoremap <silent><buffer> <localleader>tr :TableModeRealign<CR>
-        xnoremap <silent><buffer> <localleader>tc :Tableize<CR>
-    endif
-    if exists(':PrevimOpen') == 2
-        nnoremap <silent><buffer> <localleader>p :PrevimOpen<CR>
-    endif
-    if exists(':Goyo') == 2
-        nnoremap <silent><buffer> <localleader>z :Goyo<CR>
-    endif
-    nnoremap <silent><buffer> <localleader>? :call <SID>MarkdownHelp()<CR>
-    nnoremap <silent><buffer> <localleader>s :setlocal spell! spell?<CR>
-    nnoremap <silent><buffer> <localleader>c :call <SID>MarkdownToggleConceal()<CR>
-    nnoremap <silent><buffer> <localleader>g :call <SID>MarkdownGlow()<CR>
-    nnoremap <silent><buffer> <localleader>i :MarkdownPasteImage<CR>
-    if exists(':WhichKey') == 2
-        nnoremap <silent><buffer> <localleader> :<C-u>WhichKey ','<CR>
-        xnoremap <silent><buffer> <localleader> :<C-u>WhichKeyVisual ','<CR>
-    endif
-    if exists(':ALELint') == 2
-        nnoremap <silent><buffer> <localleader>l :ALELint<CR>
-        nnoremap <silent><buffer> <localleader>f :ALEFix<CR>
-    endif
-    call s:GuardLongLines()
-endfunction
-
-function! s:ProseSetup() abort
-    setlocal wrap linebreak breakindent textwidth=0 colorcolumn=0
-    setlocal norelativenumber
-    if exists(':Pencil') == 2
-        call pencil#init({'wrap': 'soft'})
-    endif
-    if &filetype ==# 'gitcommit' || &filetype ==# 'mail'
-        setlocal spell spelllang=en_us,cjk
-    endif
-    call s:GuardLongLines()
-endfunction
-
-function! s:GoyoEnter() abort
-    if &filetype =~# '^\%(markdown\|text\|gitcommit\)$' && exists(':Limelight') == 2
-        silent Limelight
-    endif
-    setlocal wrap linebreak
-    call chopsticks#ui#bufferline#Refresh()
-endfunction
-
-function! s:GoyoLeave() abort
-    if exists(':Limelight') == 2
-        silent! execute 'Limelight!'
-    endif
-    call chopsticks#ui#bufferline#Refresh()
-endfunction
-
-command! -nargs=? -complete=file MarkdownPasteImage call s:MarkdownPasteImage(<q-args>)
-command! MarkdownGlow call s:MarkdownGlow()
-command! MarkdownHelp call s:MarkdownHelp()
+command! -nargs=? -complete=file MarkdownPasteImage call chopsticks#markdown#PasteImage(<q-args>)
+command! MarkdownGlow call chopsticks#markdown#Glow()
+command! MarkdownHelp call chopsticks#markdown#Help()
 
 " ── LSP and completion ─────────────────────────────────────────────────────
 
@@ -1440,15 +1115,15 @@ function! s:LspMaps() abort
         \ [['c', 'r'], 'Rename symbol'],
         \ [['c', 'S'], 'Workspace symbols'],
         \ ]
-        call s:WhichKeyAdd(l:item[0], 'Code', l:item[1])
-        call s:Catalog('Code', 'n*', s:LeaderLabel(l:item[0]), l:item[1])
+        call chopsticks#keys#WhichKeyAdd(l:item[0], 'Code', l:item[1])
+        call chopsticks#keys#Catalog('Code', 'n*', chopsticks#keys#LeaderLabel(l:item[0]), l:item[1])
     endfor
     for l:item in [
         \ ['gd', 'Go to definition'], ['gr', 'Find references'],
         \ ['gI', 'Go to implementation'], ['gy', 'Go to type definition'],
         \ ['K', 'Hover documentation'], ['[d / ]d', 'Previous / next LSP diagnostic'],
         \ ]
-        call s:Catalog('Code', 'n*', l:item[0], l:item[1])
+        call chopsticks#keys#Catalog('Code', 'n*', l:item[0], l:item[1])
     endfor
 endfunction
 
@@ -1480,7 +1155,7 @@ inoremap <silent><expr> <S-Tab> <SID>CompletionBackTab()
 nnoremap <silent> <C-s> :update<CR>
 inoremap <silent> <C-s> <C-o>:update<CR>
 xnoremap <silent> <C-s> :<C-u>update<CR>gv
-call s:Catalog('Essentials', 'n/i/x', 'Ctrl-s', 'Save file')
+call chopsticks#keys#Catalog('Essentials', 'n/i/x', 'Ctrl-s', 'Save file')
 call s:LeaderN(['?'], ':ChopsticksCheatsheet<CR>', 'Essentials', 'Full cheatsheet')
 call s:LeaderN(['e'], ':call <SID>ExploreRoot()<CR>', 'Files', 'Explore project root')
 call s:LeaderN(['E'], ':call <SID>ExploreHere()<CR>', 'Files', 'Explore current file directory')
@@ -1491,8 +1166,8 @@ nnoremap <silent><expr> k v:count == 0 ? 'gk' : 'k'
 xnoremap <silent><expr> j v:count == 0 ? 'gj' : 'j'
 xnoremap <silent><expr> k v:count == 0 ? 'gk' : 'k'
 nnoremap <silent> <Esc> :nohlsearch<CR><Esc>
-call s:Catalog('Navigation', 'n/x', 'j / k', 'Screen line; count uses physical line')
-call s:Catalog('Navigation', 'n', 'Esc', 'Clear search highlight')
+call chopsticks#keys#Catalog('Navigation', 'n/x', 'j / k', 'Screen line; count uses physical line')
+call chopsticks#keys#Catalog('Navigation', 'n', 'Esc', 'Clear search highlight')
 
 call s:DirectN('<C-h>', '<C-w>h', 'Ctrl-h', 'Windows', 'Focus left window')
 call s:DirectN('<C-j>', '<C-w>j', 'Ctrl-j', 'Windows', 'Focus lower window')
@@ -1513,8 +1188,8 @@ call s:DirectN('<C-Left>', ':vertical resize -2<CR>', 'Ctrl-Left', 'Windows', 'D
 call s:DirectN('<C-Right>', ':vertical resize +2<CR>', 'Ctrl-Right', 'Windows', 'Increase width')
 call s:LeaderN(['-'], '<C-w>s', 'Windows', 'Split below')
 nnoremap <silent> <leader><Bar> <C-w>v
-call s:WhichKeyAdd(['<Bar>'], 'Windows', 'Split right')
-call s:Catalog('Windows', 'n', 'SPC |', 'Split right')
+call chopsticks#keys#WhichKeyAdd(['<Bar>'], 'Windows', 'Split right')
+call chopsticks#keys#Catalog('Windows', 'n', 'SPC |', 'Split right')
 call s:LeaderN(['w', 'h'], '<C-w>h', 'Windows', 'Focus left')
 call s:LeaderN(['w', 'j'], '<C-w>j', 'Windows', 'Focus down')
 call s:LeaderN(['w', 'k'], '<C-w>k', 'Windows', 'Focus up')
@@ -1532,21 +1207,21 @@ xnoremap <M-j> :<C-u>execute "'<,'>move '>+" . v:count1<CR>gv=gv
 xnoremap <M-k> :<C-u>execute "'<,'>move '<-" . (v:count1 + 1)<CR>gv=gv
 xnoremap < <gv
 xnoremap > >gv
-call s:Catalog('Editing', 'n/i/x', 'Alt-j / Alt-k', 'Move line or selection')
-call s:Catalog('Editing', 'x', '< / >', 'Indent and keep selection')
+call chopsticks#keys#Catalog('Editing', 'n/i/x', 'Alt-j / Alt-k', 'Move line or selection')
+call chopsticks#keys#Catalog('Editing', 'x', '< / >', 'Indent and keep selection')
 
 nnoremap <silent> x "_x
 call s:LeaderN(['p'], '"0p', 'Editing', 'Paste without clobbering yank')
 call s:LeaderN(['P'], '"0P', 'Editing', 'Paste last yank before cursor')
 call s:LeaderX(['p'], '"_dP', 'Editing', 'Paste without replacing yank')
-call s:WhichKeyAdd(['p'], 'Editing', 'Paste without clobbering yank')
+call chopsticks#keys#WhichKeyAdd(['p'], 'Editing', 'Paste without clobbering yank')
 call s:LeaderN(['v'], '`[v`]', 'Editing', 'Reselect last change')
 if has('clipboard')
     call s:LeaderN(['y'], '"+y', 'Editing', 'Yank to system clipboard')
     call s:LeaderX(['y'], '"+y', 'Editing', 'Yank to system clipboard')
     call s:LeaderN(['Y'], '"+Y', 'Editing', 'Yank line to system clipboard')
 endif
-call s:Catalog('Editing', 'n', 'x', 'Delete character without changing registers')
+call chopsticks#keys#Catalog('Editing', 'n', 'x', 'Delete character without changing registers')
 
 nnoremap n nzzzv
 nnoremap N Nzzzv
@@ -1554,15 +1229,15 @@ nnoremap <C-d> <C-d>zz
 xnoremap <C-d> <C-d>zz
 nnoremap <C-u> <C-u>zz
 xnoremap <C-u> <C-u>zz
-call s:Catalog('Navigation', 'n', 'n / N', 'Search result centered')
-call s:Catalog('Navigation', 'n/x', 'Ctrl-d / Ctrl-u', 'Half-page centered')
+call chopsticks#keys#Catalog('Navigation', 'n', 'n / N', 'Search result centered')
+call chopsticks#keys#Catalog('Navigation', 'n/x', 'Ctrl-d / Ctrl-u', 'Half-page centered')
 
 nnoremap <silent> [<Space> :<C-u>put! =repeat(nr2char(10), v:count1)<CR>'[
 nnoremap <silent> ]<Space> :<C-u>put =repeat(nr2char(10), v:count1)<CR>
-call s:Catalog('Editing', 'n', '[SPC / ]SPC', 'Insert blank line above / below')
+call chopsticks#keys#Catalog('Editing', 'n', '[SPC / ]SPC', 'Insert blank line above / below')
 call s:LeaderN(['s', 'r'], ':%s/\<<C-r><C-w>\>//g<Left><Left>', 'Search', 'Replace word under cursor')
 call s:LeaderX(['s', 'r'], ':s///g<Left><Left><Left>', 'Search', 'Replace in selection')
-call s:WhichKeyAdd(['s', 'r'], 'Search', 'Replace text')
+call chopsticks#keys#WhichKeyAdd(['s', 'r'], 'Search', 'Replace text')
 call s:LeaderX(['s', 's'], 'y/\V<C-r>=escape(@",''/\'')<CR><CR>', 'Search', 'Search visual selection')
 
 call s:DirectN(']q', ':cnext<CR>', ']q', 'Diagnostics', 'Next quickfix item')
@@ -1575,7 +1250,7 @@ call s:DirectN('L', ':bnext<CR>', 'L', 'Buffers', 'Next buffer')
 call s:DirectN('H', ':bprevious<CR>', 'H', 'Buffers', 'Previous buffer')
 nnoremap <silent> ]x /^\(<<<<<<<\|=======\|>>>>>>>\)<CR>
 nnoremap <silent> [x ?^\(<<<<<<<\|=======\|>>>>>>>\)<CR>
-call s:Catalog('Diagnostics', 'n', '[x / ]x', 'Previous / next conflict marker')
+call chopsticks#keys#Catalog('Diagnostics', 'n', '[x / ]x', 'Previous / next conflict marker')
 call s:LeaderN(['x', 'q'], ':call <SID>ToggleQuickfix()<CR>', 'Diagnostics', 'Toggle quickfix list')
 call s:LeaderN(['x', 'l'], ':call <SID>ToggleLocationList()<CR>', 'Diagnostics', 'Toggle location list')
 
@@ -1606,11 +1281,11 @@ call s:LeaderN(['u', 'i'], ':ChopsticksIconsToggle<CR>', 'Toggles', 'Toggle Nerd
 call s:LeaderN(['u', 'b'], ':ChopsticksTransparencyToggle<CR>', 'Toggles', 'Toggle background transparency')
 call s:LeaderN(['u', 'd'], ':ChopsticksUiDensity<CR>', 'Toggles', 'Cycle UI density')
 
-call s:Catalog('Files', 'n*', 'Fern h / l', 'Collapse / open node')
-call s:Catalog('Files', 'n*', 'Fern s / v / t', 'Open in split / vsplit / tab')
-call s:Catalog('Files', 'n*', 'Fern N / r / x', 'New path / rename / mark')
-call s:Catalog('Files', 'n*', 'Fern . / R', 'Toggle hidden files / reload')
-call s:Catalog('Files', 'n*', 'Fern q / Esc', 'Close drawer')
+call chopsticks#keys#Catalog('Files', 'n*', 'Fern h / l', 'Collapse / open node')
+call chopsticks#keys#Catalog('Files', 'n*', 'Fern s / v / t', 'Open in split / vsplit / tab')
+call chopsticks#keys#Catalog('Files', 'n*', 'Fern N / r / x', 'New path / rename / mark')
+call chopsticks#keys#Catalog('Files', 'n*', 'Fern . / R', 'Toggle hidden files / reload')
+call chopsticks#keys#Catalog('Files', 'n*', 'Fern q / Esc', 'Close drawer')
 
 call s:LeaderN(['q', 'w'], ':confirm quit<CR>', 'Quit', 'Close window')
 call s:LeaderN(['q', 'q'], ':confirm qall<CR>', 'Quit', 'Quit Vim')
@@ -1618,12 +1293,12 @@ call s:LeaderN(['q', 's'], ':ChopsticksSessionSave<CR>', 'Quit', 'Save project s
 call s:LeaderN(['q', 'l'], ':ChopsticksSessionLoad<CR>', 'Quit', 'Restore project session')
 
 if has('terminal')
-    call s:LeaderN(['t', 't'], ':call <SID>OpenTerminal([], ''tab'')<CR>', 'Terminal', 'Terminal in new tab')
-    call s:LeaderN(['t', 's'], ':call <SID>OpenTerminal([], ''split'')<CR>', 'Terminal', 'Terminal below')
+    call s:LeaderN(['t', 't'], ':call chopsticks#ui#window#Terminal([], ''tab'')<CR>', 'Terminal', 'Terminal in new tab')
+    call s:LeaderN(['t', 's'], ':call chopsticks#ui#window#Terminal([], ''split'')<CR>', 'Terminal', 'Terminal below')
     if !empty(maparg("\<Esc>\<Esc>", 't'))
         execute 'tunmap <Esc><Esc>'
     endif
-    call s:Catalog('Terminal', 't', 'Ctrl-w N', 'Leave terminal mode')
+    call chopsticks#keys#Catalog('Terminal', 't', 'Ctrl-w N', 'Leave terminal mode')
 endif
 
 call s:LeaderN(['<Tab>', '<Tab>'], ':tabnew<CR>', 'Tabs', 'New tab')
@@ -1640,7 +1315,7 @@ call s:LeaderN(['g', 'g'], ':call <SID>OpenLazygit()<CR>', 'Git', 'Lazygit at pr
 
 function! s:PluginMaps() abort
     if exists(':Files') == 2 && executable('fzf') == 1
-        call s:Catalog('Fast find', 't', 'Esc / Ctrl-q', 'Close finder')
+        call chopsticks#keys#Catalog('Fast find', 't', 'Esc / Ctrl-q', 'Close finder')
         call s:LeaderN(['<Space>'], ':Buffers<CR>', 'Buffers', 'Find open buffers')
         call s:LeaderN([','], ':Buffers<CR>', 'Buffers', 'Find open buffers')
         call s:LeaderN(['f', 'f'], ':call <SID>FindFiles()<CR>', 'Files', 'Find files')
@@ -1694,8 +1369,8 @@ function! s:PluginMaps() abort
     endif
     if exists('g:plugs') && has_key(g:plugs, 'vim-easymotion')
         nmap <silent> <leader>j <Plug>(easymotion-overwin-w)
-        call s:WhichKeyAdd(['j'], 'Navigation', 'Jump to visible target')
-        call s:Catalog('Navigation', 'n', 'SPC j', 'Jump to visible target')
+        call chopsticks#keys#WhichKeyAdd(['j'], 'Navigation', 'Jump to visible target')
+        call chopsticks#keys#Catalog('Navigation', 'n', 'SPC j', 'Jump to visible target')
     endif
 endfunction
 
@@ -1737,16 +1412,16 @@ augroup Chopsticks
         \ setlocal syntax= | let b:ale_enabled = 0 | endif
     " 'breakindent' is global, so guard every buffer and not only prose ones.
     " BufWinEnter runs after filetype setup, which is where it gets re-enabled.
-    autocmd BufWinEnter * call <SID>GuardLongLines()
+    autocmd BufWinEnter * call chopsticks#markdown#GuardLongLines()
     autocmd QuickFixCmdPost [^l]* cwindow
     autocmd QuickFixCmdPost l* lwindow
     autocmd FileType fern call <SID>FernSetup()
-    autocmd FileType which_key call <SID>WhichKeySetup()
+    autocmd FileType which_key call chopsticks#keys#Setup()
     autocmd FileType netrw setlocal bufhidden=wipe
     autocmd FileType qf nnoremap <silent><buffer> q :close<CR>
     autocmd BufNewFile,BufRead *.mdx setfiletype markdown
-    autocmd FileType markdown call <SID>MarkdownSetup()
-    autocmd FileType text,gitcommit,mail call <SID>ProseSetup()
+    autocmd FileType markdown call chopsticks#markdown#Setup()
+    autocmd FileType text,gitcommit,mail call chopsticks#markdown#ProseSetup()
     autocmd FileType python setlocal expandtab shiftwidth=4 tabstop=4 softtabstop=4 textwidth=88
     autocmd FileType javascript,typescript setlocal expandtab shiftwidth=2 tabstop=2 softtabstop=2 textwidth=100
     autocmd FileType go setlocal noexpandtab shiftwidth=4 tabstop=4 softtabstop=0 textwidth=120
@@ -1756,8 +1431,8 @@ augroup Chopsticks
     autocmd FileType sh setlocal expandtab shiftwidth=2 tabstop=2 softtabstop=2 textwidth=80
     autocmd FileType make setlocal noexpandtab shiftwidth=8 tabstop=8 softtabstop=0
     autocmd User lsp_buffer_enabled call <SID>LspMaps()
-    autocmd User GoyoEnter nested call <SID>GoyoEnter()
-    autocmd User GoyoLeave nested call <SID>GoyoLeave()
+    autocmd User GoyoEnter nested call chopsticks#markdown#GoyoEnter()
+    autocmd User GoyoLeave nested call chopsticks#markdown#GoyoLeave()
 augroup END
 
 augroup ChopsticksPlugins
@@ -1784,5 +1459,5 @@ endif
 " VimEnter.  Reapply buffer-local writing defaults without relying on an LSP
 " plugin to replay FileType as a side effect.
 if &filetype ==# 'markdown'
-    call s:MarkdownSetup()
+    call chopsticks#markdown#Setup()
 endif

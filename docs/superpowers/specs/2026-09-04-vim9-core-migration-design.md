@@ -40,6 +40,28 @@ Two structural liabilities compound this:
 | D7 | Debugging: built-in `termdebug`. DAP is deferred. |
 | D8 | Snippets: `vim-vsnip` + `vim-vsnip-integ`. |
 | D9 | No in-editor AI agent plugin. |
+| D10 | The supported-Vim floor rises from 8.2 to 9.1.1947 on every platform. |
+
+### D10, the version floor
+
+Everything this migration depends on has a floor above Vim 8.2: Vim9script and
+`yegappan/lsp` need 9.0, `fuzzbox.vim` needs 9.0, `wildtrigger()` arrived in
+patch 9.1.1576, and `'autocomplete'` in 9.1.1590. The last fix in the
+`'autocomplete'` and `wildtrigger()` series is 9.1.1920, and 9.1.1779 is what
+made `'autocomplete'` settable per buffer, which the per-filetype configuration
+needs.
+
+Chopsticks already requires patch 9.1.1947 on Windows, for the executable
+search-path advisory. Since 9.1.1947 is above every patch listed here, adopting
+it as the universal floor adds no constraint Windows did not already carry, and
+it *removes* the platform split: the separate Windows floor in `README.md`,
+`CONTRIBUTING.md`, and `.vimrc:21` collapses into one number, and the
+`has('patch-8.2.*')` guards at `.vimrc:471`, `.vimrc:583`, `.vimrc:626`, and
+`.vimrc:1821` become dead code to delete.
+
+The cost is real and is the point: Vim 8.2 is no longer supported. The
+`vim-minimum` CI job must be repinned from `v8.2.0000`, and README, CONTRIBUTING,
+and the `.vimrc` version guard all change.
 
 ### D2, retiring the single file
 
@@ -187,10 +209,28 @@ Every new plugin is commit-pinned like the rest.
 
 Each phase is one pull request. CI must be green before the next begins.
 
-**Phase 0 — skeleton.** Create the `autoload/` layout and move existing code
-into it, converting legacy syntax to Vim9. No behavior changes. This separates
-"we restructured" from "we swapped a plugin", so a later regression has one
-obvious cause.
+**Phase 0 — skeleton.** Raise the version floor per D10, extend the tooling to
+cover more than one file, then create the `autoload/` layout and move existing
+code into it, converting legacy syntax to Vim9. No behavior changes. This
+separates "we restructured" from "we swapped a plugin", so a later regression
+has one obvious cause.
+
+Two pieces of existing tooling assume the single file and must be fixed before
+any code moves:
+
+- `scripts/lint-vim.sh` lints exactly one path, `$chopsticks_root/.vimrc`
+  (lines 163 and 206). It has to walk `plugin/`, `autoload/`, and `lang/` too,
+  or every new module ships unchecked.
+- The `vim-minimum` CI job pins `v8.2.0000`. It becomes the D10 floor.
+
+The global functions `tests/ui.vim` asserts on — `ChopsticksStatusline()`,
+`ChopsticksTabline()`, `ChopsticksIcon()`, `ChopsticksUiDensity()`,
+`ChopsticksSessionPath()`, `ChopsticksDashboardEnabled()`,
+`ChopsticksTransparencyEnabled()`, `ChopsticksSystemClipboardEnabled()` — are a
+public contract, not incidental. `&statusline` and `&tabline` are set to
+`'%!ChopsticksStatusline()'` and `'%!ChopsticksTabline()'`, so the names are
+load-bearing at every redraw. They stay, declared in `plugin/chopsticks.vim`,
+each delegating to an autoload function.
 
 Done when: `tests/plugins.vim` and `tests/ui.vim` pass unchanged,
 `scripts/benchmark-vim.py` shows no startup regression, and every documented

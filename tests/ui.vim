@@ -402,7 +402,10 @@ function! s:AssertDataDirectory(expected, session_is_derived) abort
         call assert_true(isdirectory(l:directory), l:directory)
     endfor
     if a:session_is_derived
-        call assert_equal(l:expected . '.sessions/',
+        " The derived session directory goes through .vimrc's
+        " s:NormalizeDirectory() like any other, so it ends in whichever
+        " separator that function appends -- not a hardcoded '/'.
+        call assert_equal(s:NormalizedDirectory(l:expected . '.sessions'),
             \ g:chopsticks_session_dir)
         call assert_true(isdirectory(g:chopsticks_session_dir))
     endif
@@ -544,8 +547,11 @@ endfunction
 
 function! s:AssertSession() abort
     call assert_false(&sessionoptions =~# '\<\%(curdir\|terminal\)\>')
-    let l:expected_directory = fnamemodify(
-        \ expand('~/.chopsticks-session-tests'), ':p')
+    " Derived from the same string the harness hands g:chopsticks_session_dir,
+    " through the same normaliser, so the two cannot disagree about which
+    " separator terminates the path.
+    let l:expected_directory =
+        \ s:NormalizedDirectory('~/.chopsticks-session-tests')
     call assert_equal(l:expected_directory, g:chopsticks_session_dir)
 
     " Session names must distinguish equal project basenames.  Otherwise two

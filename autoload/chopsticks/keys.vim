@@ -7,14 +7,22 @@ vim9script
 # cheatsheet. It does not own the bindings themselves.
 #
 # .vimrc keeps the four helpers that actually create mappings — LeaderN,
-# LeaderX, DirectN, DirectX — and they call into here. That split is forced
-# rather than chosen. Those helpers `:execute` a `:nnoremap` whose
-# right-hand side contains `<SID>`, and Vim expands `<SID>` in a mapping to
-# the script ID of whatever script runs the :nnoremap. Moving them here
-# would silently rewrite every one of those mappings to point at a function
-# in THIS script, which does not exist. The bindings and their right-hand
-# sides also read as configuration: which key does what is the part a person
-# edits, and it belongs beside the functions those keys call.
+# LeaderX, DirectN, DirectX — and they call into here.
+#
+# That split was originally forced. Those helpers `:execute` a `:nnoremap`
+# whose right-hand side used to contain `<SID>`, and Vim expands `<SID>` in a
+# mapping to the script ID of whatever script runs the :nnoremap, so moving
+# them would have silently repointed every one of ~85 mappings at a function
+# absent from this script. That is no longer true: as the actions those keys
+# call moved into modules, their right-hand sides became dotted autoload
+# names, and .vimrc now contains exactly one `<SID>` reference, in an
+# autocommand. The helpers could move.
+#
+# They stay because the reason is now editorial rather than technical. The
+# bindings are configuration: which key does what is the part a person
+# edits, and the four-line helpers that turn a binding into a mapping plus a
+# catalogue entry read better beside the 85 bindings that use them than in a
+# module three files away.
 
 import autoload 'chopsticks/ui/icons.vim'
 import autoload 'chopsticks/ui/window.vim'

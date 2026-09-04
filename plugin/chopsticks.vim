@@ -32,7 +32,34 @@ endif
 g:loaded_chopsticks = true
 
 import autoload 'chopsticks/clipboard.vim'
+import autoload 'chopsticks/session.vim'
+import autoload 'chopsticks/health.vim'
 
 def g:ChopsticksSystemClipboardEnabled(): number
   return clipboard.Enabled()
 enddef
+
+def g:ChopsticksSessionPath(): string
+  return session.Path()
+enddef
+
+# Not one of the documented Chopsticks* globals tests/ui.vim's
+# s:AssertPublicInterface() enumerates, but .vimrc's own fern, fzf, and
+# terminal helpers need the same project-root resolution session.vim itself
+# uses, outside any session action. .vimrc cannot reach an autoload module
+# with a Vim9 `import` statement (see .vimrc's own comment on this, next to
+# its ChopsticksProjectRoot() call sites): vimlint's legacy-script parser
+# does not understand that syntax, so this shim exists to give .vimrc a
+# plain global call instead, the same way it already reaches
+# ChopsticksIconsEnabled() and ChopsticksSystemClipboardEnabled().
+def g:ChopsticksProjectRoot(): string
+  return session.ProjectRoot()
+enddef
+
+def g:ChopsticksHealthLines(): list<string>
+  return health.Lines()
+enddef
+
+command! -bar ChopsticksSessionSave session.Save()
+command! -bar -bang ChopsticksSessionLoad session.Load(<bang>0)
+command! ChopsticksHealth health.Show()

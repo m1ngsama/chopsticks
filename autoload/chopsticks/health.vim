@@ -13,12 +13,12 @@ vim9script
 # only resolves an unqualified name to a script-local function or a Vim
 # builtin, never to a global one.
 #
-# FernAvailable() and OpenScratch() duplicate two small, self-contained
-# .vimrc helpers (s:FernAvailable() and s:OpenScratch()). s:OpenScratch() in
-# particular is shared with the cheatsheet and markdown-image features, so
-# it stays in .vimrc; Vim9 script-local names cannot cross files, so the
-# small amount of logic actually needed here is reproduced instead of
-# reaching back into .vimrc.
+# FernAvailable() duplicates a small, self-contained .vimrc helper
+# (s:FernAvailable()), because Vim9 script-local names cannot cross files
+# and reproducing three lines beats inventing a global for them. The scratch
+# buffer used to be duplicated here too; it now comes from
+# autoload/chopsticks/ui/window.vim, which the cheatsheet and the Markdown
+# help sheet share.
 #
 # g:chopsticks_use_fern is read raw here, exactly like .vimrc's own
 # s:FernAvailable() reads it: .vimrc never runs it through s:ResolveSwitch()
@@ -31,6 +31,8 @@ vim9script
 # reproduces the legacy coercion so a value that s:FernAvailable() and this
 # function must keep agreeing on (say, 2 or 'no') is handled the same way
 # here as there, instead of throwing.
+
+import autoload 'chopsticks/ui/window.vim'
 
 def LegacyTruthy(value: any): bool
   return type(value) == v:t_string ? str2nr(value) != 0 : !!value
@@ -121,20 +123,7 @@ export def Lines(): list<string>
   return lines
 enddef
 
-def OpenScratch(name: string, lines: list<string>): void
-  botright new
-  execute 'file ' .. fnameescape(name)
-  setlocal buftype=nofile bufhidden=wipe nobuflisted noswapfile
-  setlocal nowrap nonumber norelativenumber signcolumn=no
-  setlocal modifiable
-  silent :%delete _
-  setline(1, lines)
-  setlocal nomodifiable nomodified
-  nnoremap <silent><buffer> q :close<CR>
-  nnoremap <silent><buffer> <Esc> :close<CR>
-  normal! gg
-enddef
 
 export def Show(): void
-  OpenScratch('[chopsticks-health]', Lines())
+  window.Scratch('[chopsticks-health]', Lines())
 enddef

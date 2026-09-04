@@ -14,6 +14,8 @@ vim9script
 # plugin/chopsticks.vim's header.
 
 import autoload 'chopsticks/ui/icons.vim'
+import autoload 'chopsticks/ui/bufferline.vim'
+import autoload 'chopsticks/ui/dashboard.vim'
 
 # The three density steps, most to least detailed. A density is never trusted
 # from the user without being checked against this list.
@@ -25,12 +27,11 @@ export def UiDensity(): string
   return index(DENSITIES, value) >= 0 ? value : 'balanced'
 enddef
 
-# The cross-module calls below go through the classic dotted name rather
-# than `import autoload`, deliberately. The bufferline needs UiDensity() from
-# this module, and this needs its Refresh(), so importing both ways would
-# make the two files mutually dependent. The dotted name resolves at call
-# time and needs no import, which breaks the cycle without either module
-# having to know it exists.
+# This and bufferline.vim import each other. That is fine: `import autoload`
+# binds lazily, so a mutual pair resolves at call time rather than at source
+# time (verified on Vim 9.2 with a minimal a/b pair). The dashboard import is
+# lazy for the same reason — it is only reached when a dashboard is on
+# screen, so declaring it here does not source it on an ordinary start.
 export def SetUiDensity(value: string)
   if empty(value)
     var current = index(DENSITIES, UiDensity())
@@ -43,15 +44,15 @@ export def SetUiDensity(value: string)
     echohl None
     return
   endif
-  chopsticks#ui#bufferline#Refresh()
+  bufferline.Refresh()
   if &filetype ==# 'chopsticks-dashboard'
-    chopsticks#ui#dashboard#Render()
+    dashboard.Render()
   endif
   redrawstatus!
   echo 'UI density: ' .. UiDensity()
 enddef
 
-export def Mode(active: number = 1): list<string>
+def Mode(active: number = 1): list<string>
   if !active
     return [' - ', 'ChopStatusMuted']
   endif
@@ -76,7 +77,7 @@ enddef
 # autoload-style name (ale#statusline#Count, gitgutter#hunk#summary) is
 # exempt: Vim assumes those resolve later, which is why they appear
 # literally below. call() defers the lookup to run time for the rest.
-export def GitBranch(buffer: number = -1): string
+def GitBranch(buffer: number = -1): string
   if !exists('*FugitiveHead')
     return ''
   endif
@@ -86,6 +87,12 @@ export def GitBranch(buffer: number = -1): string
     .. substitute(branch, '%', '%%', 'g') .. ' '
 enddef
 
+# The `buffer < 0` default reproduces the legacy `a:0 ? a:1 : bufnr('')`
+# for every argument these are actually called with, including an explicit
+# 0. It differs only for an explicit NEGATIVE buffer number, which the
+# legacy form would have passed through to getbufvar() and this treats as
+# "not given". No caller passes one; buffer numbers come from getwininfo()
+# and getbufinfo().
 export def GitDiff(buffer: number = -1): string
   if !exists('*GitGutterGetHunkSummary')
     return ''
@@ -151,7 +158,7 @@ export def WritingMode(buffer: number = -1, window: number = -1): string
   return empty(parts) ? '' : ' ' .. join(parts, ' ') .. ' '
 enddef
 
-export def BufferFlags(buffer: number = -1): string
+def BufferFlags(buffer: number = -1): string
   var target = buffer < 0 ? bufnr('') : buffer
   var parts = []
   if getbufvar(target, '&modified')
@@ -177,10 +184,9 @@ def Context(): dict<any>
     winid: window,
     bufnr: empty(info) ? bufnr('') : info[0].bufnr,
     width: empty(info) ? winwidth(0) : info[0].width,
-    # Number, not bool. In legacy script `==` produced 0 or 1 and this value
-    # is handed to Mode(), whose parameter stays a number so that the
-    # ChopsticksMode() wrapper can keep forwarding whatever a legacy caller
-    # passes. Vim9 comparisons produce bool, which is not the same type.
+    # Number, not bool. Vim9 comparisons produce bool where legacy script
+    # produced 0 or 1, and Mode() below takes a number, so without the
+    # coercion this is E1013 at the call in Render().
     active: window == win_getid() ? 1 : 0,
   }
 enddef

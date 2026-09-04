@@ -30,14 +30,15 @@ vim9script
 # callers that go through the g:ChopsticksIcon() / g:ChopsticksIconsEnabled()
 # shim, since both only ever run once Vim has fully started.
 #
-# Apply() only re-applies the fern/ALE icon variables above. A live icon
-# toggle also has to refresh things that are not icon concerns at all: fzf's
-# gfiles options, the statusline's file-icon cache, a dashboard re-render,
-# and the status/tabline redraw. Those stay in .vimrc, since Vim9
-# script-local names cannot cross files and none of that logic belongs here.
-# Toggle() fires a guarded `User ChopsticksIconsToggled` autocommand after
-# applying so .vimrc can still run that refresh, in the same order it always
-# has, without plugin/chopsticks.vim needing a second global just for it.
+# Apply() re-applies the fern/ALE icon variables above and clears this
+# module's own file-icon cache. A live icon toggle also has to refresh things
+# that are not icon concerns at all: fzf's gfiles options, a dashboard
+# re-render, and the status/tabline redraw. Those stay in .vimrc, since
+# s:fzf_abort_keys and s:FzfVisualOptions() are script-local there and Vim9
+# script-local names cannot cross files. Toggle() fires a guarded
+# `User ChopsticksIconsToggled` autocommand after applying so .vimrc can
+# still run that refresh, in the same order it always has, without
+# plugin/chopsticks.vim needing a second global just for it.
 
 var auto_enabled = &encoding ==# 'utf-8'
   && empty($SSH_CONNECTION) && empty($SSH_CLIENT) && empty($SSH_TTY)

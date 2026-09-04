@@ -15,7 +15,6 @@ scriptencoding utf-8
 if !exists('g:chopsticks_startup_started_at')
     let g:chopsticks_startup_started_at = reltime()
 endif
-let s:directory_startup_opened = 0
 let s:is_windows = has('win32') || has('win64')
 let g:chopsticks_version = '0.2.0'
 
@@ -244,26 +243,13 @@ let g:fzf_action = {
     \ 'ctrl-v': 'vsplit',
     \ 'ctrl-o': 'edit',
     \ }
-let s:fzf_abort_keys = 'esc:abort,ctrl-c:abort,ctrl-g:abort,ctrl-q:abort'
-let s:fzf_skip_dirs = [
-    \ '.git', '.cache', '.cargo', '.npm', '.pnpm-store', '.rustup',
-    \ '.bun', '.codex', 'Library', 'node_modules', 'plugged',
-    \ '.venv', 'venv', '__pycache__', 'build', 'dist', 'target', 'vendor',
-    \ ]
 " See the dotted-autoload-name comment above g:fern#renderer: this function
 " runs both from this file's own top level immediately below (building
 " g:fzf_vim) and later from s:RefreshIconDependents(), when icons are
 " toggled.
-function! s:FzfVisualOptions() abort
-    return [
-        \ '--prompt', chopsticks#ui#icons#Get('search') . ' ',
-        \ '--pointer', chopsticks#ui#icons#Get('pointer'),
-        \ '--marker', chopsticks#ui#icons#Get('marker'),
-        \ ]
-endfunction
 let g:fzf_vim = {
     \ 'preview_window': s:is_remote ? [] : ['right,55%', 'ctrl-/'],
-    \ 'gfiles_options': ['--bind', s:fzf_abort_keys] + s:FzfVisualOptions(),
+    \ 'gfiles_options': ['--bind', chopsticks#find#AbortKeys()] + chopsticks#find#VisualOptions(),
     \ }
 
 let g:ale_disable_lsp = 1
@@ -621,7 +607,7 @@ call chopsticks#ui#bufferline#Refresh()
 " toggle always also refreshed -- fzf's gfiles options, a dashboard
 " re-render, and the status/tabline redraw -- is not an icon concern and
 " stays here, since Vim9 script-local names cannot cross files
-" (s:fzf_abort_keys and s:FzfVisualOptions() are local to this file; the
+" (chopsticks#find#AbortKeys() and chopsticks#find#VisualOptions() are local to this file; the
 " dashboard re-render reaches its own module by the classic dotted name).
 " The file-icon cache used to be cleared here too; it now lives in icons.vim
 " beside the glyphs it caches, and Apply() clears it.
@@ -631,7 +617,7 @@ call chopsticks#ui#bufferline#Refresh()
 " needing a second global just to reach it.
 function! s:RefreshIconDependents() abort
     let g:fzf_vim.gfiles_options =
-        \ ['--bind', s:fzf_abort_keys] + s:FzfVisualOptions()
+        \ ['--bind', chopsticks#find#AbortKeys()] + chopsticks#find#VisualOptions()
     if &filetype ==# 'chopsticks-dashboard'
         call chopsticks#ui#dashboard#Render()
     endif
@@ -672,16 +658,6 @@ call chopsticks#ui#theme#DefineInterfaceColors()
 
 " ── Shared actions ─────────────────────────────────────────────────────────
 
-function! s:MakeParent(path) abort
-    if empty(a:path) || &buftype !=# '' || a:path =~# '^\w\+://'
-        return
-    endif
-    let l:dir = fnamemodify(a:path, ':h')
-    if !isdirectory(l:dir)
-        silent! call mkdir(l:dir, 'p')
-    endif
-endfunction
-
 " Project-root resolution, session save/load, and their permission checks now
 " live in autoload/chopsticks/session.vim (Vim9 script). ChopsticksProjectRoot()
 " and ChopsticksSessionPath() (see plugin/chopsticks.vim) delegate to it, the
@@ -690,310 +666,14 @@ endfunction
 " parser (vim-vimlparser) does not understand `import autoload` syntax and
 " fails to parse this file if one is added.
 
-function! s:FzfFileSource() abort
-    if executable('fd') == 1
-        let l:parts = ['fd', '--type', 'f', '--hidden', '--color', 'never']
-        for l:directory in s:fzf_skip_dirs
-            call extend(l:parts, ['--exclude', shellescape(l:directory)])
-        endfor
-        return join(l:parts, ' ')
-    endif
-    if executable('rg') == 1
-        let l:parts = ['rg', '--files', '--hidden', '--color', 'never']
-        for l:directory in s:fzf_skip_dirs
-            call extend(l:parts,
-                \ ['--glob', shellescape('!**/' . l:directory . '/**')])
-        endfor
-        return join(l:parts, ' ')
-    endif
-    return ''
-endfunction
-
-function! s:FzfFiles(path, bang) abort
-    let l:root = empty(a:path) ? ChopsticksProjectRoot() : expand(a:path)
-    let l:root = fnamemodify(l:root, ':p')
-    let l:options = [
-        \ '--bind', s:fzf_abort_keys,
-        \ '--header', chopsticks#ui#icons#Get('quit')
-        \     . ' ESC / CTRL-Q close · ENTER open',
-        \ ]
-    call extend(l:options, s:FzfVisualOptions())
-    let l:spec = {'dir': l:root, 'options': l:options}
-    let l:source = s:FzfFileSource()
-    if !empty(l:source)
-        let l:spec.source = l:source
-    endif
-    call fzf#vim#files(l:root, fzf#vim#with_preview(l:spec), a:bang)
-endfunction
-
-function! s:ProjectFzfSpec() abort
-    return {'dir': ChopsticksProjectRoot()}
-endfunction
-
-function! s:ProjectGrep(query, bang) abort
-    if exists(':Rg') != 2 || executable('rg') != 1
-        \ || executable('fzf') != 1
-        echohl WarningMsg | echom 'chopsticks: project grep needs fzf.vim and rg' | echohl None
-        return
-    endif
-    let l:command = 'rg --column --line-number --no-heading '
-        \ . '--color=always --smart-case -- ' . fzf#shellescape(a:query)
-    call fzf#vim#grep(
-        \ l:command, fzf#vim#with_preview(s:ProjectFzfSpec()), a:bang)
-endfunction
-
 command! -bang -nargs=* ChopsticksProjectGrep
-    \ call s:ProjectGrep(<q-args>, <bang>0)
+    \ call chopsticks#find#Grep(<q-args>, <bang>0)
 
-function! s:ProjectGitFiles() abort
-    if exists(':GFiles') != 2 || executable('git') != 1
-        \ || executable('fzf') != 1
-        echohl WarningMsg | echom 'chopsticks: Git file search needs Git and fzf.vim' | echohl None
-        return
-    endif
-    let l:root = ChopsticksProjectRoot()
-    call system('git -C ' . shellescape(l:root) . ' rev-parse --is-inside-work-tree')
-    if v:shell_error != 0
-        echohl WarningMsg | echom 'chopsticks: current buffer is outside a Git worktree' | echohl None
-        return
-    endif
-    call fzf#vim#gitfiles(
-        \ '', fzf#vim#with_preview(s:ProjectFzfSpec()), 0)
-endfunction
+command! ChopsticksFindFiles call chopsticks#find#FindFiles()
 
-function! s:FindFiles() abort
-    if executable('fzf') == 1 && exists(':GFiles') == 2
-        \ && executable('git') == 1
-        let l:root = ChopsticksProjectRoot()
-        call system('git -C ' . shellescape(l:root) . ' rev-parse --is-inside-work-tree')
-        if v:shell_error == 0
-            call s:ProjectGitFiles()
-            return
-        endif
-    endif
-    if executable('fzf') == 1 && exists(':Files') == 2
-        execute 'Files ' . fnameescape(ChopsticksProjectRoot())
-        return
-    endif
-    execute 'edit ' . fnameescape(ChopsticksProjectRoot())
-endfunction
+command! ChopsticksRecentFiles call chopsticks#find#RecentFiles()
 
-command! ChopsticksFindFiles call s:FindFiles()
-
-function! s:RecentFiles() abort
-    if executable('fzf') == 1 && exists(':History') == 2
-        History
-    elseif !empty(v:oldfiles)
-        browse oldfiles
-    else
-        echohl WarningMsg
-        echom 'chopsticks: no recent files yet'
-        echohl None
-    endif
-endfunction
-
-command! ChopsticksRecentFiles call s:RecentFiles()
-
-function! s:DefineFzfCommands() abort
-    if executable('fzf') == 1 && exists(':Files') == 2
-        command! -bang -nargs=? -complete=dir Files
-            \ call s:FzfFiles(<q-args>, <bang>0)
-    endif
-endfunction
-call s:DefineFzfCommands()
-
-function! s:CopyPath(relative) abort
-    if empty(expand('%:p'))
-        echohl WarningMsg | echom 'chopsticks: current buffer has no file path' | echohl None
-        return
-    endif
-    let l:path = a:relative ? fnamemodify(expand('%:p'), ':.') : expand('%:p')
-    if has('clipboard')
-        call setreg('+', l:path)
-    endif
-    call setreg('"', l:path)
-    echo 'copied: ' . l:path
-endfunction
-
-function! s:ExplorerWindow() abort
-    for l:window in getwininfo()
-        if l:window.tabnr == tabpagenr()
-            \ && index(['fern', 'netrw'],
-            \     getbufvar(l:window.bufnr, '&filetype')) >= 0
-            return l:window.winid
-        endif
-    endfor
-    return 0
-endfunction
-
-function! s:FernAvailable() abort
-    return get(g:, 'chopsticks_use_fern', 1)
-        \ && exists(':Fern') == 2
-endfunction
-
-function! s:PathInside(path, directory) abort
-    let l:path = resolve(fnamemodify(a:path, ':p'))
-    let l:directory = resolve(fnamemodify(a:directory, ':p'))
-    if s:is_windows
-        let l:path = substitute(l:path, '\\', '/', 'g')
-        let l:directory = substitute(l:directory, '\\', '/', 'g')
-        let l:path = substitute(l:path, '/\+$', '', '')
-        let l:directory = substitute(l:directory, '/\+$', '', '')
-        return l:path ==? l:directory
-            \ || stridx(tolower(l:path),
-            \     tolower(l:directory . '/')) == 0
-    endif
-    let l:path = substitute(l:path, '/\+$', '', '')
-    let l:directory = substitute(l:directory, '/\+$', '', '')
-    return l:path ==# l:directory
-        \ || stridx(l:path, l:directory . '/') == 0
-endfunction
-
-function! s:ToggleExplorer(directory) abort
-    if s:FernAvailable()
-        let l:directory = fnamemodify(a:directory, ':p')
-        let l:command = 'Fern ' . fnameescape(l:directory)
-            \ . ' -drawer -toggle -width=' . g:fern#drawer_width
-        let l:current = expand('%:p')
-        if filereadable(l:current) && s:PathInside(l:current, l:directory)
-            let l:command .= ' -reveal=' . fnameescape(l:current)
-        endif
-        execute l:command
-        return
-    endif
-    let l:explorer = s:ExplorerWindow()
-    if l:explorer
-        let l:origin = win_getid()
-        if win_gotoid(l:explorer)
-            close
-        endif
-        if l:origin != l:explorer && win_id2win(l:origin) > 0
-            call win_gotoid(l:origin)
-        endif
-        return
-    endif
-    execute 'Lexplore ' . fnameescape(a:directory)
-endfunction
-
-function! s:FernSetup() abort
-    setlocal nonumber norelativenumber signcolumn=no winfixwidth cursorline
-    " Match the reversible node interaction used by mature file trees: the
-    " same key opens a file, expands a closed directory, and collapses an
-    " open directory.  expand:stay keeps the cursor on the directory so the
-    " second press can close it again.
-    nmap <buffer><silent><expr> <Plug>(chopsticks-fern-toggle-node)
-        \ fern#smart#leaf(
-        \ "\<Plug>(fern-action-open)",
-        \ "\<Plug>(fern-action-expand:stay)",
-        \ "\<Plug>(fern-action-collapse)")
-    nmap <silent><buffer> <CR> <Plug>(chopsticks-fern-toggle-node)
-    nmap <silent><buffer> l <Plug>(chopsticks-fern-toggle-node)
-    nmap <buffer><silent><expr> <Plug>(chopsticks-fern-parent-or-collapse)
-        \ fern#smart#leaf(
-        \ "\<Plug>(fern-action-focus:parent)",
-        \ "\<Plug>(fern-action-focus:parent)",
-        \ "\<Plug>(fern-action-collapse)")
-    nmap <silent><buffer> h <Plug>(chopsticks-fern-parent-or-collapse)
-    nmap <silent><buffer> o <Plug>(fern-action-open)
-    nmap <silent><buffer> s <Plug>(fern-action-open:split)
-    nmap <silent><buffer> v <Plug>(fern-action-open:vsplit)
-    nmap <silent><buffer> t <Plug>(fern-action-open:tabedit)
-    nmap <silent><buffer> N <Plug>(fern-action-new-path)
-    nmap <silent><buffer> r <Plug>(fern-action-rename)
-    nmap <silent><buffer> x <Plug>(fern-action-mark:toggle)
-    nmap <silent><buffer> . <Plug>(fern-action-hidden:toggle)
-    nmap <silent><buffer> R <Plug>(fern-action-reload:all)
-    nnoremap <silent><buffer> q :close<CR>
-    nnoremap <silent><buffer> <Esc> :close<CR>
-    if chopsticks#ui#icons#Enabled()
-        try
-            call glyph_palette#apply()
-        catch /^Vim\%((\a\+)\)\=:E117/
-        endtry
-    endif
-endfunction
-
-function! s:ExploreRoot() abort
-    call s:ToggleExplorer(ChopsticksProjectRoot())
-endfunction
-
-function! s:ExploreHere() abort
-    if &filetype ==# 'fern'
-        call s:ToggleExplorer(getcwd())
-        return
-    endif
-    let l:directory = empty(expand('%:p')) ? getcwd() : expand('%:p:h')
-    call s:ToggleExplorer(l:directory)
-endfunction
-
-function! s:MaybeOpenDirectory() abort
-    if s:directory_startup_opened || argc() != 1
-        \ || !isdirectory(argv(0)) || &modified
-        return
-    endif
-    let l:directory = fnamemodify(argv(0), ':p')
-    if !isdirectory(expand('%:p'))
-        return
-    endif
-    let s:directory_startup_opened = 1
-    let l:directory_buffer = bufnr('%')
-    silent keepalt enew
-    execute 'lcd ' . fnameescape(l:directory)
-    if l:directory_buffer != bufnr('%') && bufexists(l:directory_buffer)
-        execute 'silent! bwipeout ' . l:directory_buffer
-    endif
-    call s:ToggleExplorer(l:directory)
-endfunction
-
-function! s:ToggleQuickfix() abort
-    for l:window in getwininfo()
-        if get(l:window, 'quickfix', 0) && !get(l:window, 'loclist', 0)
-            cclose
-            return
-        endif
-    endfor
-    copen
-endfunction
-
-function! s:ToggleLocationList() abort
-    for l:window in getwininfo()
-        if get(l:window, 'quickfix', 0) && get(l:window, 'loclist', 0)
-            lclose
-            return
-        endif
-    endfor
-    try
-        lopen
-    catch /^Vim\%((\a\+)\)\=:E776/
-        echohl WarningMsg | echom 'chopsticks: location list is empty' | echohl None
-    endtry
-endfunction
-
-function! s:DeleteOtherBuffers() abort
-    let l:current = bufnr('%')
-    let l:deleted = 0
-    let l:kept = 0
-    for l:buffer in getbufinfo({'buflisted': 1})
-        if l:buffer.bufnr == l:current
-            continue
-        endif
-        if getbufvar(l:buffer.bufnr, '&modified')
-            let l:kept += 1
-            continue
-        endif
-        execute 'silent bdelete ' . l:buffer.bufnr
-        let l:deleted += 1
-    endfor
-    echo printf('buffers: deleted %d, kept %d modified', l:deleted, l:kept)
-endfunction
-
-function! s:OpenLazygit() abort
-    if executable('lazygit') != 1
-        echohl WarningMsg | echom 'chopsticks: lazygit is not installed' | echohl None
-        return
-    endif
-    call chopsticks#ui#window#Terminal(['lazygit', '--path', ChopsticksProjectRoot()], 'tab')
-endfunction
+call chopsticks#find#DefineCommands()
 
 " ChopsticksHealthLines()/:ChopsticksHealth now live in
 " autoload/chopsticks/health.vim (Vim9 script); see plugin/chopsticks.vim for
@@ -1159,8 +839,8 @@ inoremap <silent> <C-s> <C-o>:update<CR>
 xnoremap <silent> <C-s> :<C-u>update<CR>gv
 call chopsticks#keys#Catalog('Essentials', 'n/i/x', 'Ctrl-s', 'Save file')
 call s:LeaderN(['?'], ':ChopsticksCheatsheet<CR>', 'Essentials', 'Full cheatsheet')
-call s:LeaderN(['e'], ':call <SID>ExploreRoot()<CR>', 'Files', 'Explore project root')
-call s:LeaderN(['E'], ':call <SID>ExploreHere()<CR>', 'Files', 'Explore current file directory')
+call s:LeaderN(['e'], ':call chopsticks#explorer#Root()<CR>', 'Files', 'Explore project root')
+call s:LeaderN(['E'], ':call chopsticks#explorer#Here()<CR>', 'Files', 'Explore current file directory')
 
 " Wrapped prose moves by screen line; counts retain physical-line semantics.
 nnoremap <silent><expr> j v:count == 0 ? 'gj' : 'j'
@@ -1183,7 +863,7 @@ call s:DirectN('ss', ':split<CR>', 'ss', 'Windows', 'Split below')
 call s:DirectN('sv', ':vsplit<CR>', 'sv', 'Windows', 'Split right')
 call s:DirectN('sq', ':confirm close<CR>', 'sq', 'Windows', 'Close window')
 call s:DirectN('s=', '<C-w>=', 's=', 'Windows', 'Balance windows')
-call s:DirectN('se', ':call <SID>ExploreHere()<CR>', 'se', 'Windows', 'Explore current file directory')
+call s:DirectN('se', ':call chopsticks#explorer#Here()<CR>', 'se', 'Windows', 'Explore current file directory')
 call s:DirectN('<C-Up>', ':resize +2<CR>', 'Ctrl-Up', 'Windows', 'Increase height')
 call s:DirectN('<C-Down>', ':resize -2<CR>', 'Ctrl-Down', 'Windows', 'Decrease height')
 call s:DirectN('<C-Left>', ':vertical resize -2<CR>', 'Ctrl-Left', 'Windows', 'Decrease width')
@@ -1253,25 +933,25 @@ call s:DirectN('H', ':bprevious<CR>', 'H', 'Buffers', 'Previous buffer')
 nnoremap <silent> ]x /^\(<<<<<<<\|=======\|>>>>>>>\)<CR>
 nnoremap <silent> [x ?^\(<<<<<<<\|=======\|>>>>>>>\)<CR>
 call chopsticks#keys#Catalog('Diagnostics', 'n', '[x / ]x', 'Previous / next conflict marker')
-call s:LeaderN(['x', 'q'], ':call <SID>ToggleQuickfix()<CR>', 'Diagnostics', 'Toggle quickfix list')
-call s:LeaderN(['x', 'l'], ':call <SID>ToggleLocationList()<CR>', 'Diagnostics', 'Toggle location list')
+call s:LeaderN(['x', 'q'], ':call chopsticks#actions#ToggleQuickfix()<CR>', 'Diagnostics', 'Toggle quickfix list')
+call s:LeaderN(['x', 'l'], ':call chopsticks#actions#ToggleLocationList()<CR>', 'Diagnostics', 'Toggle location list')
 
 call s:LeaderN(['b', 'b'], ':buffer #<CR>', 'Buffers', 'Switch to other buffer')
 call s:LeaderN(['b', 'd'], ':bdelete<CR>', 'Buffers', 'Delete buffer')
 call s:LeaderN(['b', 'n'], ':bnext<CR>', 'Buffers', 'Next buffer')
 call s:LeaderN(['b', 'p'], ':bprevious<CR>', 'Buffers', 'Previous buffer')
-call s:LeaderN(['b', 'o'], ':call <SID>DeleteOtherBuffers()<CR>', 'Buffers', 'Delete other unmodified buffers')
+call s:LeaderN(['b', 'o'], ':call chopsticks#actions#DeleteOtherBuffers()<CR>', 'Buffers', 'Delete other unmodified buffers')
 
 call s:LeaderN(['f', 'n'], ':enew<CR>', 'Files', 'New file')
 call s:LeaderN(['f', 's'], ':update<CR>', 'Files', 'Save file')
 call s:LeaderN(['f', 'S'], ':wall<CR>', 'Files', 'Save all files')
 call s:LeaderN(['f', 'd'], ':lcd %:p:h<CR>:pwd<CR>', 'Files', 'Use file directory locally')
-call s:LeaderN(['f', 'e'], ':call <SID>ExploreRoot()<CR>', 'Files', 'Explore project root')
-call s:LeaderN(['f', 'E'], ':call <SID>ExploreHere()<CR>', 'Files', 'Explore current file directory')
+call s:LeaderN(['f', 'e'], ':call chopsticks#explorer#Root()<CR>', 'Files', 'Explore project root')
+call s:LeaderN(['f', 'E'], ':call chopsticks#explorer#Here()<CR>', 'Files', 'Explore current file directory')
 call s:LeaderN(['f', 'v'], ':edit $MYVIMRC<CR>', 'Files', 'Edit Vim config')
 call s:LeaderN(['f', 'R'], ':source $MYVIMRC<CR>', 'Files', 'Reload Vim config')
-call s:LeaderN(['f', 'y'], ':call <SID>CopyPath(1)<CR>', 'Files', 'Copy relative path')
-call s:LeaderN(['f', 'Y'], ':call <SID>CopyPath(0)<CR>', 'Files', 'Copy absolute path')
+call s:LeaderN(['f', 'y'], ':call chopsticks#actions#CopyPath(1)<CR>', 'Files', 'Copy relative path')
+call s:LeaderN(['f', 'Y'], ':call chopsticks#actions#CopyPath(0)<CR>', 'Files', 'Copy absolute path')
 
 call s:LeaderN(['u', 'h'], ':nohlsearch<CR>', 'Toggles', 'Clear search highlight')
 call s:LeaderN(['u', 'n'], ':set number! number?<CR>', 'Toggles', 'Toggle line numbers')
@@ -1311,7 +991,7 @@ call s:LeaderN(['<Tab>', 'o'], ':tabonly<CR>', 'Tabs', 'Close other tabs')
 call s:LeaderN(['<Tab>', 'f'], ':tabfirst<CR>', 'Tabs', 'First tab')
 call s:LeaderN(['<Tab>', 'l'], ':tablast<CR>', 'Tabs', 'Last tab')
 
-call s:LeaderN(['g', 'g'], ':call <SID>OpenLazygit()<CR>', 'Git', 'Lazygit at project root')
+call s:LeaderN(['g', 'g'], ':call chopsticks#actions#Lazygit()<CR>', 'Git', 'Lazygit at project root')
 
 " ── Plugin mappings ────────────────────────────────────────────────────────
 
@@ -1320,8 +1000,8 @@ function! s:PluginMaps() abort
         call chopsticks#keys#Catalog('Fast find', 't', 'Esc / Ctrl-q', 'Close finder')
         call s:LeaderN(['<Space>'], ':Buffers<CR>', 'Buffers', 'Find open buffers')
         call s:LeaderN([','], ':Buffers<CR>', 'Buffers', 'Find open buffers')
-        call s:LeaderN(['f', 'f'], ':call <SID>FindFiles()<CR>', 'Files', 'Find files')
-        call s:LeaderN(['f', 'g'], ':call <SID>ProjectGitFiles()<CR>', 'Files', 'Find Git files')
+        call s:LeaderN(['f', 'f'], ':call chopsticks#find#FindFiles()<CR>', 'Files', 'Find files')
+        call s:LeaderN(['f', 'g'], ':call chopsticks#find#GitFiles()<CR>', 'Files', 'Find Git files')
         call s:LeaderN(['f', 'r'], ':History<CR>', 'Files', 'Recent files')
         call s:LeaderN(['/'], ':BLines<CR>', 'Search', 'Search current buffer')
         call s:LeaderN(['s', 'b'], ':BLines<CR>', 'Search', 'Search current buffer')
@@ -1329,8 +1009,8 @@ function! s:PluginMaps() abort
         call s:LeaderN(['s', 'c'], ':Commands<CR>', 'Search', 'Search commands')
         call s:LeaderN(['s', 'h'], ':Helptags<CR>', 'Search', 'Search Vim help')
         call s:LeaderN(['s', 'm'], ':Maps<CR>', 'Search', 'Search mappings')
-        call s:DirectN('<C-p>', ':call <SID>FindFiles()<CR>', 'Ctrl-p', 'Fast find', 'Find files')
-        call s:DirectN(';f', ':call <SID>FindFiles()<CR>', ';f', 'Fast find', 'Find files')
+        call s:DirectN('<C-p>', ':call chopsticks#find#FindFiles()<CR>', 'Ctrl-p', 'Fast find', 'Find files')
+        call s:DirectN(';f', ':call chopsticks#find#FindFiles()<CR>', ';f', 'Fast find', 'Find files')
         call s:DirectN(';b', ':Buffers<CR>', ';b', 'Fast find', 'Find open buffers')
         call s:DirectN(';l', ':BLines<CR>', ';l', 'Fast find', 'Search current buffer')
         call s:DirectN(';h', ':Helptags<CR>', ';h', 'Fast find', 'Search Vim help')
@@ -1387,7 +1067,7 @@ function! s:RegisterWhichKey() abort
 endfunction
 
 function! s:PluginsReady() abort
-    call s:DefineFzfCommands()
+    call chopsticks#find#DefineCommands()
     call s:PluginMaps()
     call s:RegisterWhichKey()
 endfunction
@@ -1409,7 +1089,7 @@ augroup Chopsticks
         \ && &filetype !~# 'commit'
         \ && index(['xxd', 'gitrebase', 'tutor'], &filetype) < 0 && !&diff |
         \ execute "normal! g`\"" | endif
-    autocmd BufWritePre * call <SID>MakeParent(expand('<afile>'))
+    autocmd BufWritePre * call chopsticks#actions#MakeParent(expand('<afile>'))
     autocmd BufReadPost * if getfsize(expand('<afile>')) > 10 * 1024 * 1024 |
         \ setlocal syntax= | let b:ale_enabled = 0 | endif
     " 'breakindent' is global, so guard every buffer and not only prose ones.
@@ -1417,7 +1097,7 @@ augroup Chopsticks
     autocmd BufWinEnter * call chopsticks#markdown#GuardLongLines()
     autocmd QuickFixCmdPost [^l]* cwindow
     autocmd QuickFixCmdPost l* lwindow
-    autocmd FileType fern call <SID>FernSetup()
+    autocmd FileType fern call chopsticks#explorer#FernSetup()
     autocmd FileType which_key call chopsticks#keys#Setup()
     autocmd FileType netrw setlocal bufhidden=wipe
     autocmd FileType qf nnoremap <silent><buffer> q :close<CR>
@@ -1444,7 +1124,7 @@ augroup END
 
 augroup ChopsticksDirectory
     autocmd!
-    autocmd BufEnter * nested call <SID>MaybeOpenDirectory()
+    autocmd BufEnter * nested call chopsticks#explorer#MaybeOpenDirectory()
 augroup END
 
 augroup ChopsticksDashboard

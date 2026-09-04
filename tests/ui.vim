@@ -635,6 +635,80 @@ function! s:AssertHealth() abort
     call assert_equal(2, exists(':ChopsticksHealth'))
 endfunction
 
+" Characterization of the key catalog and the mappings it documents.
+" Written before the key code moves out of .vimrc, so that a failure
+" afterwards means the move broke something rather than that nothing was
+" watching. The specific keys asserted here are the ones README.md lists, so
+" this also catches the cheatsheet drifting away from the documentation.
+function! s:AssertKeys() abort
+    let l:lines = ChopsticksKeyLines()
+    call assert_equal(type([]), type(l:lines))
+    " The sheet is around 190 lines with about 17 blank separators. A lower
+    " bound well under that still catches a move that dropped whole groups,
+    " without breaking every time a key is added.
+    call assert_true(len(l:lines) > 150,
+        \ 'key catalog is suspiciously short: ' . len(l:lines))
+    call assert_equal(2, exists(':ChopsticksKeys'))
+    call assert_equal(2, exists(':ChopsticksCheatsheet'))
+    call assert_match('cheatsheet', l:lines[0])
+
+    " Blank lines are the section separators, so they are expected; what
+    " would be wrong is the sheet becoming mostly blank.
+    let l:blank = len(filter(copy(l:lines), {_, l -> empty(trim(l))}))
+    call assert_true(l:blank * 4 < len(l:lines),
+        \ 'key catalog is mostly blank: ' . l:blank . '/' . len(l:lines))
+
+    " Leader mappings, from README's key table.
+    for l:key in ['e', 'p', 'P']
+        call assert_true(!empty(maparg('<Space>' . l:key, 'n')),
+            \ 'missing leader mapping: <Space>' . l:key)
+    endfor
+
+    " Direct mappings, also from README.
+    for l:key in ['ss', 'sv', 'sq', 'sh', 'sj', 'sk', 'sl']
+        call assert_true(!empty(maparg(l:key, 'n')),
+            \ 'missing window mapping: ' . l:key)
+    endfor
+    for l:key in ['H', 'L']
+        call assert_true(!empty(maparg(l:key, 'n')),
+            \ 'missing buffer mapping: ' . l:key)
+    endfor
+
+    " The catalogue must mention the groups the which-key tree is built from.
+    let l:joined = join(l:lines, "\n")
+    for l:group in ['Files', 'Windows', 'Buffers', 'Git', 'Toggles']
+        call assert_match(l:group, l:joined,
+            \ 'key catalog does not mention group: ' . l:group)
+    endfor
+endfunction
+
+" Characterization of Markdown and prose setup, for the same reason.
+function! s:AssertMarkdown() abort
+    call assert_equal(2, exists(':MarkdownPasteImage'))
+    call assert_equal(2, exists(':MarkdownGlow'))
+    call assert_equal(2, exists(':MarkdownHelp'))
+
+    silent edit README.md
+    call assert_equal('markdown', &filetype)
+    call assert_equal(',', get(g:, 'maplocalleader', ''))
+
+    " The LocalLeader mappings Chopsticks defines unconditionally. Comma is
+    " the Markdown LocalLeader, and maparg() wants the resolved key, not the
+    " <LocalLeader> spelling. The other documented Markdown keys -- ,o ,z ,tt
+    " ,f ,l and friends -- are guarded on their plugin being present, so
+    " asserting them here would make this a test of what is installed.
+    for l:key in ['?', 's', 'c', 'g', 'i']
+        call assert_true(!empty(maparg(',' . l:key, 'n')),
+            \ 'missing Markdown mapping: ,' . l:key)
+        call assert_true(get(maparg(',' . l:key, 'n', 0, 1), 'buffer', 0),
+            \ 'Markdown mapping is not buffer-local: ,' . l:key)
+    endfor
+
+    " Prose buffers get spell checking when the switch is on, and the
+    " long-line guard leaves 'breakindent' alone on an ordinary document.
+    call assert_equal(g:chopsticks_markdown_spell ? 1 : 0, &l:spell ? 1 : 0)
+endfunction
+
 function! s:IsTransparent(group) abort
     let l:id = hlID(a:group)
     let l:gui = synIDattr(l:id, 'bg', 'gui')
@@ -784,6 +858,10 @@ function! s:RunCase() abort
         call s:AssertSession()
     elseif s:case ==# 'health'
         call s:AssertHealth()
+    elseif s:case ==# 'keys'
+        call s:AssertKeys()
+    elseif s:case ==# 'markdown'
+        call s:AssertMarkdown()
     elseif s:case ==# 'symlink-install'
         call s:AssertRuntimepathContainsRoot()
     else

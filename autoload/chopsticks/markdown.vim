@@ -10,11 +10,15 @@ vim9script
 # script-local functions.
 
 import autoload 'chopsticks/ui/window.vim'
+import autoload 'chopsticks/switch.vim'
 import autoload 'chopsticks/ui/bufferline.vim'
 
 export def ToggleConceal()
   &l:conceallevel = &l:conceallevel == 0 ? 2 : 0
-  echo 'Markdown conceal: ' .. (&l:conceallevel ? 'ON' : 'OFF')
+  # `!= 0` rather than a bare truthiness test: 'conceallevel' is 2 here, and
+  # Vim9 refuses any Number other than 0 or 1 in a boolean position (E1023).
+  # Legacy script coerced it, which is why this read as correct.
+  echo 'Markdown conceal: ' .. (&l:conceallevel != 0 ? 'ON' : 'OFF')
 enddef
 
 export def Glow()
@@ -85,8 +89,14 @@ export def PasteImage(requested_name: string)
   echo 'saved: ' .. relative_dir .. '/' .. name
 enddef
 
+# The sheet is built into a variable and then passed, rather than written as
+# a multi-line list literal in the argument position. The literal form parses
+# in most contexts but not all: reached through a <ScriptCmd> mapping under
+# the headless test harness it failed to compile with E697, while the same
+# function called directly compiled cleanly. Binding it first removes the
+# ambiguity entirely.
 export def Help()
-  window.Scratch('[chopsticks-markdown]', [
+  var sheet = [
     'chopsticks Markdown',
     '',
     'Writing',
@@ -110,7 +120,15 @@ export def Help()
     '  ,l / ,f  lint now / format with Prettier',
     '',
     'Press q to close.',
-  ])
+  ]
+  window.Scratch('[chopsticks-markdown]', sheet)
+enddef
+
+# g:chopsticks_long_line_threshold is a raw user value, never normalised by
+# .vimrc, so it is read through switch.vim rather than compared directly:
+# a String would raise E1030 against a Number in Vim9, on every buffer.
+def Threshold(): number
+  return switch.Number(g:chopsticks_long_line_threshold, 0)
 enddef
 
 # Vim recomputes the break indent while laying out every wrapped screen line,
@@ -130,7 +148,7 @@ def HasLongLine(): bool
   # Constant time, and decisive for the case that actually degrades: a buffer
   # that is mostly one very long line.
   var bytes = line2byte(lines + 1)
-  if bytes > 0 && bytes / lines > g:chopsticks_long_line_threshold
+  if bytes > 0 && bytes / lines > Threshold()
     return true
   endif
   # Exact, but only for buffers small enough that walking them costs well
@@ -139,12 +157,11 @@ def HasLongLine(): bool
   if lines > 2000
     return false
   endif
-  return max(mapnew(range(1, lines), (_, l) => col([l, '$'])))
-    > g:chopsticks_long_line_threshold
+  return max(mapnew(range(1, lines), (_, l) => col([l, '$']))) > Threshold()
 enddef
 
 export def GuardLongLines()
-  if !exists('+breakindent') || g:chopsticks_long_line_threshold <= 0
+  if !exists('+breakindent') || Threshold() <= 0
     return
   endif
   if HasLongLine()
@@ -155,15 +172,15 @@ enddef
 export def Setup()
   setlocal wrap linebreak breakindent textwidth=0 colorcolumn=0
   setlocal norelativenumber nolist signcolumn=auto foldlevel=99
-  &l:conceallevel = g:chopsticks_markdown_conceal ? 2 : 0
-  if g:chopsticks_markdown_spell
+  &l:conceallevel = switch.Truthy(g:chopsticks_markdown_conceal) ? 2 : 0
+  if switch.Truthy(g:chopsticks_markdown_spell)
     setlocal spell spelllang=en_us,cjk
   else
     setlocal nospell
   endif
   if exists(':Pencil') == 2
     pencil#init({wrap: 'soft'})
-    &l:conceallevel = g:chopsticks_markdown_conceal ? 2 : 0
+    &l:conceallevel = switch.Truthy(g:chopsticks_markdown_conceal) ? 2 : 0
   endif
 
   # Each block below is guarded on the plugin that provides it, so the same

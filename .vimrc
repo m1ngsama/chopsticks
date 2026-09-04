@@ -250,9 +250,10 @@ let s:fzf_skip_dirs = [
     \ '.bun', '.codex', 'Library', 'node_modules', 'plugged',
     \ '.venv', 'venv', '__pycache__', 'build', 'dist', 'target', 'vendor',
     \ ]
-" See the comment on chopsticks#keys#Group() above: this function runs both from
-" this file's own top level immediately below (building g:fzf_vim) and
-" later from s:RefreshIconDependents(), when icons are toggled.
+" See the dotted-autoload-name comment above g:fern#renderer: this function
+" runs both from this file's own top level immediately below (building
+" g:fzf_vim) and later from s:RefreshIconDependents(), when icons are
+" toggled.
 function! s:FzfVisualOptions() abort
     return [
         \ '--prompt', chopsticks#ui#icons#Get('search') . ' ',
@@ -296,8 +297,8 @@ let g:ale_lint_on_text_changed = 'never'
 let g:ale_virtualtext_cursor = 'disabled'
 let g:ale_echo_msg_format = '%severity%: %s'
 " chopsticks#ui#icons#Get(), not g:ChopsticksIcon(): this file's own script
-" top level, before plugin/chopsticks.vim's shim exists. See the comment on
-" chopsticks#keys#Group() above.
+" top level, before plugin/chopsticks.vim's shim exists. See the
+" dotted-autoload-name comment above g:fern#renderer.
 let g:ale_sign_error = chopsticks#ui#icons#Get('error')
 let g:ale_sign_warning = chopsticks#ui#icons#Get('warning')
 let g:ale_sign_info = chopsticks#ui#icons#Get('info')
@@ -998,6 +999,7 @@ endfunction
 " autoload/chopsticks/health.vim (Vim9 script); see plugin/chopsticks.vim for
 " the ChopsticksHealthLines() global and the :ChopsticksHealth command.
 
+call chopsticks#keys#Reset()
 let g:which_key_map = {}
 let g:which_key_local_map = {'name': chopsticks#keys#Group('Markdown')}
 

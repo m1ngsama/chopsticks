@@ -95,6 +95,16 @@ export def WhichKeyAdd(parts: list<string>, group: string, description: string)
   node[parts[len(parts) - 1]] = description
 enddef
 
+# Clear the catalogue. .vimrc calls this beside its own reset of
+# g:which_key_map, so that re-sourcing .vimrc rebuilds both records from
+# scratch instead of leaving entries for keys the new configuration no
+# longer binds. Module state outlives a .vimrc re-source; the script-local
+# list this replaced did not.
+export def Reset()
+  catalog = []
+  catalog_index = {}
+enddef
+
 export def Lines(): list<string>
   var lines = [
     'chopsticks ' .. g:chopsticks_version .. ' cheatsheet',

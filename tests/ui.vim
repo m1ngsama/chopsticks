@@ -707,6 +707,32 @@ function! s:AssertMarkdown() abort
     " Prose buffers get spell checking when the switch is on, and the
     " long-line guard leaves 'breakindent' alone on an ordinary document.
     call assert_equal(g:chopsticks_markdown_spell ? 1 : 0, &l:spell ? 1 : 0)
+
+    " Press the keys, do not merely count them. A <ScriptCmd> mapping that
+    " points at a function which throws still satisfies maparg(), so an
+    " existence check passes while the feature is broken -- which is exactly
+    " how a Vim9 bool-strictness error shipped green here once already.
+    let l:before = &l:conceallevel
+    let v:errmsg = ''
+    call feedkeys(",c", 'xt')
+    call assert_equal('', v:errmsg, ',c raised: ' . v:errmsg)
+    call assert_notequal(l:before, &l:conceallevel,
+        \ ',c did not change conceallevel')
+    call feedkeys(",c", 'xt')
+    call assert_equal(l:before, &l:conceallevel,
+        \ ',c did not toggle back')
+
+    let v:errmsg = ''
+    call feedkeys(",?", 'xt')
+    call assert_equal('', v:errmsg, ',? raised: ' . v:errmsg)
+    call assert_equal('[chopsticks-markdown]', bufname('%'))
+    call feedkeys("q", 'xt')
+
+    " The long-line guard runs on every buffer that reaches a window, so a
+    " throw here would fire constantly rather than only on a keypress.
+    let v:errmsg = ''
+    call chopsticks#markdown#GuardLongLines()
+    call assert_equal('', v:errmsg, 'GuardLongLines raised: ' . v:errmsg)
 endfunction
 
 function! s:IsTransparent(group) abort

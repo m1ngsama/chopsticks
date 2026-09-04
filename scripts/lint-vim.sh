@@ -220,6 +220,9 @@ lint_vim9_file() {
     vim9_root_for_vim=$(path_for_vim "$chopsticks_root")
     vim9_log=$vim9_copy.log
     vim9_log_for_vim=$(path_for_vim "$vim9_log")
+    vim9_error=$vim9_copy.error
+    rm -f "$vim9_error"
+    vim9_error_for_vim=$(path_for_vim "$vim9_error")
     # The dollar-prefixed names below are Vim environment lookups, not shell
     # expansions, so the single quotes are intentional. Paths travel through
     # the environment and are escaped with fnameescape() inside Vim, as the
@@ -231,15 +234,26 @@ lint_vim9_file() {
     if ! env \
         CHOPSTICKS_VIM9_ROOT="$vim9_root_for_vim" \
         CHOPSTICKS_VIM9_FILE="$vim9_copy_for_vim" \
+        CHOPSTICKS_VIM9_ERROR="$vim9_error_for_vim" \
         "$test_vim" \
             -Nu NONE -i NONE -n -N -es \
             -V1"$vim9_log_for_vim" \
             --cmd 'execute "set runtimepath^=" . fnameescape($CHOPSTICKS_VIM9_ROOT)' \
-            -c 'try | execute "source " . fnameescape($CHOPSTICKS_VIM9_FILE) | catch | cquit | endtry' \
+            -c 'try | execute "source " . fnameescape($CHOPSTICKS_VIM9_FILE) | catch | call writefile([v:exception, v:throwpoint], $CHOPSTICKS_VIM9_ERROR) | cquit | endtry' \
             -c 'qall!' >/dev/null 2>&1
     then
         printf 'vim9 compile failed: %s\n' "$vim9_source" >&2
-        sed 's/^/  /' "$vim9_log" >&2
+        # The exception itself, which is the part that names the construct
+        # Vim refused. Without this the report is just a filename, which is
+        # what it gave the first time this fired on a Vim older than the
+        # developer's.
+        if [ -s "$vim9_error" ]; then
+            sed 's/^/  /' "$vim9_error" >&2
+        fi
+        if [ -s "$vim9_log" ]; then
+            printf '  --- verbose log tail ---\n' >&2
+            tail -20 "$vim9_log" | sed 's/^/  /' >&2
+        fi
         return 1
     fi
     return 0

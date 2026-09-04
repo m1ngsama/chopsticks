@@ -186,6 +186,52 @@ if [ "$skip_vimlint" -eq 0 ]; then
     fi
 fi
 
+# vimlint parses legacy script only and cannot read `vim9script`, so Vim9
+# modules are checked with :defcompile instead, which compiles every def in
+# the script it runs inside and reports Vim9 type and syntax errors.
+# :defcompile only compiles the script it runs inside: sourcing a module
+# directly from the command line and running :defcompile afterward compiles
+# the command line's own (empty) script, not the module, and silently misses
+# every error in it. Copying the module and appending the directive to the
+# copy puts :defcompile inside the module's own script context, where it
+# actually checks it.
+lint_vim9_file() {
+    vim9_source=$1
+    vim9_copy=$test_root/vim9-$(printf '%s' "$vim9_source" |
+        tr '/.' '__').vim
+    cp "$vim9_source" "$vim9_copy"
+    printf '\ndefcompile\n' >>"$vim9_copy"
+    vim9_copy_for_vim=$(path_for_vim "$vim9_copy")
+    vim9_root_for_vim=$(path_for_vim "$chopsticks_root")
+    vim9_log=$vim9_copy.log
+    if ! "$test_vim" \
+        -Nu NONE -i NONE -n -N -es \
+        -V1"$vim9_log" \
+        --cmd "set runtimepath^=$vim9_root_for_vim" \
+        -c "try | source $vim9_copy_for_vim | catch | cquit | endtry" \
+        -c 'qall!' >/dev/null 2>&1
+    then
+        printf 'vim9 compile failed: %s\n' "$vim9_source" >&2
+        sed 's/^/  /' "$vim9_log" >&2
+        return 1
+    fi
+    return 0
+}
+
+vim9_failed=0
+for vim9_candidate in \
+    "$chopsticks_root"/plugin/*.vim \
+    "$chopsticks_root"/autoload/chopsticks/*.vim \
+    "$chopsticks_root"/autoload/chopsticks/*/*.vim \
+    "$chopsticks_root"/lang/*.vim
+do
+    [ -f "$vim9_candidate" ] || continue
+    lint_vim9_file "$vim9_candidate" || vim9_failed=1
+done
+if [ "$vim9_failed" -ne 0 ]; then
+    exit 1
+fi
+
 run_ui_test() {
     test_case=$1
     shift

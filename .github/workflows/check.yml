@@ -100,16 +100,34 @@ jobs:
           go-version: 1.25.x
           cache: false
 
+      # Ubuntu's packaged Vim is older than the 9.1.1947 floor, so it is not
+      # installed here. A Vim below the floor makes .vimrc abort at its
+      # version guard and then block on the hit-enter prompt, which shows up
+      # only as the job's timeout expiring.
+      - uses: rhysd/action-setup-vim@febef33995d6649302e9d88dda81e071b68f16a7 # v1.6.1
+        id: vim
+        with:
+          version: v9.2.0984
+
       - name: Install Vim and check tools
+        env:
+          CHOPSTICKS_TEST_VIM: ${{ steps.vim.outputs.executable }}
         run: |
           sudo apt-get update
-          sudo apt-get install -y curl fzf ripgrep shellcheck vim
+          sudo apt-get install -y curl fzf ripgrep shellcheck
           npm ci --ignore-scripts
-          vim --version | head -1
+          "$CHOPSTICKS_TEST_VIM" --version | head -1
+          # Fail here, in a second, rather than letting a Vim below the floor
+          # hang a later step until the job times out.
+          "$CHOPSTICKS_TEST_VIM" -Nu NONE -i NONE -n -N -es \
+            -c 'call assert_true(has("patch-9.1.1947"))' \
+            -c 'if !empty(v:errors) | cquit | endif' \
+            -c 'qall!'
 
       - name: Install pinned Vim plugins
         env:
           CHOPSTICKS_TEST_HOME: ${{ runner.temp }}/chopsticks-home
+          CHOPSTICKS_TEST_VIM: ${{ steps.vim.outputs.executable }}
         run: |
           mkdir -p "$CHOPSTICKS_TEST_HOME/.vim/autoload"
           curl -fsSL \
@@ -118,12 +136,13 @@ jobs:
           echo "7e2b20cd909da9c456498684c98f03c63829170f01e34595dd8e1818a217d37c  $CHOPSTICKS_TEST_HOME/.vim/autoload/plug.vim" \
             | sha256sum --check
           HOME="$CHOPSTICKS_TEST_HOME" \
-            vim -Nu "$GITHUB_WORKSPACE/.vimrc" -n --not-a-term \
-              '+PlugInstall --sync' '+qall!'
+            "$CHOPSTICKS_TEST_VIM" -Nu "$GITHUB_WORKSPACE/.vimrc" \
+              -n --not-a-term '+PlugInstall --sync' '+qall!'
 
       - name: Check startup performance budget
         env:
           CHOPSTICKS_TEST_HOME: ${{ runner.temp }}/chopsticks-home
+          CHOPSTICKS_TEST_VIM: ${{ steps.vim.outputs.executable }}
         run: |
           npm run test:benchmark
           python3 -B scripts/benchmark-vim.py \
@@ -144,6 +163,7 @@ jobs:
       - name: Check Vim startup and Markdown setup
         env:
           CHOPSTICKS_TEST_HOME: ${{ runner.temp }}/chopsticks-home
+          CHOPSTICKS_TEST_VIM: ${{ steps.vim.outputs.executable }}
         run: |
           run_plugin_test() {
             test_case=$1
@@ -156,7 +176,8 @@ jobs:
               TERM=xterm-256color \
               CHOPSTICKS_TEST_CASE="$test_case" \
               CHOPSTICKS_TEST_ERRORS="$test_errors" \
-              vim -Nu "$GITHUB_WORKSPACE/.vimrc" -i NONE -n -es \
+              "$CHOPSTICKS_TEST_VIM" -Nu "$GITHUB_WORKSPACE/.vimrc" \
+                -i NONE -n -es \
                 -V1"$test_log" "$@" -S "$GITHUB_WORKSPACE/tests/plugins.vim"
             then
               echo "plugin integration test failed: $test_case" >&2
@@ -186,6 +207,8 @@ jobs:
             --cmd 'let g:chopsticks_use_fern = 0' "$GITHUB_WORKSPACE"
 
       - name: Lint source and configuration
+        env:
+          CHOPSTICKS_TEST_VIM: ${{ steps.vim.outputs.executable }}
         run: |
           npm run lint
           git diff --check

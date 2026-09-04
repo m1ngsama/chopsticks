@@ -257,6 +257,9 @@ run_ui_test() {
     fi
     ui_test_count=$((ui_test_count + 1))
     test_home=$test_root/home-$test_case
+    test_completed=$test_root/$test_case.completed
+    rm -f "$test_completed"
+    test_completed_for_vim=$(path_for_vim "$test_completed")
     test_errors=$test_root/$test_case.errors
     test_log=$test_root/$test_case.log
     test_screen=$test_root/$test_case.screen
@@ -271,10 +274,19 @@ run_ui_test() {
         "${CHOPSTICKS_TEST_SESSION_DIR:-}")
     test_local_config_for_vim=$(path_for_vim \
         "${CHOPSTICKS_TEST_LOCAL_CONFIG:-}")
+    # -es is silent Ex mode. A case that opens the dashboard buffer exits
+    # there with status 0, before tests/ui.vim reaches its own end -- so any
+    # assertion failure already recorded is discarded and the case reports
+    # success having tested only the part before the dashboard. The three
+    # cases that open one run with --not-a-term instead, which is headless
+    # without silent Ex mode's early exit. The completion marker below is
+    # what makes a regression here visible rather than silent.
     test_mode=-es
-    if [ "$test_case" = dashboard-wide ]; then
-        test_mode=--not-a-term
-    fi
+    case "$test_case" in
+        dashboard-wide|default|rich)
+            test_mode=--not-a-term
+            ;;
+    esac
     mkdir -p "$test_home"
 
     if ! env \
@@ -293,6 +305,7 @@ run_ui_test() {
         CHOPSTICKS_TEST_CASE="$test_case" \
         CHOPSTICKS_TEST_DATA_DIR="$test_data_dir_for_vim" \
         CHOPSTICKS_TEST_ERRORS="$test_errors_for_vim" \
+        CHOPSTICKS_TEST_COMPLETED="$test_completed_for_vim" \
         CHOPSTICKS_TEST_LOCAL_CONFIG="$test_local_config_for_vim" \
         CHOPSTICKS_TEST_SESSION_DIR="$test_session_dir_for_vim" \
         "$test_vim" \
@@ -319,6 +332,20 @@ run_ui_test() {
                 grep -n -B10 -m1 'E[0-9][0-9]*:' "$test_log" \
                     | sed 's/^/  /' >&2
             fi
+        fi
+        return 1
+    fi
+    # Vim exiting 0 is not proof the case ran: an early :qall -- from a
+    # mapping a case triggers, say -- quits silently with no assertions
+    # recorded, which is indistinguishable from success. tests/ui.vim writes
+    # this marker as its last act, so a missing one means the script did not
+    # reach the end and the case tested nothing.
+    if [ ! -s "$test_completed" ]; then
+        printf 'headless UI test never completed: %s\n' "$test_case" >&2
+        printf '  tests/ui.vim exited before its completion marker.\n' >&2
+        if [ -s "$test_log" ]; then
+            printf '  --- tail of the verbose log ---\n' >&2
+            tail -20 "$test_log" | sed 's/^/  /' >&2
         fi
         return 1
     fi

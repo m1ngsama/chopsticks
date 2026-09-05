@@ -83,7 +83,10 @@ export def Lines(): list<string>
     lines->add('[--] vim-plug is not installed')
   endif
   lines->extend(['', 'Language servers (on PATH; not verified to start)'])
-  for file in sort(globpath(&runtimepath, 'lang/*.vim', false, true))
+  # $VIMRUNTIME ships its own lang/ full of menu_*.vim locale files that
+  # otherwise swamp this section with irrelevant "no binary named" rows.
+  for file in sort(globpath(&runtimepath, 'lang/*.vim', false, true)
+      ->filter((_, val) => stridx(val, $VIMRUNTIME) != 0))
     var language = fnamemodify(file, ':t:r')
     var binary = matchstr(join(readfile(file), ' '), "exepath('\\zs[^']\\+")
     var path = empty(binary) ? '' : exepath(binary)

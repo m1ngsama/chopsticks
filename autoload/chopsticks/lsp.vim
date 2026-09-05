@@ -5,6 +5,36 @@ vim9script
 
 import autoload 'chopsticks/keys.vim'
 
+# A server covering two filetypes gets one lang/ file, named for the first.
+const ALIASES = {cpp: 'c', javascript: 'typescript'}
+var registered: dict<bool> = {}
+
+export def Ensure(ft: string)
+  if empty(ft)
+    return
+  endif
+  var name = ALIASES->get(ft, ft)
+  if registered->has_key(name)
+    return
+  endif
+  # Marked before the source, so a filetype with no lang/ file costs one
+  # dictionary lookup for the rest of the session instead of a globpath.
+  registered[name] = true
+  if !exists('*g:LspAddServer')
+    return
+  endif
+  var found = globpath(&runtimepath, $'lang/{name}.vim', false, true)
+  if !empty(found)
+    execute 'source' fnameescape(found[0])
+  endif
+enddef
+
+export def Registered(): list<string>
+  # keys() would resolve to the keys.vim import in this script, not the
+  # builtin; items() is unshadowed.
+  return sort(registered->items()->mapnew((_, v) => v[0]))
+enddef
+
 # Applied by .vimrc's `User lsp_buffer_enabled` autocommand, so a file type with
 # no server never gains keys that would do nothing. The cheatsheet entries are
 # registered here for the same reason; 'n*' marks them buffer-local.

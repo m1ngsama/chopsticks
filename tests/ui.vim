@@ -834,12 +834,6 @@ function! s:RunCase() abort
             \ ChopsticksSystemClipboardEnabled())
         call assert_false(ChopsticksTransparencyEnabled())
         call s:AssertConfigurationFallbacks()
-    elseif s:case ==# 'default-dashboard'
-        " Split out of 'default' because opening the dashboard a second time
-        " kills Vim before tests/ui.vim can report anything -- see
-        " known_incomplete_ui_tests in scripts/lint-vim.sh. Keeping it here
-        " means only this half is excused, while everything above, which needs
-        " no dashboard, keeps failing properly when it should.
         call s:AssertAutomaticDashboard(1)
         command! Rg echo
         ChopsticksDashboard

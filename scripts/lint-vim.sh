@@ -32,24 +32,11 @@ test_vim=${CHOPSTICKS_TEST_VIM:-${VIMLINT_VIM:-vim}}
 skip_vimlint=${CHOPSTICKS_TEST_SKIP_VIMLINT:-0}
 ui_test_cases=${CHOPSTICKS_TEST_UI_CASES:-all}
 ui_test_count=0
-all_ui_test_cases='default default-dashboard minimal rich density status-context tabline-width
+all_ui_test_cases='default minimal rich density status-context tabline-width
 transparent opaque theme-valid theme-fallback dashboard-off dashboard-on
 dashboard-wide bufferline-off bufferline-on data-dir-override
 data-dir-invalid-type data-dir-empty path-overrides fzf-unavailable session
 health keys markdown symlink-install'
-# Cases known not to reach the end of tests/ui.vim. Both open the dashboard a
-# second time, on a buffer that is already one, and Vim terminates there --
-# uncatchably, with no assertion recorded. Verified pre-existing: the same two
-# cases die the same way against .vimrc as it stood before the autoload split,
-# so this is not a regression from that work. Under -es they exit 0 while
-# dying, which is why it went unnoticed: everything those two assert after the
-# dashboard has never run, and any assertion that failed before it was
-# discarded along with the rest of v:errors.
-#
-# They are warned about rather than failed so the suite stays usable as a gate
-# for the other 22 cases. A case that starts quitting early WITHOUT being
-# listed here still fails, which is the property worth keeping.
-known_incomplete_ui_tests='default-dashboard rich'
 mkdir -p "$disabled_git_hooks"
 
 case "$skip_vimlint" in
@@ -325,10 +312,9 @@ run_ui_test() {
         "${CHOPSTICKS_TEST_SESSION_DIR:-}")
     test_local_config_for_vim=$(path_for_vim \
         "${CHOPSTICKS_TEST_LOCAL_CONFIG:-}")
-    # -es is silent Ex mode, and a case that opens the dashboard dies there
-    # with status 0 -- silently, before tests/ui.vim reaches the end where it
-    # would report anything v:errors had collected. Cases that open one run
-    # with --not-a-term instead, which is headless without that behaviour.
+    # Ex mode reports no real window geometry, and the wide logo only renders
+    # above a width and height threshold, so that one case needs a headless
+    # mode that still has a screen.
     test_mode=-es
     if [ "$test_case" = dashboard-wide ]; then
         test_mode=--not-a-term
@@ -387,13 +373,6 @@ run_ui_test() {
     # this marker as its last act, so a missing one means the script did not
     # reach the end and the case tested nothing.
     if [ ! -s "$test_completed" ]; then
-        case " $known_incomplete_ui_tests " in
-            *" $test_case "*)
-                printf 'warning: UI test %s quit early (known)\n' \
-                    "$test_case" >&2
-                return 0
-                ;;
-        esac
         printf 'headless UI test never completed: %s\n' "$test_case" >&2
         printf '  tests/ui.vim exited before its completion marker.\n' >&2
         if [ -s "$test_log" ]; then
@@ -508,7 +487,6 @@ run_symlink_ui_test() {
 }
 
 run_ui_test default
-run_ui_test default-dashboard
 run_ui_test minimal \
     --cmd "let g:chopsticks_ui_density = 'minimal'"
 run_ui_test rich \

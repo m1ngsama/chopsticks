@@ -89,6 +89,22 @@ function! s:RunStartup(expected_auto_lint) abort
     call s:AssertDiagnosticsPresentation()
     call s:AssertGitDiffPresentation()
     call s:AssertGitBranchPresentation()
+    call s:AssertAleKeepsTheGutter()
+endfunction
+
+" aleSupport does not clear autoHighlightDiags up front: the plugin clears it
+" when the first server starts, which for `vim file.c` is at FileType, before
+" VimEnter. Anything of ours that re-applies the LSP options on a later
+" startup event therefore undoes the hand-off and puts two signs, ALE's and
+" the LSP's, on every diagnostic line. No server can start here, so the
+" hand-off is replayed by hand, then every path that still reaches Options().
+function! s:AssertAleKeepsTheGutter() abort
+    call g:LspOptionsSet({'autoHighlightDiags': v:false})
+    if exists('#User#LspSetup')
+        doautocmd <nomodeline> User LspSetup
+    endif
+    call chopsticks#lsp#Ensure('c')
+    call assert_equal(v:false, g:LspOptionsGet().autoHighlightDiags)
 endfunction
 
 function! s:GuiColor(group, attribute) abort

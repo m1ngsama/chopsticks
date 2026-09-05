@@ -54,9 +54,6 @@ let g:mapleader = "\<Space>"
 let g:maplocalleader = ','
 
 let s:is_remote = !empty($SSH_CONNECTION) || !empty($SSH_CLIENT) || !empty($SSH_TTY)
-" A Vim9 module cannot read a legacy script-local, and chopsticks#lsp#Options()
-" needs this.
-let g:chopsticks_is_remote = s:is_remote
 let s:is_rich_terminal = !s:is_remote && has('termguicolors')
     \ && ($COLORTERM ==# 'truecolor' || $COLORTERM ==# '24bit')
 
@@ -255,10 +252,6 @@ let g:ale_echo_msg_format = '%severity%: %s'
 let g:ale_sign_error = chopsticks#ui#icons#Get('error')
 let g:ale_sign_warning = chopsticks#ui#icons#Get('warning')
 let g:ale_sign_info = chopsticks#ui#icons#Get('info')
-
-" LspOptionsSet is only defined once the plugin is sourced, which is after this
-" file runs, so the options go through the plugin's own setup event.
-autocmd User LspSetup call chopsticks#lsp#Options()
 
 let g:vim_markdown_folding_disabled = 1
 let g:vim_markdown_toc_autofit = 1

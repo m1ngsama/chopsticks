@@ -74,13 +74,18 @@ Project grep requires `rg`. The project root is the nearest parent containing
 ## LSP, linting, or formatting does not run
 
 Plugins provide the editor integration, while language servers, linters, and
-formatters are separate executables. Inspect:
+formatters are separate executables. Chopsticks registers servers but does not
+install them; `:ChopsticksHealth` lists every language it knows and whether the
+server is on your `PATH`. Inspect:
 
 ```vim
-:LspStatus
+:LspShowAllServers
 :ALEInfo
 :ChopsticksHealth
 ```
+
+A language whose server is not installed is silent by design: no error on every
+file you open. The health report is where its absence shows.
 
 Linting is manual by default. Use `,l` or `:ALELint` in a Markdown buffer. To
 lint automatically when entering and saving supported files, add this to

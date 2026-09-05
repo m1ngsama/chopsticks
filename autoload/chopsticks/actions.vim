@@ -1,15 +1,11 @@
 vim9script
 
-# Small editor actions bound to keys: the quickfix and location-list
-# toggles, buffer cleanup, path copying, and the lazygit launcher. Each is
-# too small to deserve its own module and none of them belong to another.
+# Key-bound actions each too small for a module of its own.
 
 import autoload 'chopsticks/ui/window.vim'
 
-# Create the parent directory of a file being written, so `:e src/new/x.txt`
-# in a directory that does not exist yet saves instead of failing. Skips
-# special buffers and anything that looks like a URL, which netrw and
-# fugitive both produce.
+# So `:e src/new/x.txt` saves into a directory that does not exist yet. The URL
+# guard is for the paths netrw and fugitive produce.
 export def MakeParent(path: string)
   if empty(path) || &buftype !=# '' || path =~# '^\w\+://'
     return
@@ -46,8 +42,6 @@ export def ToggleLocationList()
   endtry
 enddef
 
-# Close every other file buffer, keeping modified ones. Reports both counts
-# so an unexpectedly small number of deletions is visible rather than silent.
 export def DeleteOtherBuffers()
   var current = bufnr('%')
   var deleted = 0
@@ -66,9 +60,6 @@ export def DeleteOtherBuffers()
   echo printf('buffers: deleted %d, kept %d modified', deleted, kept)
 enddef
 
-# Copy the current file's path, relative to the working directory or
-# absolute. Always sets the unnamed register; also the system clipboard when
-# this Vim has one.
 export def CopyPath(relative: bool)
   if empty(expand('%:p'))
     echohl WarningMsg

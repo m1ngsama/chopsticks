@@ -1,24 +1,17 @@
 vim9script
 
-# The file tree drawer: Fern when it is installed, netrw's :Lexplore
-# otherwise, behind the same keys either way.
-#
-# Fern's own actions are <Plug> mappings, so the buffer-local mappings below
-# stay `nmap` to <Plug> targets rather than becoming <ScriptCmd> — they are
-# not calls into this module at all.
+# Fern when installed, netrw's :Lexplore otherwise, behind the same keys. The
+# buffer-local mappings stay nmap to <Plug> targets, not <ScriptCmd>: they are
+# Fern's own actions, not calls into this module.
 
 import autoload 'chopsticks/ui/icons.vim'
 import autoload 'chopsticks/switch.vim'
 
 const IS_WINDOWS = has('win32') || has('win64')
 
-# Set once, the first time a directory argument is turned into a drawer, so
-# that reopening a buffer later does not re-trigger the startup behaviour.
-#
-# Module state outlives a `:source $MYVIMRC`, where the script-local flag it
-# replaced did not. Re-sourcing therefore no longer re-arms this, which is
-# the more defensible behaviour anyway: the directory argument belongs to
-# the Vim session that started, not to the last time the config was reloaded.
+# Module state outlives a :source $MYVIMRC, where the script-local flag it
+# replaced did not, so a reload no longer re-arms the startup drawer. The
+# directory argument belongs to the session that started, not to the reload.
 var directory_startup_opened = false
 
 def ExplorerWindow(): number
@@ -31,18 +24,15 @@ def ExplorerWindow(): number
   return 0
 enddef
 
-# g:chopsticks_use_fern is never normalised by .vimrc, so it holds whatever
-# the user assigned. Read through switch.Truthy(): a Vim9 && raises E1135 on
-# a String and E1023 on a Number that is not 0 or 1, where legacy coerced --
-# and a throw here escapes Toggle(), so SPC e would error out instead of
-# falling back to netrw. health.vim reads the same switch the same way.
+# Through switch.Truthy() because a raw Vim9 && throws on a user value that is
+# not 0 or 1, and the throw escapes Toggle(): SPC e would error instead of
+# falling back to netrw.
 export def FernAvailable(): bool
   return switch.Truthy(get(g:, 'chopsticks_use_fern', 1)) && exists(':Fern') == 2
 enddef
 
-# Whether `path` is `directory` or sits under it. Compares resolved paths, so
-# a symlinked project root still matches its own files. Windows compares
-# case-insensitively and normalises separators first.
+# Resolved, so a symlinked project root still matches its own files. Windows
+# normalises separators and compares case-insensitively.
 def PathInside(path_value: string, directory_value: string): bool
   var path = resolve(fnamemodify(path_value, ':p'))
   var directory = resolve(fnamemodify(directory_value, ':p'))
@@ -65,8 +55,6 @@ export def Toggle(directory_arg: string)
     var command = 'Fern ' .. fnameescape(directory)
       .. ' -drawer -toggle -width=' .. g:fern#drawer_width
     var current = expand('%:p')
-    # Reveal the current file in the tree, but only when it is actually
-    # inside the directory being opened.
     if filereadable(current) && PathInside(current, directory)
       command ..= ' -reveal=' .. fnameescape(current)
     endif
@@ -75,8 +63,8 @@ export def Toggle(directory_arg: string)
   endif
   var explorer = ExplorerWindow()
   if explorer != 0
-    # netrw has no toggle, so closing is done by hand, returning to the
-    # window the user was in rather than wherever closing left the cursor.
+    # netrw has no toggle. Close by hand and go back to the window the user
+    # was in, not wherever closing left the cursor.
     var origin = win_getid()
     if win_gotoid(explorer)
       close
@@ -91,10 +79,8 @@ enddef
 
 export def FernSetup()
   setlocal nonumber norelativenumber signcolumn=no winfixwidth cursorline
-  # Match the reversible node interaction used by mature file trees: the same
-  # key opens a file, expands a closed directory, and collapses an open
-  # directory. expand:stay keeps the cursor on the directory so the second
-  # press can close it again.
+  # One key opens a file, expands a closed directory, collapses an open one.
+  # expand:stay holds the cursor so the second press can close it again.
   nmap <buffer><silent><expr> <Plug>(chopsticks-fern-toggle-node)
     \ fern#smart#leaf(
     \ "\<Plug>(fern-action-open)",
@@ -139,9 +125,8 @@ export def Here()
   Toggle(empty(expand('%:p')) ? getcwd() : expand('%:p:h'))
 enddef
 
-# `vim some/directory` should land in a drawer over an empty buffer rather
-# than in netrw's own listing. Runs from BufEnter because the directory
-# buffer does not exist yet at VimEnter.
+# `vim some/directory` lands in a drawer over an empty buffer, not netrw's
+# listing. From BufEnter: the directory buffer does not exist yet at VimEnter.
 export def MaybeOpenDirectory()
   if directory_startup_opened || argc() != 1
       || !isdirectory(argv(0)) || &modified

@@ -1,28 +1,10 @@
 vim9script
 
-# The key catalogue and the which-key tree.
-#
-# This module owns the RECORD of what is bound: the catalogue every mapping
-# registers into, the which-key nested dictionary, and the rendered
-# cheatsheet. It does not own the bindings themselves.
-#
-# .vimrc keeps the four helpers that actually create mappings — LeaderN,
-# LeaderX, DirectN, DirectX — and they call into here.
-#
-# That split was originally forced. Those helpers `:execute` a `:nnoremap`
-# whose right-hand side used to contain `<SID>`, and Vim expands `<SID>` in a
-# mapping to the script ID of whatever script runs the :nnoremap, so moving
-# them would have silently repointed every one of ~85 mappings at a function
-# absent from this script. That is no longer true: as the actions those keys
-# call moved into modules, their right-hand sides became dotted autoload
-# names, and .vimrc now contains exactly one `<SID>` reference, in an
-# autocommand. The helpers could move.
-#
-# They stay because the reason is now editorial rather than technical. The
-# bindings are configuration: which key does what is the part a person
-# edits, and the four-line helpers that turn a binding into a mapping plus a
-# catalogue entry read better beside the 85 bindings that use them than in a
-# module three files away.
+# The record of what is bound -- catalogue, which-key tree, cheatsheet -- not
+# the bindings themselves. .vimrc keeps the four helpers that create mappings
+# and calls in here. They could move now that their right-hand sides are dotted
+# names rather than <SID>; they stay because which key does what is
+# configuration and reads better beside the 85 bindings that use them.
 
 import autoload 'chopsticks/ui/icons.vim'
 import autoload 'chopsticks/ui/window.vim'
@@ -38,16 +20,14 @@ const GROUP_ORDER = [
 var catalog: list<dict<string>> = []
 var catalog_index: dict<number> = {}
 
-# A group's which-key label: its icon, when icons are on, then its name.
 export def Group(group: string): string
   var icon = icons.Group(group)
   return '+' .. (empty(icon) ? '' : icon .. ' ') .. group
 enddef
 
-# Record one binding. Keyed on mode plus keys so that re-registering the same
-# key replaces its entry instead of listing it twice — which matters because
-# some keys are registered again under a different description once the
-# plugin that backs them turns out to be installed.
+# Keyed on mode plus keys, so re-registering a key replaces its entry rather
+# than listing it twice: some keys are registered again with a different
+# description once the plugin backing them turns out to be installed.
 export def Catalog(group: string, mode: string, keys: string, description: string)
   var id = mode .. "\n" .. keys
   var entry = {
@@ -64,7 +44,6 @@ export def Catalog(group: string, mode: string, keys: string, description: strin
   endif
 enddef
 
-# Render a leader sequence the way the cheatsheet shows it: 'SPC g s'.
 export def LeaderLabel(parts: list<string>): string
   var tokens = []
   for token in parts
@@ -81,10 +60,8 @@ export def LeaderLabel(parts: list<string>): string
   return 'SPC ' .. trim(join(tokens, ''))
 enddef
 
-# Insert a binding into g:which_key_map, creating any intermediate group
-# nodes it passes through. A node that already exists as a plain description
-# string is replaced by a group dictionary, so registering 'SPC g' after
-# 'SPC g s' cannot lose the subtree.
+# A node already present as a plain description string becomes a group
+# dictionary, so registering 'SPC g' after 'SPC g s' cannot lose the subtree.
 export def WhichKeyAdd(parts: list<string>, group: string, description: string)
   if empty(parts)
     return
@@ -104,11 +81,9 @@ export def WhichKeyAdd(parts: list<string>, group: string, description: string)
   node[parts[len(parts) - 1]] = description
 enddef
 
-# Clear the catalogue. .vimrc calls this beside its own reset of
-# g:which_key_map, so that re-sourcing .vimrc rebuilds both records from
-# scratch instead of leaving entries for keys the new configuration no
-# longer binds. Module state outlives a .vimrc re-source; the script-local
-# list this replaced did not.
+# Module state outlives a .vimrc re-source where the script-local list it
+# replaced did not, so a reload would otherwise keep entries for keys the new
+# configuration no longer binds.
 export def Reset()
   catalog = []
   catalog_index = {}
@@ -148,9 +123,6 @@ export def Setup()
   execute 'syntax match WhichKeyGroup /' .. pattern .. '/'
 enddef
 
-# The cheatsheet itself, as a scratch buffer. Its own filetype so a
-# colorscheme can highlight the key columns, and 'cursorline' because the
-# sheet is read by scanning down it.
 export def Show()
   window.Scratch('[chopsticks-cheatsheet]', Lines())
   setlocal filetype=chopsticks-cheatsheet cursorline

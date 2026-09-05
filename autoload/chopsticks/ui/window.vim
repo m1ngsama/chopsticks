@@ -1,17 +1,9 @@
 vim9script
 
-# Two window helpers shared by everything that needs a throwaway buffer or a
-# terminal: the cheatsheet, the Markdown help sheet, :ChopsticksHealth, the
-# Glow preview, lazygit, and the plain terminal mappings.
-#
-# They live here because they had started to be copied. health.vim carried
-# its own transcription of Scratch() when it moved out of .vimrc, and moving
-# the Markdown help would have made a third. One copy keeps the buffer
-# options, the q/Esc mappings, and the terminal's split geometry identical
-# everywhere, which is what makes these read as one editor rather than
-# several features that each grew their own window.
+# One copy, because these had started to be transcribed per feature. The
+# cheatsheet, Markdown help, :ChopsticksHealth, Glow, lazygit and the terminal
+# mappings all come through here so their windows stay identical.
 
-# A read-only, unlisted buffer holding fixed text, closed with q or Esc.
 export def Scratch(name: string, lines: list<string>)
   botright new
   execute 'file ' .. fnameescape(name)
@@ -26,8 +18,6 @@ export def Scratch(name: string, lines: list<string>)
   normal! gg
 enddef
 
-# A terminal running `command`, or the shell when it is empty. A command
-# terminal closes itself when the command exits; a shell stays.
 export def Terminal(command: list<string>, position: string)
   if !has('terminal')
     echohl ErrorMsg

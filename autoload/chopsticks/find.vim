@@ -1,26 +1,18 @@
 vim9script
 
-# Finding files and text, through fzf when it is available and degrading to
-# Vim's own commands when it is not.
+# Searches are rooted at the project, not the working directory, so the same
+# keys find the same files whichever buffer is open. Every entry point degrades
+# to Vim's own commands where fzf is absent.
 #
-# Every entry point checks for fzf and its plugin before using them, so the
-# same keys keep working on a machine with neither. The project root, not the
-# working directory, is what these search: g:ChopsticksProjectRoot() resolves
-# it from the current buffer, so :ChopsticksFindFiles finds the same files
-# whichever file you happen to have open.
-#
-# fzf#vim#... names are autoload-style, so Vim resolves them at call time and
-# they can appear literally even where fzf.vim is absent. Plain COMMANDS
-# cannot: Vim9 resolves a command name when the :def is compiled, so :History
-# and friends go through :execute or this module would fail to compile
-# wherever fzf.vim is not installed.
+# fzf#vim#... names are autoload-style and resolve at call time, so they can
+# appear literally even without fzf.vim. Plain commands cannot: Vim9 resolves a
+# command name when the :def is compiled, so :History and friends go through
+# :execute or this module fails to compile wherever fzf.vim is missing.
 
 import autoload 'chopsticks/ui/icons.vim'
 
 const ABORT_KEYS = 'esc:abort,ctrl-c:abort,ctrl-g:abort,ctrl-q:abort'
 
-# Directories never worth walking: version control, package caches, build
-# output, and virtualenvs.
 const SKIP_DIRS = [
   '.git', '.cache', '.cargo', '.npm', '.pnpm-store', '.rustup',
   '.bun', '.codex', 'Library', 'node_modules', 'plugged',
@@ -31,8 +23,7 @@ export def AbortKeys(): string
   return ABORT_KEYS
 enddef
 
-# The icon-bearing half of fzf's appearance. Re-read on an icon toggle rather
-# than baked in once, which is why it is a function and not a constant.
+# A function, not a constant, so an icon toggle is picked up.
 export def VisualOptions(): list<string>
   return [
     '--prompt', icons.Get('search') .. ' ',
@@ -41,7 +32,6 @@ export def VisualOptions(): list<string>
   ]
 enddef
 
-# fd first, ripgrep second, and fzf's own default when neither is installed.
 def FileSource(): string
   if executable('fd') == 1
     var parts = ['fd', '--type', 'f', '--hidden', '--color', 'never']
@@ -76,8 +66,7 @@ export def Files(path: string, bang: bool)
   fzf#vim#files(root, fzf#vim#with_preview(spec), bang)
 enddef
 
-# Searches stay rooted at the project even when the window's directory is
-# elsewhere; tests/ui.vim asserts this does not change the working directory.
+# tests/ui.vim asserts this does not change the working directory.
 export def ProjectSpec(): dict<string>
   return {dir: g:ChopsticksProjectRoot()}
 enddef
@@ -112,8 +101,6 @@ export def GitFiles()
   fzf#vim#gitfiles('', fzf#vim#with_preview(ProjectSpec()), 0)
 enddef
 
-# Prefer Git's file list inside a worktree, fzf's walk outside one, and a
-# plain :edit of the root when fzf is missing entirely.
 export def FindFiles()
   if executable('fzf') == 1 && exists(':GFiles') == 2 && executable('git') == 1
     var root = g:ChopsticksProjectRoot()
@@ -142,8 +129,6 @@ export def RecentFiles()
   endif
 enddef
 
-# Replace fzf.vim's :Files with one that searches the project root and uses
-# the source and appearance above. Only when fzf.vim actually defined it.
 export def DefineCommands()
   if executable('fzf') == 1 && exists(':Files') == 2
     command! -bang -nargs=? -complete=dir Files

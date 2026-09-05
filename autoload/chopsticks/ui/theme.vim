@@ -1,35 +1,11 @@
 vim9script
 
-# Colorscheme and statusline highlight setup, backing
-# ChopsticksTransparencyEnabled() (a documented public global, see
-# plugin/chopsticks.vim), the :ChopsticksTheme and
-# :ChopsticksTransparencyToggle commands, and the highlight colors the
-# statusline and dashboard draw with.
+# .vimrc calls Apply() and DefineInterfaceColors() at its own top level, before
+# plugin/chopsticks.vim exists, so it reaches them by dotted name. This module
+# therefore loads early in every startup rather than on a user action.
 #
-# .vimrc calls Apply() and DefineInterfaceColors() at its own script top
-# level, once plugins and 'termguicolors' are ready, and again (through the
-# same top-level `ColorScheme` autocommand both a startup colorscheme change
-# and :ChopsticksTheme / :ChopsticksTransparencyToggle trigger) later on. The
-# top-level calls run well before Vim's automatic plugin-loading pass sources
-# plugin/chopsticks.vim and defines the g:ChopsticksTransparencyEnabled()
-# shim (which Apply() and DefineInterfaceColors() both need), so .vimrc
-# reaches Apply() and DefineInterfaceColors() there through Vim's classic
-# dotted autoload name instead (chopsticks#ui#theme#Apply(), etc.), which
-# needs no shim; see .vimrc's own comment next to those call sites, and
-# plugin/chopsticks.vim's comment on why sourcing that shim early is not a
-# usable fix. As with icons.vim, that means this module loads (on first
-# call) early in every startup rather than staying unloaded until a user
-# action, unlike clipboard.vim/session.vim/health.vim; the classic dotted
-# name is just as lazy, it is only reached this early by necessity.
-#
-# ResolveSwitch reproduces .vimrc's own s:ResolveSwitch(): Vim9 script-local
-# names cannot cross files, and this is the only piece of it
-# TransparencyEnabled() needs, so it is duplicated here rather than pulling
-# .vimrc's switch-handling wholesale into this module. It returns `number`,
-# not `bool`, for the same reason autoload/chopsticks/clipboard.vim does:
-# tests/ui.vim compares ChopsticksTransparencyEnabled() against a Number
-# with assert_equal(), and Vim's assert_equal() does not treat 0/1 and
-# v:false/v:true as equal.
+# ResolveSwitch duplicates .vimrc's s:ResolveSwitch(): Vim9 script-local names
+# cannot cross files, and this is the only piece of it needed here.
 
 def ResolveSwitch(value: any, automatic: number): number
   if type(value) == v:t_number
@@ -79,9 +55,8 @@ export def DefineInterfaceColors(): void
   var bg = HighlightColor('Normal', 'bg', '#2d353b')
   var surface = HighlightColor('CursorLine', 'bg', '#343f44')
   var fg = HighlightColor('Normal', 'fg', '#d3c6aa')
-  # Everforest exposes its palette as stable named highlight groups.  Other
-  # themes fall back to canonical syntax groups instead of hard-coded color
-  # assumptions.
+  # Everforest names its palette groups; other themes fall back to canonical
+  # syntax groups rather than to hard-coded colors.
   var muted = HighlightColor('Grey', 'fg', HighlightColor('Comment', 'fg', '#859289'))
   var red = HighlightColor('Red', 'fg', HighlightColor('ErrorMsg', 'fg', '#e67e80'))
   var orange = HighlightColor('Orange', 'fg', HighlightColor('Special', 'fg', '#e69875'))

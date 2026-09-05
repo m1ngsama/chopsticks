@@ -11,9 +11,10 @@ const ALIASES = {cpp: 'c', javascript: 'typescript'}
 var registered: dict<bool> = {}
 
 # g:LspAddServer() freezes each server's omni-completion flag from the options
-# in force when it runs, and a FileType fires before the plugin's own LspSetup
-# event does, so Ensure() calls this too. Guarded rather than assumed, because
-# either caller can reach it with no plugin loaded.
+# in force when it runs, so Ensure() applies these before it sources a lang/
+# file. Nothing else may apply them later: aleSupport makes the plugin clear
+# autoHighlightDiags itself once the first server starts, and a second pass
+# would put both plugins' signs on every diagnostic line.
 export def Options()
   if !exists('*g:LspOptionsSet')
     return
@@ -25,7 +26,6 @@ export def Options()
     showInlayHints: true,
     semanticHighlight: true,
     aleSupport: true,
-    autoHighlightDiags: !g:chopsticks_is_remote,
     outlineOnRight: true,
   })
 enddef

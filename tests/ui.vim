@@ -656,6 +656,13 @@ function! s:AssertHealth() abort
     call assert_equal(type([]), type(l:lines))
     call assert_true(len(l:lines) > 0)
     call assert_equal(2, exists(':ChopsticksHealth'))
+    call assert_match('Language servers', join(l:lines, "\n"))
+    " Every lang/ file is listed whether or not its binary is installed, so an
+    " absent server is visible here rather than only as silence in a buffer.
+    for l:language in ['bash', 'c', 'go', 'python', 'rust', 'typescript']
+        call assert_match(l:language, join(l:lines, "\n"),
+            \ 'health report omits language: ' . l:language)
+    endfor
 endfunction
 
 " Characterization of the key catalog and the mappings it documents.

@@ -54,6 +54,9 @@ let g:mapleader = "\<Space>"
 let g:maplocalleader = ','
 
 let s:is_remote = !empty($SSH_CONNECTION) || !empty($SSH_CLIENT) || !empty($SSH_TTY)
+" A Vim9 module cannot read a legacy script-local, and chopsticks#lsp#Options()
+" needs this.
+let g:chopsticks_is_remote = s:is_remote
 let s:is_rich_terminal = !s:is_remote && has('termguicolors')
     \ && ($COLORTERM ==# 'truecolor' || $COLORTERM ==# '24bit')
 
@@ -253,17 +256,9 @@ let g:ale_sign_error = chopsticks#ui#icons#Get('error')
 let g:ale_sign_warning = chopsticks#ui#icons#Get('warning')
 let g:ale_sign_info = chopsticks#ui#icons#Get('info')
 
-" vim-lsp-settings' VimEnter lazy path replays BufEnter for every loaded
-" buffer.  Initializing its lightweight filetype dispatcher while plugins are
-" sourced avoids parsing and sending an initial file twice, which matters for
-" large Markdown documents without changing when a language server starts.
-let g:lsp_settings_lazyload = 0
-let g:lsp_diagnostics_virtual_text_enabled = 0
-let g:lsp_diagnostics_highlights_enabled = !s:is_remote
-let g:lsp_document_highlight_enabled = !s:is_remote
-let g:lsp_diagnostics_echo_cursor = 1
-let g:lsp_diagnostics_float_cursor = 1
-let g:asyncomplete_auto_completeopt = 0
+" LspOptionsSet is only defined once the plugin is sourced, which is after this
+" file runs, so the options go through the plugin's own setup event.
+autocmd User LspSetup call chopsticks#lsp#Options()
 
 let g:vim_markdown_folding_disabled = 1
 let g:vim_markdown_toc_autofit = 1
@@ -356,10 +351,7 @@ if filereadable(s:vim_plug)
 
     " Diagnostics, formatting, LSP, completion.
     Plug 'dense-analysis/ale', {'commit': '199a95d386cb856c27e5b90d4e3ea8bd45a58c23'}
-    Plug 'prabirshrestha/vim-lsp', {'commit': 'e10d186452743beb7b43d2b3427020832f930c2b'}
-    Plug 'mattn/vim-lsp-settings', {'commit': 'b0c9bacfe98ff6bc4c5f6b0fffdc085d252387e0'}
-    Plug 'prabirshrestha/asyncomplete.vim', {'commit': '17b654a87a834d4e835fb7467e562b4421ad9310'}
-    Plug 'prabirshrestha/asyncomplete-lsp.vim', {'commit': 'da23f4418a6301feac7b99e1728fb79acb243d69'}
+    Plug 'yegappan/lsp', {'commit': 'e38a68d3de2e6afe45139fcaa6814eec69f3f8fe'}
 
     " Markdown and prose.
     Plug 'preservim/vim-markdown', {'commit': '1bc9d0cd8e1cc3e901b0a49c2b50a843f1c89397', 'for': 'markdown'}
@@ -965,7 +957,10 @@ augroup Chopsticks
     autocmd FileType html,css,yaml,json,dockerfile setlocal expandtab shiftwidth=2 tabstop=2 softtabstop=2
     autocmd FileType sh setlocal expandtab shiftwidth=2 tabstop=2 softtabstop=2 textwidth=80
     autocmd FileType make setlocal noexpandtab shiftwidth=8 tabstop=8 softtabstop=0
-    autocmd User lsp_buffer_enabled call chopsticks#lsp#Maps()
+    autocmd User LspAttached call chopsticks#lsp#Maps()
+    " <amatch> is the filetype the event fired for, which &filetype may not yet
+    " be during a nested FileType.
+    autocmd FileType * call chopsticks#lsp#Ensure(expand('<amatch>'))
     autocmd User GoyoEnter nested call chopsticks#markdown#GoyoEnter()
     autocmd User GoyoLeave nested call chopsticks#markdown#GoyoLeave()
 augroup END

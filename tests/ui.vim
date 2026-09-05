@@ -789,6 +789,26 @@ function! s:AssertLangFiles() abort
     unlet g:chopsticks_test_lsp_servers
 endfunction
 
+" User LspAttached never fires without a server, so nothing else would exercise
+" Maps(). Call it directly; the stub satisfies its plugin guard.
+function! s:AssertLspMaps() abort
+    function! g:LspAddServer(servers) abort
+    endfunction
+
+    new
+    call chopsticks#lsp#Maps()
+    for l:key in ['gd', 'gr', 'K', '<leader>cl']
+        call assert_true(!empty(maparg(l:key ==# '<leader>cl'
+            \ ? "\<Space>cl" : l:key, 'n')),
+            \ 'Maps() did not bind ' . l:key)
+    endfor
+    call assert_match('Code outline', join(ChopsticksKeyLines(), "\n"))
+    call assert_match('Registered LSP servers', join(ChopsticksKeyLines(), "\n"))
+    close
+
+    delfunction g:LspAddServer
+endfunction
+
 " Characterization of Markdown and prose setup, for the same reason.
 function! s:AssertMarkdown() abort
     call assert_equal(2, exists(':MarkdownPasteImage'))
@@ -997,6 +1017,8 @@ function! s:RunCase() abort
         call s:AssertLspRegistry()
     elseif s:case ==# 'lsp-lang-files'
         call s:AssertLangFiles()
+    elseif s:case ==# 'lsp-maps'
+        call s:AssertLspMaps()
     elseif s:case ==# 'markdown'
         call s:AssertMarkdown()
     elseif s:case ==# 'symlink-install'

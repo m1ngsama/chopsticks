@@ -1,30 +1,15 @@
 vim9script
 
-# Project sessions, backing ChopsticksSessionPath() (a documented public
-# global, see plugin/chopsticks.vim) and the :ChopsticksSessionSave /
-# :ChopsticksSessionLoad commands. README.md documents the security
-# properties this module must preserve exactly: session files are keyed by
-# resolved project root AND Vim release (so same-named projects never
-# collide and an incompatible session format never overwrites a compatible
-# one), POSIX writes land with private modes and a group/world-writable
-# session directory or file is refused outright, every platform rejects
-# non-regular session input, and a plain :ChopsticksSessionLoad refuses to
+# Security properties this module must preserve, all asserted by tests/ui.vim:
+# session files are keyed by resolved project root AND Vim release, so
+# same-named projects never collide and an incompatible format never overwrites
+# a compatible one; POSIX writes land with private modes and a group- or
+# world-writable directory or file is refused; every platform rejects
+# non-regular session input; and a plain :ChopsticksSessionLoad refuses to
 # clobber a modified listed buffer unless the bang form opts in.
 #
-# ProjectRoot() is exported because the file finder, the tree drawer, the
-# lazygit launcher and the health report all need the same project-root
-# resolution outside any session action. They reach it through the plain
-# global g:ChopsticksProjectRoot() declared in plugin/chopsticks.vim rather
-# than importing this module, which keeps one shared answer without four
-# modules importing the session code to get it.
-#
-# IsWindows, NormalizeDirectory, and DirectoryFileType duplicate small,
-# self-contained pieces of .vimrc's own s:is_windows / s:NormalizeDirectory /
-# s:DirectoryFileType. Those stay in .vimrc because they are shared far
-# beyond sessions (data-dir setup, the ALE state directory, fern discovery);
-# Vim9 script-local names cannot cross files, and reaching back into .vimrc
-# is not possible, so the small amount of logic actually needed here is
-# reproduced instead of exported wholesale.
+# NormalizeDirectory and DirectoryFileType duplicate pieces of .vimrc's own
+# helpers, which stay there because the rest of the config shares them.
 
 const IsWindows: bool = has('win32') || has('win64')
 

@@ -1,29 +1,8 @@
 vim9script
 
-# The startup dashboard: the buffer Vim opens when it starts with no file
-# argument. Rendering, cursor locking, and the item actions all live here.
-#
-# Entry points, and who calls them:
-#   Open()       :ChopsticksDashboard, and chopsticks#startup#MaybeOpenDashboard()
-#   Render()     .vimrc, on an icon/theme/density change and on BufEnter
-#   Enter()      .vimrc, on BufEnter into a dashboard buffer
-#   Leave()      .vimrc, on BufLeave out of one
-#   LockCursor() .vimrc, on CursorMoved and FocusGained
-#
-# .vimrc reaches all of those by the classic dotted name
-# (chopsticks#ui#dashboard#Render()), the same as every other module; see
-# plugin/chopsticks.vim's header for why that is the rule everywhere rather
-# than a special case here.
-#
-# What is NOT here, deliberately: the VimEnter decision about whether this
-# start should land on a dashboard at all. That lives in
-# autoload/chopsticks/startup.vim, so that a start which opens a file never
-# sources this file. See that module's own comment.
-#
-# This module depends on .vimrc for two values it does not own —
-# g:ChopsticksUiDensity() and g:ChopsticksDashboardEnabled() — and on
-# plugin/chopsticks.vim for g:ChopsticksProjectRoot() and
-# g:ChopsticksSessionPath().
+# Deliberately not here: the VimEnter decision about whether a start should
+# land on a dashboard at all. That lives in startup.vim, so a start that opens
+# a file never sources this file.
 
 import autoload 'chopsticks/ui/text.vim'
 import autoload 'chopsticks/ui/icons.vim'
@@ -54,15 +33,8 @@ const ITEMS = [
   {key: 'q', icon: 'quit', label: 'Quit', action: 'qall'},
 ]
 
-# The item list depends on what is actually available, not only on density:
-# the grep entry needs fzf.vim's :Rg plus both binaries, and the session entry
-# needs a session file that already exists for this project.
-#
-# The legacy version took an optional argument and branched on arity; this
-# branches on emptiness instead. No caller passes an empty density —
-# g:ChopsticksUiDensity() only ever returns minimal, balanced, or rich — so
-# the two agree today, but they are not the same contract. Pass a real
-# density or nothing.
+# Availability, not only density: the grep entry needs fzf.vim's :Rg plus both
+# binaries, and the session entry needs a session file for this project.
 def Items(requested_density: string = ''): list<dict<string>>
   var density = empty(requested_density)
     ? g:ChopsticksUiDensity() : requested_density
@@ -73,10 +45,8 @@ def Items(requested_density: string = ''): list<dict<string>>
   if exists(':Rg') != 2 || executable('rg') != 1 || executable('fzf') != 1
     filter(items, (_, item) => item.key !=# 'g')
   endif
-  # g:, not a bare name: in Vim9script a bare function name is the
-  # script-local one, so this guard would be false forever and the entry
-  # would never appear. The call below already spells it g: because a bare
-  # name there fails loudly at compile time; the guard fails silently.
+  # g:, not a bare name: a bare name is the script-local one, so the guard
+  # would be false forever and the entry would silently never appear.
   if !exists('*g:ChopsticksSessionPath')
       || !filereadable(g:ChopsticksSessionPath())
     filter(items, (_, item) => item.key !=# 's')
@@ -108,9 +78,7 @@ def PluginStats(): list<number>
 enddef
 
 def Footer(): string
-  # Idempotent, and normally a no-op: .vimrc's VimEnter autocommand has
-  # already taken the measurement. This covers a dashboard rendered before
-  # VimEnter fires.
+  # Normally a no-op; covers a dashboard rendered before VimEnter fires.
   startup.CaptureMs()
   var density = g:ChopsticksUiDensity()
   if density ==# 'minimal'
@@ -137,14 +105,10 @@ export def Enter()
   set showtabline=0 laststatus=0
   setlocal nonumber norelativenumber nolist cursorline signcolumn=no
   setlocal nowrap nospell foldcolumn=0 colorcolumn= tabstop=2
-  # Through :execute, and the exists() guard alone is not enough. Vim9
-  # resolves an OPTION name when the :def is compiled, exactly as it
-  # resolves a plain function name or a command name, so naming an option
-  # this Vim does not have makes the whole module fail to compile (E113)
-  # before the guard can run. 'winhighlight' is missing from builds older
-  # than the developer's, which is how this reached CI rather than a local
-  # run. Same rule that sends FugitiveHead() through call() in
-  # ui/statusline.vim and :Limelight through :execute in markdown.vim.
+  # :execute, because the guard alone is not enough: Vim9 resolves an option
+  # name at :def-compile time too, so naming one this Vim lacks fails the whole
+  # module with E113 before the guard runs. 'winhighlight' is missing from
+  # older builds, which is why this surfaced on CI and not locally.
   if exists('+winhighlight')
     execute 'setlocal winhighlight=CursorLine:ChopDashboardCurrent'
   endif
@@ -162,18 +126,12 @@ export def Leave()
   endif
 enddef
 
-# Clear every item key this buffer might still hold from a previous render at
-# a different density, then map only the keys the current item list uses.
-# The unmap loop walks the full ITEMS list, not the filtered one, precisely
-# so a key that existed at the previous density is removed at this one.
+# The unmap loop walks the full ITEMS list, not the filtered one, so a key that
+# existed at the previous density is cleared at this one.
 #
-# The right-hand sides use <ScriptCmd> where the legacy version used
-# `:call <SID>Name()<CR>`. <SID> cannot reach a Vim9 module's script-local
-# functions from a mapping, and <ScriptCmd> runs in the defining script's
-# context, which is what makes these private functions reachable at all. It
-# also does not enter command-line mode, so unlike the legacy form it leaves
-# @: alone and fires no CmdlineEnter/CmdlineLeave — a small, deliberate
-# improvement rather than an accident.
+# <ScriptCmd> because <SID> in a mapping cannot reach a Vim9 module's
+# script-local functions. It also leaves @: alone and fires no
+# CmdlineEnter/CmdlineLeave.
 def MapItems(items: list<dict<string>>)
   for item in ITEMS
     var mapping = maparg(item.key, 'n', 0, 1)

@@ -1,18 +1,15 @@
 vim9script
 
-# The buffer tabline: Vim's tabline reused to list open file buffers.
-#
-# 'tabline' is set to '%!ChopsticksTabline()', so Render() runs on every
-# tabline redraw. .vimrc calls Refresh() from its own script top level, which
-# is why the Chopsticks* globals backing this module are declared there
-# rather than in plugin/chopsticks.vim — see that file's header.
+# Vim's tabline reused to list open file buffers. Render() runs on every tabline
+# redraw. .vimrc calls Refresh() from its own top level, which is why this
+# module's globals are declared there and not in plugin/chopsticks.vim.
 
 import autoload 'chopsticks/ui/text.vim'
 import autoload 'chopsticks/ui/icons.vim'
 import autoload 'chopsticks/ui/statusline.vim'
 
-# Only real file buffers count. Terminals, quickfix, help, and the dashboard
-# all set 'buftype', and none of them belong in a list of open files.
+# Terminals, quickfix, help and the dashboard all set 'buftype' and are not
+# open files.
 export def FileBufferCount(): number
   var total = 0
   for buffer in getbufinfo({buflisted: 1})

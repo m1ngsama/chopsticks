@@ -1,24 +1,17 @@
 vim9script
 
-# The statusline, and the UI density that decides how much of it is shown.
+# Render() runs on every redraw of every window. Everything here must be cheap
+# and must not throw: a statusline that errors makes Vim unusable, not just
+# ugly, so every segment checks for its plugin before asking it anything.
 #
-# 'statusline' is set to '%!ChopsticksStatusline()', so Render() runs on
-# every redraw of every window. Everything here is written to be cheap and to
-# never throw: a statusline that errors makes Vim unusable, not just ugly,
-# so each segment checks for its plugin before asking it anything.
-#
-# .vimrc keeps one-line wrappers for the Chopsticks* globals this module
-# backs, rather than plugin/chopsticks.vim declaring them, because
-# 'statusline' and 'tabline' can be evaluated during .vimrc's own execution —
-# a redraw forces it — which is before Vim's plugin-loading pass has run. See
-# plugin/chopsticks.vim's header.
+# The Chopsticks* wrappers for this module stay in .vimrc, not
+# plugin/chopsticks.vim, because a redraw can evaluate 'statusline' during
+# .vimrc's own execution, before the plugin-loading pass has run.
 
 import autoload 'chopsticks/ui/icons.vim'
 import autoload 'chopsticks/ui/bufferline.vim'
 import autoload 'chopsticks/ui/dashboard.vim'
 
-# The three density steps, most to least detailed. A density is never trusted
-# from the user without being checked against this list.
 const DENSITIES = ['minimal', 'balanced', 'rich']
 
 export def UiDensity(): string
@@ -27,11 +20,9 @@ export def UiDensity(): string
   return index(DENSITIES, value) >= 0 ? value : 'balanced'
 enddef
 
-# This and bufferline.vim import each other. That is fine: `import autoload`
-# binds lazily, so a mutual pair resolves at call time rather than at source
-# time (verified on Vim 9.2 with a minimal a/b pair). The dashboard import is
-# lazy for the same reason — it is only reached when a dashboard is on
-# screen, so declaring it here does not source it on an ordinary start.
+# This and bufferline.vim import each other, which is fine: `import autoload`
+# binds at call time, not source time. The dashboard import is lazy the same
+# way, so declaring it costs nothing on a start with no dashboard.
 export def SetUiDensity(value: string)
   if empty(value)
     var current = index(DENSITIES, UiDensity())
@@ -69,22 +60,14 @@ def Mode(active: number = 1): list<string>
   return [' N ', 'ChopStatusNormal']
 enddef
 
-# FugitiveHead() is reached through call() rather than named directly, and
-# that is not style. Vim9 compiles a plain function name at :def-compile
-# time, so naming an optional plugin's function makes this whole module fail
-# to compile on a machine where the plugin is absent -- the exists() guard
-# above never gets a chance to run, because compilation happens first. An
-# autoload-style name (ale#statusline#Count, gitgutter#hunk#summary) is
-# exempt: Vim assumes those resolve later, which is why they appear
-# literally below. call() defers the lookup to run time for the rest.
+# call(), not a plain name: Vim9 compiles a named function at :def-compile
+# time, so naming an optional plugin's global makes the whole module fail to
+# compile where that plugin is absent, before the guard can run. Autoload-style
+# names (ale#statusline#Count) are exempt and appear literally.
 #
-# The exists() guards have the same root cause and a nastier symptom. In
-# Vim9script a bare function name means the SCRIPT-local one, so
-# exists('*FugitiveHead') asks whether this file defines it -- and answers
-# 0 forever, however many plugins define the global. Nothing errors; the
-# feature just never appears. Builtins are exempt (they are not script
-# names) and so are autoload names, but every global from a legacy plugin,
-# and every global of ours defined in .vimrc, must be spelled g:Name here.
+# The guard is spelled g: for a related reason: a bare name in Vim9 means the
+# script-local one, so exists('*FugitiveHead') answers 0 forever however many
+# plugins define the global, and the feature silently never appears.
 def GitBranch(buffer: number = -1): string
   if !exists('*g:FugitiveHead')
     return ''
@@ -95,12 +78,6 @@ def GitBranch(buffer: number = -1): string
     .. substitute(branch, '%', '%%', 'g') .. ' '
 enddef
 
-# The `buffer < 0` default reproduces the legacy `a:0 ? a:1 : bufnr('')`
-# for every argument these are actually called with, including an explicit
-# 0. It differs only for an explicit NEGATIVE buffer number, which the
-# legacy form would have passed through to getbufvar() and this treats as
-# "not given". No caller passes one; buffer numbers come from getwininfo()
-# and getbufinfo().
 export def GitDiff(buffer: number = -1): string
   if !exists('*g:GitGutterGetHunkSummary')
     return ''
@@ -153,9 +130,8 @@ export def WritingMode(buffer: number = -1, window: number = -1): string
   if window_number > 0 && getwinvar(window_number, '&spell')
     add(parts, icons.Get('spell'))
   endif
-  # getbufvar() returns `any`, and a Vim9 comparison against a Number
-  # raises E1030 if a plugin ever sets this to a String. Pencil sets a
-  # Number today; str2nr() keeps that from mattering.
+  # getbufvar() returns any, and comparing that to a Number raises E1030 if a
+  # plugin ever sets this to a String.
   var pencil = str2nr(string(getbufvar(target, 'pencil_wrap_mode', 0)))
   if pencil == 2
     add(parts, icons.Get('wrap') .. ':'
@@ -181,9 +157,8 @@ def BufferFlags(buffer: number = -1): string
   return empty(parts) ? '' : ' ' .. join(parts, ' ') .. ' '
 enddef
 
-# Which window this evaluation is for. Vim sets g:statusline_winid while
-# drawing an inactive window's statusline, which is how one function can
-# render every window's line differently.
+# Vim sets g:statusline_winid while drawing an inactive window's statusline,
+# which is how one function renders every window's line differently.
 def Context(): dict<any>
   var window = get(g:, 'statusline_winid', win_getid())
   var info = getwininfo(window)
@@ -195,15 +170,14 @@ def Context(): dict<any>
     winid: window,
     bufnr: empty(info) ? bufnr('') : info[0].bufnr,
     width: empty(info) ? winwidth(0) : info[0].width,
-    # Number, not bool. Vim9 comparisons produce bool where legacy script
-    # produced 0 or 1, and Mode() below takes a number, so without the
-    # coercion this is E1013 at the call in Render().
+    # Number, not the bool a Vim9 comparison produces: Mode() takes a number,
+    # so without the coercion Render()'s call is E1013.
     active: window == win_getid() ? 1 : 0,
   }
 enddef
 
-# A narrow window steps the density down regardless of the configured value,
-# so a split never renders a statusline wider than its own window.
+# A narrow window steps the density down whatever is configured, so a split
+# never renders a line wider than itself.
 def EffectiveDensity(width: number): string
   var density = UiDensity()
   if width < 70

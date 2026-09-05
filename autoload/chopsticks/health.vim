@@ -1,36 +1,7 @@
 vim9script
 
-# The :ChopsticksHealth report, backing ChopsticksHealthLines() (a
-# documented public global, see plugin/chopsticks.vim) and the
-# :ChopsticksHealth command.
-#
-# Lines() reads a wide slice of global state and other Chopsticks* globals.
-# .vimrc still defines ChopsticksIconsEnabled(), ChopsticksIcon(),
-# ChopsticksUiDensity(), ChopsticksTransparencyEnabled(),
-# ChopsticksDashboardEnabled(), and ChopsticksBufferlineEnabled() at global
-# scope -- they have not moved yet -- so they are called here with an
-# explicit g: prefix: unlike .vimrc's own legacy-script calls, a Vim9 def
-# only resolves an unqualified name to a script-local function or a Vim
-# builtin, never to a global one.
-#
-# FernAvailable() duplicates a small, self-contained .vimrc helper
-# (s:FernAvailable()), because Vim9 script-local names cannot cross files
-# and reproducing three lines beats inventing a global for them. The scratch
-# buffer used to be duplicated here too; it now comes from
-# autoload/chopsticks/ui/window.vim, which the cheatsheet and the Markdown
-# help sheet share.
-#
-# g:chopsticks_use_fern is read raw here, exactly like .vimrc's own
-# s:FernAvailable() reads it: .vimrc never runs it through s:ResolveSwitch()
-# (unlike g:chopsticks_auto_lint, g:chopsticks_dashboard, and friends), so it
-# holds whatever type and value the user last assigned. Legacy `&&`/`if`
-# coerce any Number or String to a boolean without erroring (a String is
-# truthy iff str2nr() on it is nonzero, matching .vimrc's own && exactly);
-# Vim9's `&&`, `||`, and `if`/`?:` raise E1023 (Number) or E1135 (String) on
-# anything that is not already exactly 0, 1, true, or false. switch.Truthy()
-# reproduces the legacy coercion so a value that s:FernAvailable() and this
-# function must keep agreeing on (say, 2 or 'no') is handled the same way
-# here as there, instead of throwing.
+# Duplicates .vimrc's s:FernAvailable(), which the two must keep agreeing on:
+# Vim9 script-local names cannot cross files, and three lines beat a global.
 
 import autoload 'chopsticks/ui/window.vim'
 import autoload 'chopsticks/switch.vim'
@@ -119,7 +90,6 @@ export def Lines(): list<string>
     ])
   return lines
 enddef
-
 
 export def Show(): void
   window.Scratch('[chopsticks-health]', Lines())

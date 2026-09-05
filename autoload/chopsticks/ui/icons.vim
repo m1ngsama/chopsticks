@@ -1,44 +1,12 @@
 vim9script
 
-# Nerd Font icon lookup, backing ChopsticksIcon() and ChopsticksIconsEnabled()
-# (documented public globals, see plugin/chopsticks.vim), the
-# :ChopsticksIconsToggle command, and every consumer of the icon dictionary:
-# the dashboard, statusline, tabline, ALE's sign definitions, and Fern.
+# .vimrc reaches this module by dotted name from its own top level, so it loads
+# early in every startup rather than on a user action.
 #
-# .vimrc calls Enabled(), Get(), and Group() through Vim's classic dotted
-# autoload name (chopsticks#ui#icons#Enabled(), etc.), almost everywhere it
-# needs an icon -- fern/ALE setup, which-key group labels, the
-# statusline/tabline/dashboard functions, fzf option builders -- rather than
-# through the g:ChopsticksIcon() / g:ChopsticksIconsEnabled() shim
-# plugin/chopsticks.vim declares for the same functions. Several of those
-# call sites run at .vimrc's own script top level (some behind an immediate
-# `redrawstatus!`/`redrawtabline`, which forces the statusline/tabline
-# functions to evaluate right there), well before Vim's automatic
-# plugin-loading pass sources plugin/chopsticks.vim and defines that shim;
-# calling it there would fail with E117. The classic dotted name resolves
-# against 'runtimepath' the moment it is referenced and needs no shim, and
-# works just as correctly at the handful of call sites that really are safely
-# deferred, so .vimrc uses it uniformly instead of having to prove which case
-# applies at each call site; see .vimrc's own comment next to
-# s:WhichKeyGroup(), and plugin/chopsticks.vim's comment on why sourcing that
-# shim early is not a usable fix. One consequence: because .vimrc's own top
-# level calls these almost immediately, this module loads (on first call)
-# very early in every startup, unlike clipboard.vim/session.vim/health.vim,
-# which stay unloaded until the user takes an action that needs them -- the
-# classic dotted name is just as lazy, it is only reached this early by
-# necessity, not by accident. tests/ui.vim and health.vim are the only
-# callers that go through the g:ChopsticksIcon() / g:ChopsticksIconsEnabled()
-# shim, since both only ever run once Vim has fully started.
-#
-# Apply() re-applies the fern/ALE icon variables above and clears this
-# module's own file-icon cache. A live icon toggle also has to refresh things
-# that are not icon concerns at all: fzf's gfiles options, a dashboard
-# re-render, and the status/tabline redraw. Those stay in .vimrc, since
-# s:fzf_abort_keys and s:FzfVisualOptions() are script-local there and Vim9
-# script-local names cannot cross files. Toggle() fires a guarded
-# `User ChopsticksIconsToggled` autocommand after applying so .vimrc can
-# still run that refresh, in the same order it always has, without
-# plugin/chopsticks.vim needing a second global just for it.
+# A live icon toggle also has to refresh things that are not icon concerns --
+# fzf's gfiles options, the dashboard, the status and tab lines -- which stay in
+# .vimrc because they are script-local there. Toggle() fires a guarded
+# `User ChopsticksIconsToggled` so .vimrc can run that refresh in its old order.
 
 var auto_enabled = &encoding ==# 'utf-8'
   && empty($SSH_CONNECTION) && empty($SSH_CLIENT) && empty($SSH_TTY)
@@ -127,12 +95,9 @@ export def Group(group: string): string
   return Get(get(group_glyphs, group, ''))
 enddef
 
-# Per-path filetype glyph, for the statusline and the buffer tabline.
-#
-# Cached because both surfaces ask for the same handful of paths on every
-# redraw, and nerdfont#find() is a pattern walk. The cache is cleared by
-# Apply() below, so an icon-mode change cannot leave stale glyphs behind;
-# nothing outside this module has to remember to do that.
+# The statusline and tabline ask for the same handful of paths on every redraw
+# and nerdfont#find() is a pattern walk. Apply() clears this, so an icon-mode
+# change cannot leave stale glyphs behind.
 var file_icon_cache = {}
 
 export def FileIcon(path: string): string

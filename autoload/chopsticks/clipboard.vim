@@ -1,15 +1,7 @@
 vim9script
 
-# Whether the system clipboard is wired into the unnamed registers: Vim was
-# built with +clipboard and 'clipboard' already contains 'unnamedplus' (set
-# earlier in .vimrc, gated on g:chopsticks_system_clipboard and platform
-# desktop detection).
-#
-# Returns number, not bool. Callers compare this against a Number produced by
-# legacy-script && expressions (e.g. tests/ui.vim's assert_equal against
-# has('clipboard') && ...), and Vim's assert_equal() does not treat 0/1 and
-# v:false/v:true as equal, so a bool return would fail that assertion even
-# though the value is "the same".
+# Number, not bool: tests/ui.vim compares this against a legacy && expression,
+# and assert_equal() does not treat v:true as equal to 1.
 export def Enabled(): number
   return has('clipboard')
     && index(split(&clipboard, ','), 'unnamedplus') >= 0 ? 1 : 0

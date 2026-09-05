@@ -1,13 +1,7 @@
 vim9script
 
-# Markdown and prose editing: the buffer setup applied to a Markdown file,
-# the lighter setup for plain text and commit messages, and the commands
-# behind the LocalLeader mappings.
-#
-# Reached from .vimrc's FileType autocommands by the classic dotted name.
-# The buffer-local mappings this module creates use <ScriptCmd> rather than
-# <SID>, because <SID> in a mapping cannot reach a Vim9 module's
-# script-local functions.
+# The buffer-local mappings here use <ScriptCmd>, not <SID>: <SID> in a mapping
+# cannot reach a Vim9 module's script-local functions.
 
 import autoload 'chopsticks/ui/window.vim'
 import autoload 'chopsticks/switch.vim'
@@ -15,9 +9,8 @@ import autoload 'chopsticks/ui/bufferline.vim'
 
 export def ToggleConceal()
   &l:conceallevel = &l:conceallevel == 0 ? 2 : 0
-  # `!= 0` rather than a bare truthiness test: 'conceallevel' is 2 here, and
-  # Vim9 refuses any Number other than 0 or 1 in a boolean position (E1023).
-  # Legacy script coerced it, which is why this read as correct.
+  # != 0, not a bare truthiness test: 'conceallevel' is 2 here and Vim9 refuses
+  # any Number but 0 or 1 in a boolean position (E1023).
   echo 'Markdown conceal: ' .. (&l:conceallevel != 0 ? 'ON' : 'OFF')
 enddef
 
@@ -38,9 +31,8 @@ export def Glow()
   window.Terminal(['glow', '-p', expand('%:p')], 'split')
 enddef
 
-# Save the clipboard's PNG beside the document and insert a link to it.
-# Refuses rather than overwrites when the target name is taken, and cleans up
-# a partial file when pngpaste finds no image on the clipboard.
+# Refuses rather than overwrites a taken name, and cleans up the partial file
+# when pngpaste finds no image.
 export def PasteImage(requested_name: string)
   if executable('pngpaste') != 1
     echohl WarningMsg
@@ -89,12 +81,9 @@ export def PasteImage(requested_name: string)
   echo 'saved: ' .. relative_dir .. '/' .. name
 enddef
 
-# The sheet is built into a variable and then passed, rather than written as
-# a multi-line list literal in the argument position. The literal form parses
-# in most contexts but not all: reached through a <ScriptCmd> mapping under
-# the headless test harness it failed to compile with E697, while the same
-# function called directly compiled cleanly. Binding it first removes the
-# ambiguity entirely.
+# Bound to a variable rather than written as a multi-line list literal in the
+# argument position: through a <ScriptCmd> mapping under the headless harness
+# the literal form failed to compile with E697, though a direct call was fine.
 export def Help()
   var sheet = [
     'chopsticks Markdown',
@@ -124,36 +113,29 @@ export def Help()
   window.Scratch('[chopsticks-markdown]', sheet)
 enddef
 
-# g:chopsticks_long_line_threshold is a raw user value, never normalised by
-# .vimrc, so it is read through switch.vim rather than compared directly:
-# a String would raise E1030 against a Number in Vim9, on every buffer.
+# A raw user value, never normalised, so it goes through switch.vim: comparing
+# a String to a Number is E1030, on every buffer.
 def Threshold(): number
   return switch.Number(g:chopsticks_long_line_threshold, 0)
 enddef
 
-# Vim recomputes the break indent while laying out every wrapped screen line,
-# so one very long line degrades far worse than linearly: a 1 MiB single-line
-# Markdown file turns a single redraw into tens of seconds. The file-size
-# guard elsewhere does not catch this, because the cost follows line length
-# rather than total bytes. Drop the option on buffers that contain such a
-# line. Detection itself has to stay cheap, because this runs for every
-# buffer that reaches a window. A virtual-column search is not an option:
-# computing screen columns over an enormous line is slower than the problem
-# it looks for.
+# Vim recomputes the break indent for every wrapped screen line, so one very
+# long line degrades far worse than linearly -- a 1 MiB single-line file turns
+# a redraw into tens of seconds. Total bytes do not predict it, so the file-size
+# guard elsewhere misses it. Detection runs for every buffer reaching a window
+# and so must stay cheap: a virtual-column search would cost more than the
+# problem it looks for.
 def HasLongLine(): bool
   var lines = line('$')
   if lines <= 0
     return false
   endif
-  # Constant time, and decisive for the case that actually degrades: a buffer
-  # that is mostly one very long line.
+  # Constant time, and decisive for a buffer that is mostly one long line.
   var bytes = line2byte(lines + 1)
   if bytes > 0 && bytes / lines > Threshold()
     return true
   endif
-  # Exact, but only for buffers small enough that walking them costs well
-  # under a millisecond, so this guard never shows up in a startup budget.
-  # Larger buffers keep the constant-time answer above.
+  # Exact, but only where walking the buffer costs well under a millisecond.
   if lines > 2000
     return false
   endif
@@ -183,8 +165,6 @@ export def Setup()
     &l:conceallevel = switch.Truthy(g:chopsticks_markdown_conceal) ? 2 : 0
   endif
 
-  # Each block below is guarded on the plugin that provides it, so the same
-  # document behaves sensibly with any subset of them installed.
   if !empty(maparg('<Plug>(bullets-newline)', 'i'))
     imap <silent><buffer> <CR> <Plug>(bullets-newline)
     nmap <silent><buffer> o <Plug>(bullets-newline)
@@ -223,8 +203,6 @@ export def Setup()
   GuardLongLines()
 enddef
 
-# Plain text, commit messages, and mail get the wrapping but not the
-# Markdown-specific mappings or conceal handling.
 export def ProseSetup()
   setlocal wrap linebreak breakindent textwidth=0 colorcolumn=0
   setlocal norelativenumber
@@ -237,12 +215,9 @@ export def ProseSetup()
   GuardLongLines()
 enddef
 
-# Both Limelight invocations go through :execute. Vim9 resolves a command
-# name when the :def is compiled, exactly as it resolves a plain function
-# name, so naming an optional plugin's command directly makes this module
-# fail to compile wherever that plugin is absent (E476) -- the exists()
-# guard never runs, because compilation happens first. The same rule is why
-# statusline.vim reaches FugitiveHead() through call().
+# :execute, because Vim9 resolves a command name at :def-compile time: naming
+# Limelight directly makes this module fail to compile (E476) wherever the
+# plugin is absent, before the guard can run.
 export def GoyoEnter()
   if &filetype =~# '^\%(markdown\|text\|gitcommit\)$' && exists(':Limelight') == 2
     silent execute 'Limelight'

@@ -1,99 +1,20 @@
 vim9script
 
-# THE RULE, in two lines:
-#   .vimrc reaches a module either by its classic dotted name
-#   (chopsticks#ui#icons#Get()) or through a g:Chopsticks* shim declared
-#   here. The dotted name always works; a shim is for names something
-#   OUTSIDE Chopsticks depends on -- tests/ui.vim, 'statusline', 'tabline',
-#   a user command -- plus a few that exist so one module can reach
-#   another's value without importing it.
+# Never :source this file from .vimrc. It lives under plugin/, so Vim sources
+# it again once .vimrc finishes; re-sourcing resets the script-local scope the
+# `import autoload` bindings live in, and the guard below then skips the import
+# lines, leaving every shim to fail E1001 at call time.
 #
-# Prefer the dotted name for a new .vimrc call site. Add a shim only when
-# the name has to be visible from outside.
+# For the same reason .vimrc cannot call these globals from its own top level:
+# this file has not loaded yet, so the call fails E117. It reaches modules
+# there by classic dotted name (chopsticks#ui#icons#Get()), which resolves
+# against 'runtimepath' on reference. Prefer that; a shim is for names
+# something outside Chopsticks depends on -- tests/ui.vim, 'statusline',
+# 'tabline', a user command.
 #
-# The dotted name is correct from anywhere — it resolves against
-# 'runtimepath' the moment it is referenced — so .vimrc never has to prove
-# whether a given call site runs before or after Vim's plugin-loading pass.
-# That question is genuinely hard to answer by inspection: a `redraw`,
-# `redrawstatus!`, or `redrawtabline` forces 'statusline'/'tabline' to
-# evaluate right where it appears, so a call that looks safely deferred
-# inside a function can still run during .vimrc's own execution. Getting it
-# wrong fails at startup with E117, before this file has loaded at all.
-# Using one convention for the whole of .vimrc removes the question.
-#
-# Most globals here are the outward-facing contract: tests/ui.vim asserts
-# them, or 'statusline' and 'tabline' evaluate them. Two are not, and are
-# here for a different reason — g:ChopsticksProjectRoot() and
-# g:ChopsticksSessionPath() are how one module reaches another's value
-# without importing it. find.vim, explorer.vim, actions.vim, health.vim and
-# dashboard.vim all call one or both; .vimrc itself no longer calls either,
-# since the call sites that once did moved into those modules. Both stay
-# asserted by tests/ui.vim so a cross-module dependency stays visible
-# instead of drifting into a private helper.
-#
-# Public interface. Every Chopsticks* global is declared here and delegates to
-# an autoload module, which Vim does not read until the first call. Names in
-# this file are a contract: tests/ui.vim asserts them, and 'statusline' and
-# 'tabline' evaluate two of them on every redraw.
-#
-# .vimrc is sourced before this file. Vim's automatic plugin-loading pass
-# runs only after the user's vimrc finishes, and .vimrc has to add this
-# repository's own directory to 'runtimepath' from inside itself before that
-# pass runs, just so it can find this file at all. A Chopsticks* global that
-# .vimrc calls at its own script top level — not from inside a function,
-# autocommand, or mapping — cannot be moved behind this shim without also
-# moving that call site, or startup fails with E117 (unknown function) at
-# the point .vimrc reaches it, before this file has ever loaded.
-# ChopsticksIconsEnabled() and ChopsticksIcon() are exactly that: .vimrc
-# calls both at top level to build g:fern#renderer, g:ale_sign_error, and
-# friends. It reaches the icon and theme modules there through Vim's classic
-# dotted autoload name instead (chopsticks#ui#icons#..., which resolves
-# against 'runtimepath' the moment it is referenced, with no shim and no
-# `import` needed) rather than through the g:ChopsticksIcon()-style globals
-# declared below; see .vimrc's own comment next to those call sites for why.
-# An earlier version of this file instead had .vimrc `:source` this file
-# itself, early, so those globals would already exist by the time .vimrc's
-# top level reached them. That broke every shim below with E1001 "variable
-# not found" at call time, and the reason is worth stating exactly, because
-# the obvious explanation is wrong.
-#
-# It is NOT that `import autoload` fails to survive a nested `:source`. It
-# survives that fine: a Vim9 script sourced from inside another script keeps
-# working when called later from anywhere.
-#
-# What breaks is this file being sourced TWICE. It lives under plugin/, so
-# after .vimrc sources it once, Vim's automatic plugin-loading pass sources
-# it again. Re-sourcing a Vim9 script resets its script-local scope, which
-# is where `import autoload` puts its bindings. On that second pass the
-# `finish` guard below sees g:loaded_chopsticks already set and skips the
-# rest of the file — including the `import` lines, which therefore never
-# re-bind. The `def g:...` globals defined by the first pass survive as
-# globals, so the names still exist; their module bindings do not. Every
-# shim then fails with E1001 the moment it is called.
-#
-# Verified on Vim 9.2 as three cases: guard above the imports, sourced early
-# and re-sourced by the plugin pass, fails E1001; the same file with the
-# `import` lines moved ABOVE the guard succeeds; and the same file sourced
-# nested but NOT placed under plugin/, so never re-sourced, also succeeds.
-#
-# Moving the imports above the guard is therefore a real fix, and it would
-# allow a single calling convention everywhere. It is deliberately NOT used
-# here: it makes the guard's POSITION load-bearing, with nothing in the test
-# suite that would catch a later tidy-up moving the imports back down. The
-# dotted-name convention has no such hidden dependency. If you ever do move
-# the imports above the guard, add a test that fails when they move back.
-#
-# So: whatever calls a Chopsticks* global from .vimrc's own top level, in
-# some later task, uses the classic dotted name — not an early `:source`.
-#
-# Shims declared here return `number`, not Vim9 `bool`, wherever a caller in
-# tests/ui.vim or .vimrc compares the result against a value produced by
-# legacy script: legacy `&&`, `||`, and comparison operators return Number
-# 0/1, Vim9's v:true/v:false do not compare equal to 0/1 under
-# assert_equal() or ==#, and returning bool where a legacy caller expects
-# Number silently breaks that comparison. Check every caller's usage before
-# picking a return type; do not default to bool just because Vim9 prefers
-# it. See autoload/chopsticks/clipboard.vim for the worked example.
+# Shims return number, not bool. Legacy callers compare against the 0/1 legacy
+# operators produce, and v:true/v:false do not equal those under assert_equal()
+# or ==#.
 
 if exists('g:loaded_chopsticks')
   finish
@@ -127,19 +48,8 @@ def g:ChopsticksSessionPath(): string
   return session.Path()
 enddef
 
-# .vimrc's own fern, fzf, and terminal helpers need the same project-root
-# resolution session.vim itself uses, outside any session action. .vimrc
-# cannot reach an autoload module with a Vim9 `import` statement (see
-# .vimrc's own comment on this, next to its ChopsticksProjectRoot() call
-# sites): vimlint's legacy-script parser does not understand that syntax, so
-# this shim exists to give .vimrc a plain global call instead, the same way
-# it reaches ChopsticksSystemClipboardEnabled(). Note that .vimrc does NOT
-# reach ChopsticksIconsEnabled() this way any more: every .vimrc call site
-# for icons and theme moved to the classic dotted name, for the startup
-# ordering reason above. Every ChopsticksProjectRoot() call site in .vimrc
-# sits inside a function body, so the shim is loaded by the time any of them
-# runs. tests/ui.vim's s:AssertPublicInterface() asserts this global exists,
-# same as the others.
+# find, explorer, actions, health and dashboard reach session.vim through this
+# and ChopsticksSessionPath() rather than importing it.
 def g:ChopsticksProjectRoot(): string
   return session.ProjectRoot()
 enddef

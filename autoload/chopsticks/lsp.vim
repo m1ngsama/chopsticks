@@ -1,21 +1,13 @@
 vim9script
 
-# Language-server keys and the insert-mode completion keys.
-#
-# Everything here is guarded on the plugin that provides it. vim-lsp defines
-# lsp#complete() and the <Plug>(lsp-...) mappings; asyncomplete defines
-# force_refresh(). With neither installed, Tab is an ordinary Tab and the
-# buffer simply has no LSP mappings.
+# Guarded on the plugin that provides each piece: without vim-lsp and
+# asyncomplete, Tab is an ordinary Tab and the buffer gains no LSP mappings.
 
 import autoload 'chopsticks/keys.vim'
 
-# Buffer-local LSP mappings, applied by .vimrc's `User lsp_buffer_enabled`
-# autocommand once a server has actually attached to the buffer -- so a file
-# type with no server never gains keys that would do nothing.
-#
-# The cheatsheet entries are registered here rather than beside the other
-# bindings because they only exist for buffers a server attached to; the 'n*'
-# mode marker is what tells the reader they are buffer-local.
+# Applied by .vimrc's `User lsp_buffer_enabled` autocommand, so a file type with
+# no server never gains keys that would do nothing. The cheatsheet entries are
+# registered here for the same reason; 'n*' marks them buffer-local.
 export def Maps()
   if !exists('*lsp#complete')
     return
@@ -56,24 +48,17 @@ export def Maps()
   endfor
 enddef
 
-# True when there is nothing but whitespace behind the cursor, where Tab
-# should indent rather than complete.
-#
-# strpart(), not str[i]. col() is a BYTE offset, and the two dialects index
-# strings differently: legacy str[i] takes byte i, Vim9 str[i] takes
-# character i. With a multibyte character before the cursor the Vim9 form
-# reads past the end and returns an empty string, which matches no
-# whitespace, so Tab would open the completion menu where it used to indent.
-# strpart() is byte-based in both.
+# strpart(), not str[i]. col() is a byte offset, and Vim9 str[i] takes character
+# i where legacy took byte i; with a multibyte character before the cursor the
+# Vim9 form reads past the end and returns '', matching no whitespace, so Tab
+# would complete where it used to indent. strpart() is byte-based in both.
 def AfterWhitespace(): bool
   var column = col('.') - 1
   return column == 0 || strpart(getline('.'), column - 1, 1) =~# '\s'
 enddef
 
-# Tab cycles the completion menu when one is open, indents at the start of a
-# line, and otherwise asks asyncomplete for candidates. Reached from an
-# <expr> mapping by its dotted name: <SID> in a mapping cannot resolve a
-# Vim9 module's functions.
+# Reached from an <expr> mapping by dotted name: <SID> in a mapping cannot
+# resolve a Vim9 module's functions.
 export def CompletionTab(): string
   if pumvisible()
     return "\<C-n>"

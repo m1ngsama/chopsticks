@@ -711,6 +711,34 @@ function! s:AssertKeys() abort
     endfor
 endfunction
 
+function! s:AssertLspRegistry() abort
+    function! g:LspAddServer(servers) abort
+    endfunction
+
+    " A filetype with no lang/ file must be recorded as seen, so the miss is
+    " paid once per session rather than on every FileType.
+    call chopsticks#lsp#Ensure('nosuchfiletype')
+    call assert_true(index(chopsticks#lsp#Registered(), 'nosuchfiletype') >= 0)
+
+    " Aliases collapse: cpp is served by lang/c.vim, javascript by
+    " lang/typescript.vim, so neither adds a second key.
+    call chopsticks#lsp#Ensure('c')
+    call chopsticks#lsp#Ensure('cpp')
+    call assert_equal(1, len(filter(copy(chopsticks#lsp#Registered()),
+        \ {_, v -> v ==# 'c'})))
+    call assert_false(index(chopsticks#lsp#Registered(), 'cpp') >= 0)
+
+    call chopsticks#lsp#Ensure('javascript')
+    call assert_true(index(chopsticks#lsp#Registered(), 'typescript') >= 0)
+    call assert_false(index(chopsticks#lsp#Registered(), 'javascript') >= 0)
+
+    " An empty filetype is not a filetype.
+    call chopsticks#lsp#Ensure('')
+    call assert_false(index(chopsticks#lsp#Registered(), '') >= 0)
+
+    delfunction g:LspAddServer
+endfunction
+
 " Characterization of Markdown and prose setup, for the same reason.
 function! s:AssertMarkdown() abort
     call assert_equal(2, exists(':MarkdownPasteImage'))
@@ -915,6 +943,8 @@ function! s:RunCase() abort
         call s:AssertHealth()
     elseif s:case ==# 'keys'
         call s:AssertKeys()
+    elseif s:case ==# 'lsp-registry'
+        call s:AssertLspRegistry()
     elseif s:case ==# 'markdown'
         call s:AssertMarkdown()
     elseif s:case ==# 'symlink-install'

@@ -10,9 +10,11 @@ export def Scratch(name: string, lines: list<string>)
   setlocal buftype=nofile bufhidden=wipe nobuflisted noswapfile
   setlocal nowrap nonumber norelativenumber signcolumn=no
   setlocal modifiable
-  silent :%delete _
   setline(1, lines)
   setlocal nomodifiable nomodified
+  # A split's default half height shows a fraction of a long sheet, so take
+  # what the content needs and leave the rest.
+  execute 'resize' max([1, min([len(lines), &lines - 4])])
   nnoremap <silent><buffer> q :close<CR>
   nnoremap <silent><buffer> <Esc> :close<CR>
   normal! gg

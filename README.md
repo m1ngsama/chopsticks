@@ -205,7 +205,8 @@ summarized instead of pushing the active buffer off-screen.
 ## Use
 
 Pause after Space, or after comma in Markdown, to open the contextual key
-guide. `SPC ?` opens the searchable full cheatsheet.
+guide. `SPC ?` opens the searchable full cheatsheet and `SPC h` the health
+report; the start screen names both.
 
 ```text
 Ctrl-s  save              Ctrl-p / ;f  find files

@@ -681,11 +681,17 @@ function! s:AssertKeys() abort
     call assert_true(l:blank * 4 < len(l:lines),
         \ 'key catalog is mostly blank: ' . l:blank . '/' . len(l:lines))
 
-    " Leader mappings, from README's key table.
-    for l:key in ['e', 'p', 'P']
+    " Leader mappings, from README's key table. '?' and 'h' are the two the
+    " dashboard footer advertises, and a footer naming a key that does not
+    " exist outside the dashboard is how they were unreachable before.
+    for l:key in ['e', 'p', 'P', '?', 'h']
         call assert_true(!empty(maparg('<Space>' . l:key, 'n')),
             \ 'missing leader mapping: <Space>' . l:key)
     endfor
+
+    " Both entry points the footer names must be findable in the sheet itself.
+    call assert_match('Full cheatsheet', join(l:lines, "\n"))
+    call assert_match('Health report', join(l:lines, "\n"))
 
     " Direct mappings, also from README.
     for l:key in ['ss', 'sv', 'sq', 'sh', 'sj', 'sk', 'sl']

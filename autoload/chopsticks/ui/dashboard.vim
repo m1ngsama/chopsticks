@@ -236,8 +236,10 @@ export def Render()
   var footer_column = strlen(matchstr(footer_line, '^ *')) + 1
 
   setlocal modifiable
-  silent keepjumps :%delete _
   setline(1, lines)
+  if line('$') > len(lines)
+    deletebufline('%', len(lines) + 1, '$')
+  endif
   setlocal nomodified nomodifiable
   clearmatches()
   matchaddpos('ChopDashboardLogo', logo_matches, 10)

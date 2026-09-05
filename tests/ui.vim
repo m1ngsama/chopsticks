@@ -712,6 +712,13 @@ function! s:AssertKeys() abort
 endfunction
 
 function! s:AssertLspRegistry() abort
+    " Bookkeeping must happen even with no plugin present: this filetype is
+    " Ensure()d before g:LspAddServer exists, so this only passes if
+    " registered[name] = true runs before the plugin guard returns.
+    call assert_false(exists('*g:LspAddServer'))
+    call chopsticks#lsp#Ensure('nopluginfiletype')
+    call assert_true(index(chopsticks#lsp#Registered(), 'nopluginfiletype') >= 0)
+
     function! g:LspAddServer(servers) abort
     endfunction
 

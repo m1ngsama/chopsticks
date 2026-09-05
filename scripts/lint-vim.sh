@@ -36,7 +36,7 @@ all_ui_test_cases='default minimal rich density status-context tabline-width
 transparent opaque theme-valid theme-fallback dashboard-off dashboard-on
 dashboard-wide bufferline-off bufferline-on data-dir-override
 data-dir-invalid-type data-dir-empty path-overrides fzf-unavailable session
-health keys lsp-registry markdown symlink-install'
+health keys lsp-registry lsp-lang-files markdown symlink-install'
 mkdir -p "$disabled_git_hooks"
 
 case "$skip_vimlint" in
@@ -196,6 +196,14 @@ fi
 # every error in it. Copying the module and appending the directive to the
 # copy puts :defcompile inside the module's own script context, where it
 # actually checks it.
+#
+# A vim9script's top-level statements run as soon as it is sourced, unlike a
+# :def body, which :defcompile only compiles once called. lang/*.vim calls
+# g:LspAddServer() at that top level, and Task 3's plugin is the only thing
+# that ever defines it, so sourcing here would abort with E117 before
+# :defcompile is reached. The stub below satisfies that call for every file
+# this loop checks; it is never invoked, so it changes nothing for files
+# that do not call it.
 vim9_copy_counter=0
 lint_vim9_file() {
     vim9_source=$1
@@ -226,6 +234,8 @@ lint_vim9_file() {
             -Nu NONE -i NONE -n -N -es \
             -V1"$vim9_log_for_vim" \
             --cmd 'execute "set runtimepath^=" . fnameescape($CHOPSTICKS_VIM9_ROOT)' \
+            --cmd 'function! g:LspAddServer(servers) abort
+endfunction' \
             -c 'try | execute "source " . fnameescape($CHOPSTICKS_VIM9_FILE) | catch | call writefile([v:exception, v:throwpoint], $CHOPSTICKS_VIM9_ERROR) | cquit | endtry' \
             -c 'qall!' >/dev/null 2>&1
     then
@@ -579,6 +589,7 @@ run_ui_test session \
 run_ui_test health
 run_ui_test keys
 run_ui_test lsp-registry
+run_ui_test lsp-lang-files
 run_ui_test markdown
 run_symlink_ui_test
 

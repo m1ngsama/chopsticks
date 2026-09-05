@@ -746,6 +746,49 @@ function! s:AssertLspRegistry() abort
     delfunction g:LspAddServer
 endfunction
 
+function! s:AssertLangFiles() abort
+    " Stub the plugin's entry point and source each file for real, so a typo
+    " in a language nobody on CI has a server for still fails here.
+    let g:chopsticks_test_lsp_servers = []
+    function! g:LspAddServer(servers) abort
+        call extend(g:chopsticks_test_lsp_servers, a:servers)
+    endfunction
+
+    let l:expected = {
+        \ 'c': ['c', 'cpp'],
+        \ 'typescript': ['typescript', 'javascript'],
+        \ 'go': ['go'],
+        \ 'rust': ['rust'],
+        \ 'python': ['python'],
+        \ 'bash': ['sh'],
+        \ }
+    for l:name in sort(keys(l:expected))
+        let g:chopsticks_test_lsp_servers = []
+        let l:file = globpath(&runtimepath, 'lang/' . l:name . '.vim', 0, 1)
+        call assert_false(empty(l:file), 'missing lang file: ' . l:name)
+        if empty(l:file)
+            continue
+        endif
+        execute 'source' fnameescape(l:file[0])
+        call assert_equal(1, len(g:chopsticks_test_lsp_servers),
+            \ l:name . ' must register exactly one server')
+        if empty(g:chopsticks_test_lsp_servers)
+            continue
+        endif
+        let l:server = g:chopsticks_test_lsp_servers[0]
+        for l:key in ['name', 'filetype', 'path', 'args']
+            call assert_true(has_key(l:server, l:key),
+                \ l:name . ' server is missing ' . l:key)
+        endfor
+        call assert_equal(l:expected[l:name], l:server.filetype,
+            \ l:name . ' registers the wrong filetypes')
+        call assert_equal(type([]), type(l:server.args),
+            \ l:name . ' args must be a list')
+    endfor
+    delfunction g:LspAddServer
+    unlet g:chopsticks_test_lsp_servers
+endfunction
+
 " Characterization of Markdown and prose setup, for the same reason.
 function! s:AssertMarkdown() abort
     call assert_equal(2, exists(':MarkdownPasteImage'))
@@ -952,6 +995,8 @@ function! s:RunCase() abort
         call s:AssertKeys()
     elseif s:case ==# 'lsp-registry'
         call s:AssertLspRegistry()
+    elseif s:case ==# 'lsp-lang-files'
+        call s:AssertLangFiles()
     elseif s:case ==# 'markdown'
         call s:AssertMarkdown()
     elseif s:case ==# 'symlink-install'

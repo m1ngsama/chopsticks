@@ -668,6 +668,19 @@ function! s:AssertHealth() abort
     " exits 1). The report must say so rather than imply a verified server.
     call assert_match('not verified to start', join(l:lines, "\n"),
         \ 'health report no longer distinguishes "on PATH" from "works"')
+    " Presence checks alone missed 149 spurious rows from $VIMRUNTIME's own
+    " lang/menu_*.vim locale files; pin the exact row set so that regresses.
+    let l:header = index(l:lines, 'Language servers (on PATH; not verified to start)')
+    call assert_true(l:header >= 0, 'health report is missing the language servers header')
+    let l:rows = []
+    let l:i = l:header + 1
+    while l:i < len(l:lines) && l:lines[l:i] !=# ''
+        call add(l:rows, l:lines[l:i])
+        let l:i += 1
+    endwhile
+    let l:names = sort(map(copy(l:rows), {_, row -> split(row)[1]}))
+    call assert_equal(sort(['bash', 'c', 'go', 'python', 'rust', 'typescript']), l:names,
+        \ 'language servers section rows: ' . string(l:rows))
 endfunction
 
 " Characterization of the key catalog and the mappings it documents.

@@ -681,6 +681,34 @@ function! s:AssertHealth() abort
     let l:names = sort(map(copy(l:rows), {_, row -> split(row)[1]}))
     call assert_equal(sort(['bash', 'c', 'go', 'python', 'rust', 'typescript']), l:names,
         \ 'language servers section rows: ' . string(l:rows))
+    " A string-prefix exclusion (stridx(val, $VIMRUNTIME) != 0) treats a
+    " sibling directory whose name merely extends $VIMRUNTIME's own
+    " (…/vim92-sibling/lang/x.vim) as living inside it and silently drops
+    " its lang/ files. $VIMRUNTIME is faked here so the exclusion is
+    " exercised against a sibling this test controls rather than the real
+    " runtime directory.
+    let l:previous_vimruntime = $VIMRUNTIME
+    let l:previous_rtp = &runtimepath
+    let l:runtime = tempname() . '-runtime'
+    let l:sibling = l:runtime . '-sibling'
+    call mkdir(l:sibling . '/lang', 'p')
+    call writefile([
+        \ 'vim9script',
+        \ "g:LspAddServer([{name: 'ztest', filetype: ['ztest'], "
+        \ . "path: exepath('chopsticks-test-sibling-binary')}])",
+        \ ], l:sibling . '/lang/ztest.vim')
+    let $VIMRUNTIME = l:runtime
+    try
+        execute 'set runtimepath+=' . fnameescape(l:sibling)
+        call assert_match('chopsticks-test-sibling-binary',
+            \ join(ChopsticksHealthLines(), "\n"),
+            \ 'health report drops a lang/ directory that only shares a '
+            \ . 'name prefix with $VIMRUNTIME')
+    finally
+        let &runtimepath = l:previous_rtp
+        let $VIMRUNTIME = l:previous_vimruntime
+        call delete(l:sibling, 'rf')
+    endtry
 endfunction
 
 " Characterization of the key catalog and the mappings it documents.

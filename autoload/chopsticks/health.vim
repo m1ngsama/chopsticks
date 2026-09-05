@@ -82,19 +82,20 @@ export def Lines(): list<string>
   else
     lines->add('[--] vim-plug is not installed')
   endif
-  lines->extend(['', 'Language servers'])
+  lines->extend(['', 'Language servers (on PATH; not verified to start)'])
   for file in sort(globpath(&runtimepath, 'lang/*.vim', false, true))
     var language = fnamemodify(file, ':t:r')
     var binary = matchstr(join(readfile(file), ' '), "exepath('\\zs[^']\\+")
     var path = empty(binary) ? '' : exepath(binary)
     lines->add(printf('[%s] %-14s %s',
       empty(path) ? '--' : 'ok', language,
-      empty(path) ? (empty(binary) ? 'no binary named' : binary .. ' not installed') : path))
+      empty(path) ? (empty(binary) ? 'no binary named' : binary .. ' not installed')
+        : 'on PATH: ' .. path))
   endfor
   lines->extend([
     '',
     'Run :PlugInstall for missing plugins.',
-    'Run :LspShowAllServers in a source buffer to inspect language servers.',
+    'A server on PATH may still fail to start; run :LspShowAllServers to check.',
     'Press q to close.',
     ])
   return lines

@@ -663,6 +663,11 @@ function! s:AssertHealth() abort
         call assert_match(l:language, join(l:lines, "\n"),
             \ 'health report omits language: ' . l:language)
     endfor
+    " exepath() only proves a binary is on PATH, not that it starts (a
+    " rustup shim for an uninstalled toolchain is executable and still
+    " exits 1). The report must say so rather than imply a verified server.
+    call assert_match('not verified to start', join(l:lines, "\n"),
+        \ 'health report no longer distinguishes "on PATH" from "works"')
 endfunction
 
 " Characterization of the key catalog and the mappings it documents.

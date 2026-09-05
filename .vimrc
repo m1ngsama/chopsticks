@@ -691,6 +691,7 @@ inoremap <silent> <C-s> <C-o>:update<CR>
 xnoremap <silent> <C-s> :<C-u>update<CR>gv
 call chopsticks#keys#Catalog('Essentials', 'n/i/x', 'Ctrl-s', 'Save file')
 call s:LeaderN(['?'], ':ChopsticksCheatsheet<CR>', 'Essentials', 'Full cheatsheet')
+call s:LeaderN(['h'], ':ChopsticksHealth<CR>', 'Essentials', 'Health report')
 call s:LeaderN(['e'], ':call chopsticks#explorer#Root()<CR>', 'Files', 'Explore project root')
 call s:LeaderN(['E'], ':call chopsticks#explorer#Here()<CR>', 'Files', 'Explore current file directory')
 

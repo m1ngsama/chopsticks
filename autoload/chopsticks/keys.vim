@@ -95,7 +95,7 @@ export def Lines(): list<string>
     '',
     'SPC = Leader   , = Markdown LocalLeader',
     'Pause after SPC or , for the contextual key guide.',
-    'Use / to search this sheet, n/N to move, and q to close.',
+    'Use / to search, } and { to jump sections, n/N to move, q to close.',
     'Modes: n normal · x visual · i insert · t terminal · * buffer-local',
   ]
   for group in GROUP_ORDER

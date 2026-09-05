@@ -11,6 +11,23 @@ def FernAvailable(): bool
     && exists(':Fern') == 2
 enddef
 
+const IS_WINDOWS = has('win32') || has('win64')
+
+# Directory equality, not a string prefix: a sibling of $VIMRUNTIME whose
+# name merely extends it (…/vim92-sibling/lang/x.vim) must not match.
+# Windows normalises separators and compares case-insensitively, matching
+# explorer.vim's PathInside().
+def UnderVimRuntimeLang(file: string): bool
+  var parent = fnamemodify(file, ':h')
+  var target = $VIMRUNTIME .. '/lang'
+  if IS_WINDOWS
+    parent = substitute(parent, '\\', '/', 'g')
+    target = substitute(target, '\\', '/', 'g')
+    return parent ==? target
+  endif
+  return parent ==# target
+enddef
+
 export def Lines(): list<string>
   var requested_theme = type(g:chopsticks_colorscheme) == type('')
     && !empty(g:chopsticks_colorscheme)
@@ -86,7 +103,7 @@ export def Lines(): list<string>
   # $VIMRUNTIME ships its own lang/ full of menu_*.vim locale files that
   # otherwise swamp this section with irrelevant "no binary named" rows.
   for file in sort(globpath(&runtimepath, 'lang/*.vim', false, true)
-      ->filter((_, val) => stridx(val, $VIMRUNTIME) != 0))
+      ->filter((_, val) => !UnderVimRuntimeLang(val)))
     var language = fnamemodify(file, ':t:r')
     var binary = matchstr(join(readfile(file), ' '), "exepath('\\zs[^']\\+")
     var path = empty(binary) ? '' : exepath(binary)

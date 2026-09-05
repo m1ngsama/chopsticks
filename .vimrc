@@ -3,15 +3,10 @@ scriptencoding utf-8
 
 " chopsticks — a modern, Vim-only development and Markdown writing setup
 
-" Global rather than script-local because the dashboard's footer reports the
-" startup time and now lives in autoload/chopsticks/ui/dashboard.vim, which
-" cannot see this file's s: scope. It has to be captured here, in the first
-" lines, so the figure covers the whole of startup.
-"
-" Being a global does mean a user could set it before this file runs and
-" skew the reported figure. That is a cosmetic number on the dashboard
-" footer, not something Chopsticks decides anything from, so the guard below
-" deliberately honours an existing value rather than overwriting it.
+" Global because the dashboard footer that reports it cannot see this file's
+" s: scope, and captured in the first lines so it covers the whole of startup.
+" The guard honours an existing value: a user could skew it, but it is a
+" cosmetic number nothing decides anything from.
 if !exists('g:chopsticks_startup_started_at')
     let g:chopsticks_startup_started_at = reltime()
 endif
@@ -37,26 +32,17 @@ if empty($MYVIMRC)
     let $MYVIMRC = expand('<sfile>:p')
 endif
 
-" plugin/ and autoload/ hold the Vim9 modules this file delegates public
-" Chopsticks* globals to. Vim's automatic plugin-loading pass only sources
-" plugin/**/*.vim from directories already on 'runtimepath', and starting
-" Vim with -u pointing at this file does not add its own directory to
-" 'runtimepath' automatically, so it is added explicitly before that pass
-" runs.
+" Vim's plugin-loading pass only sources plugin/**/*.vim from directories
+" already on 'runtimepath', and -u pointing here does not add this one, so it
+" is added before that pass runs.
 "
-" $MYVIMRC cannot be used to find that directory: the documented install
-" (README.md) symlinks this file to ~/.vimrc, so $MYVIMRC names the symlink,
-" and fnamemodify(..., ':h') on it gives $HOME, not this repository. The
-" documented Windows install instead sources this file from a separate
-" _vimrc, so there $MYVIMRC names a different file in a different directory
-" entirely. resolve(expand('<sfile>:p')) gives this file's own real location
-" in both cases. Vim9 modules under plugin/ and autoload/ must not depend on
-" their own path (the linter sources a copy from a temporary directory), but
-" that rule does not apply to this legacy script: it is always sourced from
-" its real location, never copied, so <sfile> here is safe and correct.
+" $MYVIMRC cannot locate it: the documented install symlinks this file to
+" ~/.vimrc, so $MYVIMRC names the symlink and ':h' gives $HOME; the Windows
+" install sources this file from a separate _vimrc entirely. <sfile> gives this
+" file's real location in both. The rule that Vim9 modules must not read their
+" own path does not apply here -- this file is never copied.
 "
-" The guard keeps a manual reload (:source $MYVIMRC) from duplicating the
-" 'runtimepath' entry.
+" The guard keeps :source $MYVIMRC from duplicating the entry.
 let s:chopsticks_root = fnamemodify(resolve(expand('<sfile>:p')), ':h')
 if index(split(&runtimepath, ','), s:chopsticks_root) < 0
     execute 'set runtimepath^=' . fnameescape(s:chopsticks_root)
@@ -76,15 +62,11 @@ function! s:NormalizeDirectory(value, fallback) abort
         \ ? a:value : a:fallback
     let l:directory = simplify(fnamemodify(expand(l:value), ':p'))
     if l:directory !~# '[/\\]$'
-        " ':p' appends the separator itself, but only for a directory that
-        " already exists, so this branch runs for one that does not -- which
-        " on Windows is how 'C:\dir\name/' used to appear. Match the
-        " separator the path already uses.
-        "
-        " tests/ui.vim's s:NormalizedDirectory() and
-        " autoload/chopsticks/session.vim's NormalizeDirectory() repeat this
-        " rule. All three must agree: fixing one alone moves the failure to
-        " whichever comparison the other two feed.
+        " ':p' appends a separator only for a directory that exists, so this
+        " runs for one that does not, where a hardcoded '/' gave 'C:\dir/'.
+        " tests/ui.vim and session.vim repeat this rule; all three must agree,
+        " or fixing one moves the failure to whichever comparison the others
+        " feed.
         let l:directory .= s:is_windows && l:directory =~# '\\' ? '\' : '/'
     endif
     return l:directory
@@ -183,32 +165,12 @@ function! ChopsticksDashboardEnabled() abort
         \ ChopsticksUiDensity() !=# 'minimal')
 endfunction
 
-" From here down, this file reaches autoload/chopsticks/ui/icons.vim and
-" autoload/chopsticks/ui/theme.vim through Vim's classic dotted autoload
-" names (chopsticks#ui#icons#Get(), chopsticks#ui#icons#Enabled(),
-" chopsticks#ui#icons#Group(), chopsticks#ui#theme#Apply(),
-" chopsticks#ui#theme#DefineInterfaceColors()) instead of the
-" g:ChopsticksIcon()-style shim plugin/chopsticks.vim declares for the same
-" functions. This file's own icon, ALE-sign, which-key, colorscheme, and
-" statusline/tabline setup all run from its own script top level, several of
-" them behind an immediate `redraw`/`redrawstatus!`/`redrawtabline` (which
-" forces 'statusline'/'tabline' to evaluate right there, not lazily) -- all
-" of that is well before Vim's automatic plugin-loading pass would source
-" plugin/chopsticks.vim and define that shim, so calling it would fail with
-" E117. The classic dotted name needs no shim and no `import`: Vim resolves
-" it against 'runtimepath' (already set above) the moment it is first
-" referenced, the same way g:ChopsticksIcon() eventually will, just without
-" waiting for plugin/chopsticks.vim. Every function below that touches an
-" icon or the theme keeps using the classic name even where it looks safely
-" deferred (a mapping's RHS, an autocommand): several of them are reachable
-" from both an early top-level redraw and a later, genuinely deferred one,
-" and the classic name works correctly either way, so one calling
-" convention here removes the need to prove which case applies at each call
-" site. tests/ui.vim and autoload/chopsticks/health.vim are the only
-" callers that go through the g:ChopsticksIcon()-style shim, since both
-" only ever run once Vim has fully started. See plugin/chopsticks.vim's own
-" comment on ChopsticksIcon() and ChopsticksIconsEnabled() for why sourcing
-" that shim early, instead, is not a usable fix.
+" From here down this file reaches the modules by dotted autoload name
+" (chopsticks#ui#icons#Get()) rather than through the g:Chopsticks* shims.
+" Much of the setup below runs at this file's top level, before the shims
+" exist, and a redraw can force even a deferred-looking call to run there, so
+" one convention everywhere beats proving which case applies per call site.
+" See plugin/chopsticks.vim's header.
 let g:fern#renderer = chopsticks#ui#icons#Enabled() ? 'nerdfont' : 'default'
 let g:fern#renderer#nerdfont#indent_markers = 1
 let g:fern#renderer#nerdfont#leading = '  '
@@ -252,10 +214,6 @@ let g:fzf_action = {
     \ 'ctrl-v': 'vsplit',
     \ 'ctrl-o': 'edit',
     \ }
-" See the dotted-autoload-name comment above g:fern#renderer: this function
-" runs both from this file's own top level immediately below (building
-" g:fzf_vim) and later from s:RefreshIconDependents(), when icons are
-" toggled.
 let g:fzf_vim = {
     \ 'preview_window': s:is_remote ? [] : ['right,55%', 'ctrl-/'],
     \ 'gfiles_options': ['--bind', chopsticks#find#AbortKeys()] + chopsticks#find#VisualOptions(),
@@ -291,9 +249,6 @@ let g:ale_lint_on_insert_leave = 0
 let g:ale_lint_on_text_changed = 'never'
 let g:ale_virtualtext_cursor = 'disabled'
 let g:ale_echo_msg_format = '%severity%: %s'
-" chopsticks#ui#icons#Get(), not g:ChopsticksIcon(): this file's own script
-" top level, before plugin/chopsticks.vim's shim exists. See the
-" dotted-autoload-name comment above g:fern#renderer.
 let g:ale_sign_error = chopsticks#ui#icons#Get('error')
 let g:ale_sign_warning = chopsticks#ui#icons#Get('warning')
 let g:ale_sign_info = chopsticks#ui#icons#Get('info')
@@ -539,39 +494,18 @@ if s:is_rich_terminal
 endif
 set background=dark
 
-" chopsticks#ui#theme#Apply(), Vim's classic dotted autoload name for
-" autoload/chopsticks/ui/theme.vim's exported Apply(): this call is still
-" this file's own script top level (after plug#end(), but well before Vim's
-" automatic plugin-loading pass sources plugin/chopsticks.vim and defines
-" its g:ChopsticksTransparencyEnabled()-style shim), so it cannot go through
-" that shim; see chopsticks#keys#Group()'s comment above for the full rationale.
 call chopsticks#ui#theme#Apply()
 
 " ── Interface: statusline and buffer tabline ───────────────────────────────
 
-" These wrappers stay in this file rather than moving to
-" plugin/chopsticks.vim, which declares every other Chopsticks* global.
-" 'statusline' and 'tabline' name two of them, and the `redrawtabline` a few
-" lines below evaluates 'tabline' immediately, during this file's own
-" execution -- long before Vim's plugin-loading pass has sourced
-" plugin/chopsticks.vim. A global that does not exist yet at that moment
-" fails startup with E117. The bodies live in
-" autoload/chopsticks/ui/statusline.vim and bufferline.vim; these are the
-" names Vim and tests/ui.vim know them by.
+" These wrappers stay here, not in plugin/chopsticks.vim: 'statusline' and
+" 'tabline' name two of them and the `redrawtabline` below evaluates 'tabline'
+" during this file's own execution, where a global that does not exist yet is
+" E117 at startup.
 "
-" Only the globals something outside these modules actually calls are here.
-" ChopsticksUiDensity(), ChopsticksStatusline(), and ChopsticksTabline() are
-" asserted by tests/ui.vim and named by 'statusline'/'tabline'. The three
-" variadic ones are called from tests/plugins.vim and tests/ui.vim. The
-" statusline's other segments -- the mode, the git branch, the file icon,
-" the buffer flags -- had globals too, but nothing outside the statusline
-" ever called them, so they are now private to their module rather than
-" being kept alive as dead public names.
-"
-" The variadic signatures match the legacy ones exactly, and have to:
-" tests/plugins.vim calls ChopsticksDiagnostics() and ChopsticksGitDiff()
-" WITH a buffer argument while tests/ui.vim calls ChopsticksWritingMode()
-" with none, so neither a fixed arity nor a dropped argument would do.
+" Only globals something outside the modules calls are here. The variadic
+" signatures are fixed by their callers: tests/plugins.vim passes a buffer
+" argument where tests/ui.vim passes none.
 function! ChopsticksUiDensity() abort
     return chopsticks#ui#statusline#UiDensity()
 endfunction
@@ -596,9 +530,8 @@ function! ChopsticksWritingMode(...) abort
     return call('chopsticks#ui#statusline#WritingMode', a:000)
 endfunction
 
-" Stays here because it is the only one of these that needs s:ResolveSwitch(),
-" which resolves the 'auto' form of every g:chopsticks_* switch and is still
-" this file's own.
+" Here because it is the only one needing s:ResolveSwitch(), which is this
+" file's own.
 function! ChopsticksBufferlineEnabled() abort
     let l:density = ChopsticksUiDensity()
     return s:ResolveSwitch(g:chopsticks_bufferline,
@@ -611,20 +544,10 @@ set statusline=%!ChopsticksStatusline()
 set tabline=%!ChopsticksTabline()
 call chopsticks#ui#bufferline#Refresh()
 
-" icons.vim's own Toggle()/Apply() (see plugin/chopsticks.vim) now own the
-" fern/ALE icon variables an icon toggle re-applies. The rest of what a live
-" toggle always also refreshed -- fzf's gfiles options, a dashboard
-" re-render, and the status/tabline redraw -- is not an icon concern, so it
-" stays here rather than in icons.vim. g:fzf_vim is this file's to own; the
-" values that go into it come back from autoload/chopsticks/find.vim through
-" chopsticks#find#AbortKeys() and chopsticks#find#VisualOptions(), and the
-" dashboard re-render reaches its own module by the classic dotted name.
-" The file-icon cache used to be cleared here too; it now lives in icons.vim
-" beside the glyphs it caches, and Apply() clears it.
-" icons.vim's Toggle() fires a guarded `User ChopsticksIconsToggled`
-" autocommand right after it applies (see the augroup below) so this still
-" runs in the same order it always has, without plugin/chopsticks.vim
-" needing a second global just to reach it.
+" icons.vim owns the fern/ALE variables a toggle re-applies. What a toggle also
+" has to refresh but is not an icon concern -- g:fzf_vim, the dashboard, the
+" status and tab lines -- stays here, driven by the guarded
+" `User ChopsticksIconsToggled` icons.vim fires (see the augroup below).
 function! s:RefreshIconDependents() abort
     let g:fzf_vim.gfiles_options =
         \ ['--bind', chopsticks#find#AbortKeys()] + chopsticks#find#VisualOptions()
@@ -646,14 +569,9 @@ endfunction
 
 augroup ChopsticksInterface
     autocmd!
-    " chopsticks#ui#theme#DefineInterfaceColors(), not the g: shim: the
-    " `:colorscheme` command chopsticks#ui#theme#Apply() runs above triggers
-    " this ColorScheme autocommand synchronously, at this file's own top
-    " level, before plugin/chopsticks.vim's shim exists -- the same reason
-    " Apply() itself is reached through the classic dotted name (see the
-    " comment above it). :ChopsticksTheme and :ChopsticksTransparencyToggle
-    " also trigger this event, well after startup, but the classic name
-    " works there too, so one call site covers both.
+    " Apply()'s :colorscheme triggers this synchronously at top level, before
+    " the shims exist. :ChopsticksTheme fires it again long after startup; the
+    " dotted name covers both.
     autocmd ColorScheme * call chopsticks#ui#theme#DefineInterfaceColors()
     autocmd User ChopsticksIconsToggled call s:RefreshIconDependents()
     autocmd BufEnter * if &filetype ==# 'chopsticks-dashboard' | call chopsticks#ui#dashboard#Enter() | call chopsticks#ui#dashboard#Render() | endif
@@ -668,13 +586,9 @@ call chopsticks#ui#theme#DefineInterfaceColors()
 
 " ── Shared actions ─────────────────────────────────────────────────────────
 
-" Project-root resolution, session save/load, and their permission checks now
-" live in autoload/chopsticks/session.vim (Vim9 script). ChopsticksProjectRoot()
-" and ChopsticksSessionPath() (see plugin/chopsticks.vim) delegate to it, the
-" same shim shape ChopsticksIconsEnabled() and friends already use -- a
-" Vim9 `:import` statement cannot be used here: vimlint's legacy-script
-" parser (vim-vimlparser) does not understand `import autoload` syntax and
-" fails to parse this file if one is added.
+" This file cannot use a Vim9 :import: vimlint's legacy parser does not
+" understand `import autoload` and fails to parse the file if one is added.
+" Sessions are reached through the plugin/chopsticks.vim shims instead.
 
 command! -bang -nargs=* ChopsticksProjectGrep
     \ call chopsticks#find#Grep(<q-args>, <bang>0)
@@ -684,10 +598,6 @@ command! ChopsticksFindFiles call chopsticks#find#FindFiles()
 command! ChopsticksRecentFiles call chopsticks#find#RecentFiles()
 
 call chopsticks#find#DefineCommands()
-
-" ChopsticksHealthLines()/:ChopsticksHealth now live in
-" autoload/chopsticks/health.vim (Vim9 script); see plugin/chopsticks.vim for
-" the ChopsticksHealthLines() global and the :ChopsticksHealth command.
 
 call chopsticks#keys#Reset()
 let g:which_key_map = {}

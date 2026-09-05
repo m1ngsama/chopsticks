@@ -789,6 +789,35 @@ function! s:AssertLangFiles() abort
     unlet g:chopsticks_test_lsp_servers
 endfunction
 
+" The options must reach the plugin before any server does: g:LspAddServer()
+" freezes each server's omni-completion flag from the options in force when it
+" runs, and a FileType fires before the plugin's own LspSetup event. Both
+" globals are stubbed, so the order is observable with no plugin installed.
+function! s:AssertLspOptionsOrder() abort
+    let g:chopsticks_test_lsp_calls = []
+    let g:chopsticks_test_lsp_options = {}
+    function! g:LspOptionsSet(options) abort
+        call add(g:chopsticks_test_lsp_calls, 'options')
+        let g:chopsticks_test_lsp_options = a:options
+    endfunction
+    function! g:LspAddServer(servers) abort
+        call add(g:chopsticks_test_lsp_calls, 'server')
+    endfunction
+
+    call chopsticks#lsp#Ensure('c')
+    call assert_equal(['options', 'server'], g:chopsticks_test_lsp_calls,
+        \ 'Ensure() must set the options before it registers a server')
+    call assert_equal(v:false, get(g:chopsticks_test_lsp_options,
+        \ 'autoComplete', v:null))
+    call assert_equal(v:true, get(g:chopsticks_test_lsp_options,
+        \ 'omniComplete', v:null))
+
+    delfunction g:LspOptionsSet
+    delfunction g:LspAddServer
+    unlet g:chopsticks_test_lsp_calls
+    unlet g:chopsticks_test_lsp_options
+endfunction
+
 " User LspAttached never fires without a server, so nothing else would exercise
 " Maps(). Call it directly; the stub satisfies its plugin guard.
 function! s:AssertLspMaps() abort
@@ -1017,6 +1046,8 @@ function! s:RunCase() abort
         call s:AssertLspRegistry()
     elseif s:case ==# 'lsp-lang-files'
         call s:AssertLangFiles()
+    elseif s:case ==# 'lsp-options-order'
+        call s:AssertLspOptionsOrder()
     elseif s:case ==# 'lsp-maps'
         call s:AssertLspMaps()
     elseif s:case ==# 'markdown'

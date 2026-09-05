@@ -36,7 +36,8 @@ all_ui_test_cases='default minimal rich density status-context tabline-width
 transparent opaque theme-valid theme-fallback dashboard-off dashboard-on
 dashboard-wide bufferline-off bufferline-on data-dir-override
 data-dir-invalid-type data-dir-empty path-overrides fzf-unavailable session
-health keys lsp-registry lsp-lang-files lsp-maps markdown symlink-install'
+health keys lsp-registry lsp-lang-files lsp-options-order lsp-maps markdown
+symlink-install'
 mkdir -p "$disabled_git_hooks"
 
 case "$skip_vimlint" in
@@ -590,6 +591,7 @@ run_ui_test health
 run_ui_test keys
 run_ui_test lsp-registry
 run_ui_test lsp-lang-files
+run_ui_test lsp-options-order
 run_ui_test lsp-maps
 run_ui_test markdown
 run_symlink_ui_test

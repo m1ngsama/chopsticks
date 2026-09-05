@@ -150,21 +150,33 @@ pinned and verified the way plugins already are.
 
 ### Layout
 
-    .vimrc                          thin bootstrap, legacy script
+    .vimrc                          bootstrap and configuration, legacy script
     plugin/chopsticks.vim           command and mapping declarations
     autoload/chopsticks/
-      options.vim  keys.vim  session.vim  health.vim
+      keys.vim  session.vim  health.vim  markdown.vim  startup.vim  switch.vim
+      actions.vim  clipboard.vim  explorer.vim
       ui/ theme.vim  dashboard.vim  statusline.vim  bufferline.vim  icons.vim
+      ui/ text.vim  window.vim
       lsp.vim                       LspAddServer dispatch, registry driver
       complete.vim                  'autocomplete' and 'complete' wiring
       find.vim                      fuzzbox configuration and custom selectors
       debug.vim                     termdebug wrapper
-      markdown.vim
     lang/                           one file per language
 
 `plugin/chopsticks.vim` only declares commands and mappings, which is cheap and
 must happen at startup. Every mapping's right-hand side calls into an
 `autoload/` function, so no module is read until it is used.
+
+`.vimrc` is not a thin bootstrap. Phase 0 moved the behaviour out and left the
+configuration in: Vim options, plugin policy, key registrations, and the
+autocommand wiring, plus what Vim's startup order pins there — directory
+resolution and switch normalisation, the `Chopsticks*` wrappers `'statusline'`
+and `'tabline'` evaluate during `.vimrc`'s own execution, and the four mapping
+helpers whose `:execute`'d right-hand sides contain `<SID>`. There is no
+`options.vim` and no `autocmds.vim`; an earlier draft of this section named the
+first, and Phase 0 concluded it should not exist. Which key does what and what
+each plugin is told are the parts a person edits, and they belong in the file
+named after the person's config.
 
 ### Language registry
 

@@ -1,7 +1,8 @@
 vim9script
 
-# Guarded on the plugin: without yegappan/lsp, Tab is an ordinary Tab and a
-# buffer gains no LSP mappings.
+# Every entry point here is guarded on yegappan/lsp: without it no server is
+# registered, no buffer gains LSP mappings, and Tab falls back to whatever
+# omni-completion the filetype already had.
 
 import autoload 'chopsticks/keys.vim'
 
@@ -76,7 +77,9 @@ export def Maps()
   nnoremap <silent><buffer> <leader>ca <Cmd>LspCodeAction<CR>
   nnoremap <silent><buffer> <leader>cr <Cmd>LspRename<CR>
   nnoremap <silent><buffer> <leader>cf <Cmd>LspFormat<CR>
-  xnoremap <silent><buffer> <leader>cf <Cmd>LspFormat<CR>
+  # ':', not '<Cmd>': only the former picks up the '<,'> range, and without a
+  # range :LspFormat formats the whole document instead of the selection.
+  xnoremap <silent><buffer> <leader>cf :LspFormat<CR>
   nnoremap <silent><buffer> <leader>co <Cmd>LspDocumentSymbol<CR>
   nnoremap <silent><buffer> <leader>cS <Cmd>LspSymbolSearch<CR>
   nnoremap <silent><buffer> <leader>cl <Cmd>LspOutline<CR>

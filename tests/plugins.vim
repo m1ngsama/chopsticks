@@ -60,6 +60,7 @@ function! s:RunStartup(expected_auto_lint) abort
     call assert_false(exists('*asyncomplete#force_refresh'))
     call assert_true(exists('#User#LspAttached'))
     call assert_equal(v:false, g:LspOptionsGet().autoComplete)
+    call assert_equal(v:true, g:LspOptionsGet().omniComplete)
     call assert_equal(v:true, g:LspOptionsGet().ignoreMissingServer)
     call assert_equal(v:true, g:LspOptionsGet().aleSupport)
     call assert_equal(a:expected_auto_lint, g:chopsticks_auto_lint)

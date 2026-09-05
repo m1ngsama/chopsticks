@@ -27,6 +27,8 @@ releases of the current line.
   budgets, plugin profiles, and per-commit JSON artifacts in CI.
 - Contributor, security, release, performance, configuration, and
   troubleshooting guides plus issue and pull-request templates.
+- Code outline on `SPC c l`, inlay hints, and semantic highlighting, from the
+  new Vim9script LSP client.
 
 ### Changed
 
@@ -52,6 +54,8 @@ releases of the current line.
   until one of their functions is called. Starting Vim on an ordinary file
   leaves the dashboard, session, health, clipboard, and scratch-window
   modules unread.
+- Language servers are registered from `lang/` and installed by you, rather
+  than downloaded automatically. `:ChopsticksHealth` reports which are present.
 
 ### Fixed
 

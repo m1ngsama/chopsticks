@@ -87,6 +87,9 @@ export def DefineInterfaceColors(): void
   execute 'highlight ChopDashboardCurrent ctermbg=237 cterm=none guibg=' .. surface .. ' gui=none'
   execute 'highlight ChopDashboardFooter ctermfg=180 cterm=italic guifg=' .. yellow .. ' gui=italic'
   execute 'highlight ChopDashboardStatus ctermbg=237 ctermfg=237 guibg=' .. surface .. ' guifg=' .. surface
+  execute 'highlight fuzzboxBorder ctermfg=108 guifg=' .. muted
+  execute 'highlight fuzzboxMatching ctermfg=108 cterm=bold guifg=' .. green .. ' gui=bold'
+  execute 'highlight fuzzboxSelectionSign ctermbg=237 guibg=' .. surface
   if TransparencyEnabled()
     highlight Normal ctermbg=NONE guibg=NONE
     highlight NormalNC ctermbg=NONE guibg=NONE

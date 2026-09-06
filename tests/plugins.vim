@@ -25,6 +25,11 @@ function! s:AssertEditorAndExplorer(editor_type, explorer_type) abort
     endif
 endfunction
 
+" Mirrors .vimrc's s:is_remote, which is script-local and unreachable here.
+function! s:IsRemote() abort
+    return !empty($SSH_CONNECTION) || !empty($SSH_CLIENT) || !empty($SSH_TTY)
+endfunction
+
 function! s:RunStartup(expected_auto_lint) abort
     silent edit README.md
     tnoremap <Esc><Esc> <C-\><C-n>
@@ -75,6 +80,31 @@ function! s:RunStartup(expected_auto_lint) abort
     call assert_match('chopsticks#explorer#Root', maparg("\<Space>e", 'n'))
     call assert_match('FindFiles', maparg(';f', 'n'))
     call assert_match('ChopsticksProjectGrep', maparg(';r', 'n'))
+    call assert_equal(2, exists(':FuzzyFiles'))
+    call assert_equal(0, g:fuzzbox_mappings)
+    " The plugin's own <leader>f* defaults would land on our Files group.
+    call assert_equal('', maparg("\<Space>fb", 'n'))
+    call assert_equal(["\<Esc>", "\<C-c>", "\<C-g>", "\<C-q>"], g:fuzzbox_keymaps.exit)
+    call assert_equal(chopsticks#ui#icons#Enabled(), g:fuzzbox_devicons)
+    call assert_equal(s:IsRemote() ? 0 : 1, g:fuzzbox_preview)
+    call assert_equal(['─', '│', '─', '│', '╭', '╮', '╯', '╰'],
+        \ g:fuzzbox_borderchars)
+    call assert_equal(0.92, g:fuzzbox_window_defaults.maxwidth)
+    call assert_equal(0.84, g:fuzzbox_window_defaults.maxheight)
+    " The plugin ships its own g:fuzzbox_exclude_dir, so losing ours raises
+    " nothing; it just leaves ;f walking Library/ and every tree under
+    " .vim/plugged whenever the cwd is $HOME.
+    for l:excluded in ['Library', 'node_modules', 'plugged']
+        call assert_true(index(g:fuzzbox_exclude_dir, l:excluded) >= 0,
+            \ l:excluded)
+    endfor
+    " Our own colour, not merely that the group exists -- the plugin defines
+    " every fuzzbox* group itself, so hlexists() alone cannot fail.
+    call assert_match('guifg=#859289', execute('highlight fuzzboxBorder'))
+    call assert_match('guifg=#a7c080',
+        \ execute('highlight fuzzboxMatching'))
+    call assert_match('guibg=#343f44',
+        \ execute('highlight fuzzboxSelectionSign'))
     call assert_match('chopsticks#find#GitFiles', maparg("\<Space>fg", 'n'))
     call assert_equal('edit', get(g:fzf_action, 'ctrl-o', ''))
     call assert_equal('', maparg("\<Esc>\<Esc>", 't'))

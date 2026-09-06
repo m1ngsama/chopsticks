@@ -225,13 +225,23 @@ let g:fzf_vim = {
 " and raises E1093 on Unix at this pin; it was an abort key under fzf anyway.
 " vim-nerdfont and vim-glyph-palette are configured by the plugin's own
 " after/plugin when they are loaded, so no glyph or colour function is set here.
+"
+" width and height, not maxwidth and maxheight: the plugin reads maxheight
+" nowhere, takes height from maxwidth when a preview is shown, and falls back to
+" minwidth/minheight of 0.5 when one is not -- so over SSH, or below the preview
+" cutoff, max* alone would shrink the finder to half the screen.
+"
+" The exclusion list is scoped to files. It replaced a file-source filter and
+" never applied to grep or to recent files; left global it would silently drop
+" matches under tracked build/, dist/, target/ and vendor/ trees, and hide most
+" of the MRU list.
 let g:fuzzbox_mappings = 0
 let g:fuzzbox_preview = s:is_remote ? 0 : 1
 let g:fuzzbox_devicons = chopsticks#ui#icons#Enabled()
 let g:fuzzbox_borderchars = ['─', '│', '─', '│', '╭', '╮', '╯', '╰']
 let g:fuzzbox_keymaps = {'exit': ["\<Esc>", "\<C-c>", "\<C-g>", "\<C-q>"]}
-let g:fuzzbox_window_defaults = {'maxwidth': 0.92, 'maxheight': 0.84}
-let g:fuzzbox_exclude_dir = [
+let g:fuzzbox_window_defaults = {'width': 0.92, 'height': 0.84}
+let g:fuzzbox_files_exclude_dir = [
     \ '.git', '.cache', '.cargo', '.npm', '.pnpm-store', '.rustup',
     \ '.bun', '.codex', 'Library', 'node_modules', 'plugged',
     \ '.venv', 'venv', '__pycache__', 'build', 'dist', 'target', 'vendor',

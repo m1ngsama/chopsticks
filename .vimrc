@@ -219,6 +219,24 @@ let g:fzf_vim = {
     \ 'gfiles_options': ['--bind', chopsticks#find#AbortKeys()] + chopsticks#find#VisualOptions(),
     \ }
 
+" g:fuzzbox_keymaps is merged into the plugin's defaults, so naming only exit
+" replaces that one list. Ctrl-q is listed because the default binds it to a
+" send-to-quickfix action that unpacks three values from a four-value function
+" and raises E1093 on Unix at this pin; it was an abort key under fzf anyway.
+" vim-nerdfont and vim-glyph-palette are configured by the plugin's own
+" after/plugin when they are loaded, so no glyph or colour function is set here.
+let g:fuzzbox_mappings = 0
+let g:fuzzbox_preview = s:is_remote ? 0 : 1
+let g:fuzzbox_devicons = chopsticks#ui#icons#Enabled()
+let g:fuzzbox_borderchars = ['─', '│', '─', '│', '╭', '╮', '╯', '╰']
+let g:fuzzbox_keymaps = {'exit': ["\<Esc>", "\<C-c>", "\<C-g>", "\<C-q>"]}
+let g:fuzzbox_window_defaults = {'maxwidth': 0.92, 'maxheight': 0.84}
+let g:fuzzbox_exclude_dir = [
+    \ '.git', '.cache', '.cargo', '.npm', '.pnpm-store', '.rustup',
+    \ '.bun', '.codex', 'Library', 'node_modules', 'plugged',
+    \ '.venv', 'venv', '__pycache__', 'build', 'dist', 'target', 'vendor',
+    \ ]
+
 let g:ale_disable_lsp = 1
 let g:ale_linters_explicit = 1
 let g:ale_linters = {
@@ -317,6 +335,7 @@ if filereadable(s:vim_plug)
     " Find and navigate.
     Plug 'junegunn/fzf', {'commit': '3337be9d450cd349e99273a2d3985ceaf5f3753f'}
     Plug 'junegunn/fzf.vim', {'commit': 'd2a59a992a2455f609c0fde2ebd84427ea8f919a'}
+    Plug 'vim-fuzzbox/fuzzbox.vim', {'commit': '4f9f653158b1d27e6217c97a9da6fbcc00c31cb3'}
     Plug 'lambdalisue/vim-fern', {'commit': '3bbca3c87a57cdc87495b91a695b8eda722a1de1'}
     Plug 'lambdalisue/vim-nerdfont', {'commit': '3a28b3f061a8b6de751175cc3f91f072d4bfc811'}
     Plug 'lambdalisue/vim-fern-renderer-nerdfont', {'commit': '325629c68eb543229715b68920fbcb92b206beb6'}

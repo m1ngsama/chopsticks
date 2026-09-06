@@ -89,15 +89,20 @@ function! s:RunStartup(expected_auto_lint) abort
     call assert_equal(s:IsRemote() ? 0 : 1, g:fuzzbox_preview)
     call assert_equal(['─', '│', '─', '│', '╭', '╮', '╯', '╰'],
         \ g:fuzzbox_borderchars)
-    call assert_equal(0.92, g:fuzzbox_window_defaults.maxwidth)
-    call assert_equal(0.84, g:fuzzbox_window_defaults.maxheight)
-    " The plugin ships its own g:fuzzbox_exclude_dir, so losing ours raises
-    " nothing; it just leaves ;f walking Library/ and every tree under
-    " .vim/plugged whenever the cwd is $HOME.
+    " width/height, not max*: the plugin ignores maxheight and drops to 0.5
+    " when the preview is off, so max* alone would halve the finder over SSH.
+    call assert_equal(0.92, g:fuzzbox_window_defaults.width)
+    call assert_equal(0.84, g:fuzzbox_window_defaults.height)
+    call assert_false(has_key(g:fuzzbox_window_defaults, 'maxwidth'))
+    " Scoped to files. The list replaced a file-source filter; applied globally
+    " it would also narrow project grep and hide most of the recent-file list.
     for l:excluded in ['Library', 'node_modules', 'plugged']
-        call assert_true(index(g:fuzzbox_exclude_dir, l:excluded) >= 0,
+        call assert_true(index(g:fuzzbox_files_exclude_dir, l:excluded) >= 0,
             \ l:excluded)
     endfor
+    " The plugin defines g:fuzzbox_exclude_dir itself and grep and mru fall back
+    " to it, so what proves the scoping is that ours did NOT leak into it.
+    call assert_equal(['.git', '.hg', '.svn'], g:fuzzbox_exclude_dir)
     " Our own colour, not merely that the group exists -- the plugin defines
     " every fuzzbox* group itself, so hlexists() alone cannot fail.
     call assert_match('guifg=#859289', execute('highlight fuzzboxBorder'))

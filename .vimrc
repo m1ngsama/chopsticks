@@ -210,7 +210,8 @@ let g:netrw_list_hide .= ',\.pyc$,node_modules,\.git,__pycache__,\.DS_Store,dist
 " g:fuzzbox_keymaps is merged into the plugin's defaults, so naming only exit
 " replaces that one list. Ctrl-q is listed because the default binds it to a
 " send-to-quickfix action that unpacks three values from a four-value function
-" and raises E1093 on Unix at this pin; it was an abort key under fzf anyway.
+" and raises E1093 on Unix at this pin; it was already an abort key in the
+" finder this replaced.
 " vim-nerdfont and vim-glyph-palette are configured by the plugin's own
 " after/plugin when they are loaded, so no glyph or colour function is set here.
 "
@@ -331,8 +332,6 @@ if filereadable(s:vim_plug)
     call plug#begin(g:chopsticks_data_dir . 'plugged')
 
     " Find and navigate.
-    Plug 'junegunn/fzf', {'commit': '3337be9d450cd349e99273a2d3985ceaf5f3753f'}
-    Plug 'junegunn/fzf.vim', {'commit': 'd2a59a992a2455f609c0fde2ebd84427ea8f919a'}
     Plug 'vim-fuzzbox/fuzzbox.vim', {'commit': '4f9f653158b1d27e6217c97a9da6fbcc00c31cb3'}
     Plug 'lambdalisue/vim-fern', {'commit': '3bbca3c87a57cdc87495b91a695b8eda722a1de1'}
     Plug 'lambdalisue/vim-nerdfont', {'commit': '3a28b3f061a8b6de751175cc3f91f072d4bfc811'}

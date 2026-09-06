@@ -33,7 +33,6 @@ DEFAULT_SAMPLES = 21
 MINIMUM_SAMPLES = 20
 OPTIONAL_TOOLS = (
     "fd",
-    "fzf",
     "git",
     "glow",
     "lazygit",

@@ -20,13 +20,9 @@ Confirm that vim-plug exists at `~/.vim/autoload/plug.vim` on Unix or
 ```
 
 Restart Vim after installation. Startup intentionally stays offline and will
-not install a missing plugin or the `fzf` executable for you. Confirm the latter
-with `:echo executable('fzf')`; install it with `brew install fzf`,
-`sudo apt-get install fzf`, or `winget install --exact --id junegunn.fzf`.
-Chopsticks does not run fzf's bundled unverified release downloader. Fern
-requires the `vim-fern` plugin, installed by the same `:PlugInstall`; until
-it is installed, or when disabled with `g:chopsticks_use_fern = 0`, `SPC e`
-deliberately falls back to netrw.
+not install a missing plugin for you. Fern requires the `vim-fern` plugin,
+installed by the same `:PlugInstall`; until it is installed, or when disabled
+with `g:chopsticks_use_fern = 0`, `SPC e` deliberately falls back to netrw.
 
 ## Icons are boxes or columns do not align
 
@@ -63,13 +59,13 @@ yank after a delete.
 
 ## Search is empty or slow
 
-Inside a Git worktree, file search prefers Git's tracked-file list. Elsewhere it
-uses `fd`, then `rg`, then fzf's native file source. Install `git`, `fzf`,
-`ripgrep`, and optionally `fd`, and verify that each command is visible in
-`:ChopsticksHealth`.
+File search prefers `rg`, then `ugrep`, then `ag`, then `fd`, then
+`git ls-files`, then the system `find`; text search prefers `rg`, then
+`ugrep`, then `ag`, then `git grep`, then `grep`. Install `ripgrep` for speed
+and confirm it is visible in `:ChopsticksHealth`.
 
-Project grep requires `rg`. The project root is the nearest parent containing
-`.git`; outside a worktree it is Vim's current directory.
+The project root is the nearest parent containing `.git`; outside a worktree it
+is Vim's current directory.
 
 ## LSP, linting, or formatting does not run
 

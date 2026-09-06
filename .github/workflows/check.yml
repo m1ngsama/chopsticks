@@ -114,7 +114,7 @@ jobs:
           CHOPSTICKS_TEST_VIM: ${{ steps.vim.outputs.executable }}
         run: |
           sudo apt-get update
-          sudo apt-get install -y curl fzf ripgrep shellcheck
+          sudo apt-get install -y curl ripgrep shellcheck
           npm ci --ignore-scripts
           "$CHOPSTICKS_TEST_VIM" --version | head -1
           # Fail here, in a second, rather than letting a Vim below the floor

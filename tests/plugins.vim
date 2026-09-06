@@ -144,6 +144,7 @@ function! s:RunStartup(expected_auto_lint) abort
     call assert_match('chopsticks#explorer#Root', maparg("\<Space>e", 'n'))
     call assert_match('FindFiles', maparg(';f', 'n'))
     call assert_equal(2, exists(':FuzzyFiles'))
+    call assert_equal(0, exists(':Files'))
     " What the dashboard's Find Text entry is keyed on. The UI suite has no
     " plugin and can only stub it.
     call assert_equal(2, exists(':FuzzyGrep'))

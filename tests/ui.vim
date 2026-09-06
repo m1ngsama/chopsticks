@@ -523,7 +523,6 @@ function! s:AssertFinderFallback() abort
     call assert_equal(2, exists(':ChopsticksRecentFiles'))
     call assert_equal('', maparg(';f', 'n'))
     call assert_equal('', maparg(';r', 'n'))
-    call assert_notmatch('\<fzf\>', join(ChopsticksHealthLines(), "\n"))
     call assert_match('project grep needs fuzzbox',
         \ execute('ChopsticksProjectGrep'))
     call assert_match('Git file search needs fuzzbox',

@@ -30,6 +30,70 @@ function! s:IsRemote() abort
     return !empty($SSH_CONNECTION) || !empty($SSH_CLIENT) || !empty($SSH_TTY)
 endfunction
 
+" What the finder put on screen: every popup's title and contents. Polls
+" because the sources are asynchronous jobs, and closes with <Esc> so the
+" plugin runs its own exit path -- popup_clear() would destroy the popups
+" behind its back, leaving its active flag set and a pending update timer to
+" fire against a freed buffer.
+function! s:FinderScreen(launch, expected) abort
+    execute a:launch
+    let l:screen = ''
+    for l:attempt in range(50)
+        let l:parts = []
+        for l:popup_id in popup_list()
+            call add(l:parts, get(popup_getoptions(l:popup_id), 'title', ''))
+            call extend(l:parts, getbufline(winbufnr(l:popup_id), 1, '$'))
+        endfor
+        let l:screen = join(l:parts, "\n")
+        if l:screen =~# a:expected
+            break
+        endif
+        sleep 100m
+    endfor
+    call feedkeys("\<Esc>", 'xt')
+    call assert_true(empty(popup_list()), a:launch . ' left a popup open')
+    return l:screen
+endfunction
+
+" Every selector is launched from a working directory outside the project,
+" because the finder is rooted by passing cwd to the job, never by moving Vim.
+" Asserted here because this is the suite that has a plugin to assert it about.
+function! s:AssertFinderSelectors() abort
+    let l:before = getcwd()
+    let l:outside = tempname() . '-outside'
+    call mkdir(l:outside, 'p')
+    " Untracked and not ignored: the one thing that tells the file source and
+    " git ls-files apart, and a grep hit no other directory can produce.
+    let l:probe = s:root . '/untracked-probe.txt'
+    call writefile(['chopsticks-probe-token'], l:probe)
+    try
+        execute 'cd ' . fnameescape(l:outside)
+        let l:files = s:FinderScreen('ChopsticksFindFiles', 'untracked-probe')
+        let l:grep = s:FinderScreen(
+            \ "call chopsticks#find#Grep('chopsticks-probe-token')",
+            \ 'untracked-probe\.txt:\d\+:')
+        let l:git = s:FinderScreen('call chopsticks#find#GitFiles()', 'README.md')
+        let l:recent = s:FinderScreen('ChopsticksRecentFiles', 'Recent Files')
+        call assert_equal(resolve(l:outside), resolve(getcwd()))
+    finally
+        execute 'cd ' . fnameescape(l:before)
+        call delete(l:outside, 'rf')
+        call delete(l:probe)
+    endtry
+    call assert_match('README.md', l:files)
+    " The headline behaviour change: the file source lists untracked files,
+    " where git ls-files does not. Without this the l:git notmatch below could
+    " pass against a FindFiles that had quietly gone back to Git-only.
+    call assert_match('untracked-probe', l:files)
+    call assert_match('> chopsticks-probe-token', l:grep)
+    call assert_match('untracked-probe\.txt:\d\+:', l:grep)
+    call assert_match('README.md', l:git)
+    call assert_notmatch('untracked-probe', l:git)
+    " Only the title separates the recent-file list from the buffer list, which
+    " holds the same files in a session this short.
+    call assert_match('Recent Files', l:recent)
+endfunction
+
 function! s:RunStartup(expected_auto_lint) abort
     silent edit README.md
     tnoremap <Esc><Esc> <C-\><C-n>
@@ -79,8 +143,10 @@ function! s:RunStartup(expected_auto_lint) abort
     call assert_match('WhichKey', maparg(',', 'n'))
     call assert_match('chopsticks#explorer#Root', maparg("\<Space>e", 'n'))
     call assert_match('FindFiles', maparg(';f', 'n'))
-    call assert_match('ChopsticksProjectGrep', maparg(';r', 'n'))
     call assert_equal(2, exists(':FuzzyFiles'))
+    " What the dashboard's Find Text entry is keyed on. The UI suite has no
+    " plugin and can only stub it.
+    call assert_equal(2, exists(':FuzzyGrep'))
     call assert_equal(0, g:fuzzbox_mappings)
     " The plugin's own <leader>f* defaults would land on our Files group.
     call assert_equal('', maparg("\<Space>fb", 'n'))
@@ -111,7 +177,32 @@ function! s:RunStartup(expected_auto_lint) abort
     call assert_match('guibg=#343f44',
         \ execute('highlight fuzzboxSelectionSign'))
     call assert_match('chopsticks#find#GitFiles', maparg("\<Space>fg", 'n'))
-    call assert_equal('edit', get(g:fzf_action, 'ctrl-o', ''))
+    call s:AssertFinderSelectors()
+    " Every mapping that names a command, checked by resolving the name it
+    " names. Matching the right-hand side as a substring passes on a command
+    " nothing defines, and that miss only surfaces under the user's fingers.
+    for [l:key, l:command] in [
+        \ ["\<Space>\<Space>", 'FuzzyBuffers'], ["\<Space>,", 'FuzzyBuffers'],
+        \ ["\<Space>fr", 'FuzzyMru'], ["\<Space>/", 'FuzzyInBuffer'],
+        \ ["\<Space>sb", 'FuzzyInBuffer'], ["\<Space>sc", 'FuzzyCommands'],
+        \ ["\<Space>sg", 'ChopsticksProjectGrep'], ["\<Space>sh", 'FuzzyHelp'],
+        \ ["\<Space>sw", 'ChopsticksProjectGrep'], [';b', 'FuzzyBuffers'],
+        \ [';h', 'FuzzyHelp'], [';l', 'FuzzyInBuffer'],
+        \ [';r', 'ChopsticksProjectGrep'], ['\', 'FuzzyBuffers'],
+        \ ]
+        call assert_equal(l:command,
+            \ matchstr(maparg(l:key, 'n'), '^:\zs\u\w*'), string(l:key))
+        call assert_equal(2, exists(':' . l:command), l:command)
+    endfor
+    " The loop above only reads right-hand sides that name a command, so the
+    " bindings that call a function are invisible to it and could be deleted
+    " with every suite still green.
+    for l:key in ["\<C-p>", "\<Space>ff", ';f']
+        call assert_match('chopsticks#find#FindFiles',
+            \ maparg(l:key, 'n'), string(l:key))
+    endfor
+    call assert_equal('', maparg("\<Space>sB", 'n'))
+    call assert_equal('', maparg("\<Space>sm", 'n'))
     call assert_equal('', maparg("\<Esc>\<Esc>", 't'))
     call assert_match('TableModeToggle', maparg(',tt', 'n'))
     call assert_match('ALELint', maparg(',l', 'n'))

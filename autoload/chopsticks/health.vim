@@ -77,7 +77,7 @@ export def Lines(): list<string>
     '',
     'Tools',
     ]
-  for tool in ['git', 'rg', 'fzf', 'fd', 'lazygit', 'marksman',
+  for tool in ['git', 'rg', 'fd', 'lazygit', 'marksman',
       'markdownlint', 'prettier', 'glow', 'pandoc', 'pngpaste']
     var available = executable(tool) == 1
     lines->add(printf('[%s] %-14s %s',

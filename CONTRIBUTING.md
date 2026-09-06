@@ -79,25 +79,8 @@ The npm scripts find Python without requiring a platform-specific alias: they
 try `py -3` and `python` on Windows, and `python3` then `python` elsewhere. They
 fail before running a task when the interpreter is older than Python 3.8.
 
-Install `fzf` as a system dependency before testing fuzzy-finder features.
-Chopsticks deliberately does not run fzf's plugin-provided binary downloader;
-use one of the upstream-supported package-manager commands instead:
-
-```sh
-# macOS with Homebrew
-brew install fzf
-
-# Debian or Ubuntu
-sudo apt install fzf
-```
-
-```powershell
-# Windows PowerShell with WinGet
-winget install --exact --id junegunn.fzf
-```
-
-After installing with WinGet, open a new PowerShell session so the updated
-`PATH` is visible.
+Fuzzy finding needs no extra binary. Install `ripgrep` for faster file and
+text search; without it fuzzbox falls back to `git` and the system `grep`.
 
 Each Vim lint run downloads two commit-pinned linters into a fresh, isolated
 temporary directory and removes it afterward. On a trusted development

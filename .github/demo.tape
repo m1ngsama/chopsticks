@@ -6,7 +6,6 @@ Require bash
 Require vim
 Require git
 Require rg
-Require fzf
 
 Set Shell bash
 Set FontFamily "JetBrainsMono Nerd Font Mono"
@@ -64,7 +63,7 @@ Sleep 2s
 Ctrl+C
 Sleep 500ms
 
-# Find and open the README through the real fzf.vim integration.
+# Find and open the README through fuzzbox.
 Type "f"
 Wait+Screen /README.md/
 Type "README"
@@ -83,7 +82,7 @@ Sleep 750ms
 
 # Search inside the current file, then enter the Markdown focus mode.
 Type@40ms ";l"
-Wait+Screen /BLines/
+Wait+Screen /Lines in Buffer/
 Type "Interface"
 Sleep 1s
 Enter

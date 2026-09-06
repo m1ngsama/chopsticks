@@ -43,8 +43,13 @@ releases of the current line.
 - Plugins, local configuration, sessions, and generated state now derive from
   Vim's platform-native data root (`~/.vim` or `~/vimfiles`), with an explicit
   `g:chopsticks_data_dir` override.
-- fzf is an explicit system prerequisite; startup no longer invokes the
-  plugin's unverified release downloader.
+- The fuzzy finder is now fuzzbox, a Vim9script plugin with no binary
+  dependency, so no separate finder executable is required on any platform.
+  Finder keys are unchanged, including `Esc`, `Ctrl-c`, `Ctrl-g` and `Ctrl-q`
+  to close it. File search now lists every file the finder can see rather
+  than only Git-tracked ones, so a newly created file appears immediately;
+  project grep matches a literal string as you type, where it previously took
+  a regular expression and then filtered fuzzily.
 - Vim 9.1.1947 or newer is required on every platform, not only Windows. The
   reason is unchanged -- older builds carry an upstream executable search-path
   vulnerability -- but the floor is no longer split by platform.
@@ -56,6 +61,12 @@ releases of the current line.
   modules unread.
 - Language servers are registered from `lang/` and installed by you, rather
   than downloaded automatically. `:ChopsticksHealth` reports which are present.
+
+### Removed
+
+- `SPC s B` (search all open buffers) and `SPC s m` (search mappings). The
+  cheatsheet on `SPC ?` supersedes the latter; the project grep covers the
+  former.
 
 ### Fixed
 
@@ -73,8 +84,6 @@ releases of the current line.
 - File search cancellation consistently returns to Vim.
 - Project grep and Git-file search now use the current file's nearest Git root
   without changing Vim's working-directory scope.
-- The fzf `Ctrl-O` action now opens the selected file instead of invoking
-  Vim's unrelated legacy `:open` command.
 - Re-sourcing `.vimrc` no longer duplicates key-guide state or autocommands.
 - Session loading now refuses modified buffers and symlink or non-regular
   inputs, enforces private POSIX permissions, and respects the Windows profile

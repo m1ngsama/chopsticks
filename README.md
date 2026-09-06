@@ -19,17 +19,17 @@ pinned to a commit.
 
 ## Install
 
-Requires Vim 9.1.1947+, Git, a system `fzf` executable,
-and [vim-plug](https://github.com/junegunn/vim-plug). Install the executable
-prerequisites first:
+Requires Vim 9.1.1947+, Git, and
+[vim-plug](https://github.com/junegunn/vim-plug). `ripgrep` is optional and
+makes file and text search faster. Install the executable prerequisites first:
 
 ```sh
 # macOS
-brew install vim git fzf curl
+brew install vim git ripgrep curl
 
 # Debian or Ubuntu
 sudo apt-get update
-sudo apt-get install -y vim git fzf curl
+sudo apt-get install -y vim git ripgrep curl
 ```
 
 Move aside an existing `~/.vimrc`, `~/chopsticks`, or
@@ -82,7 +82,7 @@ On Windows, install the prerequisites from PowerShell:
 
 ```powershell
 $ErrorActionPreference = 'Stop'
-foreach ($package in 'vim.vim', 'Git.Git', 'junegunn.fzf') {
+foreach ($package in 'vim.vim', 'Git.Git') {
   winget install --exact --id $package
   if ($LASTEXITCODE -ne 0) {
     throw "WinGet failed to install $package (exit $LASTEXITCODE)"
@@ -91,13 +91,13 @@ foreach ($package in 'vim.vim', 'Git.Git', 'junegunn.fzf') {
 ```
 
 Close and reopen PowerShell so WinGet's PATH changes take effect, then confirm
-all three commands resolve before continuing. The setup refuses to overwrite
+both commands resolve before continuing. The setup refuses to overwrite
 an existing `~/chopsticks`, `~/_vimrc`, or `~/vimfiles/autoload/plug.vim`;
 move any of them aside first:
 
 ```powershell
 $ErrorActionPreference = 'Stop'
-Get-Command vim, git, fzf
+Get-Command vim, git
 
 $chopsticksRepo = Join-Path $HOME 'chopsticks'
 $vimrcPath = Join-Path $HOME '_vimrc'
@@ -149,9 +149,7 @@ iTerm2, WezTerm, Kitty, Ghostty, Windows Terminal, and VS Code terminals enable
 Nerd Font v3 icons automatically when their active font supports them. Set
 `g:chopsticks_icons = 0` before sourcing the file for ASCII output.
 
-The vim-plug bootstrap is pinned and verified before Vim executes it. The fzf
-plugin is also commit-pinned, but Chopsticks never runs its bundled downloader;
-that downloader fetches a second release artifact without verifying a checksum.
+The vim-plug bootstrap is pinned and verified before Vim executes it.
 
 ## Interface
 
@@ -337,7 +335,7 @@ brew install vhs ffmpeg
 npm run demo
 ```
 
-The tape expects `rg`, `fzf`, and **JetBrainsMono Nerd Font Mono** so icon and
+The tape expects `rg` and **JetBrainsMono Nerd Font Mono** so icon and
 cell widths remain deterministic.
 
 ## Update

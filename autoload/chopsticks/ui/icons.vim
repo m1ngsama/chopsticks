@@ -4,8 +4,8 @@ vim9script
 # early in every startup rather than on a user action.
 #
 # A live icon toggle also has to refresh things that are not icon concerns --
-# fzf's gfiles options, the dashboard, the status and tab lines -- which stay in
-# .vimrc because they are script-local there. Toggle() fires a guarded
+# fuzzbox's devicon switch, the dashboard, the status and tab lines -- which
+# stay in .vimrc because they are script-local there. Toggle() fires a guarded
 # `User ChopsticksIconsToggled` so .vimrc can run that refresh in its old order.
 
 var auto_enabled = &encoding ==# 'utf-8'

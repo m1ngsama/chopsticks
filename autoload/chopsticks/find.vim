@@ -1,92 +1,34 @@
 vim9script
 
-# Searches are rooted at the project, not the working directory, so the same
-# keys find the same files whichever buffer is open. Every entry point degrades
-# to Vim's own commands where fzf is absent.
-#
-# fzf#vim#... names are autoload-style and resolve at call time, so they can
-# appear literally even without fzf.vim. Plain commands cannot: Vim9 resolves a
-# command name when the :def is compiled, so :History and friends go through
-# :execute or this module fails to compile wherever fzf.vim is missing.
-
-import autoload 'chopsticks/ui/icons.vim'
-
-const ABORT_KEYS = 'esc:abort,ctrl-c:abort,ctrl-g:abort,ctrl-q:abort'
-
-const SKIP_DIRS = [
-  '.git', '.cache', '.cargo', '.npm', '.pnpm-store', '.rustup',
-  '.bun', '.codex', 'Library', 'node_modules', 'plugged',
-  '.venv', 'venv', '__pycache__', 'build', 'dist', 'target', 'vendor',
-]
-
-export def AbortKeys(): string
-  return ABORT_KEYS
+def Available(): bool
+  return exists(':FuzzyFiles') == 2
 enddef
 
-# A function, not a constant, so an icon toggle is picked up.
-export def VisualOptions(): list<string>
-  return [
-    '--prompt', icons.Get('search') .. ' ',
-    '--pointer', icons.Get('pointer'),
-    '--marker', icons.Get('marker'),
-  ]
-enddef
-
-def FileSource(): string
-  if executable('fd') == 1
-    var parts = ['fd', '--type', 'f', '--hidden', '--color', 'never']
-    for directory in SKIP_DIRS
-      extend(parts, ['--exclude', shellescape(directory)])
-    endfor
-    return join(parts, ' ')
+export def FindFiles()
+  if Available()
+    fuzzbox#Launch('files', {cwd: g:ChopsticksProjectRoot()})
+  else
+    execute 'edit' fnameescape(g:ChopsticksProjectRoot())
   endif
-  if executable('rg') == 1
-    var parts = ['rg', '--files', '--hidden', '--color', 'never']
-    for directory in SKIP_DIRS
-      extend(parts, ['--glob', shellescape('!**/' .. directory .. '/**')])
-    endfor
-    return join(parts, ' ')
-  endif
-  return ''
 enddef
 
-export def Files(path: string, bang: bool)
-  var root = fnamemodify(
-    empty(path) ? g:ChopsticksProjectRoot() : expand(path), ':p')
-  var options = [
-    '--bind', ABORT_KEYS,
-    '--header', icons.Get('quit') .. ' ESC / CTRL-Q close · ENTER open',
-  ]
-  extend(options, VisualOptions())
-  var spec = {dir: root, options: options}
-  var source = FileSource()
-  if !empty(source)
-    spec.source = source
-  endif
-  fzf#vim#files(root, fzf#vim#with_preview(spec), bang)
-enddef
-
-# tests/ui.vim asserts this does not change the working directory.
-export def ProjectSpec(): dict<string>
-  return {dir: g:ChopsticksProjectRoot()}
-enddef
-
-export def Grep(query: string, bang: bool)
-  if exists(':Rg') != 2 || executable('rg') != 1 || executable('fzf') != 1
+export def Grep(query: string)
+  if !Available()
     echohl WarningMsg
-    echomsg 'chopsticks: project grep needs fzf.vim and rg'
+    echomsg 'chopsticks: project grep needs fuzzbox'
     echohl None
     return
   endif
-  var command = 'rg --column --line-number --no-heading '
-    .. '--color=always --smart-case -- ' .. fzf#shellescape(query)
-  fzf#vim#grep(command, fzf#vim#with_preview(ProjectSpec()), bang)
+  fuzzbox#Launch('grep', {cwd: g:ChopsticksProjectRoot(), prompt_text: query})
 enddef
 
+# The worktree check is why this is a function and not a bare :FuzzyGitFiles
+# mapping: outside a repository the command would push git's own error into
+# the popup instead of saying what is wrong.
 export def GitFiles()
-  if exists(':GFiles') != 2 || executable('git') != 1 || executable('fzf') != 1
+  if !Available()
     echohl WarningMsg
-    echomsg 'chopsticks: Git file search needs Git and fzf.vim'
+    echomsg 'chopsticks: Git file search needs fuzzbox'
     echohl None
     return
   endif
@@ -98,40 +40,17 @@ export def GitFiles()
     echohl None
     return
   endif
-  fzf#vim#gitfiles('', fzf#vim#with_preview(ProjectSpec()), 0)
-enddef
-
-export def FindFiles()
-  if executable('fzf') == 1 && exists(':GFiles') == 2 && executable('git') == 1
-    var root = g:ChopsticksProjectRoot()
-    system('git -C ' .. shellescape(root) .. ' rev-parse --is-inside-work-tree')
-    if v:shell_error == 0
-      GitFiles()
-      return
-    endif
-  endif
-  if executable('fzf') == 1 && exists(':Files') == 2
-    execute 'Files ' .. fnameescape(g:ChopsticksProjectRoot())
-    return
-  endif
-  execute 'edit ' .. fnameescape(g:ChopsticksProjectRoot())
+  fuzzbox#Launch('files', {cwd: root, command: 'git ls-files'})
 enddef
 
 export def RecentFiles()
-  if executable('fzf') == 1 && exists(':History') == 2
-    execute 'History'
+  if Available()
+    fuzzbox#Launch('mru')
   elseif !empty(v:oldfiles)
     execute 'browse oldfiles'
   else
     echohl WarningMsg
     echomsg 'chopsticks: no recent files yet'
     echohl None
-  endif
-enddef
-
-export def DefineCommands()
-  if executable('fzf') == 1 && exists(':Files') == 2
-    command! -bang -nargs=? -complete=dir Files
-      \ chopsticks#find#Files(<q-args>, <bang>0)
   endif
 enddef

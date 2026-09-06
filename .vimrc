@@ -207,18 +207,6 @@ let g:netrw_keepdir = 0
 let g:netrw_list_hide = '\(^\|\s\s\)\zs\.\S\+'
 let g:netrw_list_hide .= ',\.pyc$,node_modules,\.git,__pycache__,\.DS_Store,dist,build'
 
-let g:fzf_layout = {'window': {'width': 0.92, 'height': 0.84}}
-let g:fzf_action = {
-    \ 'ctrl-t': 'tab split',
-    \ 'ctrl-x': 'split',
-    \ 'ctrl-v': 'vsplit',
-    \ 'ctrl-o': 'edit',
-    \ }
-let g:fzf_vim = {
-    \ 'preview_window': s:is_remote ? [] : ['right,55%', 'ctrl-/'],
-    \ 'gfiles_options': ['--bind', chopsticks#find#AbortKeys()] + chopsticks#find#VisualOptions(),
-    \ }
-
 " g:fuzzbox_keymaps is merged into the plugin's defaults, so naming only exit
 " replaces that one list. Ctrl-q is listed because the default binds it to a
 " send-to-quickfix action that unpacks three values from a four-value function
@@ -559,12 +547,11 @@ set tabline=%!ChopsticksTabline()
 call chopsticks#ui#bufferline#Refresh()
 
 " icons.vim owns the fern/ALE variables a toggle re-applies. What a toggle also
-" has to refresh but is not an icon concern -- g:fzf_vim, the dashboard, the
-" status and tab lines -- stays here, driven by the guarded
+" has to refresh but is not an icon concern -- g:fuzzbox_devicons, the
+" dashboard, the status and tab lines -- stays here, driven by the guarded
 " `User ChopsticksIconsToggled` icons.vim fires (see the augroup below).
 function! s:RefreshIconDependents() abort
-    let g:fzf_vim.gfiles_options =
-        \ ['--bind', chopsticks#find#AbortKeys()] + chopsticks#find#VisualOptions()
+    let g:fuzzbox_devicons = chopsticks#ui#icons#Enabled()
     if &filetype ==# 'chopsticks-dashboard'
         call chopsticks#ui#dashboard#Render()
     endif
@@ -604,14 +591,11 @@ call chopsticks#ui#theme#DefineInterfaceColors()
 " understand `import autoload` and fails to parse the file if one is added.
 " Sessions are reached through the plugin/chopsticks.vim shims instead.
 
-command! -bang -nargs=* ChopsticksProjectGrep
-    \ call chopsticks#find#Grep(<q-args>, <bang>0)
+command! -nargs=* ChopsticksProjectGrep call chopsticks#find#Grep(<q-args>)
 
 command! ChopsticksFindFiles call chopsticks#find#FindFiles()
 
 command! ChopsticksRecentFiles call chopsticks#find#RecentFiles()
-
-call chopsticks#find#DefineCommands()
 
 call chopsticks#keys#Reset()
 let g:which_key_map = {}
@@ -863,31 +847,26 @@ call s:LeaderN(['g', 'g'], ':call chopsticks#actions#Lazygit()<CR>', 'Git', 'Laz
 " ── Plugin mappings ────────────────────────────────────────────────────────
 
 function! s:PluginMaps() abort
-    if exists(':Files') == 2 && executable('fzf') == 1
+    if exists(':FuzzyFiles') == 2
         call chopsticks#keys#Catalog('Fast find', 't', 'Esc / Ctrl-q', 'Close finder')
-        call s:LeaderN(['<Space>'], ':Buffers<CR>', 'Buffers', 'Find open buffers')
-        call s:LeaderN([','], ':Buffers<CR>', 'Buffers', 'Find open buffers')
+        call s:LeaderN(['<Space>'], ':FuzzyBuffers<CR>', 'Buffers', 'Find open buffers')
+        call s:LeaderN([','], ':FuzzyBuffers<CR>', 'Buffers', 'Find open buffers')
         call s:LeaderN(['f', 'f'], ':call chopsticks#find#FindFiles()<CR>', 'Files', 'Find files')
         call s:LeaderN(['f', 'g'], ':call chopsticks#find#GitFiles()<CR>', 'Files', 'Find Git files')
-        call s:LeaderN(['f', 'r'], ':History<CR>', 'Files', 'Recent files')
-        call s:LeaderN(['/'], ':BLines<CR>', 'Search', 'Search current buffer')
-        call s:LeaderN(['s', 'b'], ':BLines<CR>', 'Search', 'Search current buffer')
-        call s:LeaderN(['s', 'B'], ':Lines<CR>', 'Search', 'Search open buffers')
-        call s:LeaderN(['s', 'c'], ':Commands<CR>', 'Search', 'Search commands')
-        call s:LeaderN(['s', 'h'], ':Helptags<CR>', 'Search', 'Search Vim help')
-        call s:LeaderN(['s', 'm'], ':Maps<CR>', 'Search', 'Search mappings')
+        call s:LeaderN(['f', 'r'], ':FuzzyMru<CR>', 'Files', 'Recent files')
+        call s:LeaderN(['/'], ':FuzzyInBuffer<CR>', 'Search', 'Search current buffer')
+        call s:LeaderN(['s', 'b'], ':FuzzyInBuffer<CR>', 'Search', 'Search current buffer')
+        call s:LeaderN(['s', 'c'], ':FuzzyCommands<CR>', 'Search', 'Search commands')
+        call s:LeaderN(['s', 'g'], ':ChopsticksProjectGrep<CR>', 'Search', 'Grep project')
+        call s:LeaderN(['s', 'h'], ':FuzzyHelp<CR>', 'Search', 'Search Vim help')
+        call s:LeaderN(['s', 'w'], ':ChopsticksProjectGrep <C-r><C-w><CR>', 'Search', 'Grep word under cursor')
         call s:DirectN('<C-p>', ':call chopsticks#find#FindFiles()<CR>', 'Ctrl-p', 'Fast find', 'Find files')
         call s:DirectN(';f', ':call chopsticks#find#FindFiles()<CR>', ';f', 'Fast find', 'Find files')
-        call s:DirectN(';b', ':Buffers<CR>', ';b', 'Fast find', 'Find open buffers')
-        call s:DirectN(';l', ':BLines<CR>', ';l', 'Fast find', 'Search current buffer')
-        call s:DirectN(';h', ':Helptags<CR>', ';h', 'Fast find', 'Search Vim help')
-        call s:DirectN('<Bslash>', ':Buffers<CR>', '\', 'Fast find', 'Find open buffers')
-    endif
-    if exists(':Rg') == 2 && executable('rg') == 1
-        \ && executable('fzf') == 1
-        call s:LeaderN(['s', 'g'], ':ChopsticksProjectGrep<CR>', 'Search', 'Grep project')
-        call s:LeaderN(['s', 'w'], ':ChopsticksProjectGrep <C-r><C-w><CR>', 'Search', 'Grep word under cursor')
+        call s:DirectN(';b', ':FuzzyBuffers<CR>', ';b', 'Fast find', 'Find open buffers')
+        call s:DirectN(';l', ':FuzzyInBuffer<CR>', ';l', 'Fast find', 'Search current buffer')
+        call s:DirectN(';h', ':FuzzyHelp<CR>', ';h', 'Fast find', 'Search Vim help')
         call s:DirectN(';r', ':ChopsticksProjectGrep<CR>', ';r', 'Fast find', 'Grep project')
+        call s:DirectN('<Bslash>', ':FuzzyBuffers<CR>', '\', 'Fast find', 'Find open buffers')
     endif
     if exists(':Git') == 2 && executable('git') == 1
         call s:LeaderN(['g', 's'], ':Git status<CR>', 'Git', 'Git status')
@@ -934,7 +913,6 @@ function! s:RegisterWhichKey() abort
 endfunction
 
 function! s:PluginsReady() abort
-    call chopsticks#find#DefineCommands()
     call s:PluginMaps()
     call s:RegisterWhichKey()
 endfunction

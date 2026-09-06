@@ -477,17 +477,8 @@ function! s:AssertProjectRootSpecialCharacters() abort
 endfunction
 
 function! s:AssertProjectCommandsStayRooted() abort
-    " The spec builder used to be a script-local function in .vimrc, found
-    " here by searching :function output for its <SNR> name. It is now
-    " chopsticks#find#ProjectSpec() and is called directly below.
-    "
-    " Two ways of writing this are silently vacuous, and both were tried
-    " here. Searching :function output finds nothing once the name changes,
-    " and exists('*chopsticks#find#ProjectSpec') is 0 until something has
-    " already loaded the module -- exists() does not trigger autoloading. A
-    " guard on either one turns the whole assertion into an early return
-    " that reports success. Calling the function is what loads it, so this
-    " calls it and lets a genuine failure raise.
+    " Runs the real command rather than a spec builder, so the assertion is on
+    " what the user gets: without the plugin, FindFiles edits the root.
     let l:outside = tempname() . '-outside-project'
     let l:previous = getcwd()
     call mkdir(l:outside, 'p')
@@ -495,16 +486,13 @@ function! s:AssertProjectCommandsStayRooted() abort
         execute 'silent edit ' . fnameescape(s:root . '/README.md')
         execute 'cd ' . fnameescape(l:outside)
         call assert_equal(0, haslocaldir())
-        let l:spec = chopsticks#find#ProjectSpec()
-        call assert_equal(fnamemodify(s:root, ':p'),
-            \ fnamemodify(l:spec.dir, ':p'))
-        " resolve() on both sides: on macOS tempname() hands back a
-        " /var/... path while getcwd() reports the /private/var/... the
-        " symlink points at, so comparing them unresolved fails on a
-        " correct working directory.
-        call assert_equal(resolve(fnamemodify(l:outside, ':p')),
-            \ resolve(fnamemodify(getcwd(), ':p')))
+        ChopsticksFindFiles
+        let l:Canon = {p -> substitute(resolve(fnamemodify(p, ':p')), '[/\\]\+$', '', '')}
+        call assert_equal(l:Canon(s:root), l:Canon(bufname('%')))
         call assert_equal(0, haslocaldir())
+        " The directory buffer this opened is a file buffer to
+        " FileBufferCount(), and the bufferline case counts those.
+        silent! bwipeout!
     finally
         execute 'cd ' . fnameescape(l:previous)
         call delete(l:outside, 'rf')
@@ -527,22 +515,35 @@ function! s:AssertStartupTimeIsStable() abort
     call assert_equal(l:startup_ms, g:chopsticks_startup_ms)
 endfunction
 
-function! s:AssertFzfFallback() abort
-    call assert_notequal(1, executable('fzf'))
-    call assert_equal(2, exists(':Files'))
-    call assert_equal(2, exists(':History'))
-    call assert_equal(2, exists(':Rg'))
+function! s:AssertFinderFallback() abort
+    " The UI harness installs no plugins, so this is the no-fuzzbox path.
+    call assert_equal(0, exists(':FuzzyFiles'))
+    call assert_equal(2, exists(':ChopsticksFindFiles'))
+    call assert_equal(2, exists(':ChopsticksProjectGrep'))
+    call assert_equal(2, exists(':ChopsticksRecentFiles'))
     call assert_equal('', maparg(';f', 'n'))
     call assert_equal('', maparg(';r', 'n'))
-    call assert_match('\[--\]\s\+fzf\s\+optional / missing',
-        \ join(ChopsticksHealthLines(), "\n"))
+    call assert_notmatch('\<fzf\>', join(ChopsticksHealthLines(), "\n"))
+    call assert_match('project grep needs fuzzbox',
+        \ execute('ChopsticksProjectGrep'))
+    call assert_match('Git file search needs fuzzbox',
+        \ execute('call chopsticks#find#GitFiles()'))
+    call assert_match('no recent files yet', execute('ChopsticksRecentFiles'))
+
+    " Only the buffer is asserted. The fallback opens netrw, and
+    " g:netrw_keepdir = 0 makes netrw lcd into the directory it browses, so
+    " getcwd() legitimately changes here. That the plugin path leaves Vim's
+    " directory alone is asserted in tests/plugins.vim, which has a plugin.
+    " Starting from a named buffer, because an unnamed one expands to the
+    " working directory -- which is the root, so a fallback that never ran
+    " would read as one that did.
+    execute 'silent edit ' . fnameescape(s:root . '/README.md')
+    ChopsticksFindFiles
+    let l:Canon = {p -> substitute(resolve(fnamemodify(p, ':p')), '[/\\]\+$', '', '')}
+    call assert_equal(l:Canon(s:root), l:Canon(bufname('%')))
 
     ChopsticksDashboard
     call assert_notmatch('Find Text', join(getline(1, '$'), "\n"))
-    call assert_notmatch('fzf command executed',
-        \ execute('ChopsticksRecentFiles'))
-    call assert_notmatch('fzf command executed',
-        \ execute('ChopsticksFindFiles'))
 endfunction
 
 function! s:AssertSession() abort
@@ -1021,21 +1022,17 @@ function! s:RunCase() abort
         call assert_false(ChopsticksTransparencyEnabled())
         call s:AssertConfigurationFallbacks()
         call s:AssertAutomaticDashboard(1)
-        command! Rg echo
+        command! FuzzyGrep echo
         ChopsticksDashboard
         let l:dashboard = join(getline(1, '$'), "\n")
-        if executable('rg') == 1 && executable('fzf') == 1
-            call assert_match('Find Text', l:dashboard)
-        else
-            call assert_notmatch('Find Text', l:dashboard)
-        endif
+        call assert_match('Find Text', l:dashboard)
         call s:AssertBufferline(0, 2)
         call s:AssertDashboardLayout()
         call s:AssertDensityCycle()
     elseif s:case ==# 'minimal'
         call assert_equal('minimal', ChopsticksUiDensity())
         call s:AssertAutomaticDashboard(0)
-        command! Rg echo
+        command! FuzzyGrep echo
         ChopsticksDashboard
         call assert_notmatch('Find Text', join(getline(1, '$'), "\n"))
         call assert_notmatch('Restore Session', join(getline(1, '$'), "\n"))
@@ -1043,14 +1040,10 @@ function! s:RunCase() abort
     elseif s:case ==# 'rich'
         call assert_equal('rich', ChopsticksUiDensity())
         call s:AssertAutomaticDashboard(1)
-        command! Rg echo
+        command! FuzzyGrep echo
         ChopsticksDashboard
         let l:dashboard = join(getline(1, '$'), "\n")
-        if executable('rg') == 1 && executable('fzf') == 1
-            call assert_match('Find Text', l:dashboard)
-        else
-            call assert_notmatch('Find Text', l:dashboard)
-        endif
+        call assert_match('Find Text', l:dashboard)
         call s:AssertBufferline(2, 2)
     elseif s:case ==# 'density'
         call s:AssertStatuslineDensity()
@@ -1087,8 +1080,8 @@ function! s:RunCase() abort
         call s:AssertDataDirectory(s:DefaultDataDirectory(), 1)
     elseif s:case ==# 'path-overrides'
         call s:AssertExplicitPathOverrides()
-    elseif s:case ==# 'fzf-unavailable'
-        call s:AssertFzfFallback()
+    elseif s:case ==# 'finder-unavailable'
+        call s:AssertFinderFallback()
     elseif s:case ==# 'session'
         call s:AssertSession()
     elseif s:case ==# 'health'

@@ -33,8 +33,8 @@ const ITEMS = [
   {key: 'q', icon: 'quit', label: 'Quit', action: 'qall'},
 ]
 
-# Availability, not only density: the grep entry needs fzf.vim's :Rg plus both
-# binaries, and the session entry needs a session file for this project.
+# Availability, not only density: the grep entry needs the finder plugin, and
+# the session entry needs a session file for this project.
 def Items(requested_density: string = ''): list<dict<string>>
   var density = empty(requested_density)
     ? g:ChopsticksUiDensity() : requested_density
@@ -42,7 +42,7 @@ def Items(requested_density: string = ''): list<dict<string>>
     ? ['f', 'n', 'r', 'c', 'q']
     : ['f', 'n', 'g', 'r', 'c', 's', 'q']
   var items = filter(copy(ITEMS), (_, item) => index(keys, item.key) >= 0)
-  if exists(':Rg') != 2 || executable('rg') != 1 || executable('fzf') != 1
+  if exists(':FuzzyGrep') != 2
     filter(items, (_, item) => item.key !=# 'g')
   endif
   # g:, not a bare name: a bare name is the script-local one, so the guard

@@ -10,6 +10,14 @@ releases of the current line.
 
 ## [Unreleased]
 
+### Added
+
+- Python and Rust linting and formatting. `,l` runs `ruff` on Python and
+  `cargo clippy` on Rust, and `,f` formats with `ruff_format` and `rustfmt`.
+  Both languages previously had neither: `g:ale_linters_explicit` means only
+  the languages named in the list are linted, and they were not in it.
+  `:ChopsticksHealth` now reports whether `ruff` and `rustfmt` are installed.
+
 ## [0.2.1] - 2026-09-07
 
 ### Added

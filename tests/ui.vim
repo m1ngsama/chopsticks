@@ -530,6 +530,20 @@ endfunction
 " that is missing something: without the autocommand nothing appears until
 " <Tab>, without noselect the line rewrites itself as you type, and without the
 " two mappings the popup swallows Up and Down and history becomes unreachable.
+" g:ale_linters_explicit is what makes this list exhaustive rather than
+" additive: ALE runs only what is named here, so a language missing from it is
+" a language with no linting at all. That was true of Python and Rust.
+function! s:AssertLanguageTooling() abort
+    call assert_equal(1, g:ale_linters_explicit)
+    call assert_equal(['ruff'], g:ale_linters.python)
+    call assert_equal(['cargo'], g:ale_linters.rust)
+    call assert_equal(['ruff_format'], g:ale_fixers.python)
+    call assert_equal(['rustfmt'], g:ale_fixers.rust)
+    " clippy is the reason to run cargo at all here; rust-analyzer already
+    " reports what plain `cargo check` would, through ALE's LSP bridge.
+    call assert_equal(executable('cargo-clippy'), g:ale_rust_cargo_use_clippy)
+endfunction
+
 function! s:AssertCmdlineAutocomplete(enabled) abort
     call assert_equal(a:enabled, g:chopsticks_cmdline_autocomplete)
     call assert_equal(a:enabled ? 'noselect:lastused,full' : 'longest:full,full',
@@ -697,6 +711,12 @@ function! s:AssertHealth() abort
     " exits 1). The report must say so rather than imply a verified server.
     call assert_match('not verified to start', join(l:lines, "\n"),
         \ 'health report no longer distinguishes "on PATH" from "works"')
+    " The tools the fixers and linters name. Reporting a missing one is the
+    " whole mechanism by which this configuration installs nothing itself.
+    for l:tool in ['ruff', 'rustfmt']
+        call assert_match('\n\[\%(ok\|--\)\] ' . l:tool . '\s', join(l:lines, "\n"),
+            \ 'health report does not mention ' . l:tool)
+    endfor
     " Presence checks alone missed 149 spurious rows from $VIMRUNTIME's own
     " lang/menu_*.vim locale files; pin the exact row set so that regresses.
     let l:header = index(l:lines, 'Language servers (on PATH; not verified to start)')
@@ -1068,6 +1088,7 @@ function! s:RunCase() abort
         call assert_equal('auto', g:chopsticks_system_clipboard)
         call assert_equal('everforest', g:chopsticks_colorscheme)
         call s:AssertCmdlineAutocomplete(1)
+        call s:AssertLanguageTooling()
         let l:desktop_clipboard = has('clipboard')
             \ && (has('macunix') || has('win32') || has('win64')
             \     || !empty($DISPLAY) || !empty($WAYLAND_DISPLAY))

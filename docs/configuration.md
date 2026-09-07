@@ -55,6 +55,7 @@ override either derived path independently.
 | `g:chopsticks_markdown_image_dir`     | `assets`                          | Relative directory            | Stores images pasted with `,i`           |
 | `g:chopsticks_auto_lint`              | `0`                               | `0`, `1`                      | Lints automatically on enter and save    |
 | `g:chopsticks_long_line_threshold`    | `4096`                            | Columns, or `0` to disable    | Drops `breakindent` on very long lines   |
+| `g:chopsticks_cmdline_autocomplete`   | `1`                               | `0`, `1`                      | Suggests on the command line as you type |
 | `g:chopsticks_finder_exclude_dir`     | 18 build and cache directories    | List of directory names       | Directories file search never lists      |
 
 For automatic switches, the strings `on`, `true`, and `yes` are also enabled

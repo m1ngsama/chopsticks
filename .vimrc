@@ -114,6 +114,8 @@ let g:chopsticks_markdown_spell = get(g:, 'chopsticks_markdown_spell', 1)
 let g:chopsticks_markdown_conceal = get(g:, 'chopsticks_markdown_conceal', 0)
 let g:chopsticks_markdown_image_dir = get(g:, 'chopsticks_markdown_image_dir', 'assets')
 let g:chopsticks_auto_lint = get(g:, 'chopsticks_auto_lint', 0)
+let g:chopsticks_cmdline_autocomplete =
+    \ get(g:, 'chopsticks_cmdline_autocomplete', 1)
 let g:chopsticks_long_line_threshold =
     \ get(g:, 'chopsticks_long_line_threshold', 4096)
 let g:chopsticks_ui_density = get(g:, 'chopsticks_ui_density', 'balanced')
@@ -412,7 +414,16 @@ set scrolloff=10 sidescrolloff=5 nowrap
 set incsearch hlsearch ignorecase smartcase
 set noexrc nomodeline
 set showcmd showmatch wildmenu wildignorecase
-set wildmode=longest:full,full
+" longest:full completes the shared prefix on the first <Tab>, which is what
+" you want when you asked for completion. Autocompletion asks on every
+" keystroke instead, so the same setting would rewrite the line while it is
+" being typed; noselect offers without inserting, and lastused puts the buffer
+" you came from at the top of :b.
+if g:chopsticks_cmdline_autocomplete
+    set wildmode=noselect:lastused,full
+else
+    set wildmode=longest:full,full
+endif
 set wildignore=*.pyc
 set wildignore+=*/node_modules/*,*/.git/*,*/__pycache__/*,*/dist/*,*/build/*
 set mouse=a
@@ -702,6 +713,16 @@ command! MarkdownHelp call chopsticks#markdown#Help()
 inoremap <silent><expr> <Tab> chopsticks#lsp#CompletionTab()
 inoremap <silent><expr> <S-Tab> chopsticks#lsp#CompletionBackTab()
 
+" With a suggestion popup open on the command line, Up and Down move inside it
+" and command-line history becomes unreachable. Dismissing the popup first
+" gives the keys back their usual meaning without giving up the suggestions.
+if g:chopsticks_cmdline_autocomplete
+    cnoremap <expr> <Up> wildmenumode() ? "\<C-e>\<Up>" : "\<Up>"
+    cnoremap <expr> <Down> wildmenumode() ? "\<C-e>\<Down>" : "\<Down>"
+    call chopsticks#keys#Catalog('Essentials', 'c', 'Tab / Up / Down',
+        \ 'Command-line suggestions, then history')
+endif
+
 " ── Core mappings ──────────────────────────────────────────────────────────
 
 " Save from any editing mode without moving either hand off the home row.
@@ -965,6 +986,14 @@ augroup Chopsticks
     autocmd QuickFixCmdPost l* lwindow
     autocmd FileType fern call chopsticks#explorer#FernSetup()
     autocmd FileType which_key call chopsticks#keys#Setup()
+    " Registered only when enabled, because this fires on every keystroke of
+    " every command line. wildtrigger() is the quiet form of 'wildchar': it
+    " does not beep when nothing matches, which is what makes it usable as an
+    " automatic trigger. The pattern covers searches too, where it completes
+    " from the buffer.
+    if g:chopsticks_cmdline_autocomplete
+        autocmd CmdlineChanged [:\/\?] call wildtrigger()
+    endif
     autocmd FileType netrw setlocal bufhidden=wipe
     autocmd FileType qf nnoremap <silent><buffer> q :close<CR>
     autocmd BufNewFile,BufRead *.mdx setfiletype markdown

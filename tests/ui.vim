@@ -526,6 +526,23 @@ function! s:AssertDefaultFinderExclude() abort
     endfor
 endfunction
 
+" All four parts, because each one alone leaves a working-looking command line
+" that is missing something: without the autocommand nothing appears until
+" <Tab>, without noselect the line rewrites itself as you type, and without the
+" two mappings the popup swallows Up and Down and history becomes unreachable.
+function! s:AssertCmdlineAutocomplete(enabled) abort
+    call assert_equal(a:enabled, g:chopsticks_cmdline_autocomplete)
+    call assert_equal(a:enabled ? 'noselect:lastused,full' : 'longest:full,full',
+        \ &wildmode)
+    call assert_equal(a:enabled, exists('#Chopsticks#CmdlineChanged'))
+    for l:key in ['<Up>', '<Down>']
+        call assert_equal(a:enabled ? 1 : 0,
+            \ maparg(l:key, 'c') =~# 'wildmenumode()' ? 1 : 0, l:key)
+    endfor
+    call assert_equal(a:enabled ? 1 : 0,
+        \ join(ChopsticksKeyLines(), "\n") =~# 'Command-line suggestions' ? 1 : 0)
+endfunction
+
 function! s:AssertFinderFallback() abort
     " The UI harness installs no plugins, so this is the no-fuzzbox path.
     call assert_equal(0, exists(':FuzzyFiles'))
@@ -756,9 +773,9 @@ endfunction
 function! s:AssertKeys() abort
     let l:lines = ChopsticksKeyLines()
     call assert_equal(type([]), type(l:lines))
-    " The sheet is 161 lines with 16 blank separators. A bound below that
-    " still catches a move that dropped whole groups, without breaking every
-    " time a key is added or retired.
+    " A floor, not a count. The sheet moves whenever a key is added or
+    " retired, and this sits far enough under it that only a move dropping
+    " whole groups takes it below -- which is the failure worth catching.
     call assert_true(len(l:lines) > 150,
         \ 'key catalog is suspiciously short: ' . len(l:lines))
     call assert_equal(2, exists(':ChopsticksKeys'))
@@ -1050,6 +1067,7 @@ function! s:RunCase() abort
         call assert_equal('auto', g:chopsticks_bufferline)
         call assert_equal('auto', g:chopsticks_system_clipboard)
         call assert_equal('everforest', g:chopsticks_colorscheme)
+        call s:AssertCmdlineAutocomplete(1)
         let l:desktop_clipboard = has('clipboard')
             \ && (has('macunix') || has('win32') || has('win64')
             \     || !empty($DISPLAY) || !empty($WAYLAND_DISPLAY))
@@ -1116,6 +1134,8 @@ function! s:RunCase() abort
         call s:AssertDataDirectory(s:DefaultDataDirectory(), 1)
     elseif s:case ==# 'path-overrides'
         call s:AssertExplicitPathOverrides()
+    elseif s:case ==# 'cmdline-autocomplete-off'
+        call s:AssertCmdlineAutocomplete(0)
     elseif s:case ==# 'finder-exclude-override'
         call assert_equal(['vendor/', 'tmp/'], g:fuzzbox_files_exclude_dir)
     elseif s:case ==# 'finder-exclude-invalid-type'

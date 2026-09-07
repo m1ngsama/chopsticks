@@ -36,7 +36,7 @@ all_ui_test_cases='default minimal rich density status-context tabline-width
 transparent opaque theme-valid theme-fallback dashboard-off dashboard-on
 dashboard-wide bufferline-off bufferline-on data-dir-override
 data-dir-invalid-type data-dir-empty path-overrides finder-exclude-override
-finder-exclude-invalid-type finder-unavailable session
+finder-exclude-invalid-type cmdline-autocomplete-off finder-unavailable session
 health keys lsp-registry lsp-lang-files lsp-options-order lsp-maps markdown
 symlink-install'
 mkdir -p "$disabled_git_hooks"
@@ -580,6 +580,9 @@ run_ui_test finder-exclude-override \
     --cmd 'let g:chopsticks_dashboard = 0'
 run_ui_test finder-exclude-invalid-type \
     --cmd "let g:chopsticks_finder_exclude_dir = 'vendor'" \
+    --cmd 'let g:chopsticks_dashboard = 0'
+run_ui_test cmdline-autocomplete-off \
+    --cmd 'let g:chopsticks_cmdline_autocomplete = 0' \
     --cmd 'let g:chopsticks_dashboard = 0'
 # shellcheck disable=SC2016
 run_ui_test path-overrides \

@@ -247,6 +247,9 @@ function! s:RunStartup(expected_auto_lint) abort
     " prints them, so a rename shows up as a row that stopped existing.
     let l:sheet = join(ChopsticksKeyLines(), "\n")
     call assert_match('\nStart here\n', l:sheet)
+    " The section the UI suite cannot see: these keys exist only with the
+    " finder installed, which is the difference between the two suites.
+    call assert_match('\nFast find\n', l:sheet)
     for l:key in chopsticks#keys#StarterCoverage()
         call assert_match('\n  ' . escape(l:key, '\.*$^~[]') . '\s',
             \ l:sheet, 'Start here names an unbound key: ' . l:key)

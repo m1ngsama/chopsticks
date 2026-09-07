@@ -10,6 +10,15 @@ releases of the current line.
 
 ## [Unreleased]
 
+### Added
+
+- `SPC r d` and `:ChopsticksDebug` start Vim's built-in `termdebug` in a
+  window layout, choosing `rust-gdb` for Rust and `gdb` elsewhere, and loading
+  the package on first use rather than at startup. termdebug speaks GDB/MI, so
+  `lldb` is refused even where it is the only debugger installed; on macOS
+  that means `brew install gdb` and codesigning it. `:ChopsticksHealth` reports
+  whether `gdb` is present.
+
 ## [0.2.2] - 2026-09-07
 
 ### Added

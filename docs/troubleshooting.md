@@ -101,6 +101,17 @@ Open a buffer with the expected filetype before checking. Install the relevant
 tool using its official package instructions, restart Vim, and check `:messages`
 for discovery errors.
 
+## Debugging does not start
+
+`SPC r d` runs Vim's built-in `termdebug`, which drives the debugger over
+GDB/MI. Only `gdb` and front ends compatible with it work; `lldb` speaks a
+different protocol and is refused rather than started and left silent. On
+macOS that means installing `gdb` and codesigning it for Mach port access,
+which its own installation notes cover. `:ChopsticksHealth` reports whether
+`gdb` is on your `PATH`.
+
+Rust uses `rust-gdb` when it is installed, for the pretty-printers it adds.
+
 ## The theme or background is wrong
 
 Test a built-in theme to separate theme installation from terminal rendering:

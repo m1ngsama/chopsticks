@@ -641,6 +641,8 @@ command! -nargs=* ChopsticksProjectGrep call chopsticks#find#Grep(<q-args>)
 command! ChopsticksFindFiles call chopsticks#find#FindFiles()
 
 command! ChopsticksRecentFiles call chopsticks#find#RecentFiles()
+command! -nargs=* -complete=file ChopsticksDebug
+    \ call chopsticks#debug#Start(<q-args>)
 
 call chopsticks#keys#Reset()
 let g:which_key_map = {}
@@ -946,6 +948,7 @@ function! s:PluginMaps() abort
     if exists(':UndotreeToggle') == 2
         call s:LeaderN(['u', 'U'], ':UndotreeToggle<CR>', 'Toggles', 'Toggle undo tree')
     endif
+    call s:LeaderN(['r', 'd'], ':ChopsticksDebug<CR>', 'Run', 'Debug with termdebug')
     call s:LeaderN(['f', 'H'], ':ChopsticksDashboard<CR>', 'Files', 'Start screen')
     if exists(':Goyo') == 2
         call s:LeaderN(['z'], ':Goyo<CR>', 'Essentials', 'Focus mode')

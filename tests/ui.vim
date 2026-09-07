@@ -745,9 +745,9 @@ endfunction
 function! s:AssertKeys() abort
     let l:lines = ChopsticksKeyLines()
     call assert_equal(type([]), type(l:lines))
-    " The sheet is around 190 lines with about 17 blank separators. A lower
-    " bound well under that still catches a move that dropped whole groups,
-    " without breaking every time a key is added.
+    " The sheet is 161 lines with 16 blank separators. A bound below that
+    " still catches a move that dropped whole groups, without breaking every
+    " time a key is added or retired.
     call assert_true(len(l:lines) > 150,
         \ 'key catalog is suspiciously short: ' . len(l:lines))
     call assert_equal(2, exists(':ChopsticksKeys'))

@@ -10,6 +10,16 @@ releases of the current line.
 
 ## [Unreleased]
 
+### Fixed
+
+- The full cheatsheet on `SPC ?` is readable. The buffer has carried
+  `filetype=chopsticks-cheatsheet` since it was written with no syntax file
+  behind it, so 163 rows rendered in one colour; the title, section headings,
+  keys and mode column now follow the active theme like every other surface.
+- The cheatsheet's description column no longer goes ragged. Its columns are
+  measured from the longest entry rather than fixed, which a five-wide mode
+  such as `n/i/x` had already outgrown.
+
 ## [0.2.6] - 2026-09-07
 
 ### Fixed

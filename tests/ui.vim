@@ -877,6 +877,45 @@ endfunction
 " afterwards means the move broke something rather than that nothing was
 " watching. The specific keys asserted here are the ones README.md lists, so
 " this also catches the cheatsheet drifting away from the documentation.
+" The sheet is generated, so its columns can only be checked on the generated
+" text. `n/i/x` is five wide and overflowed a two-wide field, pushing that one
+" row's description out of line, and nothing here could see it.
+function! s:AssertCheatsheetLayout() abort
+    let l:starts = []
+    for l:line in ChopsticksKeyLines()
+        if l:line =~# '^  \S'
+            call add(l:starts, matchend(l:line, '^  .\{-}\s\{2,}\S\+\s\{2,}'))
+        endif
+    endfor
+    call assert_true(len(l:starts) > 100, 'too few entry rows: ' . len(l:starts))
+    call assert_equal(1, len(uniq(sort(copy(l:starts)))),
+        \ 'ragged description column: ' . string(uniq(sort(copy(l:starts)))))
+endfunction
+
+" The buffer has carried filetype=chopsticks-cheatsheet since it was written,
+" with no syntax file behind it, so every row rendered in one colour.
+function! s:AssertCheatsheetSyntax() abort
+    ChopsticksCheatsheet
+    try
+        call assert_equal('chopsticks-cheatsheet', &syntax)
+        " Not hlexists(): the syntax file's `highlight default link` creates
+        " each group as a link target, so it answers true even with nothing
+        " in the theme behind it and every row back to one colour.
+        for l:group in ['ChopCheatTitle', 'ChopCheatGroup', 'ChopCheatKey',
+            \ 'ChopCheatMode', 'ChopCheatEntry', 'ChopCheatLegend']
+            call assert_match('guifg=', execute('highlight ' . l:group),
+                \ l:group . ' has no colour behind it')
+        endfor
+        let l:row = search('^  \S', 'n')
+        call assert_true(l:row > 0, 'no entry row in the cheatsheet buffer')
+        call assert_equal('chopsticksCheatKey',
+            \ synIDattr(synID(l:row, 3, 1), 'name'),
+            \ 'the key column is not classified by the syntax file')
+    finally
+        close
+    endtry
+endfunction
+
 function! s:AssertKeys() abort
     let l:lines = ChopsticksKeyLines()
     call assert_equal(type([]), type(l:lines))
@@ -1262,6 +1301,8 @@ function! s:RunCase() abort
         call s:AssertHealth()
     elseif s:case ==# 'keys'
         call s:AssertKeys()
+        call s:AssertCheatsheetLayout()
+        call s:AssertCheatsheetSyntax()
     elseif s:case ==# 'lsp-registry'
         call s:AssertLspRegistry()
     elseif s:case ==# 'lsp-lang-files'

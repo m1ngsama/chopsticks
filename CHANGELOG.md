@@ -10,6 +10,22 @@ releases of the current line.
 
 ## [Unreleased]
 
+### Changed
+
+- **Every command is shorter, and the old names are gone.** The `Chopsticks`
+  prefix became `Chop` and `Markdown` became `Md`, which is the prefix this
+  codebase already used for its highlight groups. `:ChopsticksProjectGrep` is
+  `:ChopGrep`, `:ChopsticksTransparencyToggle` is `:ChopTransparency`,
+  `:MarkdownPasteImage` is `:MdPaste`; average length falls from 18 characters
+  to 9. `:ChopsticksKeys` and `:ChopsticksCheatsheet` were two names for one
+  action and are now just `:ChopKeys`.
+
+  Nothing is aliased: keeping the old names would leave fifteen extra entries
+  in command completion, which is the thing that made the short names worth
+  having. A local configuration or script that calls one by its old name must
+  be updated. The `g:chopsticks_*` settings and the `Chopsticks*()` functions
+  a statusline might call are untouched.
+
 ## [0.2.8] - 2026-09-07
 
 ### Added

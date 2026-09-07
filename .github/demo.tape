@@ -48,7 +48,7 @@ Enter
 Sleep 500ms
 Type ":normal! gg"
 Enter
-Type ":ChopsticksDashboard"
+Type ":ChopDash"
 Enter
 Wait+Screen /Find File/
 Type ":redraw!"
@@ -94,7 +94,7 @@ Type@40ms ",z"
 Sleep 750ms
 
 # Return to the Dashboard so the GIF loops on the strongest frame.
-Type ":ChopsticksDashboard"
+Type ":ChopDash"
 Enter
 Wait+Screen /Find File/
 Hide

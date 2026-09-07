@@ -5,7 +5,7 @@ vim9script
 # same-named projects never collide and an incompatible format never overwrites
 # a compatible one; POSIX writes land with private modes and a group- or
 # world-writable directory or file is refused; every platform rejects
-# non-regular session input; and a plain :ChopsticksSessionLoad refuses to
+# non-regular session input; and a plain :ChopLoad refuses to
 # clobber a modified listed buffer unless the bang form opts in.
 #
 # NormalizeDirectory and DirectoryFileType duplicate pieces of .vimrc's own
@@ -215,7 +215,7 @@ export def Load(force: bool): void
   if !force && !empty(modified)
     echohl WarningMsg
     echom printf('chopsticks: refusing to restore with %d modified listed '
-      .. 'buffer(s); write them or use :ChopsticksSessionLoad! to load '
+      .. 'buffer(s); write them or use :ChopLoad! to load '
       .. 'anyway', len(modified))
     echohl None
     return

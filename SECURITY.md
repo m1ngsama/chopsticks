@@ -53,7 +53,7 @@ code or data:
   project trust boundary.
 - Plugins execute inside Vim after an explicit `:PlugInstall`. Declarations are
   pinned to full commits to prevent silent drift, but plugins are not sandboxed.
-- `:ChopsticksSessionLoad` sources a native Vim session file. Chopsticks rejects
+- `:ChopLoad` sources a native Vim session file. Chopsticks rejects
   a session root that is not a real directory and a session path that is not a
   regular file. On platforms with meaningful POSIX modes, it also creates
   private session directories and files and refuses group- or world-writable

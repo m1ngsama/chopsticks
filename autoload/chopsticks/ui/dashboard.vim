@@ -24,12 +24,12 @@ const COMPACT_LOGO = [
 ]
 
 const ITEMS = [
-  {key: 'f', icon: 'search', label: 'Find File', action: 'ChopsticksFindFiles'},
+  {key: 'f', icon: 'search', label: 'Find File', action: 'ChopFiles'},
   {key: 'n', icon: 'new_file', label: 'New File', action: 'enew | startinsert'},
-  {key: 'g', icon: 'grep', label: 'Find Text', action: 'ChopsticksProjectGrep'},
-  {key: 'r', icon: 'recent', label: 'Recent Files', action: 'ChopsticksRecentFiles'},
+  {key: 'g', icon: 'grep', label: 'Find Text', action: 'ChopGrep'},
+  {key: 'r', icon: 'recent', label: 'Recent Files', action: 'ChopRecent'},
   {key: 'c', icon: 'config', label: 'Config', action: 'edit $MYVIMRC'},
-  {key: 's', icon: 'session', label: 'Restore Session', action: 'ChopsticksSessionLoad'},
+  {key: 's', icon: 'session', label: 'Restore Session', action: 'ChopLoad'},
   {key: 'q', icon: 'quit', label: 'Quit', action: 'qall'},
 ]
 
@@ -346,7 +346,7 @@ export def Open()
   nnoremap <silent><buffer> <Up> <ScriptCmd>Move(-1)<CR>
   nnoremap <silent><buffer> <Tab> <ScriptCmd>Move(1)<CR>
   nnoremap <silent><buffer> <S-Tab> <ScriptCmd>Move(-1)<CR>
-  nnoremap <silent><nowait><buffer> ? :ChopsticksCheatsheet<CR>
-  nnoremap <silent><nowait><buffer> h :ChopsticksHealth<CR>
+  nnoremap <silent><nowait><buffer> ? :ChopKeys<CR>
+  nnoremap <silent><nowait><buffer> h :ChopHealth<CR>
   Render()
 enddef

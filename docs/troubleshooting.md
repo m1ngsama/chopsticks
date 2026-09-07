@@ -3,7 +3,7 @@
 Start with:
 
 ```vim
-:ChopsticksHealth
+:ChopHealth
 :messages
 ```
 
@@ -63,7 +63,7 @@ File search prefers `rg`, then `ugrep`, then `ag`, then `fd`, then
 `git ls-files`, then the system `find` on Unix and `Get-ChildItem` on Windows;
 text search prefers `rg`, then `ugrep`, then `ag`, then `git grep`, then
 `grep` on Unix and `findstr` on Windows. Install `ripgrep` for speed and
-confirm it is visible in `:ChopsticksHealth`.
+confirm it is visible in `:ChopHealth`.
 
 A file that exists but never appears is usually excluded rather than missed.
 `SPC f f` skips every directory in `g:fuzzbox_files_exclude_dir`, including
@@ -77,13 +77,13 @@ is Vim's current directory.
 
 Plugins provide the editor integration, while language servers, linters, and
 formatters are separate executables. Chopsticks registers servers but does not
-install them; `:ChopsticksHealth` lists every language it knows and whether the
+install them; `:ChopHealth` lists every language it knows and whether the
 server is on your `PATH`. Inspect:
 
 ```vim
 :LspShowAllServers
 :ALEInfo
-:ChopsticksHealth
+:ChopHealth
 ```
 
 A language whose server is not installed is silent by design: no error on every
@@ -107,7 +107,7 @@ for discovery errors.
 GDB/MI. Only `gdb` and front ends compatible with it work; `lldb` speaks a
 different protocol and is refused rather than started and left silent. On
 macOS that means installing `gdb` and codesigning it for Mach port access,
-which its own installation notes cover. `:ChopsticksHealth` reports whether
+which its own installation notes cover. `:ChopHealth` reports whether
 `gdb` is on your `PATH`.
 
 Rust uses `rust-gdb` when it is installed, for the pretty-printers it adds.
@@ -117,8 +117,8 @@ Rust uses `rust-gdb` when it is installed, for the pretty-printers it adds.
 Test a built-in theme to separate theme installation from terminal rendering:
 
 ```vim
-:ChopsticksTheme default
-:ChopsticksTransparencyToggle
+:ChopTheme default
+:ChopTransparency
 ```
 
 An unknown theme safely falls back to Vim's `default`. Transparency is opaque
@@ -129,11 +129,11 @@ transparent background.
 
 Sessions store windows, buffers, and file references, not unsaved contents or
 running terminal jobs. Write modified files before
-`:ChopsticksSessionSave`.
+`:ChopSave`.
 
-A normal `:ChopsticksSessionLoad` also refuses to change the current layout
+A normal `:ChopLoad` also refuses to change the current layout
 while any listed buffer is modified. Write those buffers, or deliberately use
-`:ChopsticksSessionLoad!` to load anyway. The bang does not bypass path safety.
+`:ChopLoad!` to load anyway. The bang does not bypass path safety.
 
 On POSIX, Chopsticks refuses a session directory or file writable by group or
 other users. Fix ownership and modes instead of bypassing the check. Windows

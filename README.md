@@ -191,12 +191,12 @@ the last explicit yank available after a delete.
 Change presentation live with:
 
 ```vim
-:ChopsticksUiDensity rich
-:ChopsticksTheme everforest
-:ChopsticksTransparencyToggle
+:ChopDensity rich
+:ChopTheme everforest
+:ChopTransparency
 ```
 
-Calling `:ChopsticksUiDensity` without an argument cycles all three profiles.
+Calling `:ChopDensity` without an argument cycles all three profiles.
 The dashboard and bufferline also adapt to narrow windows; overflow buffers are
 summarized instead of pushing the active buffer off-screen.
 
@@ -236,8 +236,8 @@ Comma is the Markdown LocalLeader:
 ```
 
 ```vim
-:ChopsticksHealth
-:ChopsticksCheatsheet
+:ChopHealth
+:ChopKeys
 ```
 
 Project sessions use Vim's native `:mksession`, stored under the platform data
@@ -247,9 +247,9 @@ release, so projects with the same directory name do not collide and
 incompatible Vim session formats do not overwrite each other.
 
 ```vim
-:ChopsticksSessionSave
-:ChopsticksSessionLoad
-:ChopsticksSessionLoad! " explicitly load despite modified listed buffers
+:ChopSave
+:ChopLoad
+:ChopLoad! " explicitly load despite modified listed buffers
 ```
 
 Sessions store layout and file references, not unsaved text, and deliberately

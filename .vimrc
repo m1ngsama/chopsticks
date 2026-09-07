@@ -633,7 +633,7 @@ function! s:RefreshIconDependents() abort
     execute 'redrawtabline'
 endfunction
 
-command! -nargs=? ChopsticksUiDensity call chopsticks#ui#statusline#SetUiDensity(<q-args>)
+command! -nargs=? ChopDensity call chopsticks#ui#statusline#SetUiDensity(<q-args>)
 
 function! s:HandleResize() abort
     wincmd =
@@ -645,7 +645,7 @@ endfunction
 augroup ChopsticksInterface
     autocmd!
     " Apply()'s :colorscheme triggers this synchronously at top level, before
-    " the shims exist. :ChopsticksTheme fires it again long after startup; the
+    " the shims exist. :ChopTheme fires it again long after startup; the
     " dotted name covers both.
     autocmd ColorScheme * call chopsticks#ui#theme#DefineInterfaceColors()
     autocmd User ChopsticksIconsToggled call s:RefreshIconDependents()
@@ -665,12 +665,12 @@ call chopsticks#ui#theme#DefineInterfaceColors()
 " understand `import autoload` and fails to parse the file if one is added.
 " Sessions are reached through the plugin/chopsticks.vim shims instead.
 
-command! -nargs=* ChopsticksProjectGrep call chopsticks#find#Grep(<q-args>)
+command! -nargs=* ChopGrep call chopsticks#find#Grep(<q-args>)
 
-command! ChopsticksFindFiles call chopsticks#find#FindFiles()
+command! ChopFiles call chopsticks#find#FindFiles()
 
-command! ChopsticksRecentFiles call chopsticks#find#RecentFiles()
-command! -nargs=* -complete=file ChopsticksDebug
+command! ChopRecent call chopsticks#find#RecentFiles()
+command! -nargs=* -complete=file ChopDebug
     \ call chopsticks#debug#Start(<q-args>)
 
 call chopsticks#keys#Reset()
@@ -700,8 +700,8 @@ function! ChopsticksKeyLines() abort
     return chopsticks#keys#Lines()
 endfunction
 
-command! ChopsticksKeys call chopsticks#keys#Show()
-command! ChopsticksCheatsheet call chopsticks#keys#Show()
+command! ChopKeys call chopsticks#keys#Show()
+command! ChopKeys call chopsticks#keys#Show()
 
 " ── Markdown and prose ─────────────────────────────────────────────────────
 
@@ -748,9 +748,9 @@ for s:markdown_key in [
 endfor
 unlet s:markdown_key
 
-command! -nargs=? -complete=file MarkdownPasteImage call chopsticks#markdown#PasteImage(<q-args>)
-command! MarkdownGlow call chopsticks#markdown#Glow()
-command! MarkdownHelp call chopsticks#markdown#Help()
+command! -nargs=? -complete=file MdPaste call chopsticks#markdown#PasteImage(<q-args>)
+command! MdGlow call chopsticks#markdown#Glow()
+command! MdHelp call chopsticks#markdown#Help()
 
 " ── LSP and completion ─────────────────────────────────────────────────────
 
@@ -776,8 +776,8 @@ nnoremap <silent> <C-s> :update<CR>
 inoremap <silent> <C-s> <C-o>:update<CR>
 xnoremap <silent> <C-s> :<C-u>update<CR>gv
 call chopsticks#keys#Catalog('Essentials', 'n/i/x', 'Ctrl-s', 'Save file')
-call s:LeaderN(['?'], ':ChopsticksCheatsheet<CR>', 'Essentials', 'Full cheatsheet')
-call s:LeaderN(['h'], ':ChopsticksHealth<CR>', 'Essentials', 'Health report')
+call s:LeaderN(['?'], ':ChopKeys<CR>', 'Essentials', 'Full cheatsheet')
+call s:LeaderN(['h'], ':ChopHealth<CR>', 'Essentials', 'Health report')
 call s:LeaderN(['e'], ':call chopsticks#explorer#Root()<CR>', 'Files', 'Explore project root')
 call s:LeaderN(['E'], ':call chopsticks#explorer#Here()<CR>', 'Files', 'Explore current file directory')
 
@@ -898,9 +898,9 @@ call s:LeaderN(['u', 'r'], ':set relativenumber! relativenumber?<CR>', 'Toggles'
 call s:LeaderN(['u', 'l'], ':set list! list?<CR>', 'Toggles', 'Toggle invisible characters')
 call s:LeaderN(['u', 'w'], ':set wrap! wrap?<CR>', 'Toggles', 'Toggle wrapping')
 call s:LeaderN(['u', 's'], ':set spell! spell?<CR>', 'Toggles', 'Toggle spelling')
-call s:LeaderN(['u', 'i'], ':ChopsticksIconsToggle<CR>', 'Toggles', 'Toggle Nerd Font icons')
-call s:LeaderN(['u', 'b'], ':ChopsticksTransparencyToggle<CR>', 'Toggles', 'Toggle background transparency')
-call s:LeaderN(['u', 'd'], ':ChopsticksUiDensity<CR>', 'Toggles', 'Cycle UI density')
+call s:LeaderN(['u', 'i'], ':ChopIcons<CR>', 'Toggles', 'Toggle Nerd Font icons')
+call s:LeaderN(['u', 'b'], ':ChopTransparency<CR>', 'Toggles', 'Toggle background transparency')
+call s:LeaderN(['u', 'd'], ':ChopDensity<CR>', 'Toggles', 'Cycle UI density')
 
 call chopsticks#keys#Catalog('Files', 'n*', 'Fern h / l', 'Collapse / open node')
 call chopsticks#keys#Catalog('Files', 'n*', 'Fern s / v / t', 'Open in split / vsplit / tab')
@@ -910,8 +910,8 @@ call chopsticks#keys#Catalog('Files', 'n*', 'Fern q / Esc', 'Close drawer')
 
 call s:LeaderN(['q', 'w'], ':confirm quit<CR>', 'Quit', 'Close window')
 call s:LeaderN(['q', 'q'], ':confirm qall<CR>', 'Quit', 'Quit Vim')
-call s:LeaderN(['q', 's'], ':ChopsticksSessionSave<CR>', 'Quit', 'Save project session')
-call s:LeaderN(['q', 'l'], ':ChopsticksSessionLoad<CR>', 'Quit', 'Restore project session')
+call s:LeaderN(['q', 's'], ':ChopSave<CR>', 'Quit', 'Save project session')
+call s:LeaderN(['q', 'l'], ':ChopLoad<CR>', 'Quit', 'Restore project session')
 
 if has('terminal')
     call s:LeaderN(['t', 't'], ':call chopsticks#ui#window#Terminal([], ''tab'')<CR>', 'Terminal', 'Terminal in new tab')
@@ -945,15 +945,15 @@ function! s:PluginMaps() abort
         call s:LeaderN(['/'], ':FuzzyInBuffer<CR>', 'Search', 'Search current buffer')
         call s:LeaderN(['s', 'b'], ':FuzzyInBuffer<CR>', 'Search', 'Search current buffer')
         call s:LeaderN(['s', 'c'], ':FuzzyCommands<CR>', 'Search', 'Search commands')
-        call s:LeaderN(['s', 'g'], ':ChopsticksProjectGrep<CR>', 'Search', 'Grep project')
+        call s:LeaderN(['s', 'g'], ':ChopGrep<CR>', 'Search', 'Grep project')
         call s:LeaderN(['s', 'h'], ':FuzzyHelp<CR>', 'Search', 'Search Vim help')
-        call s:LeaderN(['s', 'w'], ':ChopsticksProjectGrep <C-r><C-w><CR>', 'Search', 'Grep word under cursor')
+        call s:LeaderN(['s', 'w'], ':ChopGrep <C-r><C-w><CR>', 'Search', 'Grep word under cursor')
         call s:DirectN('<C-p>', ':call chopsticks#find#FindFiles()<CR>', 'Ctrl-p', 'Fast find', 'Find files')
         call s:DirectN(';f', ':call chopsticks#find#FindFiles()<CR>', ';f', 'Fast find', 'Find files')
         call s:DirectN(';b', ':FuzzyBuffers<CR>', ';b', 'Fast find', 'Find open buffers')
         call s:DirectN(';l', ':FuzzyInBuffer<CR>', ';l', 'Fast find', 'Search current buffer')
         call s:DirectN(';h', ':FuzzyHelp<CR>', ';h', 'Fast find', 'Search Vim help')
-        call s:DirectN(';r', ':ChopsticksProjectGrep<CR>', ';r', 'Fast find', 'Grep project')
+        call s:DirectN(';r', ':ChopGrep<CR>', ';r', 'Fast find', 'Grep project')
         call s:DirectN('<Bslash>', ':FuzzyBuffers<CR>', '\', 'Fast find', 'Find open buffers')
     endif
     if exists(':Git') == 2 && executable('git') == 1
@@ -979,8 +979,8 @@ function! s:PluginMaps() abort
     if exists(':UndotreeToggle') == 2
         call s:LeaderN(['u', 'U'], ':UndotreeToggle<CR>', 'Toggles', 'Toggle undo tree')
     endif
-    call s:LeaderN(['r', 'd'], ':ChopsticksDebug<CR>', 'Run', 'Debug with termdebug')
-    call s:LeaderN(['f', 'H'], ':ChopsticksDashboard<CR>', 'Files', 'Start screen')
+    call s:LeaderN(['r', 'd'], ':ChopDebug<CR>', 'Run', 'Debug with termdebug')
+    call s:LeaderN(['f', 'H'], ':ChopDash<CR>', 'Files', 'Start screen')
     if exists(':Goyo') == 2
         call s:LeaderN(['z'], ':Goyo<CR>', 'Essentials', 'Focus mode')
     endif
@@ -1075,7 +1075,7 @@ augroup ChopsticksDirectory
     autocmd BufEnter * nested call chopsticks#explorer#MaybeOpenDirectory()
 augroup END
 
-augroup ChopsticksDashboard
+augroup ChopDash
     autocmd!
     autocmd VimEnter * call chopsticks#startup#CaptureMs()
     autocmd VimEnter * call chopsticks#startup#MaybeOpenDashboard()

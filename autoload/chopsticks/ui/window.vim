@@ -1,7 +1,7 @@
 vim9script
 
 # One copy, because these had started to be transcribed per feature. The
-# cheatsheet, Markdown help, :ChopsticksHealth, Glow, lazygit and the terminal
+# cheatsheet, Markdown help, :ChopHealth, Glow, lazygit and the terminal
 # mappings all come through here so their windows stay identical.
 
 export def Scratch(name: string, lines: list<string>)

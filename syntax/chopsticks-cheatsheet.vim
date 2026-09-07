@@ -15,7 +15,11 @@ syntax match chopsticksCheatLegend /\%>2l\%<7l.*/
 syntax match chopsticksCheatGroup /^\%>6l\S.*/
 # The mode is reachable only through the key's nextgroup: listed in contains
 # as well, its \S\+ also matches the key's first word, and the later rule wins.
-syntax match chopsticksCheatEntry /^ \{2}\S.*/ contains=chopsticksCheatKey
+syntax match chopsticksCheatEntry /^ \{2}\S.*/
+  \ contains=chopsticksCheatKey,chopsticksCheatAlias
+# Safe in contains where the mode is not: it needs two spaces then a bracket,
+# which column three of an entry line can never be.
+syntax match chopsticksCheatAlias /\s\{2}(\%(\S\| \)\+)$/ contained
 # nextgroup, not a second \%3c anchor: two contained matches cannot both begin
 # at column three, and the key wins, which left the mode column uncoloured and
 # ChopCheatMode dead.
@@ -29,5 +33,6 @@ highlight default link chopsticksCheatGroup ChopCheatGroup
 highlight default link chopsticksCheatEntry ChopCheatEntry
 highlight default link chopsticksCheatKey ChopCheatKey
 highlight default link chopsticksCheatMode ChopCheatMode
+highlight default link chopsticksCheatAlias ChopCheatAlias
 
 b:current_syntax = 'chopsticks-cheatsheet'

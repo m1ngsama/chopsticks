@@ -123,6 +123,53 @@ export def Reset()
   catalog_index = {}
 enddef
 
+# Three keys that do one thing were three rows that said the same sentence,
+# with nothing to say which to learn. They become one row: the fewest
+# keystrokes leads, the rest follow the description in brackets, so searching
+# the sheet for any of them still lands on it.
+#
+# Keyed on mode as well as description, because `SPC y` in normal and visual
+# mode share both a key and a sentence and are not aliases of each other.
+# Only within a group: `,z` and `SPC z` are the same action, and the reason
+# `,z` is filed under Markdown is that this is where someone looks for it.
+def Merged(entries: list<dict<string>>): list<dict<string>>
+  var order: list<string> = []
+  var clusters: dict<list<dict<string>>> = {}
+  for entry in entries
+    var id = entry.mode .. "\n" .. entry.description
+    if !clusters->has_key(id)
+      clusters[id] = []
+      order->add(id)
+    endif
+    clusters[id]->add(entry)
+  endfor
+  var merged: list<dict<string>> = []
+  for id in order
+    var cluster = clusters[id]
+    if len(cluster) == 1
+      merged->add(cluster[0])
+      continue
+    endif
+    # Fewest keystrokes leads, but a key the Start here block teaches leads
+    # over a shorter one that it does not: \ reaches the buffer list in one
+    # stroke where ;b takes two, and promoting it would leave the sheet
+    # recommending a key against the block above it. Stable otherwise, so
+    # equal ranks keep the order they were registered in.
+    var taught = StarterCoverage()
+    var Rank = (keys: string): number =>
+      (index(taught, keys) >= 0 ? 0 : 1000) + strwidth(keys)
+    var keys = mapnew(cluster, (_, entry) => entry.keys)
+    var sorted = sort(copy(keys), (a, b) => Rank(a) - Rank(b))
+    merged->add({
+      keys: sorted[0],
+      mode: cluster[0].mode,
+      description: printf('%s  (%s)', cluster[0].description,
+        join(sorted[1 : ], ', ')),
+      })
+  endfor
+  return merged
+enddef
+
 export def Lines(): list<string>
   var lines = [
     'chopsticks ' .. g:chopsticks_version .. ' cheatsheet',
@@ -154,7 +201,7 @@ export def Lines(): list<string>
       continue
     endif
     extend(lines, ['', group])
-    for entry in entries
+    for entry in Merged(entries)
       add(lines, printf(format, entry.keys, entry.mode, entry.description))
     endfor
   endfor

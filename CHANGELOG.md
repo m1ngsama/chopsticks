@@ -10,6 +10,19 @@ releases of the current line.
 
 ## [Unreleased]
 
+### Changed
+
+- Keys that do the same thing share one row on the cheatsheet. `Next buffer`
+  was three rows saying the same sentence with nothing to say which to learn;
+  it is now `L` with `(]b, SPC bn)` after the description, in a receding
+  colour. Searching the sheet for any of them still lands on the row. The key
+  that leads is the one the `Start here` block teaches, then the one with
+  fewest keystrokes. Only within a section, and only when the mode matches, so
+  `SPC y` in normal and visual mode stay apart. The sheet is 20 rows shorter.
+- The four `SPC w` window keys describe themselves the way `sh` and `Ctrl-h`
+  already did, so the three ways to focus a window are one row rather than
+  three.
+
 ## [0.3.1] - 2026-09-07
 
 ### Fixed

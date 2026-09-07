@@ -902,7 +902,8 @@ function! s:AssertCheatsheetSyntax() abort
         " each group as a link target, so it answers true even with nothing
         " in the theme behind it and every row back to one colour.
         for l:group in ['ChopCheatTitle', 'ChopCheatGroup', 'ChopCheatKey',
-            \ 'ChopCheatMode', 'ChopCheatEntry', 'ChopCheatLegend']
+            \ 'ChopCheatMode', 'ChopCheatEntry', 'ChopCheatLegend',
+            \ 'ChopCheatAlias']
             call assert_match('guifg=', execute('highlight ' . l:group),
                 \ l:group . ' has no colour behind it')
         endfor
@@ -914,6 +915,15 @@ function! s:AssertCheatsheetSyntax() abort
         let l:line = getline(l:row)
         let l:mode = matchend(l:line, '^  .\{-}\s\{2,}') + 1
         let l:text = matchend(l:line, '^  .\{-}\s\{2,}\S\+\s\{2,}') + 1
+        " The alias tail too: it is the one part of a row that is meant to
+        " recede, so an uncoloured one defeats the merge that produced it.
+        let l:alias = search('^  \S.*(.*)$', 'n')
+        if l:alias > 0
+            call assert_equal('chopsticksCheatAlias',
+                \ synIDattr(synID(l:alias, match(getline(l:alias), '(') + 1, 1), 'name'),
+                \ 'the alias tail is not classified by the syntax file')
+        endif
+        call assert_true(l:alias > 0, 'no merged alias row in the cheatsheet')
         for [l:column, l:group] in [[3, 'chopsticksCheatKey'],
             \ [l:mode, 'chopsticksCheatMode'], [l:text, 'chopsticksCheatEntry']]
             call assert_equal(l:group, synIDattr(synID(l:row, l:column, 1), 'name'),
@@ -927,10 +937,19 @@ endfunction
 function! s:AssertKeys() abort
     let l:lines = ChopsticksKeyLines()
     call assert_equal(type([]), type(l:lines))
-    " A floor, not a count. The sheet moves whenever a key is added or
-    " retired, and this sits far enough under it that only a move dropping
-    " whole groups takes it below -- which is the failure worth catching.
-    call assert_true(len(l:lines) > 150,
+    " The sections themselves, not a line count. The count was standing in for
+    " "a whole group went missing", and it stopped being able to say that as
+    " soon as alias rows started merging -- a number that moves for two
+    " different reasons cannot report either of them.
+    let l:text = join(l:lines, "\n")
+    " Sections that exist without a plugin. Fast find is not one of them --
+    " nothing binds the finder keys here -- so the plugin suite asserts it.
+    for l:section in ['Start here', 'Essentials', 'Buffers', 'Windows',
+        \ 'Files', 'Editing', 'Navigation', 'Markdown']
+        call assert_match('\n' . l:section . '\n', l:text,
+            \ 'the cheatsheet lost its ' . l:section . ' section')
+    endfor
+    call assert_true(len(l:lines) > 100,
         \ 'key catalog is suspiciously short: ' . len(l:lines))
     call assert_equal(2, exists(':ChopKeys'))
     " The rename kept no aliases, which is the whole reason it was worth

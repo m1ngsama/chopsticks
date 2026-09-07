@@ -10,6 +10,13 @@ releases of the current line.
 
 ## [Unreleased]
 
+### Added
+
+- A `Start here` block at the top of `SPC ?`. It teaches the four prefixes the
+  rest of the map hangs off -- `;` to find, `SPC` for everything by category,
+  `s` for windows, `,` for Markdown -- rather than picking a dozen individual
+  keys out of the hundred and sixty below it.
+
 ## [0.2.7] - 2026-09-07
 
 ### Fixed

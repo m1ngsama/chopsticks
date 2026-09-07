@@ -17,8 +17,42 @@ const GROUP_ORDER = [
   'Editing', 'Navigation', 'Markdown',
 ]
 
+# What to learn first. Not the fifteen most useful keys -- the four prefixes
+# the rest hangs off, which is the part a list of individual keys hides.
+#
+# Each row also names the keys it stands for, written the way the sheet prints
+# them, so the suite can check that this block still describes keys that are
+# really bound. It has to run where the plugins are: the ; row teaches the
+# finder, which is not bound at all without one.
+const STARTERS = [
+  {keys: '; f b l r h', mode: 'n', covers: [';f', ';b', ';l', ';r', ';h'],
+   description: 'Find fast: files, buffers, this file, project, help'},
+  {keys: 'SPC', mode: 'n', covers: ['SPC e', 'SPC ?'],
+   description: 'Everything else, by category -- hold it to see the menu'},
+  {keys: 's h j k l', mode: 'n', covers: ['sh', 'sj', 'sk', 'sl'],
+   description: 'Move between windows; then s or v to split, q to close'},
+  {keys: ',', mode: 'n*', covers: [',?'],
+   description: 'Markdown actions, in a Markdown file -- hold it too'},
+  {keys: 'Ctrl-s', mode: 'n/i/x', covers: ['Ctrl-s'],
+   description: 'Save, from any mode'},
+  {keys: 'SPC e', mode: 'n', covers: ['SPC e'],
+   description: 'Show or hide the file tree'},
+  {keys: 'SPC h', mode: 'n', covers: ['SPC h'],
+   description: 'Health report: what is installed and what is missing'},
+  ]
+
 var catalog: list<dict<string>> = []
 var catalog_index: dict<number> = {}
+
+# Exported for the suite, which asserts that every key a starter row claims to
+# teach is really bound.
+export def StarterCoverage(): list<string>
+  var covered: list<string> = []
+  for starter in STARTERS
+    extend(covered, starter.covers)
+  endfor
+  return covered
+enddef
 
 export def Group(group: string): string
   var icon = icons.Group(group)
@@ -103,9 +137,15 @@ export def Lines(): list<string>
   # column of slack past the longest entry also keeps both separators at two
   # spaces or more, which is what syntax/chopsticks-cheatsheet.vim finds the
   # fields by -- so widening this cannot silently uncolour them.
-  var key_width = max(mapnew(catalog, (_, entry) => strwidth(entry.keys))) + 1
+  var widths = mapnew(catalog, (_, entry) => entry.keys)
+    ->extend(mapnew(STARTERS, (_, starter) => starter.keys))
+  var key_width = max(mapnew(widths, (_, keys) => strwidth(keys))) + 1
   var mode_width = max(mapnew(catalog, (_, entry) => strwidth(entry.mode))) + 1
   var format = printf('  %%-%ds %%-%ds %%s', key_width, mode_width)
+  extend(lines, ['', 'Start here'])
+  for starter in STARTERS
+    add(lines, printf(format, starter.keys, starter.mode, starter.description))
+  endfor
   for group in GROUP_ORDER
     var entries = filter(copy(catalog), (_, entry) => entry.group ==# group)
     if empty(entries)

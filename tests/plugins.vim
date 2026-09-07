@@ -241,6 +241,16 @@ function! s:RunStartup(expected_auto_lint) abort
     call assert_equal(l:key_lines, ChopsticksKeyLines())
     call assert_true(len(ChopsticksKeyLines()) >= 100)
     call assert_match('Esc / Ctrl-q', join(ChopsticksKeyLines(), "\n"))
+    " The Start here block teaches four prefixes by naming keys it does not
+    " own. Checked here and not in the UI suite because the ; row teaches the
+    " finder, which nothing binds without the plugin. Written as the sheet
+    " prints them, so a rename shows up as a row that stopped existing.
+    let l:sheet = join(ChopsticksKeyLines(), "\n")
+    call assert_match('\nStart here\n', l:sheet)
+    for l:key in chopsticks#keys#StarterCoverage()
+        call assert_match('\n  ' . escape(l:key, '\.*$^~[]') . '\s',
+            \ l:sheet, 'Start here names an unbound key: ' . l:key)
+    endfor
     call assert_match('Fern q / Esc', join(ChopsticksKeyLines(), "\n"))
     call s:AssertWhichKeyGroupSyntax()
     call s:AssertEverforestSemanticColors()

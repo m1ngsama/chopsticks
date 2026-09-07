@@ -586,8 +586,10 @@ run_ui_test finder-exclude-invalid-type \
 run_ui_test cmdline-autocomplete-off \
     --cmd 'let g:chopsticks_cmdline_autocomplete = 0' \
     --cmd 'let g:chopsticks_dashboard = 0'
+# A string, not 1: every other switch accepts on/true/yes, and these two
+# reached the option reads without passing through s:ResolveSwitch().
 run_ui_test autocomplete-on \
-    --cmd 'let g:chopsticks_autocomplete = 1' \
+    --cmd "let g:chopsticks_autocomplete = 'yes'" \
     --cmd 'let g:chopsticks_dashboard = 0'
 # $PATH below is a Vim environment lookup, not a shell expansion.
 # shellcheck disable=SC2016

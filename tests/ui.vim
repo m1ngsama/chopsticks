@@ -566,6 +566,9 @@ function! s:AssertSnippetlessTabs() abort
 endfunction
 
 function! s:AssertDebugUnavailable() abort
+    " Reachable only here: with $PATH emptied the answer is knowable, where
+    " the default case can only say the option holds a number.
+    call assert_equal(0, g:ale_rust_cargo_use_clippy)
     call assert_equal(2, exists(':ChopsticksDebug'))
     call assert_match('debugging needs gdb', execute('ChopsticksDebug'))
     call assert_false(exists('g:termdebugger'),
@@ -588,6 +591,27 @@ function! s:AssertDebugUnavailable() abort
         call assert_match('debugging needs gdb',
             \ execute('ChopsticksDebug'), 'lldb was accepted as a debugger')
         call assert_false(exists('g:termdebugger'), 'lldb was selected')
+        " A debugger present and no termdebug package: :packadd raises E919,
+        " and an error inside a :def aborts it, so without the try the guard
+        " below it never runs and the user reads E919 instead of a sentence.
+        call writefile(['#!/bin/sh', 'exit 0'], l:fake . '/gdb')
+        call setfperm(l:fake . '/gdb', 'rwxr-xr-x')
+        let l:packpath = &packpath
+        let l:raised = ''
+        try
+            set packpath=
+            " Caught, not just asserted: without the try inside Start() the
+            " E919 aborts this function before any assertion records anything,
+            " and the case passes by never finishing.
+            call assert_match('ships no termdebug package',
+                \ execute('ChopsticksDebug'))
+        catch
+            let l:raised = v:exception
+        finally
+            let &packpath = l:packpath
+        endtry
+        call assert_equal('', l:raised,
+            \ 'ChopsticksDebug raised instead of reporting')
     finally
         let $PATH = l:previous
         call delete(l:fake, 'rf')
@@ -600,9 +624,11 @@ function! s:AssertLanguageTooling() abort
     call assert_equal(['cargo'], g:ale_linters.rust)
     call assert_equal(['ruff_format'], g:ale_fixers.python)
     call assert_equal(['rustfmt'], g:ale_fixers.rust)
-    " clippy is the reason to run cargo at all here; rust-analyzer already
-    " reports what plain `cargo check` would, through ALE's LSP bridge.
-    call assert_equal(executable('cargo-clippy'), g:ale_rust_cargo_use_clippy)
+    " Only the type, because the value is what the machine has. Asserting it
+    " equals executable('cargo-clippy') would restate .vimrc's own expression
+    " and pass against any other absent binary; the debug-unavailable case
+    " pins the value where $PATH makes it knowable.
+    call assert_equal(type(0), type(g:ale_rust_cargo_use_clippy))
 endfunction
 
 function! s:AssertCmdlineAutocomplete(enabled) abort

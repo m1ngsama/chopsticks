@@ -133,6 +133,10 @@ function! s:RunStartup(expected_auto_lint) abort
     call assert_true(exists('g:loaded_vsnip'))
     call assert_true(exists('g:loaded_vsnip_integ'))
     call assert_equal(v:true, g:LspOptionsGet().vsnipSupport)
+    " Set by vim-vsnip-integ, not by us, and asserted anyway: it is the
+    " capability that makes a server send a snippet at all, so losing the
+    " plugin that sets it would leave vsnipSupport routing an empty path.
+    call assert_equal(v:true, g:LspOptionsGet().snippetSupport)
     call assert_equal(g:chopsticks_data_dir . 'vsnip', g:vsnip_snippet_dir)
     " The option must follow the plugin, not the configuration's hope: with it
     " on and vsnip missing, every completion raises E117 inside the client.
@@ -156,6 +160,12 @@ function! s:RunStartup(expected_auto_lint) abort
     call assert_match('WhichKey', maparg("\<Space>", 'n'))
     call assert_match('WhichKey', maparg(',', 'n'))
     call assert_match('chopsticks#explorer#Root', maparg("\<Space>e", 'n'))
+    " Select mode, not only insert: vim-vsnip leaves a placeholder selected,
+    " and an insert mapping never fires there.
+    for l:key in ['<Tab>', '<S-Tab>']
+        call assert_match('chopsticks#lsp#SelectTab', maparg(l:key, 's'), l:key)
+        call assert_match('chopsticks#lsp#Completion', maparg(l:key, 'i'), l:key)
+    endfor
     call assert_match('FindFiles', maparg(';f', 'n'))
     call assert_equal(2, exists(':FuzzyFiles'))
     call assert_equal(0, exists(':Files'))

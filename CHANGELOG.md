@@ -10,6 +10,21 @@ releases of the current line.
 
 ## [Unreleased]
 
+### Fixed
+
+- `<Tab>` and `<S-Tab>` now move between snippet placeholders. vim-vsnip
+  leaves the placeholder selected in select mode, where an insert-mode mapping
+  never fires, so expanding a snippet and pressing `<Tab>` to keep the default
+  and move on did nothing at all. Typing over the placeholder first happened
+  to work, which is why this survived its own release.
+- `:ChopsticksDebug` reports a missing termdebug package instead of raising
+  `E919` on a Vim built without it.
+- `g:chopsticks_cmdline_autocomplete` and `g:chopsticks_autocomplete` accept
+  `on`, `true` and `yes` like every other switch. Both read the raw value
+  before, so `= 'yes'` silently meant off.
+- Clippy is no longer enabled where nothing can run it: `executable()` answers
+  `-1` when it cannot tell, and `-1` is true.
+
 ## [0.2.5] - 2026-09-07
 
 ### Added

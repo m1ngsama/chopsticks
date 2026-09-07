@@ -40,6 +40,10 @@ export def Options()
     semanticHighlight: true,
     aleSupport: true,
     outlineOnRight: true,
+    # snippetSupport is deliberately not set here. It is the capability the
+    # initialize request advertises, and vim-vsnip-integ sets it itself from
+    # its yegappan/lsp integration -- setting it again would be this file
+    # claiming credit for what installing that plugin already does.
     vsnipSupport: SnippetSupport(),
   })
 enddef
@@ -152,14 +156,31 @@ export def SnippetAdvance(direction: number)
   endif
 enddef
 
+def SnippetKeys(direction: number): string
+  return SnippetReady(direction)
+    ? $"\<Esc>:call chopsticks#lsp#SnippetAdvance({direction})\<CR>"
+    : ''
+enddef
+
+# vim-vsnip leaves the placeholder selected in select mode, where an insert
+# mode mapping never fires: without this, expanding a snippet and pressing Tab
+# to accept the default and move on does nothing at all. Only the snippet
+# branch belongs here -- in select mode the fallbacks would replace the
+# selection with a tab, or with whatever omni-completion returned.
+export def SelectTab(direction: number): string
+  var advance = SnippetKeys(direction)
+  return !empty(advance) ? advance : (direction > 0 ? "\<Tab>" : "\<S-Tab>")
+enddef
+
 export def CompletionTab(): string
   if pumvisible()
     return "\<C-n>"
   endif
   # Before completion, not after: inside an expanded snippet the next Tab
   # belongs to the placeholder you are standing in, not to a new suggestion.
-  if SnippetReady(1)
-    return "\<Esc>:call chopsticks#lsp#SnippetAdvance(1)\<CR>"
+  var snippet = SnippetKeys(1)
+  if !empty(snippet)
+    return snippet
   endif
   # &omnifunc rather than a plugin check: it is what <C-x><C-o> will actually
   # call, set by the LSP client on an attached buffer and by a filetype plugin
@@ -174,8 +195,9 @@ export def CompletionBackTab(): string
   if pumvisible()
     return "\<C-p>"
   endif
-  if SnippetReady(-1)
-    return "\<Esc>:call chopsticks#lsp#SnippetAdvance(-1)\<CR>"
+  var snippet = SnippetKeys(-1)
+  if !empty(snippet)
+    return snippet
   endif
   return "\<C-h>"
 enddef

@@ -155,6 +155,9 @@ endfunction
 
 let g:chopsticks_auto_lint = s:ResolveSwitch(
     \ g:chopsticks_auto_lint, 0)
+let g:chopsticks_cmdline_autocomplete = s:ResolveSwitch(
+    \ g:chopsticks_cmdline_autocomplete, 1)
+let g:chopsticks_autocomplete = s:ResolveSwitch(g:chopsticks_autocomplete, 0)
 
 let s:clipboard_auto_enabled = !s:is_remote && has('clipboard')
     \ && (has('macunix') || has('win32') || has('win64')
@@ -289,7 +292,9 @@ let g:ale_linters = {
     \ 'sh': ['shellcheck'],
     \ 'markdown': ['markdownlint', 'vale'],
     \ }
-let g:ale_rust_cargo_use_clippy = executable('cargo-clippy')
+" == 1, not the bare call: executable() answers -1 where it cannot tell, and
+" -1 is true, which would turn clippy on precisely where nothing can run it.
+let g:ale_rust_cargo_use_clippy = executable('cargo-clippy') == 1
 let g:ale_fixers = {
     \ '*': ['remove_trailing_lines', 'trim_whitespace'],
     \ 'javascript': ['prettier', 'eslint'],
@@ -751,6 +756,8 @@ command! MarkdownHelp call chopsticks#markdown#Help()
 
 inoremap <silent><expr> <Tab> chopsticks#lsp#CompletionTab()
 inoremap <silent><expr> <S-Tab> chopsticks#lsp#CompletionBackTab()
+snoremap <silent><expr> <Tab> chopsticks#lsp#SelectTab(1)
+snoremap <silent><expr> <S-Tab> chopsticks#lsp#SelectTab(-1)
 
 " With a suggestion popup open on the command line, Up and Down move inside it
 " and command-line history becomes unreachable. Dismissing the popup first

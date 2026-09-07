@@ -20,26 +20,35 @@ def Debugger(filetype: string): string
   return ''
 enddef
 
+def Warn(message: string)
+  echohl WarningMsg
+  echomsg 'chopsticks: ' .. message
+  echohl None
+enddef
+
 export def Start(arguments: string)
   var debugger = Debugger(&filetype)
   if empty(debugger)
-    echohl WarningMsg
-    echomsg 'chopsticks: debugging needs gdb; lldb speaks a protocol termdebug '
-      .. 'does not'
-    echohl None
+    Warn('debugging needs gdb; lldb speaks a protocol termdebug does not')
     return
   endif
-  # Set every time rather than once at startup: the right debugger depends on
-  # the buffer being debugged, and a session moves between languages.
+  # Inside try/catch because :packadd raises E919 on a Vim built without the
+  # package, and an error in a :def aborts the function -- the check below it
+  # would never be reached, and the user would read E919 instead of a sentence.
+  if exists(':Termdebug') != 2
+    try
+      packadd termdebug
+    catch
+      Warn('this Vim ships no termdebug package')
+      return
+    endtry
+  endif
+  if exists(':Termdebug') != 2
+    Warn('this Vim ships no termdebug package')
+    return
+  endif
+  # Last, so that every path that gives up leaves this unset: the no-debugger
+  # path is asserted on exactly that.
   g:termdebugger = debugger
-  if exists(':Termdebug') != 2
-    packadd termdebug
-  endif
-  if exists(':Termdebug') != 2
-    echohl WarningMsg
-    echomsg 'chopsticks: this Vim ships no termdebug package'
-    echohl None
-    return
-  endif
   execute 'Termdebug' arguments
 enddef

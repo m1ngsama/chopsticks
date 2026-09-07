@@ -698,6 +698,18 @@ function! s:AssertHealth() abort
         \ "g:LspAddServer([{name: 'ztest', filetype: ['ztest'], "
         \ . "path: exepath('chopsticks-test-sibling-binary')}])",
         \ ], l:sibling . '/lang/ztest.vim')
+    " The mirror case: a runtimepath entry that reaches $VIMRUNTIME's own
+    " lang/ through a symlink names one directory with two strings, so an
+    " unresolved comparison lets those files back in. Unix only, because
+    " creating a symlink on Windows needs a privilege the runner may not grant
+    " -- the same reason the symlink-install case skips there.
+    let l:link = l:runtime . '-link'
+    call mkdir(l:runtime . '/lang', 'p')
+    call writefile([
+        \ 'vim9script',
+        \ "g:LspAddServer([{name: 'zlink', filetype: ['zlink'], "
+        \ . "path: exepath('chopsticks-test-symlinked-binary')}])",
+        \ ], l:runtime . '/lang/zlink.vim')
     let $VIMRUNTIME = l:runtime
     try
         execute 'set runtimepath+=' . fnameescape(l:sibling)
@@ -705,10 +717,23 @@ function! s:AssertHealth() abort
             \ join(ChopsticksHealthLines(), "\n"),
             \ 'health report drops a lang/ directory that only shares a '
             \ . 'name prefix with $VIMRUNTIME')
+        if has('unix')
+            call system('ln -s ' . shellescape(l:runtime) . ' '
+                \ . shellescape(l:link))
+            if v:shell_error == 0
+                execute 'set runtimepath+=' . fnameescape(l:link)
+                call assert_notmatch('chopsticks-test-symlinked-binary',
+                    \ join(ChopsticksHealthLines(), "\n"),
+                    \ 'health report lists $VIMRUNTIME lang/ files reached '
+                    \ . 'through a symlinked runtimepath entry')
+            endif
+        endif
     finally
         let &runtimepath = l:previous_rtp
         let $VIMRUNTIME = l:previous_vimruntime
         call delete(l:sibling, 'rf')
+        call delete(l:link)
+        call delete(l:runtime, 'rf')
     endtry
 endfunction
 

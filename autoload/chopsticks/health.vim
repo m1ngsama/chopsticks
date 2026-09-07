@@ -18,8 +18,11 @@ const IS_WINDOWS = has('win32') || has('win64')
 # Windows normalises separators and compares case-insensitively, matching
 # explorer.vim's PathInside().
 def UnderVimRuntimeLang(file: string): bool
-  var parent = fnamemodify(file, ':h')
-  var target = $VIMRUNTIME .. '/lang'
+  # Resolved, as explorer.vim's PathInside() does: a runtimepath entry can
+  # reach this same directory through a symlink, and then two strings that
+  # differ name one directory.
+  var parent = resolve(fnamemodify(file, ':p:h'))
+  var target = resolve($VIMRUNTIME .. '/lang')
   if IS_WINDOWS
     parent = substitute(parent, '\\', '/', 'g')
     target = substitute(target, '\\', '/', 'g')

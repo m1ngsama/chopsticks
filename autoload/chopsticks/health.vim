@@ -81,7 +81,8 @@ export def Lines(): list<string>
     'Tools',
     ]
   for tool in ['git', 'rg', 'fd', 'lazygit', 'marksman',
-      'markdownlint', 'prettier', 'glow', 'pandoc', 'pngpaste']
+      'markdownlint', 'prettier', 'ruff', 'rustfmt', 'glow', 'pandoc',
+      'pngpaste']
     var available = executable(tool) == 1
     lines->add(printf('[%s] %-14s %s',
       available ? 'ok' : '--', tool,

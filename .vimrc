@@ -262,18 +262,31 @@ let g:fuzzbox_files_exclude_dir = map(copy(s:finder_exclude),
 
 let g:ale_disable_lsp = 1
 let g:ale_linters_explicit = 1
+" These stay here rather than in lang/, where the design first put them.
+" Ensure() returns early when the LSP plugin is absent, so a lang/ file is
+" never sourced without it -- linting Python would then depend on having an
+" LSP client installed, which is a coupling neither tool asks for.
+"
+" ruff replaces flake8, black and isort in one binary; cargo runs clippy rather
+" than plain check, because rust-analyzer already reports what `cargo check`
+" would through ALE's LSP bridge and clippy is the part it does not.
 let g:ale_linters = {
     \ 'javascript': ['eslint'],
     \ 'typescript': ['eslint'],
     \ 'go': ['staticcheck'],
+    \ 'python': ['ruff'],
+    \ 'rust': ['cargo'],
     \ 'sh': ['shellcheck'],
     \ 'markdown': ['markdownlint', 'vale'],
     \ }
+let g:ale_rust_cargo_use_clippy = executable('cargo-clippy')
 let g:ale_fixers = {
     \ '*': ['remove_trailing_lines', 'trim_whitespace'],
     \ 'javascript': ['prettier', 'eslint'],
     \ 'typescript': ['prettier', 'eslint'],
     \ 'go': ['goimports'],
+    \ 'python': ['ruff_format'],
+    \ 'rust': ['rustfmt'],
     \ 'json': ['prettier'],
     \ 'yaml': ['prettier'],
     \ 'html': ['prettier'],

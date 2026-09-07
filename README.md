@@ -141,7 +141,7 @@ if ($LASTEXITCODE -ne 0) {
 Recommended optional tools:
 
 ```sh
-brew install ripgrep fd lazygit marksman glow pandoc pngpaste
+brew install ripgrep fd lazygit marksman glow pandoc pngpaste ruff
 npm install --global markdownlint-cli prettier
 ```
 

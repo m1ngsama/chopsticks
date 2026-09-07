@@ -36,7 +36,8 @@ all_ui_test_cases='default minimal rich density status-context tabline-width
 transparent opaque theme-valid theme-fallback dashboard-off dashboard-on
 dashboard-wide bufferline-off bufferline-on data-dir-override
 data-dir-invalid-type data-dir-empty path-overrides finder-exclude-override
-finder-exclude-invalid-type cmdline-autocomplete-off debug-unavailable
+finder-exclude-invalid-type cmdline-autocomplete-off autocomplete-on
+debug-unavailable
 finder-unavailable session
 health keys lsp-registry lsp-lang-files lsp-options-order lsp-maps markdown
 symlink-install'
@@ -584,6 +585,9 @@ run_ui_test finder-exclude-invalid-type \
     --cmd 'let g:chopsticks_dashboard = 0'
 run_ui_test cmdline-autocomplete-off \
     --cmd 'let g:chopsticks_cmdline_autocomplete = 0' \
+    --cmd 'let g:chopsticks_dashboard = 0'
+run_ui_test autocomplete-on \
+    --cmd 'let g:chopsticks_autocomplete = 1' \
     --cmd 'let g:chopsticks_dashboard = 0'
 # $PATH below is a Vim environment lookup, not a shell expansion.
 # shellcheck disable=SC2016

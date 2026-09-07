@@ -72,6 +72,16 @@ Fern is used when the `vim-fern` plugin is installed. Setting
 `g:chopsticks_use_fern = 0`, or leaving the plugin uninstalled, uses netrw
 instead without breaking the explorer mapping.
 
+## Snippets
+
+Snippets are read from `<data-dir>/vsnip`, one JSON file per filetype, in the
+format vim-vsnip documents. `<Tab>` expands the snippet under the cursor and
+moves to the next placeholder; `<S-Tab>` moves back. Outside a snippet both
+keys keep their previous meaning.
+
+Language servers that return snippet completions expand them through the same
+plugin, so no separate setting turns that on.
+
 ## Live interface commands
 
 These commands update the current Vim process. Add the corresponding setting to

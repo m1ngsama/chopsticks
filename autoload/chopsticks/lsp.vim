@@ -15,6 +15,19 @@ var registered: dict<bool> = {}
 # file. Nothing else may apply them later: aleSupport makes the plugin clear
 # autoHighlightDiags itself once the first server starts, and a second pass
 # would put both plugins' signs on every diagnostic line.
+# vim-vsnip is what expands an LSP completion item that arrives as a snippet.
+# The plugin calls vsnip#get_complete_items() unguarded once vsnipSupport is
+# on, so every completion would raise E117 with the option set and the plugin
+# missing -- which is the state a half-finished :PlugInstall leaves behind.
+#
+# g:loaded_vsnip rather than exists('*vsnip#expandable'): an autoload function
+# does not exist until its file has been read, and nothing reads it this early.
+# Exported so the suite can answer the question without a second Options()
+# pass, which aleSupport makes unsafe to repeat.
+export def SnippetSupport(): bool
+  return exists('g:loaded_vsnip') == 1
+enddef
+
 export def Options()
   if !exists('*g:LspOptionsSet')
     return
@@ -27,6 +40,7 @@ export def Options()
     semanticHighlight: true,
     aleSupport: true,
     outlineOnRight: true,
+    vsnipSupport: SnippetSupport(),
   })
 enddef
 
@@ -117,9 +131,35 @@ enddef
 
 # Reached from an <expr> mapping by dotted name: <SID> in a mapping cannot
 # resolve a Vim9 module's functions.
+# vsnip's own <Plug> mappings are <Esc>:call ...<CR>, because the jump runs
+# from normal mode and the session re-enters insert or select mode itself.
+# This is that body under a public name, so the Tab mapping can stay
+# non-remappable: returning <Plug> from an <expr> mapping needs one that
+# remaps, and this mapping must also be able to return a literal <Tab>.
+def SnippetReady(direction: number): bool
+  return exists('g:loaded_vsnip')
+    && (vsnip#jumpable(direction) || (direction > 0 && vsnip#expandable()))
+enddef
+
+export def SnippetAdvance(direction: number)
+  if direction > 0 && vsnip#expandable()
+    vsnip#expand()
+    return
+  endif
+  var session = vsnip#get_session()
+  if !empty(session)
+    session.jump(direction)
+  endif
+enddef
+
 export def CompletionTab(): string
   if pumvisible()
     return "\<C-n>"
+  endif
+  # Before completion, not after: inside an expanded snippet the next Tab
+  # belongs to the placeholder you are standing in, not to a new suggestion.
+  if SnippetReady(1)
+    return "\<Esc>:call chopsticks#lsp#SnippetAdvance(1)\<CR>"
   endif
   # &omnifunc rather than a plugin check: it is what <C-x><C-o> will actually
   # call, set by the LSP client on an attached buffer and by a filetype plugin
@@ -131,5 +171,11 @@ export def CompletionTab(): string
 enddef
 
 export def CompletionBackTab(): string
-  return pumvisible() ? "\<C-p>" : "\<C-h>"
+  if pumvisible()
+    return "\<C-p>"
+  endif
+  if SnippetReady(-1)
+    return "\<Esc>:call chopsticks#lsp#SnippetAdvance(-1)\<CR>"
+  endif
+  return "\<C-h>"
 enddef

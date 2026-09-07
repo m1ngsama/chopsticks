@@ -10,6 +10,15 @@ releases of the current line.
 
 ## [Unreleased]
 
+### Added
+
+- Snippets, through `hrsh7th/vim-vsnip` and `hrsh7th/vim-vsnip-integ`. A
+  completion item that arrives from a language server as a snippet now expands
+  instead of landing as literal `${1:...}` text, and `<Tab>` and `<S-Tab>`
+  move between its placeholders before they mean anything else. Your own
+  snippets go in `<data-dir>/vsnip`, alongside sessions rather than in the
+  plugin's `~/.vsnip`.
+
 ## [0.2.3] - 2026-09-07
 
 ### Added

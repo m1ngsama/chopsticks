@@ -537,6 +537,15 @@ endfunction
 " have gdb and this one does not, and the path worth pinning is the one a user
 " without it hits. The success path starts a real debugger in a terminal
 " window, which no headless harness can hold.
+" Without the plugin every branch must fall through to what Tab and S-Tab did
+" before it existed. This is the suite that has no plugins, so it is the one
+" that can prove the guard rather than the feature.
+function! s:AssertSnippetlessTabs() abort
+    call assert_false(exists('g:loaded_vsnip'))
+    call assert_equal("\<Tab>", chopsticks#lsp#CompletionTab())
+    call assert_equal("\<C-h>", chopsticks#lsp#CompletionBackTab())
+endfunction
+
 function! s:AssertDebugUnavailable() abort
     call assert_equal(2, exists(':ChopsticksDebug'))
     call assert_match('debugging needs gdb', execute('ChopsticksDebug'))
@@ -1122,6 +1131,7 @@ function! s:RunCase() abort
         call assert_equal('everforest', g:chopsticks_colorscheme)
         call s:AssertCmdlineAutocomplete(1)
         call s:AssertLanguageTooling()
+        call s:AssertSnippetlessTabs()
         let l:desktop_clipboard = has('clipboard')
             \ && (has('macunix') || has('win32') || has('win64')
             \     || !empty($DISPLAY) || !empty($WAYLAND_DISPLAY))

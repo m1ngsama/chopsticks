@@ -39,7 +39,7 @@ Enter
 Wait+Screen /Find File/
 Type ":edit README.md"
 Enter
-Wait+Screen /A single-file configuration/
+Wait+Screen /Markdown writing/
 Type ":Goyo"
 Enter
 Sleep 500ms
@@ -65,11 +65,11 @@ Sleep 500ms
 
 # Find and open the README through fuzzbox.
 Type "f"
-Wait+Screen /README.md/
+Wait+Screen /Find Files/
 Type "README"
 Sleep 1s
 Enter
-Wait+Screen /A single-file configuration/
+Wait+Screen /Markdown writing/
 Sleep 1.5s
 
 # Toggle the real Fern drawer open and closed with the same command.
@@ -77,7 +77,7 @@ Type@40ms " e"
 Wait+Screen /tests/
 Sleep 1.5s
 Type@40ms " e"
-Wait+Screen /A single-file configuration/
+Wait+Screen /Markdown writing/
 Sleep 750ms
 
 # Search inside the current file, then enter the Markdown focus mode.

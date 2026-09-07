@@ -10,6 +10,8 @@ releases of the current line.
 
 ## [Unreleased]
 
+## [0.3.3] - 2026-09-07
+
 ### Changed
 
 - `SPC ?`, `SPC h` and `,?` open in a floating panel instead of a split at the
@@ -270,7 +272,8 @@ releases of the current line.
 - Replaced the retired multi-module distribution with an auditable `.vimrc`.
 - Made plugin installation explicit; startup itself no longer uses the network.
 
-[Unreleased]: https://github.com/m1ngsama/chopsticks/compare/v0.3.2...HEAD
+[Unreleased]: https://github.com/m1ngsama/chopsticks/compare/v0.3.3...HEAD
+[0.3.3]: https://github.com/m1ngsama/chopsticks/compare/v0.3.2...v0.3.3
 [0.3.2]: https://github.com/m1ngsama/chopsticks/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/m1ngsama/chopsticks/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/m1ngsama/chopsticks/compare/v0.2.8...v0.3.0

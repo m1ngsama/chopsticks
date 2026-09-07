@@ -10,6 +10,8 @@ releases of the current line.
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-09-07
+
 ### Added
 
 - Python and Rust linting and formatting. `,l` runs `ruff` on Python and
@@ -139,7 +141,8 @@ releases of the current line.
 - Replaced the retired multi-module distribution with an auditable `.vimrc`.
 - Made plugin installation explicit; startup itself no longer uses the network.
 
-[Unreleased]: https://github.com/m1ngsama/chopsticks/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/m1ngsama/chopsticks/compare/v0.2.2...HEAD
+[0.2.2]: https://github.com/m1ngsama/chopsticks/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/m1ngsama/chopsticks/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/m1ngsama/chopsticks/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/m1ngsama/chopsticks/releases/tag/v0.1.0

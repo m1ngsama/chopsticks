@@ -10,6 +10,18 @@ releases of the current line.
 
 ## [Unreleased]
 
+### Changed
+
+- `SPC ?`, `SPC h` and `,?` open in a floating panel instead of a split at the
+  bottom of the screen. Same rounded border the finder draws, the report's
+  title on the border rather than repeated inside it, and the file you were
+  reading stays visible behind it.
+- **Type to filter.** A popup cannot be searched with `/`, so the panel filters
+  as you type -- and keeps the section heading of every row it keeps, which
+  `/` never did. `Esc`, `Ctrl-c`, `Ctrl-g` and `Ctrl-q` close it, the same set
+  that closes the finder. **`q` no longer closes it**: it is a letter you might
+  want to filter by.
+
 ## [0.3.2] - 2026-09-07
 
 ### Changed

@@ -894,44 +894,78 @@ endfunction
 
 " The buffer has carried filetype=chopsticks-cheatsheet since it was written,
 " with no syntax file behind it, so every row rendered in one colour.
+" The buffer has carried filetype=chopsticks-cheatsheet since it was written,
+" with no syntax file behind it, so every row rendered in one colour. It is a
+" popup now, so everything here reads the popup's own buffer and evaluates
+" syntax inside its window.
 function! s:AssertCheatsheetSyntax() abort
     ChopKeys
+    let l:popups = popup_list()
+    call assert_equal(1, len(l:popups), 'the cheatsheet did not open as a popup')
+    if empty(l:popups)
+        return
+    endif
+    let l:id = l:popups[0]
     try
-        call assert_equal('chopsticks-cheatsheet', &syntax)
-        " Not hlexists(): the syntax file's `highlight default link` creates
-        " each group as a link target, so it answers true even with nothing
-        " in the theme behind it and every row back to one colour.
-        for l:group in ['ChopCheatTitle', 'ChopCheatGroup', 'ChopCheatKey',
+        let l:options = popup_getoptions(l:id)
+        call assert_match('cheatsheet', l:options.title)
+        call assert_equal(['─', '│', '─', '│', '╭', '╮', '╯', '╰'],
+            \ l:options.borderchars, 'the popup does not use the finder border')
+        let l:buffer = winbufnr(l:id)
+        call assert_equal('chopsticks-cheatsheet',
+            \ getbufvar(l:buffer, '&filetype'))
+        let l:lines = getbufline(l:buffer, 1, '$')
+        for l:group in ['ChopCheatGroup', 'ChopCheatKey',
             \ 'ChopCheatMode', 'ChopCheatEntry', 'ChopCheatLegend',
             \ 'ChopCheatAlias']
             call assert_match('guifg=', execute('highlight ' . l:group),
                 \ l:group . ' has no colour behind it')
         endfor
-        let l:row = search('^  \S', 'n')
-        call assert_true(l:row > 0, 'no entry row in the cheatsheet buffer')
+        let l:row = match(l:lines, '^  \S') + 1
+        call assert_true(l:row > 0, 'no entry row in the cheatsheet popup')
+        let l:alias = match(l:lines, '^  \S.*(.*)$') + 1
+        call assert_true(l:alias > 0, 'no merged alias row in the cheatsheet')
         " Every column, not only the first. Two contained rules cannot both
         " begin at column three; the key won, the mode rule never fired, and
         " asking only about column three could not tell.
-        let l:line = getline(l:row)
+        let l:line = l:lines[l:row - 1]
         let l:mode = matchend(l:line, '^  .\{-}\s\{2,}') + 1
         let l:text = matchend(l:line, '^  .\{-}\s\{2,}\S\+\s\{2,}') + 1
-        " The alias tail too: it is the one part of a row that is meant to
-        " recede, so an uncoloured one defeats the merge that produced it.
-        let l:alias = search('^  \S.*(.*)$', 'n')
-        if l:alias > 0
-            call assert_equal('chopsticksCheatAlias',
-                \ synIDattr(synID(l:alias, match(getline(l:alias), '(') + 1, 1), 'name'),
-                \ 'the alias tail is not classified by the syntax file')
-        endif
-        call assert_true(l:alias > 0, 'no merged alias row in the cheatsheet')
-        for [l:column, l:group] in [[3, 'chopsticksCheatKey'],
-            \ [l:mode, 'chopsticksCheatMode'], [l:text, 'chopsticksCheatEntry']]
-            call assert_equal(l:group, synIDattr(synID(l:row, l:column, 1), 'name'),
-                \ 'column ' . l:column . ' is not classified by the syntax file')
+        let l:alias_column = match(l:lines[l:alias - 1], '(') + 1
+        for [l:row_number, l:column, l:group] in [
+            \ [l:row, 3, 'chopsticksCheatKey'],
+            \ [l:row, l:mode, 'chopsticksCheatMode'],
+            \ [l:row, l:text, 'chopsticksCheatEntry'],
+            \ [l:alias, l:alias_column, 'chopsticksCheatAlias']]
+            let g:chopsticks_test_syntax = ''
+            call win_execute(l:id, 'let g:chopsticks_test_syntax = '
+                \ . 'synIDattr(synID(' . l:row_number . ', ' . l:column . ', 1), "name")')
+            call assert_equal(l:group, g:chopsticks_test_syntax,
+                \ 'row ' . l:row_number . ' column ' . l:column
+                \ . ' is not classified by the syntax file')
         endfor
+        unlet! g:chopsticks_test_syntax
     finally
-        close
+        call popup_close(l:id)
     endtry
+    call assert_equal([], popup_list(), 'the cheatsheet popup outlived its close')
+endfunction
+
+" What the popup buys over the split it replaced: a query keeps the section a
+" row belongs to, which searching the old buffer with / never did.
+function! s:AssertCheatsheetFilter() abort
+    let l:lines = ChopsticksKeyLines()
+    call assert_equal(l:lines, chopsticks#ui#window#Filtered(l:lines, ''))
+    let l:buffers = chopsticks#ui#window#Filtered(l:lines, 'buffer')
+    call assert_true(len(l:buffers) < len(l:lines) / 2,
+        \ 'the filter kept too much: ' . len(l:buffers))
+    call assert_match('Buffers', join(l:buffers, "\n"),
+        \ 'the filter dropped the heading of a section it kept rows from')
+    for l:line in filter(copy(l:buffers), {_, v -> v =~# '^  \S'})
+        call assert_match('\cbuffer', l:line, 'unmatched row survived: ' . l:line)
+    endfor
+    call assert_match('no key matches',
+        \ join(chopsticks#ui#window#Filtered(l:lines, 'zzzz'), "\n"))
 endfunction
 
 function! s:AssertKeys() abort
@@ -1166,8 +1200,16 @@ function! s:AssertMarkdown() abort
     let v:errmsg = ''
     call feedkeys(",?", 'xt')
     call assert_equal('', v:errmsg, ',? raised: ' . v:errmsg)
-    call assert_equal('[chopsticks-markdown]', bufname('%'))
-    call feedkeys("q", 'xt')
+    " A popup now, like every read-only report: the buffer under the cursor is
+    " untouched, and the sheet is somewhere in popup_list().
+    let l:help = popup_list()
+    call assert_equal(1, len(l:help), ',? did not open the Markdown sheet')
+    if !empty(l:help)
+        call assert_match('Markdown', popup_getoptions(l:help[0]).title)
+        call assert_match('^Writing\n',
+            \ join(getbufline(winbufnr(l:help[0]), 1, '$'), "\n"))
+        call popup_close(l:help[0])
+    endif
 
     " The long-line guard runs on every buffer that reaches a window, so a
     " throw here would fire constantly rather than only on a keypress.
@@ -1335,6 +1377,7 @@ function! s:RunCase() abort
         call s:AssertKeys()
         call s:AssertCheatsheetLayout()
         call s:AssertCheatsheetSyntax()
+        call s:AssertCheatsheetFilter()
     elseif s:case ==# 'lsp-registry'
         call s:AssertLspRegistry()
     elseif s:case ==# 'lsp-lang-files'

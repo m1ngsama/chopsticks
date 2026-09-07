@@ -176,7 +176,7 @@ export def Lines(): list<string>
     '',
     'SPC = Leader   , = Markdown LocalLeader',
     'Pause after SPC or , for the contextual key guide.',
-    'Use / to search, } and { to jump sections, n/N to move, q to close.',
+    'Type to filter · arrows scroll · Esc, Ctrl-c, Ctrl-g or Ctrl-q closes.',
     'Modes: n normal · x visual · i insert · t terminal · * buffer-local',
   ]
   # Measured, not fixed at 15 and 2: `n/i/x` is five wide and overflowed a
@@ -220,6 +220,5 @@ export def Setup()
 enddef
 
 export def Show()
-  window.Scratch('[chopsticks-cheatsheet]', Lines())
-  setlocal filetype=chopsticks-cheatsheet cursorline
+  window.Scratch('[chopsticks-cheatsheet]', Lines(), 'chopsticks-cheatsheet')
 enddef

@@ -10,9 +10,10 @@ if exists('b:current_syntax')
   finish
 endif
 
-syntax match chopsticksCheatTitle /\%1l.*/
-syntax match chopsticksCheatLegend /\%>2l\%<7l.*/
-syntax match chopsticksCheatGroup /^\%>6l\S.*/
+# The title moved onto the popup's border, so the legend is the first four
+# lines and a group heading is any line at column one after them.
+syntax match chopsticksCheatLegend /\%<5l.*/
+syntax match chopsticksCheatGroup /^\%>4l\S.*/
 # The mode is reachable only through the key's nextgroup: listed in contains
 # as well, its \S\+ also matches the key's first word, and the later rule wins.
 syntax match chopsticksCheatEntry /^ \{2}\S.*/
@@ -27,7 +28,6 @@ syntax match chopsticksCheatKey /\%3c.\{-}\ze\s\{2,}/ contained
   \ nextgroup=chopsticksCheatMode skipwhite
 syntax match chopsticksCheatMode /\S\+/ contained
 
-highlight default link chopsticksCheatTitle ChopCheatTitle
 highlight default link chopsticksCheatLegend ChopCheatLegend
 highlight default link chopsticksCheatGroup ChopCheatGroup
 highlight default link chopsticksCheatEntry ChopCheatEntry

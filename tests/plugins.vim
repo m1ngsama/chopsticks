@@ -68,12 +68,12 @@ function! s:AssertFinderSelectors() abort
         call mkdir(l:outside, 'p')
         call writefile(['chopsticks-probe-token'], l:probe)
         execute 'cd ' . fnameescape(l:outside)
-        let l:files = s:FinderScreen('ChopsticksFindFiles', 'untracked-probe')
+        let l:files = s:FinderScreen('ChopFiles', 'untracked-probe')
         let l:grep = s:FinderScreen(
             \ "call chopsticks#find#Grep('chopsticks-probe-token')",
             \ 'untracked-probe\.txt:\d\+:')
         let l:git = s:FinderScreen('call chopsticks#find#GitFiles()', 'README.md')
-        let l:recent = s:FinderScreen('ChopsticksRecentFiles', 'Recent Files')
+        let l:recent = s:FinderScreen('ChopRecent', 'Recent Files')
         call assert_equal(resolve(l:outside), resolve(getcwd()))
     finally
         execute 'cd ' . fnameescape(l:before)
@@ -103,11 +103,11 @@ function! s:RunStartup(expected_auto_lint) abort
     doautocmd VimEnter
     call assert_equal('0.2.8', get(g:, 'chopsticks_version', ''))
     for l:command in [
-        \ 'ChopsticksHealth', 'ChopsticksCheatsheet',
-        \ 'ChopsticksFindFiles', 'ChopsticksIconsToggle',
-        \ 'ChopsticksUiDensity', 'ChopsticksTransparencyToggle',
-        \ 'ChopsticksSessionSave', 'ChopsticksSessionLoad',
-        \ 'MarkdownPasteImage',
+        \ 'ChopHealth', 'ChopKeys',
+        \ 'ChopFiles', 'ChopIcons',
+        \ 'ChopDensity', 'ChopTransparency',
+        \ 'ChopSave', 'ChopLoad',
+        \ 'MdPaste',
         \ ]
         call assert_equal(2, exists(':' . l:command), l:command)
     endfor
@@ -217,10 +217,10 @@ function! s:RunStartup(expected_auto_lint) abort
         \ ["\<Space>\<Space>", 'FuzzyBuffers'], ["\<Space>,", 'FuzzyBuffers'],
         \ ["\<Space>fr", 'FuzzyMru'], ["\<Space>/", 'FuzzyInBuffer'],
         \ ["\<Space>sb", 'FuzzyInBuffer'], ["\<Space>sc", 'FuzzyCommands'],
-        \ ["\<Space>sg", 'ChopsticksProjectGrep'], ["\<Space>sh", 'FuzzyHelp'],
-        \ ["\<Space>sw", 'ChopsticksProjectGrep'], [';b', 'FuzzyBuffers'],
+        \ ["\<Space>sg", 'ChopGrep'], ["\<Space>sh", 'FuzzyHelp'],
+        \ ["\<Space>sw", 'ChopGrep'], [';b', 'FuzzyBuffers'],
         \ [';h', 'FuzzyHelp'], [';l', 'FuzzyInBuffer'],
-        \ [';r', 'ChopsticksProjectGrep'], ['\', 'FuzzyBuffers'],
+        \ [';r', 'ChopGrep'], ['\', 'FuzzyBuffers'],
         \ ]
         call assert_equal(l:command,
             \ matchstr(maparg(l:key, 'n'), '^:\zs\u\w*'), string(l:key))

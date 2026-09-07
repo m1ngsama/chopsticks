@@ -44,7 +44,7 @@ body:
     id: health
     attributes:
       label: Health and messages
-      description: Paste `:ChopsticksHealth` and relevant `:messages` output after removing private paths or project data.
+      description: Paste `:ChopHealth` and relevant `:messages` output after removing private paths or project data.
       render: text
   - type: textarea
     id: config

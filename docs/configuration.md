@@ -89,14 +89,14 @@ These commands update the current Vim process. Add the corresponding setting to
 the local config to make a choice persistent.
 
 ```vim
-:ChopsticksUiDensity
-:ChopsticksUiDensity rich
-:ChopsticksTheme everforest
-:ChopsticksIconsToggle
-:ChopsticksTransparencyToggle
+:ChopDensity
+:ChopDensity rich
+:ChopTheme everforest
+:ChopIcons
+:ChopTransparency
 ```
 
-Calling `:ChopsticksUiDensity` without an argument cycles through all three
+Calling `:ChopDensity` without an argument cycles through all three
 densities.
 
 ## Sessions
@@ -105,9 +105,9 @@ Sessions are keyed by resolved project path and Vim release, which prevents
 same-name projects and incompatible Vim formats from colliding.
 
 ```vim
-:ChopsticksSessionSave
-:ChopsticksSessionLoad
-:ChopsticksSessionLoad!
+:ChopSave
+:ChopLoad
+:ChopLoad!
 ```
 
 Save modified files first: native Vim sessions preserve layout and file
@@ -123,8 +123,8 @@ policy](../SECURITY.md#trust-model).
 Use these built-in views before changing configuration:
 
 ```vim
-:ChopsticksHealth
-:ChopsticksCheatsheet
+:ChopHealth
+:ChopKeys
 ```
 
 Health reports effective interface choices, optional tools, plugin state, and

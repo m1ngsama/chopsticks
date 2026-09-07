@@ -35,7 +35,7 @@ Changes should preserve these properties:
   sharing them would mean a module, or a global, existing only for that.
   Keep the two copies in step, and collapse them if a third caller appears.
 - Discoverability: public commands and mappings stay represented in
-  `:ChopsticksHealth`, `:ChopsticksCheatsheet`, tests, or documentation as
+  `:ChopHealth`, `:ChopKeys`, tests, or documentation as
   appropriate.
 
 Avoid adding a plugin when Vim already provides a clear, maintainable solution.

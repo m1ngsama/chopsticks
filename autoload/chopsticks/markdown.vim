@@ -191,7 +191,7 @@ export def Setup()
   nnoremap <silent><buffer> <localleader>s :setlocal spell! spell?<CR>
   nnoremap <silent><buffer> <localleader>c <ScriptCmd>ToggleConceal()<CR>
   nnoremap <silent><buffer> <localleader>g <ScriptCmd>Glow()<CR>
-  nnoremap <silent><buffer> <localleader>i :MarkdownPasteImage<CR>
+  nnoremap <silent><buffer> <localleader>i :MdPaste<CR>
   if exists(':WhichKey') == 2
     nnoremap <silent><buffer> <localleader> :<C-u>WhichKey ','<CR>
     xnoremap <silent><buffer> <localleader> :<C-u>WhichKeyVisual ','<CR>

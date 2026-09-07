@@ -127,14 +127,14 @@ function! s:AssertPublicInterface() abort
     call s:AssertHealthModuleLazy()
     call s:AssertIconsModuleLoaded()
     call s:AssertThemeModuleLoaded()
-    call assert_equal(2, exists(':ChopsticksUiDensity'))
-    call assert_equal(2, exists(':ChopsticksTransparencyToggle'))
-    call assert_equal(2, exists(':ChopsticksIconsToggle'))
-    call assert_equal(2, exists(':ChopsticksTheme'))
-    call assert_equal(2, exists(':ChopsticksDashboard'))
-    call assert_equal(2, exists(':ChopsticksSessionSave'))
-    call assert_equal(2, exists(':ChopsticksSessionLoad'))
-    call assert_equal(2, exists(':ChopsticksProjectGrep'))
+    call assert_equal(2, exists(':ChopDensity'))
+    call assert_equal(2, exists(':ChopTransparency'))
+    call assert_equal(2, exists(':ChopIcons'))
+    call assert_equal(2, exists(':ChopTheme'))
+    call assert_equal(2, exists(':ChopDash'))
+    call assert_equal(2, exists(':ChopSave'))
+    call assert_equal(2, exists(':ChopLoad'))
+    call assert_equal(2, exists(':ChopGrep'))
     call assert_true(exists('*ChopsticksUiDensity'))
     call assert_true(exists('*ChopsticksSystemClipboardEnabled'))
     call assert_true(exists('*ChopsticksTransparencyEnabled'))
@@ -210,7 +210,7 @@ function! s:AssertDashboardLayout() abort
     let l:laststatus = &laststatus
     set lines=20
     let v:errmsg = ''
-    ChopsticksDashboard
+    ChopDash
     call assert_equal('', v:errmsg)
     let l:lines = getline(1, '$')
     let l:text = join(l:lines, "\n")
@@ -240,7 +240,7 @@ function! s:AssertDashboardLayout() abort
     vnew
     vertical resize 12
     let v:errmsg = ''
-    ChopsticksDashboard
+    ChopDash
     let l:narrow_lines = getline(1, '$')
     let l:narrow_widths = map(copy(l:narrow_lines), 'strwidth(v:val)')
     call assert_equal('', v:errmsg)
@@ -250,7 +250,7 @@ function! s:AssertDashboardLayout() abort
 
     vnew
     vertical resize 1
-    ChopsticksDashboard
+    ChopDash
     let l:item_line = line('.')
     let l:description_column = get(
         \ b:chopsticks_dashboard_desc_cols, string(l:item_line), 0)
@@ -272,7 +272,7 @@ function! s:AssertWideDashboardLogo() abort
         \ '╚═╝     ╚═╝ ╚═╝╚═╝  ╚═══╝ ╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝╚═╝  ╚═╝',
         \ ]
     set columns=140 lines=40
-    ChopsticksDashboard
+    ChopDash
     let l:actual = filter(getline(1, '$'), 'v:val =~# ''[█╚]''')
     call assert_equal(l:expected,
         \ map(copy(l:actual), 'substitute(v:val, ''^ *'', '''', '''')'))
@@ -288,7 +288,7 @@ function! s:AssertDensityCycle() abort
     let l:seen = {}
     let l:seen[l:initial] = 1
     for l:index in range(1, 3)
-        silent ChopsticksUiDensity
+        silent ChopDensity
         let l:seen[ChopsticksUiDensity()] = 1
     endfor
     call assert_equal(3, len(l:seen))
@@ -300,7 +300,7 @@ function! s:AssertStatuslineDensity() abort
     set columns=160
     let l:lines = {}
     for l:density in ['minimal', 'balanced', 'rich']
-        execute 'silent ChopsticksUiDensity ' . l:density
+        execute 'silent ChopDensity ' . l:density
         call assert_equal(l:density, ChopsticksUiDensity())
         call assert_equal(2, &laststatus)
         let l:lines[l:density] = ChopsticksStatusline()
@@ -323,7 +323,7 @@ function! s:AssertStatuslineDensity() abort
 endfunction
 
 function! s:AssertStatuslineContext() abort
-    silent ChopsticksUiDensity rich
+    silent ChopDensity rich
     call s:EditOneBuffer()
     setlocal modified readonly spell
     let l:other_window = win_getid()
@@ -354,7 +354,7 @@ function! s:VisibleTabline(line) abort
 endfunction
 
 function! s:AssertTablineWidth() abort
-    silent ChopsticksUiDensity rich
+    silent ChopDensity rich
     call s:EditOneBuffer()
     for l:index in range(1, 20)
         execute 'badd ' . fnameescape(printf(
@@ -486,7 +486,7 @@ function! s:AssertProjectCommandsStayRooted() abort
         execute 'silent edit ' . fnameescape(s:root . '/README.md')
         execute 'cd ' . fnameescape(l:outside)
         call assert_equal(0, haslocaldir())
-        ChopsticksFindFiles
+        ChopFiles
         let l:Canon = {p -> substitute(resolve(fnamemodify(p, ':p')), '[/\\]\+$', '', '')}
         call assert_equal(l:Canon(s:root), l:Canon(bufname('%')))
         call assert_equal(0, haslocaldir())
@@ -511,7 +511,7 @@ function! s:AssertStartupTimeIsStable() abort
     let l:startup_ms = g:chopsticks_startup_ms
     execute 'source ' . fnameescape(s:root . '/.vimrc')
     call assert_equal(l:startup_ms, g:chopsticks_startup_ms)
-    ChopsticksDashboard
+    ChopDash
     call assert_equal(l:startup_ms, g:chopsticks_startup_ms)
 endfunction
 
@@ -569,8 +569,8 @@ function! s:AssertDebugUnavailable() abort
     " Reachable only here: with $PATH emptied the answer is knowable, where
     " the default case can only say the option holds a number.
     call assert_equal(0, g:ale_rust_cargo_use_clippy)
-    call assert_equal(2, exists(':ChopsticksDebug'))
-    call assert_match('debugging needs gdb', execute('ChopsticksDebug'))
+    call assert_equal(2, exists(':ChopDebug'))
+    call assert_match('debugging needs gdb', execute('ChopDebug'))
     call assert_false(exists('g:termdebugger'),
         \ 'a debugger was selected with none on PATH')
     " The claim worth pinning: lldb is refused even when it is the only
@@ -589,7 +589,7 @@ function! s:AssertDebugUnavailable() abort
         let $PATH = l:fake
         call assert_equal(1, executable('lldb'), 'the fake lldb is not usable')
         call assert_match('debugging needs gdb',
-            \ execute('ChopsticksDebug'), 'lldb was accepted as a debugger')
+            \ execute('ChopDebug'), 'lldb was accepted as a debugger')
         call assert_false(exists('g:termdebugger'), 'lldb was selected')
         " A debugger present and no termdebug package: :packadd raises E919,
         " and an error inside a :def aborts it, so without the try the guard
@@ -604,14 +604,14 @@ function! s:AssertDebugUnavailable() abort
             " E919 aborts this function before any assertion records anything,
             " and the case passes by never finishing.
             call assert_match('ships no termdebug package',
-                \ execute('ChopsticksDebug'))
+                \ execute('ChopDebug'))
         catch
             let l:raised = v:exception
         finally
             let &packpath = l:packpath
         endtry
         call assert_equal('', l:raised,
-            \ 'ChopsticksDebug raised instead of reporting')
+            \ 'ChopDebug raised instead of reporting')
     finally
         let $PATH = l:previous
         call delete(l:fake, 'rf')
@@ -647,23 +647,23 @@ endfunction
 function! s:AssertFinderFallback() abort
     " The UI harness installs no plugins, so this is the no-fuzzbox path.
     call assert_equal(0, exists(':FuzzyFiles'))
-    call assert_equal(2, exists(':ChopsticksFindFiles'))
-    call assert_equal(2, exists(':ChopsticksProjectGrep'))
-    call assert_equal(2, exists(':ChopsticksRecentFiles'))
+    call assert_equal(2, exists(':ChopFiles'))
+    call assert_equal(2, exists(':ChopGrep'))
+    call assert_equal(2, exists(':ChopRecent'))
     call assert_equal('', maparg(';f', 'n'))
     call assert_equal('', maparg(';r', 'n'))
     call assert_match('project grep needs fuzzbox',
-        \ execute('ChopsticksProjectGrep'))
+        \ execute('ChopGrep'))
     call assert_match('Git file search needs fuzzbox',
         \ execute('call chopsticks#find#GitFiles()'))
-    call assert_match('no recent files yet', execute('ChopsticksRecentFiles'))
+    call assert_match('no recent files yet', execute('ChopRecent'))
 
     " Starting from a named buffer, because an unnamed one expands to the
     " working directory -- which is the root, so a fallback that never ran
     " would read as one that did.
     execute 'silent edit ' . fnameescape(s:root . '/README.md')
     let l:before = getcwd()
-    ChopsticksFindFiles
+    ChopFiles
     let l:Canon = {p -> substitute(resolve(fnamemodify(p, ':p')), '[/\\]\+$', '', '')}
     call assert_equal(l:Canon(s:root), l:Canon(bufname('%')))
     " Editing the root names a buffer; it does not move Vim. netrw would lcd
@@ -671,7 +671,7 @@ function! s:AssertFinderFallback() abort
     call assert_equal(l:before, getcwd())
     call assert_equal(0, haslocaldir())
 
-    ChopsticksDashboard
+    ChopDash
     call assert_notmatch('Find Text', join(getline(1, '$'), "\n"))
 endfunction
 
@@ -712,7 +712,7 @@ function! s:AssertSession() abort
     call assert_match('-[0-9a-f]\{16}-vim'
         \ . v:version . '\.vim$', l:path)
     let v:errmsg = ''
-    silent ChopsticksSessionSave
+    silent ChopSave
     call assert_equal('', v:errmsg)
     call assert_true(filereadable(l:path))
     if exists('*getfperm') && !has('win32') && !has('win64')
@@ -723,7 +723,7 @@ function! s:AssertSession() abort
         " executable input and must be rejected before it can change layout.
         call setfperm(l:path, 'rw-rw-rw-')
         let l:window_count = winnr('$')
-        let l:refusal = execute('ChopsticksSessionLoad')
+        let l:refusal = execute('ChopLoad')
         call assert_match('refusing a session writable by other users',
             \ l:refusal)
         call assert_equal(l:window_count, winnr('$'))
@@ -734,7 +734,7 @@ function! s:AssertSession() abort
     let l:temporary = l:path . '.tmp-' . getpid()
     call writefile(['do not overwrite'], l:temporary)
     call assert_match('refusing an existing session temporary path',
-        \ execute('ChopsticksSessionSave'))
+        \ execute('ChopSave'))
     call assert_equal(['do not overwrite'], readfile(l:temporary))
     call delete(l:temporary)
 
@@ -745,15 +745,15 @@ function! s:AssertSession() abort
     call assert_equal(1, mkdir(l:path))
     let l:window_count = winnr('$')
     call assert_match('refusing a non-regular session file',
-        \ execute('ChopsticksSessionLoad!'))
+        \ execute('ChopLoad!'))
     call assert_equal(l:window_count, winnr('$'))
     call assert_equal(0, delete(l:path, 'd'))
     call assert_equal(0, rename(l:regular_session, l:path))
 
-    ChopsticksDashboard
+    ChopDash
     call assert_equal(l:path, ChopsticksSessionPath())
     call assert_match('open a project buffer before saving a session',
-        \ execute('ChopsticksSessionSave'))
+        \ execute('ChopSave'))
     silent edit package.json
     call assert_equal(l:path, ChopsticksSessionPath())
     only
@@ -762,7 +762,7 @@ function! s:AssertSession() abort
     setlocal modified
     let l:modified_buffer = bufnr('')
     let l:modified_layout = winlayout()
-    let l:refusal = execute('ChopsticksSessionLoad')
+    let l:refusal = execute('ChopLoad')
     call assert_match('refusing to restore with 1 modified listed buffer',
         \ l:refusal)
     call assert_equal(l:modified_buffer, bufnr(''))
@@ -770,7 +770,7 @@ function! s:AssertSession() abort
     call assert_equal('unsaved session-load guard', getline(1))
     call assert_true(&modified)
     let v:errmsg = ''
-    silent ChopsticksSessionLoad!
+    silent ChopLoad!
     call assert_equal('', v:errmsg)
     call assert_false(exists('g:SessionLoad'))
     call assert_equal(2, winnr('$'))
@@ -785,7 +785,7 @@ function! s:AssertHealth() abort
     let l:lines = ChopsticksHealthLines()
     call assert_equal(type([]), type(l:lines))
     call assert_true(len(l:lines) > 0)
-    call assert_equal(2, exists(':ChopsticksHealth'))
+    call assert_equal(2, exists(':ChopHealth'))
     call assert_match('Language servers', join(l:lines, "\n"))
     " Every lang/ file is listed whether or not its binary is installed, so an
     " absent server is visible here rather than only as silence in a buffer.
@@ -895,7 +895,7 @@ endfunction
 " The buffer has carried filetype=chopsticks-cheatsheet since it was written,
 " with no syntax file behind it, so every row rendered in one colour.
 function! s:AssertCheatsheetSyntax() abort
-    ChopsticksCheatsheet
+    ChopKeys
     try
         call assert_equal('chopsticks-cheatsheet', &syntax)
         " Not hlexists(): the syntax file's `highlight default link` creates
@@ -924,8 +924,8 @@ function! s:AssertKeys() abort
     " whole groups takes it below -- which is the failure worth catching.
     call assert_true(len(l:lines) > 150,
         \ 'key catalog is suspiciously short: ' . len(l:lines))
-    call assert_equal(2, exists(':ChopsticksKeys'))
-    call assert_equal(2, exists(':ChopsticksCheatsheet'))
+    call assert_equal(2, exists(':ChopKeys'))
+    call assert_equal(2, exists(':ChopKeys'))
     call assert_match('cheatsheet', l:lines[0])
 
     " Blank lines are the section separators, so they are expected; what
@@ -1093,9 +1093,9 @@ endfunction
 
 " Characterization of Markdown and prose setup, for the same reason.
 function! s:AssertMarkdown() abort
-    call assert_equal(2, exists(':MarkdownPasteImage'))
-    call assert_equal(2, exists(':MarkdownGlow'))
-    call assert_equal(2, exists(':MarkdownHelp'))
+    call assert_equal(2, exists(':MdPaste'))
+    call assert_equal(2, exists(':MdGlow'))
+    call assert_equal(2, exists(':MdHelp'))
 
     silent edit README.md
     call assert_equal('markdown', &filetype)
@@ -1155,10 +1155,10 @@ endfunction
 function! s:AssertTransparencyToggle(initial) abort
     call assert_equal(a:initial, ChopsticksTransparencyEnabled())
     call assert_equal(a:initial, s:IsTransparent('Normal'))
-    silent ChopsticksTransparencyToggle
+    silent ChopTransparency
     call assert_equal(!a:initial, ChopsticksTransparencyEnabled())
     call assert_equal(!a:initial, s:IsTransparent('Normal'))
-    silent ChopsticksTransparencyToggle
+    silent ChopTransparency
     call assert_equal(a:initial, ChopsticksTransparencyEnabled())
     call assert_equal(a:initial, s:IsTransparent('Normal'))
 endfunction
@@ -1181,7 +1181,7 @@ function! s:AssertConfigurationFallbacks() abort
         call assert_true(ChopsticksDashboardEnabled())
 
         let g:chopsticks_ui_density = 'rich'
-        silent ChopsticksUiDensity unsupported
+        silent ChopDensity unsupported
         call assert_equal('rich', ChopsticksUiDensity())
 
         for l:value in [0, '0', 'off', 'false', 'no']
@@ -1226,7 +1226,7 @@ function! s:RunCase() abort
         call s:AssertConfigurationFallbacks()
         call s:AssertAutomaticDashboard(1)
         command! FuzzyGrep echo
-        ChopsticksDashboard
+        ChopDash
         let l:dashboard = join(getline(1, '$'), "\n")
         call assert_match('Find Text', l:dashboard)
         call s:AssertBufferline(0, 2)
@@ -1236,7 +1236,7 @@ function! s:RunCase() abort
         call assert_equal('minimal', ChopsticksUiDensity())
         call s:AssertAutomaticDashboard(0)
         command! FuzzyGrep echo
-        ChopsticksDashboard
+        ChopDash
         call assert_notmatch('Find Text', join(getline(1, '$'), "\n"))
         call assert_notmatch('Restore Session', join(getline(1, '$'), "\n"))
         call s:AssertBufferline(0, 0)
@@ -1244,7 +1244,7 @@ function! s:RunCase() abort
         call assert_equal('rich', ChopsticksUiDensity())
         call s:AssertAutomaticDashboard(1)
         command! FuzzyGrep echo
-        ChopsticksDashboard
+        ChopDash
         let l:dashboard = join(getline(1, '$'), "\n")
         call assert_match('Find Text', l:dashboard)
         call s:AssertBufferline(2, 2)

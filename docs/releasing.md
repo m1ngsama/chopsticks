@@ -49,7 +49,7 @@ or the clipboard, also test the affected operating system manually.
 
 Before tagging, verify a clean install in a temporary user profile: install the
 documented, checksum-verified vim-plug bootstrap, run `:PlugInstall`, restart
-Vim, and inspect `:ChopsticksHealth`. Exercise the dashboard, file search,
+Vim, and inspect `:ChopHealth`. Exercise the dashboard, file search,
 explorer fallback, Markdown setup, and session save/load paths relevant to the
 release.
 

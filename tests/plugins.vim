@@ -61,10 +61,10 @@ endfunction
 function! s:AssertFinderSelectors() abort
     let l:before = getcwd()
     let l:outside = tempname() . '-outside'
-    call mkdir(l:outside, 'p')
     " Untracked and not ignored: the one thing that tells the file source and
     " git ls-files apart, and a grep hit no other directory can produce.
     let l:probe = s:root . '/untracked-probe.txt'
+    call mkdir(l:outside, 'p')
     call writefile(['chopsticks-probe-token'], l:probe)
     try
         execute 'cd ' . fnameescape(l:outside)
@@ -163,9 +163,16 @@ function! s:RunStartup(expected_auto_lint) abort
     call assert_false(has_key(g:fuzzbox_window_defaults, 'maxwidth'))
     " Scoped to files. The list replaced a file-source filter; applied globally
     " it would also narrow project grep and hide most of the recent-file list.
-    for l:excluded in ['Library', 'node_modules', 'plugged']
+    for l:excluded in ['Library/', 'node_modules/', 'plugged/']
         call assert_true(index(g:fuzzbox_files_exclude_dir, l:excluded) >= 0,
             \ l:excluded)
+    endfor
+    " Every entry, not only those three. The plugin builds rg's -g '!<entry>'
+    " and fd's -E <entry> straight from this list, and either one without the
+    " slash matches the name at any depth, files included -- a ./build script
+    " would leave the finder with nothing said.
+    for l:excluded in g:fuzzbox_files_exclude_dir
+        call assert_match('/$', l:excluded, l:excluded)
     endfor
     " The plugin defines g:fuzzbox_exclude_dir itself and grep and mru fall back
     " to it, so what proves the scoping is that ours did NOT leak into it.

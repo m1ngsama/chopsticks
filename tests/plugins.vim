@@ -64,9 +64,9 @@ function! s:AssertFinderSelectors() abort
     " Untracked and not ignored: the one thing that tells the file source and
     " git ls-files apart, and a grep hit no other directory can produce.
     let l:probe = s:root . '/untracked-probe.txt'
-    call mkdir(l:outside, 'p')
-    call writefile(['chopsticks-probe-token'], l:probe)
     try
+        call mkdir(l:outside, 'p')
+        call writefile(['chopsticks-probe-token'], l:probe)
         execute 'cd ' . fnameescape(l:outside)
         let l:files = s:FinderScreen('ChopsticksFindFiles', 'untracked-probe')
         let l:grep = s:FinderScreen(

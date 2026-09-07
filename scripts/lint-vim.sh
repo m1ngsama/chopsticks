@@ -200,14 +200,19 @@ fi
 #
 # A vim9script's top-level statements run as soon as it is sourced, unlike a
 # :def body, which :defcompile only compiles once called. lang/*.vim calls
-# g:LspAddServer() at that top level, and Task 3's plugin is the only thing
-# that ever defines it, so sourcing here would abort with E117 before
-# :defcompile is reached. The stub below satisfies that call for every file
-# this loop checks; it is never invoked, so it changes nothing for files
-# that do not call it.
+# g:LspAddServer() at that top level, and only the LSP plugin ever defines it,
+# so sourcing here would abort with E117 before :defcompile is reached. The
+# stub below satisfies that call, and is passed only to the lang/ files that
+# legitimately expect it: anywhere else, calling a global nothing defines is
+# the error this linter exists to report.
 vim9_copy_counter=0
 lint_vim9_file() {
     vim9_source=$1
+    case $vim9_source in
+        */lang/*.vim) vim9_stub='function! g:LspAddServer(servers) abort
+endfunction' ;;
+        *) vim9_stub='" no stub: only lang/ files call a plugin global' ;;
+    esac
     vim9_copy_counter=$((vim9_copy_counter + 1))
     vim9_copy=$test_root/vim9-$vim9_copy_counter.vim
     cp "$vim9_source" "$vim9_copy"
@@ -235,8 +240,7 @@ lint_vim9_file() {
             -Nu NONE -i NONE -n -N -es \
             -V1"$vim9_log_for_vim" \
             --cmd 'execute "set runtimepath^=" . fnameescape($CHOPSTICKS_VIM9_ROOT)' \
-            --cmd 'function! g:LspAddServer(servers) abort
-endfunction' \
+            --cmd "$vim9_stub" \
             -c 'try | execute "source " . fnameescape($CHOPSTICKS_VIM9_FILE) | catch | call writefile([v:exception, v:throwpoint], $CHOPSTICKS_VIM9_ERROR) | cquit | endtry' \
             -c 'qall!' >/dev/null 2>&1
     then

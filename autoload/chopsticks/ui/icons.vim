@@ -39,7 +39,6 @@ var glyphs = {
   'spell': ['󰓆', 'SPELL'],
   'wrap': ['󰖶', 'WRAP'],
   'startup': ['', '*'],
-  'pointer': ['', '>'],
   'marker': ['', '*'],
   'group_home': ['', ''],
   'group_find': ['', ''],

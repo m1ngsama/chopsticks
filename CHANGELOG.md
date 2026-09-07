@@ -45,9 +45,12 @@ releases of the current line.
   `g:chopsticks_data_dir` override.
 - The fuzzy finder is now fuzzbox, a Vim9script plugin with no binary
   dependency, so no separate finder executable is required on any platform.
-  Finder keys are unchanged, including `Esc`, `Ctrl-c`, `Ctrl-g` and `Ctrl-q`
-  to close it. File search no longer lists only Git-tracked files, so a newly
-  created file appears immediately, but it now skips `node_modules/`,
+  `Esc`, `Ctrl-c`, `Ctrl-g` and `Ctrl-q` still close the finder, and `Ctrl-t`,
+  `Ctrl-x` and `Ctrl-v` still open the selection in a tab or a split. Two keys
+  are gone: `Ctrl-o`, which opened the selection in the current window as
+  `Enter` already does, and `Ctrl-/`, which toggled the preview and has no
+  fuzzbox equivalent. File search no longer lists only Git-tracked files, so a
+  newly created file appears immediately, but it now skips `node_modules/`,
   `vendor/`, `dist/`, `build/`, `target/` and the other directories in
   `g:fuzzbox_files_exclude_dir` even when their contents are tracked. `SPC f g`
   lists tracked files without that exclusion. Project grep matches a literal

@@ -234,6 +234,11 @@ let g:netrw_list_hide .= ',\.pyc$,node_modules,\.git,__pycache__,\.DS_Store,dist
 " PowerShell fallbacks their exclusions, which is the cheaper failure -- a
 " noisy list rather than a hidden file -- and neither is reached while ripgrep
 " is installed.
+" Snippets live with sessions and plugins under the data root, not in the
+" plugin's own ~/.vsnip. Set before plug#end(), because the plugin reads it
+" with get(g:, ...) when its plugin/ file runs.
+let g:vsnip_snippet_dir = g:chopsticks_data_dir . 'vsnip'
+
 let g:fuzzbox_mappings = 0
 let g:fuzzbox_preview = s:is_remote ? 0 : 1
 let g:fuzzbox_devicons = chopsticks#ui#icons#Enabled()
@@ -398,6 +403,8 @@ if filereadable(s:vim_plug)
     " Diagnostics, formatting, LSP, completion.
     Plug 'dense-analysis/ale', {'commit': '199a95d386cb856c27e5b90d4e3ea8bd45a58c23'}
     Plug 'yegappan/lsp', {'commit': 'e38a68d3de2e6afe45139fcaa6814eec69f3f8fe'}
+    Plug 'hrsh7th/vim-vsnip', {'commit': '9bcfabea653abdcdac584283b5097c3f8760abaa'}
+    Plug 'hrsh7th/vim-vsnip-integ', {'commit': 'c7c93934dece8315db3649bdc6898b76358a8b8d'}
 
     " Markdown and prose.
     Plug 'preservim/vim-markdown', {'commit': '1bc9d0cd8e1cc3e901b0a49c2b50a843f1c89397', 'for': 'markdown'}

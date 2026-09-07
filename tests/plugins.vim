@@ -128,6 +128,20 @@ function! s:RunStartup(expected_auto_lint) abort
     call assert_true(exists('*g:LspOptionsSet'))
     call assert_false(exists('*asyncomplete#force_refresh'))
     call assert_true(exists('#User#LspAttached'))
+    " The snippet plugins are what make an LSP completion item that arrives as
+    " a snippet expand instead of landing as literal ${1:...} text.
+    call assert_true(exists('g:loaded_vsnip'))
+    call assert_true(exists('g:loaded_vsnip_integ'))
+    call assert_equal(v:true, g:LspOptionsGet().vsnipSupport)
+    call assert_equal(g:chopsticks_data_dir . 'vsnip', g:vsnip_snippet_dir)
+    " The option must follow the plugin, not the configuration's hope: with it
+    " on and vsnip missing, every completion raises E117 inside the client.
+    " Asked directly rather than through a second Options() pass, which the
+    " aleSupport comment there explains is unsafe to repeat.
+    unlet g:loaded_vsnip
+    call assert_false(chopsticks#lsp#SnippetSupport())
+    let g:loaded_vsnip = 1
+    call assert_true(chopsticks#lsp#SnippetSupport())
     call assert_equal(v:false, g:LspOptionsGet().autoComplete)
     call assert_equal(v:true, g:LspOptionsGet().omniComplete)
     call assert_equal(v:true, g:LspOptionsGet().ignoreMissingServer)

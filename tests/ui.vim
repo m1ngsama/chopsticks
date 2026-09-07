@@ -533,6 +533,39 @@ endfunction
 " g:ale_linters_explicit is what makes this list exhaustive rather than
 " additive: ALE runs only what is named here, so a language missing from it is
 " a language with no linting at all. That was true of Python and Rust.
+" $PATH is emptied by the case rather than trusting the machine: CI runners
+" have gdb and this one does not, and the path worth pinning is the one a user
+" without it hits. The success path starts a real debugger in a terminal
+" window, which no headless harness can hold.
+function! s:AssertDebugUnavailable() abort
+    call assert_equal(2, exists(':ChopsticksDebug'))
+    call assert_match('debugging needs gdb', execute('ChopsticksDebug'))
+    call assert_false(exists('g:termdebugger'),
+        \ 'a debugger was selected with none on PATH')
+    " The claim worth pinning: lldb is refused even when it is the only
+    " debugger present, because termdebug speaks GDB/MI and lldb does not.
+    " An empty $PATH alone cannot catch adding lldb to the candidate list.
+    " Unix only: a fake executable on Windows needs a different extension.
+    if !has('unix')
+        return
+    endif
+    let l:fake = tempname() . '-debuggers'
+    call mkdir(l:fake, 'p')
+    call writefile(['#!/bin/sh', 'exit 0'], l:fake . '/lldb')
+    call setfperm(l:fake . '/lldb', 'rwxr-xr-x')
+    let l:previous = $PATH
+    try
+        let $PATH = l:fake
+        call assert_equal(1, executable('lldb'), 'the fake lldb is not usable')
+        call assert_match('debugging needs gdb',
+            \ execute('ChopsticksDebug'), 'lldb was accepted as a debugger')
+        call assert_false(exists('g:termdebugger'), 'lldb was selected')
+    finally
+        let $PATH = l:previous
+        call delete(l:fake, 'rf')
+    endtry
+endfunction
+
 function! s:AssertLanguageTooling() abort
     call assert_equal(1, g:ale_linters_explicit)
     call assert_equal(['ruff'], g:ale_linters.python)
@@ -1155,6 +1188,8 @@ function! s:RunCase() abort
         call s:AssertDataDirectory(s:DefaultDataDirectory(), 1)
     elseif s:case ==# 'path-overrides'
         call s:AssertExplicitPathOverrides()
+    elseif s:case ==# 'debug-unavailable'
+        call s:AssertDebugUnavailable()
     elseif s:case ==# 'cmdline-autocomplete-off'
         call s:AssertCmdlineAutocomplete(0)
     elseif s:case ==# 'finder-exclude-override'

@@ -10,6 +10,8 @@ releases of the current line.
 
 ## [Unreleased]
 
+## [0.2.6] - 2026-09-07
+
 ### Fixed
 
 - `<Tab>` and `<S-Tab>` now move between snippet placeholders. vim-vsnip
@@ -192,7 +194,8 @@ releases of the current line.
 - Replaced the retired multi-module distribution with an auditable `.vimrc`.
 - Made plugin installation explicit; startup itself no longer uses the network.
 
-[Unreleased]: https://github.com/m1ngsama/chopsticks/compare/v0.2.5...HEAD
+[Unreleased]: https://github.com/m1ngsama/chopsticks/compare/v0.2.6...HEAD
+[0.2.6]: https://github.com/m1ngsama/chopsticks/compare/v0.2.5...v0.2.6
 [0.2.5]: https://github.com/m1ngsama/chopsticks/compare/v0.2.4...v0.2.5
 [0.2.4]: https://github.com/m1ngsama/chopsticks/compare/v0.2.3...v0.2.4
 [0.2.3]: https://github.com/m1ngsama/chopsticks/compare/v0.2.2...v0.2.3

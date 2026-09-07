@@ -87,6 +87,14 @@ export def DefineInterfaceColors(): void
   execute 'highlight ChopDashboardCurrent ctermbg=237 cterm=none guibg=' .. surface .. ' gui=none'
   execute 'highlight ChopDashboardFooter ctermfg=180 cterm=italic guifg=' .. yellow .. ' gui=italic'
   execute 'highlight ChopDashboardStatus ctermbg=237 ctermfg=237 guibg=' .. surface .. ' guifg=' .. surface
+  # The cheatsheet's own groups, defined here with the rest so a live theme
+  # change repaints it: syntax/chopsticks-cheatsheet.vim only links to these.
+  execute 'highlight ChopCheatTitle ctermfg=109 cterm=bold guifg=' .. blue .. ' gui=bold'
+  execute 'highlight ChopCheatLegend ctermfg=108 cterm=italic guifg=' .. muted .. ' gui=italic'
+  execute 'highlight ChopCheatGroup ctermfg=108 cterm=bold guifg=' .. aqua .. ' gui=bold'
+  execute 'highlight ChopCheatEntry ctermfg=187 cterm=none guifg=' .. fg .. ' gui=none'
+  execute 'highlight ChopCheatKey ctermfg=173 cterm=bold guifg=' .. orange .. ' gui=bold'
+  execute 'highlight ChopCheatMode ctermfg=108 cterm=none guifg=' .. muted .. ' gui=none'
   execute 'highlight fuzzboxBorder ctermfg=108 guifg=' .. muted
   execute 'highlight fuzzboxMatching ctermfg=108 cterm=bold guifg=' .. green .. ' gui=bold'
   execute 'highlight fuzzboxSelectionSign ctermbg=237 guibg=' .. surface

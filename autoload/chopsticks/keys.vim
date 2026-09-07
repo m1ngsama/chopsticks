@@ -98,6 +98,14 @@ export def Lines(): list<string>
     'Use / to search, } and { to jump sections, n/N to move, q to close.',
     'Modes: n normal · x visual · i insert · t terminal · * buffer-local',
   ]
+  # Measured, not fixed at 15 and 2: `n/i/x` is five wide and overflowed a
+  # two-wide field, pushing that row's description out of the column. One
+  # column of slack past the longest entry also keeps both separators at two
+  # spaces or more, which is what syntax/chopsticks-cheatsheet.vim finds the
+  # fields by -- so widening this cannot silently uncolour them.
+  var key_width = max(mapnew(catalog, (_, entry) => strwidth(entry.keys))) + 1
+  var mode_width = max(mapnew(catalog, (_, entry) => strwidth(entry.mode))) + 1
+  var format = printf('  %%-%ds %%-%ds %%s', key_width, mode_width)
   for group in GROUP_ORDER
     var entries = filter(copy(catalog), (_, entry) => entry.group ==# group)
     if empty(entries)
@@ -105,8 +113,7 @@ export def Lines(): list<string>
     endif
     extend(lines, ['', group])
     for entry in entries
-      add(lines, printf('  %-15s %-2s  %s',
-        entry.keys, entry.mode, entry.description))
+      add(lines, printf(format, entry.keys, entry.mode, entry.description))
     endfor
   endfor
   return lines

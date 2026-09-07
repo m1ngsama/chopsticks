@@ -908,9 +908,17 @@ function! s:AssertCheatsheetSyntax() abort
         endfor
         let l:row = search('^  \S', 'n')
         call assert_true(l:row > 0, 'no entry row in the cheatsheet buffer')
-        call assert_equal('chopsticksCheatKey',
-            \ synIDattr(synID(l:row, 3, 1), 'name'),
-            \ 'the key column is not classified by the syntax file')
+        " Every column, not only the first. Two contained rules cannot both
+        " begin at column three; the key won, the mode rule never fired, and
+        " asking only about column three could not tell.
+        let l:line = getline(l:row)
+        let l:mode = matchend(l:line, '^  .\{-}\s\{2,}') + 1
+        let l:text = matchend(l:line, '^  .\{-}\s\{2,}\S\+\s\{2,}') + 1
+        for [l:column, l:group] in [[3, 'chopsticksCheatKey'],
+            \ [l:mode, 'chopsticksCheatMode'], [l:text, 'chopsticksCheatEntry']]
+            call assert_equal(l:group, synIDattr(synID(l:row, l:column, 1), 'name'),
+                \ 'column ' . l:column . ' is not classified by the syntax file')
+        endfor
     finally
         close
     endtry
@@ -925,7 +933,12 @@ function! s:AssertKeys() abort
     call assert_true(len(l:lines) > 150,
         \ 'key catalog is suspiciously short: ' . len(l:lines))
     call assert_equal(2, exists(':ChopKeys'))
-    call assert_equal(2, exists(':ChopKeys'))
+    " The rename kept no aliases, which is the whole reason it was worth
+    " making; nothing checked that the retired names are really gone.
+    for l:retired in ['ChopsticksKeys', 'ChopsticksCheatsheet',
+        \ 'ChopsticksHealth', 'ChopsticksProjectGrep', 'MarkdownGlow']
+        call assert_equal(0, exists(':' . l:retired), l:retired)
+    endfor
     call assert_match('cheatsheet', l:lines[0])
 
     " Blank lines are the section separators, so they are expected; what

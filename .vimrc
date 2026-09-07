@@ -701,7 +701,6 @@ function! ChopsticksKeyLines() abort
 endfunction
 
 command! ChopKeys call chopsticks#keys#Show()
-command! ChopKeys call chopsticks#keys#Show()
 
 " ── Markdown and prose ─────────────────────────────────────────────────────
 
@@ -1075,7 +1074,7 @@ augroup ChopsticksDirectory
     autocmd BufEnter * nested call chopsticks#explorer#MaybeOpenDirectory()
 augroup END
 
-augroup ChopDash
+augroup ChopsticksDashboard
     autocmd!
     autocmd VimEnter * call chopsticks#startup#CaptureMs()
     autocmd VimEnter * call chopsticks#startup#MaybeOpenDashboard()

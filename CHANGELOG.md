@@ -10,6 +10,14 @@ releases of the current line.
 
 ## [Unreleased]
 
+### Fixed
+
+- The cheatsheet's mode column takes its own colour. Two syntax rules were
+  anchored to the same start column, the key won every time, and the mode rule
+  never fired -- so the colour 0.2.7 defined for it was never reached.
+- `:ChopKeys` was defined twice, and an internal autocommand group was renamed
+  along with the commands in 0.3.0 although only commands were meant to change.
+
 ## [0.3.0] - 2026-09-07
 
 ### Changed

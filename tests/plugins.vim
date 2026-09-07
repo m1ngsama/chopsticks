@@ -101,7 +101,7 @@ function! s:RunStartup(expected_auto_lint) abort
     let l:key_lines = ChopsticksKeyLines()
     execute 'source ' . fnameescape(s:root . '/.vimrc')
     doautocmd VimEnter
-    call assert_equal('0.3.0', get(g:, 'chopsticks_version', ''))
+    call assert_equal('0.3.1', get(g:, 'chopsticks_version', ''))
     for l:command in [
         \ 'ChopHealth', 'ChopKeys',
         \ 'ChopFiles', 'ChopIcons',

@@ -46,10 +46,13 @@ releases of the current line.
 - The fuzzy finder is now fuzzbox, a Vim9script plugin with no binary
   dependency, so no separate finder executable is required on any platform.
   Finder keys are unchanged, including `Esc`, `Ctrl-c`, `Ctrl-g` and `Ctrl-q`
-  to close it. File search now lists every file the finder can see rather
-  than only Git-tracked ones, so a newly created file appears immediately;
-  project grep matches a literal string as you type, where it previously took
-  a regular expression and then filtered fuzzily.
+  to close it. File search no longer lists only Git-tracked files, so a newly
+  created file appears immediately, but it now skips `node_modules/`,
+  `vendor/`, `dist/`, `build/`, `target/` and the other directories in
+  `g:fuzzbox_files_exclude_dir` even when their contents are tracked. `SPC f g`
+  lists tracked files without that exclusion. Project grep matches a literal
+  string as you type, where it previously took a regular expression and then
+  filtered fuzzily.
 - Vim 9.1.1947 or newer is required on every platform, not only Windows. The
   reason is unchanged -- older builds carry an upstream executable search-path
   vulnerability -- but the floor is no longer split by platform.

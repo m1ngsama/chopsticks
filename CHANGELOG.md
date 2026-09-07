@@ -10,6 +10,15 @@ releases of the current line.
 
 ## [Unreleased]
 
+### Added
+
+- Command-line autocompletion. Typing `:`, `/` or `?` raises the suggestion
+  popup as you type instead of only on `<Tab>`; searches complete from words
+  in the buffer. Nothing is selected until you choose it, so `<CR>` still runs
+  exactly what you typed, and `<Up>`/`<Down>` still reach command-line history.
+  Set `g:chopsticks_cmdline_autocomplete = 0` to go back to completing on
+  `<Tab>` alone.
+
 ## [0.2.0] - 2026-09-07
 
 ### Added

@@ -70,7 +70,7 @@ jobs:
           CHOPSTICKS_TEST_UI_CASES: >-
             default data-dir-override data-dir-invalid-type data-dir-empty
             path-overrides finder-exclude-override finder-exclude-invalid-type
-            finder-unavailable session
+            cmdline-autocomplete-off finder-unavailable session
           CHOPSTICKS_TEST_VIM: ${{ steps.vim.outputs.executable }}
         run: |
           set -o pipefail

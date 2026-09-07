@@ -116,6 +116,11 @@ let g:chopsticks_markdown_image_dir = get(g:, 'chopsticks_markdown_image_dir', '
 let g:chopsticks_auto_lint = get(g:, 'chopsticks_auto_lint', 0)
 let g:chopsticks_cmdline_autocomplete =
     \ get(g:, 'chopsticks_cmdline_autocomplete', 1)
+" Insert-mode autocompletion, the last piece of the Vim9 migration and the one
+" its own design flagged as least proven. The mechanism ships; the default
+" does not, because unlike the command line this rebuilds a menu on every
+" keystroke of every buffer and asks the language server for it.
+let g:chopsticks_autocomplete = get(g:, 'chopsticks_autocomplete', 0)
 let g:chopsticks_long_line_threshold =
     \ get(g:, 'chopsticks_long_line_threshold', 4096)
 let g:chopsticks_ui_density = get(g:, 'chopsticks_ui_density', 'balanced')
@@ -464,6 +469,18 @@ set complete-=i
 set completeopt=menuone,noinsert,noselect
 if exists('*popup_create')
     set completeopt+=popup
+endif
+if g:chopsticks_autocomplete && exists('+autocomplete')
+    " Per-source caps, and no tag scan: this list is walked on every keystroke
+    " where <Tab> used to ask for it once.
+    "
+    " o is deliberately absent here and added per buffer when a language
+    " server attaches. The design said complete+=o globally; at keystroke rate
+    " that runs whatever omni-completion the filetype happens to ship, and
+    " Vim's own Python one answers a half-typed line with
+    " "function: syntax error" on the message line, once per character.
+    set complete=.^5,w^5,b^5,u^5
+    set autocomplete
 endif
 set pumheight=15
 set shortmess+=cI
@@ -1031,6 +1048,9 @@ augroup Chopsticks
     autocmd FileType sh setlocal expandtab shiftwidth=2 tabstop=2 softtabstop=2 textwidth=80
     autocmd FileType make setlocal noexpandtab shiftwidth=8 tabstop=8 softtabstop=0
     autocmd User LspAttached call chopsticks#lsp#Maps()
+    if g:chopsticks_autocomplete && exists('+autocomplete')
+        autocmd User LspAttached setlocal complete+=o
+    endif
     " <amatch> is the filetype the event fired for, which &filetype may not yet
     " be during a nested FileType.
     autocmd FileType * call chopsticks#lsp#Ensure(expand('<amatch>'))

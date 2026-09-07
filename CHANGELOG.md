@@ -10,6 +10,18 @@ releases of the current line.
 
 ## [Unreleased]
 
+### Added
+
+- `g:chopsticks_autocomplete = 1` turns on Vim's insert-mode autocompletion:
+  suggestions appear as you type rather than on `<Tab>`. **It is off by
+  default.** The migration design that scheduled it recorded it as the least
+  proven change in the series, and unlike the command line this rebuilds a
+  menu on every keystroke of every buffer; the mechanism ships so the choice
+  is one line, and the default waits for the `<Tab>` path to have had real
+  use. The omni source is added per buffer when a language server attaches,
+  never globally -- at keystroke rate a filetype's own omni-completion
+  answers a half-typed line with an error, once per character.
+
 ## [0.2.4] - 2026-09-07
 
 ### Added

@@ -540,6 +540,25 @@ endfunction
 " Without the plugin every branch must fall through to what Tab and S-Tab did
 " before it existed. This is the suite that has no plugins, so it is the one
 " that can prove the guard rather than the feature.
+" Both directions, because the switch has to change two settings together:
+" the option that opens the menu and the source list walked to fill it. Left
+" off, 'complete' must keep the tag source that a keystroke-rate scan cannot
+" afford.
+function! s:AssertInsertAutocomplete(enabled) abort
+    call assert_equal(a:enabled, g:chopsticks_autocomplete)
+    if !exists('+autocomplete')
+        return
+    endif
+    call assert_equal(a:enabled, &autocomplete ? 1 : 0)
+    call assert_equal(a:enabled ? '.^5,w^5,b^5,u^5' : '.,w,b,u,t', &complete)
+    " o arrives per buffer with a language server, never globally: at
+    " keystroke rate a filetype's own omni-completion answers a half-typed
+    " line with an error message, once per character.
+    call assert_equal(a:enabled, exists('#Chopsticks#User#LspAttached')
+        \ && execute('autocmd Chopsticks User LspAttached') =~# 'complete+=o'
+        \ ? 1 : 0)
+endfunction
+
 function! s:AssertSnippetlessTabs() abort
     call assert_false(exists('g:loaded_vsnip'))
     call assert_equal("\<Tab>", chopsticks#lsp#CompletionTab())
@@ -1132,6 +1151,7 @@ function! s:RunCase() abort
         call s:AssertCmdlineAutocomplete(1)
         call s:AssertLanguageTooling()
         call s:AssertSnippetlessTabs()
+        call s:AssertInsertAutocomplete(0)
         let l:desktop_clipboard = has('clipboard')
             \ && (has('macunix') || has('win32') || has('win64')
             \     || !empty($DISPLAY) || !empty($WAYLAND_DISPLAY))
@@ -1198,6 +1218,8 @@ function! s:RunCase() abort
         call s:AssertDataDirectory(s:DefaultDataDirectory(), 1)
     elseif s:case ==# 'path-overrides'
         call s:AssertExplicitPathOverrides()
+    elseif s:case ==# 'autocomplete-on'
+        call s:AssertInsertAutocomplete(1)
     elseif s:case ==# 'debug-unavailable'
         call s:AssertDebugUnavailable()
     elseif s:case ==# 'cmdline-autocomplete-off'

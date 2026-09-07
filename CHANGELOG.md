@@ -10,6 +10,8 @@ releases of the current line.
 
 ## [Unreleased]
 
+## [0.2.4] - 2026-09-07
+
 ### Added
 
 - Snippets, through `hrsh7th/vim-vsnip` and `hrsh7th/vim-vsnip-integ`. A
@@ -161,7 +163,8 @@ releases of the current line.
 - Replaced the retired multi-module distribution with an auditable `.vimrc`.
 - Made plugin installation explicit; startup itself no longer uses the network.
 
-[Unreleased]: https://github.com/m1ngsama/chopsticks/compare/v0.2.3...HEAD
+[Unreleased]: https://github.com/m1ngsama/chopsticks/compare/v0.2.4...HEAD
+[0.2.4]: https://github.com/m1ngsama/chopsticks/compare/v0.2.3...v0.2.4
 [0.2.3]: https://github.com/m1ngsama/chopsticks/compare/v0.2.2...v0.2.3
 [0.2.2]: https://github.com/m1ngsama/chopsticks/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/m1ngsama/chopsticks/compare/v0.2.0...v0.2.1

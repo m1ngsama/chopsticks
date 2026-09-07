@@ -60,9 +60,15 @@ yank after a delete.
 ## Search is empty or slow
 
 File search prefers `rg`, then `ugrep`, then `ag`, then `fd`, then
-`git ls-files`, then the system `find`; text search prefers `rg`, then
-`ugrep`, then `ag`, then `git grep`, then `grep`. Install `ripgrep` for speed
-and confirm it is visible in `:ChopsticksHealth`.
+`git ls-files`, then the system `find` on Unix and `Get-ChildItem` on Windows;
+text search prefers `rg`, then `ugrep`, then `ag`, then `git grep`, then
+`grep` on Unix and `findstr` on Windows. Install `ripgrep` for speed and
+confirm it is visible in `:ChopsticksHealth`.
+
+A file that exists but never appears is usually excluded rather than missed.
+`SPC f f` skips every directory in `g:fuzzbox_files_exclude_dir`, including
+`node_modules`, `vendor`, `dist`, `build` and `target`, even when Git tracks
+their contents. `SPC f g` lists tracked files without that exclusion.
 
 The project root is the nearest parent containing `.git`; outside a worktree it
 is Vim's current directory.

@@ -139,8 +139,10 @@ export def Lines(): list<string>
   # fields by -- so widening this cannot silently uncolour them.
   var widths = mapnew(catalog, (_, entry) => entry.keys)
     ->extend(mapnew(STARTERS, (_, starter) => starter.keys))
+  var modes = mapnew(catalog, (_, entry) => entry.mode)
+    ->extend(mapnew(STARTERS, (_, starter) => starter.mode))
   var key_width = max(mapnew(widths, (_, keys) => strwidth(keys))) + 1
-  var mode_width = max(mapnew(catalog, (_, entry) => strwidth(entry.mode))) + 1
+  var mode_width = max(mapnew(modes, (_, mode) => strwidth(mode))) + 1
   var format = printf('  %%-%ds %%-%ds %%s', key_width, mode_width)
   extend(lines, ['', 'Start here'])
   for starter in STARTERS

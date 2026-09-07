@@ -13,10 +13,15 @@ endif
 syntax match chopsticksCheatTitle /\%1l.*/
 syntax match chopsticksCheatLegend /\%>2l\%<7l.*/
 syntax match chopsticksCheatGroup /^\%>6l\S.*/
-syntax match chopsticksCheatEntry /^ \{2}\S.*/
-  \ contains=chopsticksCheatKey,chopsticksCheatMode
+# The mode is reachable only through the key's nextgroup: listed in contains
+# as well, its \S\+ also matches the key's first word, and the later rule wins.
+syntax match chopsticksCheatEntry /^ \{2}\S.*/ contains=chopsticksCheatKey
+# nextgroup, not a second \%3c anchor: two contained matches cannot both begin
+# at column three, and the key wins, which left the mode column uncoloured and
+# ChopCheatMode dead.
 syntax match chopsticksCheatKey /\%3c.\{-}\ze\s\{2,}/ contained
-syntax match chopsticksCheatMode /\%3c.\{-}\s\{2,}\zs\S\+/ contained
+  \ nextgroup=chopsticksCheatMode skipwhite
+syntax match chopsticksCheatMode /\S\+/ contained
 
 highlight default link chopsticksCheatTitle ChopCheatTitle
 highlight default link chopsticksCheatLegend ChopCheatLegend

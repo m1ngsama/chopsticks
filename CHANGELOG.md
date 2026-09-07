@@ -29,6 +29,9 @@ releases of the current line.
   troubleshooting guides plus issue and pull-request templates.
 - Code outline on `SPC c l`, inlay hints, and semantic highlighting, from the
   new Vim9script LSP client.
+- `g:chopsticks_finder_exclude_dir`, the directories file search never lists.
+  Entries are normalised to end in a slash, so a bare `vendor` excludes the
+  directory rather than every file anywhere that happens to be named `vendor`.
 
 ### Changed
 

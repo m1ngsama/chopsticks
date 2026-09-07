@@ -515,6 +515,17 @@ function! s:AssertStartupTimeIsStable() abort
     call assert_equal(l:startup_ms, g:chopsticks_startup_ms)
 endfunction
 
+" A list is the only shape this option has; anything else falls back rather
+" than reaching map(), which would abort the whole startup on a local
+" configuration's typo.
+function! s:AssertDefaultFinderExclude() abort
+    call assert_equal(18, len(g:fuzzbox_files_exclude_dir))
+    for l:entry in ['node_modules/', 'vendor/', 'plugged/']
+        call assert_true(index(g:fuzzbox_files_exclude_dir, l:entry) >= 0,
+            \ l:entry)
+    endfor
+endfunction
+
 function! s:AssertFinderFallback() abort
     " The UI harness installs no plugins, so this is the no-fuzzbox path.
     call assert_equal(0, exists(':FuzzyFiles'))
@@ -1105,6 +1116,10 @@ function! s:RunCase() abort
         call s:AssertDataDirectory(s:DefaultDataDirectory(), 1)
     elseif s:case ==# 'path-overrides'
         call s:AssertExplicitPathOverrides()
+    elseif s:case ==# 'finder-exclude-override'
+        call assert_equal(['vendor/', 'tmp/'], g:fuzzbox_files_exclude_dir)
+    elseif s:case ==# 'finder-exclude-invalid-type'
+        call s:AssertDefaultFinderExclude()
     elseif s:case ==# 'finder-unavailable'
         call s:AssertFinderFallback()
     elseif s:case ==# 'session'

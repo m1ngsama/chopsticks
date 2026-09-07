@@ -225,25 +225,38 @@ let g:netrw_list_hide .= ',\.pyc$,node_modules,\.git,__pycache__,\.DS_Store,dist
 " matches under tracked build/, dist/, target/ and vendor/ trees, and hide most
 " of the MRU list.
 "
-" Every entry ends in a slash. The plugin passes them to rg as -g '!<entry>'
-" and to fd as -E <entry>, and without the slash both match the name at any
-" depth, files included: a ./build script or a vendor file would vanish from
-" the finder with nothing said. The slash costs the `find` and PowerShell
-" fallbacks their exclusions, which is the cheaper failure -- a noisy list
-" rather than a hidden file -- and neither is reached while ripgrep is
-" installed.
+" Every entry reaches the plugin ending in a slash. It passes them to rg as
+" -g '!<entry>' and to fd as -E <entry>, and without the slash both match the
+" name at any depth, files included: a ./build script or a vendor file would
+" vanish from the finder with nothing said. The slash costs the `find` and
+" PowerShell fallbacks their exclusions, which is the cheaper failure -- a
+" noisy list rather than a hidden file -- and neither is reached while ripgrep
+" is installed.
 let g:fuzzbox_mappings = 0
 let g:fuzzbox_preview = s:is_remote ? 0 : 1
 let g:fuzzbox_devicons = chopsticks#ui#icons#Enabled()
 let g:fuzzbox_borderchars = ['─', '│', '─', '│', '╭', '╮', '╯', '╰']
 let g:fuzzbox_keymaps = {'exit': ["\<Esc>", "\<C-c>", "\<C-g>", "\<C-q>"]}
 let g:fuzzbox_window_defaults = {'width': 0.92, 'height': 0.84}
-let g:fuzzbox_files_exclude_dir = [
-    \ '.git/', '.cache/', '.cargo/', '.npm/', '.pnpm-store/', '.rustup/',
-    \ '.bun/', '.codex/', 'Library/', 'node_modules/', 'plugged/',
-    \ '.venv/', 'venv/', '__pycache__/', 'build/', 'dist/', 'target/',
-    \ 'vendor/',
+
+" The one finder setting whose right value belongs to the project rather than
+" to this configuration -- a Go tree with a tracked vendor/ is the usual case
+" -- so it is the one a local configuration may replace. The rest of the block
+" above carries reasoning a machine-local value would quietly undo.
+let s:default_finder_exclude = [
+    \ '.git', '.cache', '.cargo', '.npm', '.pnpm-store', '.rustup',
+    \ '.bun', '.codex', 'Library', 'node_modules', 'plugged',
+    \ '.venv', 'venv', '__pycache__', 'build', 'dist', 'target', 'vendor',
     \ ]
+let s:finder_exclude = get(g:, 'chopsticks_finder_exclude_dir',
+    \ s:default_finder_exclude)
+if type(s:finder_exclude) != type([])
+    let s:finder_exclude = s:default_finder_exclude
+endif
+" The slash is added here rather than asked for, because a list written
+" without it is the trap this normalisation exists to close.
+let g:fuzzbox_files_exclude_dir = map(copy(s:finder_exclude),
+    \ 'v:val =~# "/$" ? v:val : v:val . "/"')
 
 let g:ale_disable_lsp = 1
 let g:ale_linters_explicit = 1

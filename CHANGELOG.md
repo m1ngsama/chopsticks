@@ -10,6 +10,8 @@ releases of the current line.
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-09-07
+
 ### Added
 
 - Command-line autocompletion. Typing `:`, `/` or `?` raises the suggestion
@@ -129,6 +131,7 @@ releases of the current line.
 - Replaced the retired multi-module distribution with an auditable `.vimrc`.
 - Made plugin installation explicit; startup itself no longer uses the network.
 
-[Unreleased]: https://github.com/m1ngsama/chopsticks/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/m1ngsama/chopsticks/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/m1ngsama/chopsticks/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/m1ngsama/chopsticks/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/m1ngsama/chopsticks/releases/tag/v0.1.0

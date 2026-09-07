@@ -10,6 +10,15 @@ must not be published.
 2. Choose a semantic version for the current Vim-first line. Historical `v1.x`
    and `v2.x` tags belong to the retired implementation and are not part of the
    current version sequence.
+
+   While the line is below `1.0.0`, release one finished piece of work at a
+   time and move the patch digit: `0.2.1`, `0.2.2`, and so on. Semantic
+   versioning permits this before `1.0.0`, and it is deliberate -- a version
+   that carries one change is one a faulty release can be bisected to, and a
+   public tag can never be moved or deleted to correct it. Reserve the minor
+   digit for a change that breaks an existing configuration, and never skip a
+   number to signal that a release matters.
+
 3. Synchronize the version in:
 
    - `g:chopsticks_version` in `.vimrc`;

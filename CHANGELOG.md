@@ -10,6 +10,8 @@ releases of the current line.
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-09-07
+
 ### Fixed
 
 - The cheatsheet's mode column takes its own colour. Two syntax rules were
@@ -241,7 +243,8 @@ releases of the current line.
 - Replaced the retired multi-module distribution with an auditable `.vimrc`.
 - Made plugin installation explicit; startup itself no longer uses the network.
 
-[Unreleased]: https://github.com/m1ngsama/chopsticks/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/m1ngsama/chopsticks/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/m1ngsama/chopsticks/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/m1ngsama/chopsticks/compare/v0.2.8...v0.3.0
 [0.2.8]: https://github.com/m1ngsama/chopsticks/compare/v0.2.7...v0.2.8
 [0.2.7]: https://github.com/m1ngsama/chopsticks/compare/v0.2.6...v0.2.7

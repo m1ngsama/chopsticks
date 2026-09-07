@@ -1,6 +1,6 @@
 {
   "name": "chopsticks",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "A single-file Vim development and Markdown writing setup",
   "private": true,
   "license": "MIT",

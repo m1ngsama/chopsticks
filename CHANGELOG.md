@@ -10,6 +10,8 @@ releases of the current line.
 
 ## [Unreleased]
 
+## [0.2.8] - 2026-09-07
+
 ### Added
 
 - A `Start here` block at the top of `SPC ?`. It teaches the four prefixes the
@@ -213,7 +215,8 @@ releases of the current line.
 - Replaced the retired multi-module distribution with an auditable `.vimrc`.
 - Made plugin installation explicit; startup itself no longer uses the network.
 
-[Unreleased]: https://github.com/m1ngsama/chopsticks/compare/v0.2.7...HEAD
+[Unreleased]: https://github.com/m1ngsama/chopsticks/compare/v0.2.8...HEAD
+[0.2.8]: https://github.com/m1ngsama/chopsticks/compare/v0.2.7...v0.2.8
 [0.2.7]: https://github.com/m1ngsama/chopsticks/compare/v0.2.6...v0.2.7
 [0.2.6]: https://github.com/m1ngsama/chopsticks/compare/v0.2.5...v0.2.6
 [0.2.5]: https://github.com/m1ngsama/chopsticks/compare/v0.2.4...v0.2.5

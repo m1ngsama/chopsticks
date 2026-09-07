@@ -529,17 +529,18 @@ function! s:AssertFinderFallback() abort
         \ execute('call chopsticks#find#GitFiles()'))
     call assert_match('no recent files yet', execute('ChopsticksRecentFiles'))
 
-    " Only the buffer is asserted. The fallback opens netrw, and
-    " g:netrw_keepdir = 0 makes netrw lcd into the directory it browses, so
-    " getcwd() legitimately changes here. That the plugin path leaves Vim's
-    " directory alone is asserted in tests/plugins.vim, which has a plugin.
     " Starting from a named buffer, because an unnamed one expands to the
     " working directory -- which is the root, so a fallback that never ran
     " would read as one that did.
     execute 'silent edit ' . fnameescape(s:root . '/README.md')
+    let l:before = getcwd()
     ChopsticksFindFiles
     let l:Canon = {p -> substitute(resolve(fnamemodify(p, ':p')), '[/\\]\+$', '', '')}
     call assert_equal(l:Canon(s:root), l:Canon(bufname('%')))
+    " Editing the root names a buffer; it does not move Vim. netrw would lcd
+    " into what it browses under g:netrw_keepdir = 0, but -es never renders it.
+    call assert_equal(l:before, getcwd())
+    call assert_equal(0, haslocaldir())
 
     ChopsticksDashboard
     call assert_notmatch('Find Text', join(getline(1, '$'), "\n"))

@@ -10,6 +10,8 @@ releases of the current line.
 
 ## [Unreleased]
 
+## [0.2.3] - 2026-09-07
+
 ### Added
 
 - `SPC r d` and `:ChopsticksDebug` start Vim's built-in `termdebug` in a
@@ -150,7 +152,8 @@ releases of the current line.
 - Replaced the retired multi-module distribution with an auditable `.vimrc`.
 - Made plugin installation explicit; startup itself no longer uses the network.
 
-[Unreleased]: https://github.com/m1ngsama/chopsticks/compare/v0.2.2...HEAD
+[Unreleased]: https://github.com/m1ngsama/chopsticks/compare/v0.2.3...HEAD
+[0.2.3]: https://github.com/m1ngsama/chopsticks/compare/v0.2.2...v0.2.3
 [0.2.2]: https://github.com/m1ngsama/chopsticks/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/m1ngsama/chopsticks/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/m1ngsama/chopsticks/compare/v0.1.0...v0.2.0

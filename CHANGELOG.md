@@ -10,6 +10,14 @@ releases of the current line.
 
 ## [Unreleased]
 
+### Fixed
+
+- The panel opened with `E518: Unknown option: winhighlight` on Vim 9.1.1947,
+  the documented floor. The option arrived after it, and the cursor line's
+  colour is now asked for only where it exists -- `dashboard.vim` already
+  guarded its own use of it for this exact reason. Below 9.2 the panel's
+  cursor line falls back to `PopupSelected`.
+
 ## [0.3.6] - 2026-09-08
 
 ### Added

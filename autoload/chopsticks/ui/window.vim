@@ -230,7 +230,11 @@ export def Scratch(name: string, lines: list<string>, filetype = '')
     setbufvar(winbufnr(state.id), '&filetype', filetype)
   endif
   # PopupSelected is the finder's too; remapped window-locally, not globally.
-  win_execute(state.id, 'setlocal winhighlight=PopupSelected:ChopPanelCursor')
+  # Guarded like dashboard.vim's: the option is missing before Vim 9.2 and
+  # 9.1.1947 is the floor, so the cursor line falls back to PopupSelected.
+  if exists('+winhighlight')
+    win_execute(state.id, 'setlocal winhighlight=PopupSelected:ChopPanelCursor')
+  endif
   win_execute(state.id, 'call cursor(' .. FirstEntry() .. ', 1)')
 enddef
 

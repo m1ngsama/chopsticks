@@ -14,8 +14,10 @@ import autoload 'chopsticks/ui/window.vim'
 const GROUP_ORDER = [
   'Essentials', 'Fast find', 'Buffers', 'Windows', 'Files', 'Search', 'Quit',
   'Git', 'Code', 'Diagnostics', 'Run', 'Terminal', 'Tabs', 'Toggles',
-  'Editing', 'Navigation', 'Markdown',
+  'Editing', 'Navigation', 'Writing', 'Structure', 'Links', 'Table',
 ]
+
+export const MARKDOWN_GROUPS = ['Writing', 'Structure', 'Links', 'Table']
 
 # What to learn first. Not the fifteen most useful keys -- the four prefixes
 # the rest hangs off, which is the part a list of individual keys hides.
@@ -232,6 +234,10 @@ def Rendered(sections: list<dict<any>>): list<string>
       row.keys, row.mode, row.description))
   endfor
   return lines
+enddef
+
+export def Sheet(groups: list<string>): list<string>
+  return Rendered(Sections(groups))
 enddef
 
 export def Lines(): list<string>

@@ -21,6 +21,10 @@ releases of the current line.
   the contextual key guide already puts on that group. The row glyph is read
   off the row's own description, so a new binding gets one without naming it.
   ASCII mode has no icon column rather than a half-filled one.
+- `,?` renders from the key catalogue instead of a hand-written copy of it.
+  The copy had drifted: eight keys it listed were never in the catalogue and
+  now are, so they reach the full cheatsheet too, which gains `Writing`,
+  `Structure`, `Links` and `Table` sections in place of one `Markdown` section.
 - The health report is a coloured panel: sections carry glyphs, and `[ok]`,
   `[!!]` and `[--]` take green, red and grey. The status stays bracketed text
   rather than becoming a glyph, because the bug report template asks for this

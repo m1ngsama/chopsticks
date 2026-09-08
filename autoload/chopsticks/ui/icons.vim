@@ -44,6 +44,7 @@ var glyphs = {
   'clipboard': ['', ''],
   'preview': ['', ''],
   'group_help': ['', ''],
+  'group_link': ['', ''],
   'group_home': ['', ''],
   'group_find': ['', ''],
   'group_buffer': ['󰓩', ''],
@@ -72,6 +73,8 @@ var group_glyphs = {
   'Navigation': 'group_nav', 'Markdown': 'group_markdown',
   'Table': 'group_table',
   'Start here': 'startup',
+  'Writing': 'group_edit', 'Structure': 'group_nav',
+  'Links': 'group_link',
   }
 
 export def Enabled(): number

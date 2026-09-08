@@ -726,24 +726,35 @@ let g:which_key_local_map = {
     \ 'z': 'Focus mode',
     \ }
 
+" Grouped, because the , panel renders these sections straight from the
+" catalogue rather than keeping the second copy that had drifted from it.
 for s:markdown_key in [
-    \ ['n*', ',?', 'Markdown help'],
-    \ ['n*', ',c', 'Toggle conceal'],
-    \ ['n*', ',f', 'Format with Prettier'],
-    \ ['n*', ',g', 'Preview with Glow'],
-    \ ['n*', ',i', 'Paste clipboard image'],
-    \ ['n*', ',l', 'Lint now'],
-    \ ['n*', ',o', 'Open heading outline'],
-    \ ['n*', ',O', 'Insert table of contents'],
-    \ ['n*', ',p', 'Browser preview'],
-    \ ['n*', ',s', 'Toggle spelling'],
-    \ ['n*', ',tr', 'Realign table'],
-    \ ['n*', ',tt', 'Toggle table mode'],
-    \ ['x*', ',tc', 'Tableize selection'],
-    \ ['n*', ',x', 'Toggle task checkbox'],
-    \ ['n*', ',z', 'Focus mode'],
+    \ ['Writing', 'n*', ',?', 'Markdown help'],
+    \ ['Writing', 'n*', ',z', 'Focus mode'],
+    \ ['Writing', 'n*', ',s', 'Toggle spelling'],
+    \ ['Writing', 'n*', ']s / [s', 'Next / previous misspelling'],
+    \ ['Writing', 'n*', 'z=', 'Spelling suggestions'],
+    \ ['Writing', 'n*', ',c', 'Toggle conceal'],
+    \ ['Writing', 'n*', 'gqap', 'Format paragraph'],
+    \ ['Writing', 'n*', 'g Ctrl-g', 'Word count'],
+    \ ['Structure', 'n*', ',x', 'Toggle task checkbox'],
+    \ ['Structure', 'n*', 'gN', 'Renumber list'],
+    \ ['Structure', 'n*', ']] / [[', 'Next / previous heading'],
+    \ ['Structure', 'n*', ']u', 'Parent heading'],
+    \ ['Structure', 'n*', ',o', 'Open heading outline'],
+    \ ['Structure', 'n*', ',O', 'Insert table of contents'],
+    \ ['Table', 'n*', ',tt', 'Toggle table mode'],
+    \ ['Table', 'n*', ',tr', 'Realign table'],
+    \ ['Table', 'x*', ',tc', 'Tableize selection'],
+    \ ['Links', 'n*', 'gx / ge', 'Open URL / edit linked Markdown'],
+    \ ['Links', 'n*', ',p', 'Browser preview'],
+    \ ['Links', 'n*', ',g', 'Preview with Glow'],
+    \ ['Links', 'n*', ',i', 'Paste clipboard image'],
+    \ ['Links', 'n*', ',l', 'Lint now'],
+    \ ['Links', 'n*', ',f', 'Format with Prettier'],
     \ ]
-    call chopsticks#keys#Catalog('Markdown', s:markdown_key[0], s:markdown_key[1], s:markdown_key[2])
+    call chopsticks#keys#Catalog(s:markdown_key[0], s:markdown_key[1],
+        \ s:markdown_key[2], s:markdown_key[3])
 endfor
 unlet s:markdown_key
 

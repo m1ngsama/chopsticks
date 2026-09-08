@@ -4,6 +4,7 @@ vim9script
 # cannot reach a Vim9 module's script-local functions.
 
 import autoload 'chopsticks/ui/window.vim'
+import autoload 'chopsticks/keys.vim'
 import autoload 'chopsticks/switch.vim'
 import autoload 'chopsticks/ui/bufferline.vim'
 
@@ -88,29 +89,11 @@ export def Help()
   var sheet = [
     'chopsticks Markdown',
     '',
-    'Writing',
-    '  ,z       focus mode (Goyo + Limelight)',
-    '  ,s       toggle spelling; ]s/[s navigate, z= choose',
-    '  ,c       toggle syntax conceal',
-    '  gqap     format paragraph; g<C-g> word count',
-    '',
-    'Structure',
-    '  ,x       toggle task checkbox (parents follow children)',
-    '  gN       renumber list',
-    '  ]] / [[  next / previous heading; ]u parent heading',
-    '  ,o       heading outline; ,O insert table of contents',
-    '  ,tt      table mode; ,tr realign; visual ,tc tableize',
-    '',
-    'Links and output',
-    '  gx / ge  open URL in browser / edit linked Markdown',
-    '  ,p       live browser preview (Previm)',
-    '  ,g       terminal preview (Glow)',
-    '  ,i       paste clipboard PNG into assets/',
-    '  ,l / ,f  lint now / format with Prettier',
-    '',
-    'j k Ctrl-d gg G move · / searches · q closes.',
+    ', = Markdown LocalLeader   * = only in a Markdown buffer',
+    'j k Ctrl-d gg G move · / searches · CR presses the key · q closes.',
   ]
-  window.Scratch('[chopsticks-markdown]', sheet)
+  sheet->extend(keys.Sheet(keys.MARKDOWN_GROUPS))
+  window.Scratch('[chopsticks-markdown]', sheet, 'chopsticks-cheatsheet')
 enddef
 
 # A raw user value, never normalised, so it goes through switch.vim: comparing

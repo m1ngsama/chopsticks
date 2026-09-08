@@ -1066,7 +1066,8 @@ function! s:AssertKeys() abort
     " Sections that exist without a plugin. Fast find is not one of them --
     " nothing binds the finder keys here -- so the plugin suite asserts it.
     for l:section in ['Start here', 'Essentials', 'Buffers', 'Windows',
-        \ 'Files', 'Editing', 'Navigation', 'Markdown']
+        \ 'Files', 'Editing', 'Navigation', 'Writing', 'Structure', 'Links',
+        \ 'Table']
         " Tolerant of the group glyph the heading now carries, and of its
         " absence in ASCII mode, which is the same heading either way.
         call assert_match('\n\%(\S\s\+\)\?' . l:section . '\n', l:text,
@@ -1295,8 +1296,24 @@ function! s:AssertMarkdown() abort
     call assert_equal(1, len(l:help), ',? did not open the Markdown sheet')
     if !empty(l:help)
         call assert_match('Markdown', popup_getoptions(l:help[0]).title)
-        call assert_match('^Writing\n',
-            \ join(getbufline(winbufnr(l:help[0]), 1, '$'), "\n"))
+        let l:sheet = join(getbufline(winbufnr(l:help[0]), 1, '$'), "\n")
+        for l:section in ['Writing', 'Structure', 'Links', 'Table']
+            call assert_match('\n\%(\S\s\+\)\?' . l:section . '\n', l:sheet,
+                \ 'the Markdown panel lost its ' . l:section . ' section')
+        endfor
+        " Rows the hand-written sheet had and the catalogue did not: the drift.
+        for l:key in ['gqap', ']] / \[\[', 'z=', 'gx / ge']
+            call assert_match('\n  \%(\S\+ \)\?' . l:key . '\s', l:sheet,
+                \ 'the Markdown panel lost the row for ' . l:key)
+        endfor
+        " Both halves of what CR does, on a buffer-local key: parsing the row,
+        " then finding the mapping from this buffer. ,c rather than ,z because
+        " ,z needs Goyo and this suite installs no plugins.
+        let l:row = matchstr(l:sheet, '\n\zs  \%(\S\+ \)\?,c\s[^\n]*')
+        call assert_notequal('', l:row, 'no ,c row in the Markdown panel')
+        call assert_equal(',c', chopsticks#ui#window#Keystrokes(l:row))
+        call assert_notequal('', maparg(',c', 'n'),
+            \ 'CR cannot press a Markdown row: its keys are buffer-local')
         call popup_close(l:help[0])
     endif
 

@@ -80,6 +80,33 @@ Type@40ms " e"
 Wait+Screen /Markdown writing/
 Sleep 750ms
 
+# Split the screen: each window says which file it holds.
+Type@40ms "sv"
+Wait+Screen /README/
+Type ":edit autoload/chopsticks/ui/icons.vim"
+Enter
+Wait+Screen /icons.vim/
+Sleep 1.5s
+Type@40ms "sq"
+Wait+Screen /Markdown writing/
+Sleep 500ms
+
+# The cheatsheet is a panel that reads like any other window: move, then
+# search it with /.
+Type@40ms " ?"
+Wait+Screen /Start here/
+Sleep 1s
+Type@100ms "jjj"
+Sleep 500ms
+Type "/"
+Type@70ms "git"
+Sleep 1s
+Enter
+Sleep 1s
+Type "q"
+Wait+Screen /Markdown writing/
+Sleep 500ms
+
 # Search inside the current file, then enter the Markdown focus mode.
 Type@40ms ";l"
 Wait+Screen /Lines in Buffer/

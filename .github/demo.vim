@@ -11,6 +11,7 @@ let g:chopsticks_colorscheme = 'everforest'
 let g:chopsticks_transparent_background = 0
 let g:chopsticks_dashboard = 1
 let g:chopsticks_bufferline = 1
+let g:chopsticks_window_labels = 1
 let g:chopsticks_icons = 1
 let g:chopsticks_use_fern = 1
 let g:chopsticks_markdown_spell = 0

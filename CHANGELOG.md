@@ -10,6 +10,8 @@ releases of the current line.
 
 ## [Unreleased]
 
+## [0.3.7] - 2026-09-08
+
 ### Fixed
 
 - The panel opened with `E518: Unknown option: winhighlight` on Vim 9.1.1947,

@@ -128,6 +128,7 @@ let g:chopsticks_colorscheme = get(g:, 'chopsticks_colorscheme', 'everforest')
 let g:chopsticks_transparent_background = get(g:, 'chopsticks_transparent_background', 'auto')
 let g:chopsticks_dashboard = get(g:, 'chopsticks_dashboard', 'auto')
 let g:chopsticks_bufferline = get(g:, 'chopsticks_bufferline', 'auto')
+let g:chopsticks_window_labels = get(g:, 'chopsticks_window_labels', 'auto')
 let g:chopsticks_system_clipboard = get(g:, 'chopsticks_system_clipboard', 'auto')
 let s:default_session_dir = g:chopsticks_data_dir . '.sessions'
 let g:chopsticks_session_dir = get(g:, 'chopsticks_session_dir',
@@ -616,6 +617,11 @@ function! ChopsticksBufferlineEnabled() abort
         \     && chopsticks#ui#bufferline#FileBufferCount() > 1))
 endfunction
 
+function! ChopsticksWindowLabelsEnabled() abort
+    return s:ResolveSwitch(g:chopsticks_window_labels,
+        \ ChopsticksUiDensity() !=# 'minimal')
+endfunction
+
 set statusline=%!ChopsticksStatusline()
 set tabline=%!ChopsticksTabline()
 call chopsticks#ui#bufferline#Refresh()
@@ -653,6 +659,9 @@ augroup ChopsticksInterface
     autocmd BufLeave * if &filetype ==# 'chopsticks-dashboard' | call chopsticks#ui#dashboard#Leave() | endif
     autocmd WinEnter,BufWinEnter * if &filetype ==# 'chopsticks-dashboard' | call chopsticks#ui#dashboard#Focus(v:true) | endif
     autocmd WinLeave * if &filetype ==# 'chopsticks-dashboard' | call chopsticks#ui#dashboard#Focus(v:false) | endif
+    autocmd WinEnter,WinLeave,WinNew,WinClosed,BufEnter,BufWritePost * call chopsticks#ui#winlabel#Refresh()
+    autocmd WinScrolled,WinResized,VimResized * call chopsticks#ui#winlabel#Refresh()
+    autocmd TextChanged,TextChangedI * call chopsticks#ui#winlabel#OnTextChanged()
     autocmd BufEnter,BufAdd,BufWinEnter * call chopsticks#ui#bufferline#Refresh()
     autocmd BufDelete,BufWipeout * call chopsticks#ui#bufferline#ScheduleRefresh()
     autocmd CursorMoved * if &filetype ==# 'chopsticks-dashboard' | call chopsticks#ui#dashboard#LockCursor() | endif

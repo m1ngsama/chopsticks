@@ -207,6 +207,48 @@ endfunction
 " The dashboard is nomodifiable, so every editing key left unmapped raised E21
 " at the user. s is the one that matters: it is also the window prefix, so the
 " fix must silence it without swallowing ss and sv.
+function! s:LabelCount() abort
+    let l:n = 0
+    for l:p in popup_list()
+        if get(popup_getoptions(l:p), 'highlight', '') =~# '^ChopWinLabel'
+            let l:n += 1
+        endif
+    endfor
+    return l:n
+endfunction
+
+" A split has to say which file it holds. A lone window already does, in its
+" statusline, and repeating it there is the thing this must not do.
+function! s:AssertWindowLabels() abort
+    call s:EditOneBuffer()
+    only
+    call chopsticks#ui#winlabel#Refresh()
+    call assert_equal(0, s:LabelCount(), 'a lone window grew a label')
+    split
+    call chopsticks#ui#winlabel#Refresh()
+    call assert_equal(2, s:LabelCount(), 'a split did not label both windows')
+    let l:groups = []
+    for l:p in popup_list()
+        call add(l:groups, get(popup_getoptions(l:p), 'highlight', ''))
+    endfor
+    call assert_equal(1, count(l:groups, 'ChopWinLabel'),
+        \ 'more than one window is drawn as the focused one')
+    call assert_equal(1, count(l:groups, 'ChopWinLabelNC'),
+        \ 'the unfocused window is not drawn as unfocused')
+    for l:group in ['ChopWinLabel', 'ChopWinLabelNC']
+        call assert_match('guibg=', execute('highlight ' . l:group),
+            \ l:group . ' has no colour behind it')
+    endfor
+    " A drawer, the dashboard and quickfix carry their own identity.
+    ChopDash
+    call chopsticks#ui#winlabel#Refresh()
+    call assert_equal(1, s:LabelCount(), 'a nofile window was labelled')
+    only
+    call s:EditOneBuffer()
+    call chopsticks#ui#winlabel#Refresh()
+    call assert_equal(0, s:LabelCount(), 'labels outlived their windows')
+endfunction
+
 function! s:AssertDashboardInert() abort
     ChopDash
     for l:key in ['s', 'S', 'x', 'p', 'i', 'o', 'A', 'J']
@@ -1445,6 +1487,7 @@ function! s:RunCase() abort
         call s:AssertBufferline(0, 2)
         call s:AssertDashboardLayout()
         call s:AssertDashboardInert()
+        call s:AssertWindowLabels()
         call s:AssertDensityCycle()
     elseif s:case ==# 'minimal'
         call assert_equal('minimal', ChopsticksUiDensity())

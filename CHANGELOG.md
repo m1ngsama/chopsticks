@@ -10,6 +10,8 @@ releases of the current line.
 
 ## [Unreleased]
 
+## [0.3.4] - 2026-09-08
+
 ### Changed
 
 - **The panel reads before it searches.** `SPC ?`, `SPC h` and `,?` move with

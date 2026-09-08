@@ -217,6 +217,32 @@ function! s:LabelCount() abort
     return l:n
 endfunction
 
+" A long name in a narrow split was drawn from wherever it happened to start
+" and covered the split beside it, which is a daily layout, not a corner.
+function! s:AssertLabelsFitTheirWindows() abort
+    let l:wins = []
+    for l:n in range(1, winnr('$'))
+        let l:id = win_getid(l:n)
+        call add(l:wins, [win_screenpos(l:id)[1],
+            \ win_screenpos(l:id)[1] + winwidth(l:id) - 1])
+    endfor
+    for l:p in popup_list()
+        if get(popup_getoptions(l:p), 'highlight', '') !~# '^ChopWinLabel'
+            continue
+        endif
+        let l:pos = popup_getpos(l:p)
+        let l:right = l:pos.col + l:pos.width - 1
+        let l:fits = 0
+        for [l:wl, l:wr] in l:wins
+            if l:pos.col >= l:wl && l:right <= l:wr
+                let l:fits = 1
+            endif
+        endfor
+        call assert_true(l:fits, 'a label spans ' . l:pos.col . '-' . l:right
+            \ . ', outside every window ' . string(l:wins))
+    endfor
+endfunction
+
 " A split has to say which file it holds. A lone window already does, in its
 " statusline, and repeating it there is the thing this must not do.
 function! s:AssertWindowLabels() abort
@@ -247,6 +273,42 @@ function! s:AssertWindowLabels() abort
     call s:EditOneBuffer()
     call chopsticks#ui#winlabel#Refresh()
     call assert_equal(0, s:LabelCount(), 'labels outlived their windows')
+
+    " Narrow splits holding a long name: the label must stay inside its window.
+    let l:long = tempname() . '-a-very-long-component-filename-indeed.txt'
+    call writefile(['x'], l:long)
+    try
+        only
+        execute 'vsplit ' . fnameescape(l:long)
+        vsplit
+        call chopsticks#ui#winlabel#Refresh()
+        call s:AssertLabelsFitTheirWindows()
+        " Narrower still: a two-character label names nothing and is clutter.
+        " 'winwidth' is relaxed rather than the screen resized: Ex mode has no
+        " screen to resize, and its default of 20 refuses a narrower split.
+        let l:winwidth = &winwidth
+        let l:winminwidth = &winminwidth
+        try
+            only
+            set winwidth=1 winminwidth=1
+            for l:i in range(11)
+                vsplit
+            endfor
+            call chopsticks#ui#winlabel#Refresh()
+            call assert_true(winwidth(0) < 12, 'the windows are '
+                \ . winwidth(0) . ' wide, too wide to exercise the floor')
+            call assert_equal(0, s:LabelCount(),
+                \ 'a window too narrow to name still carries a label')
+        finally
+            let &winwidth = l:winwidth
+            let &winminwidth = l:winminwidth
+        endtry
+    finally
+        call delete(l:long)
+        only
+        call s:EditOneBuffer()
+        call chopsticks#ui#winlabel#Refresh()
+    endtry
 endfunction
 
 function! s:AssertDashboardInert() abort

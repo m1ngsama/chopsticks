@@ -11,6 +11,8 @@ import autoload 'chopsticks/ui/text.vim'
 # the label floats on.
 const ZINDEX = 30
 const MAX_WIDTH = 40
+# Below this a label covers the file instead of naming it.
+const MIN_WIDTH = 12
 
 var labels: dict<number> = {}
 var modified: dict<number> = {}
@@ -27,7 +29,9 @@ def Wanted(id: number): bool
   return kind ==# '' || kind ==# 'terminal' || kind ==# 'help'
 enddef
 
-def Text(id: number): string
+# Bounded by the window, not only by MAX_WIDTH: a long name in a narrow split
+# was drawn from wherever it happened to start and covered the split beside it.
+def Text(id: number, width: number): string
   var buf = winbufnr(id)
   var name = bufname(buf)
   var label = icons.FileIcon(name)
@@ -35,23 +39,24 @@ def Text(id: number): string
   if getbufvar(buf, '&modified')
     label ..= ' [+]'
   endif
-  return ' ' .. text.Truncate(label, MAX_WIDTH) .. ' '
+  return ' ' .. text.Truncate(label, min([MAX_WIDTH, width - 2])) .. ' '
 enddef
 
-def Show(id: number)
+def Show(id: number): bool
   var pos = win_screenpos(id)
-  if pos == [0, 0]
-    return
+  var width = winwidth(id)
+  if pos == [0, 0] || width < MIN_WIDTH
+    return false
   endif
-  var body = Text(id)
-  var column = pos[1] + winwidth(id) - strwidth(body)
+  var body = Text(id, width)
+  var column = pos[1] + width - strwidth(body)
   var group = id == win_getid() ? 'ChopWinLabel' : 'ChopWinLabelNC'
   var key = string(id)
   if labels->has_key(key) && !empty(popup_getpos(labels[key]))
     popup_settext(labels[key], body)
     popup_move(labels[key], {line: pos[0], col: max([1, column])})
     popup_setoptions(labels[key], {highlight: group})
-    return
+    return true
   endif
   labels[key] = popup_create(body, {
     line: pos[0],
@@ -61,6 +66,7 @@ def Show(id: number)
     mapping: false,
     wrap: false,
     })
+  return true
 enddef
 
 export def Clear()
@@ -76,6 +82,11 @@ export def Refresh()
   endif
   # A lone window already names its file in the statusline, and saying it
   # twice is the thing this is meant to avoid.
+  # The accessor lives in .vimrc; without this guard a partial configuration
+  # turns every window event into an E117.
+  if !exists('*g:ChopsticksWindowLabelsEnabled')
+    return
+  endif
   if !g:ChopsticksWindowLabelsEnabled() || winnr('$') < 2
     Clear()
     return
@@ -85,9 +96,10 @@ export def Refresh()
     var live: list<string> = []
     for nr in range(1, winnr('$'))
       var id = win_getid(nr)
-      if Wanted(id)
+      # Only when it actually drew: a window that shrank below MIN_WIDTH must
+      # lose the label it had rather than keep a stale one.
+      if Wanted(id) && Show(id)
         live->add(string(id))
-        Show(id)
       endif
     endfor
     for key in keys(labels)

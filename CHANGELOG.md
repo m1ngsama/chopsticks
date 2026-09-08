@@ -10,6 +10,20 @@ releases of the current line.
 
 ## [Unreleased]
 
+## [0.3.5] - 2026-09-08
+
+### Fixed
+
+- Editing keys no longer raise `E21` on the start screen. It is nomodifiable,
+  so `s`, `x`, `p`, `i`, `o` and the rest reached Vim's own commands and failed
+  at the user. `s` was the one that showed: it is also the window prefix, so
+  holding it past `timeoutlen` ran a substitute instead of waiting for `ss`.
+- Splitting the start screen no longer paints a band across the screen for
+  every split. `:split` copies `'cursorline'`, so each copy lit a full-width
+  row whether or not it held the cursor, and matches are window-local so the
+  copies had no highlighting at all. One cursor line, in the focused window,
+  and every window draws its own highlighting.
+
 ## [0.3.4] - 2026-09-08
 
 ### Changed

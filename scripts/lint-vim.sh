@@ -608,7 +608,10 @@ run_ui_test session \
     --cmd "let g:chopsticks_session_dir = '~/.chopsticks-session-tests'" \
     --cmd 'let g:chopsticks_dashboard = 0'
 run_ui_test health
-run_ui_test keys
+# Both icon modes: the icon column shifts every field on an entry row,
+# and the syntax file has a separate rule for each case.
+run_ui_test keys --cmd 'let g:chopsticks_icons = 1'
+run_ui_test keys --cmd 'let g:chopsticks_icons = 0'
 run_ui_test lsp-registry
 run_ui_test lsp-lang-files
 run_ui_test lsp-options-order

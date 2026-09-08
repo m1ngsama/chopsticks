@@ -17,6 +17,22 @@ releases of the current line.
   the key on the row, and `q` closes again. 0.3.3 filtered on every keystroke,
   which meant `j` -- the first thing a Vim user presses -- searched for the
   letter j and emptied the panel. The row under the cursor is highlighted.
+- Every row carries a glyph for what it does and every section heading the one
+  the contextual key guide already puts on that group. The row glyph is read
+  off the row's own description, so a new binding gets one without naming it.
+  ASCII mode has no icon column rather than a half-filled one.
+- The health report is a coloured panel: sections carry glyphs, and `[ok]`,
+  `[!!]` and `[--]` take green, red and grey. The status stays bracketed text
+  rather than becoming a glyph, because the bug report template asks for this
+  report pasted into an issue.
+
+### Fixed
+
+- Searching the health report found nothing. Its rows began at column one,
+  which the panel's filter reads as a section heading, so every row was
+  dropped before the query saw it.
+- A query no longer paints the first sections in the legend's colour. It
+  dropped the legend, and the syntax file's line anchors are measured from it.
 
 ## [0.3.3] - 2026-09-07
 

@@ -178,42 +178,73 @@ def Heading(group: string): string
   return empty(icon) ? group : icon .. '  ' .. group
 enddef
 
+# By display width: printf's %-Ns counts characters, not the glyph's cells.
+def IconCell(icon: string, width: number): string
+  return width == 0 ? '' : icon .. repeat(' ', width - strwidth(icon) + 1)
+enddef
+
+def Sections(groups: list<string>): list<dict<any>>
+  var sections: list<dict<any>> = []
+  for group in groups
+    var entries = filter(copy(catalog), (_, entry) => entry.group ==# group)
+    if !empty(entries)
+      sections->add({group: group, entries: Merged(entries)})
+    endif
+  endfor
+  return sections
+enddef
+
+# Measured, not fixed at 15 and 2: `n/i/x` is five wide and overflowed a
+# two-wide field, pushing that row's description out of the column. One
+# column of slack past the longest entry also keeps both separators at two
+# spaces or more, which is what syntax/chopsticks-cheatsheet.vim finds the
+# fields by -- so widening this cannot silently uncolour them. Measured over
+# the sections asked for, so the Markdown panel is not padded to the full
+# sheet's widest key.
+def Rendered(sections: list<dict<any>>): list<string>
+  var rows: list<dict<string>> = []
+  for section in sections
+    for entry in section.entries
+      rows->add({
+        group: section.group,
+        icon: icons.Action(entry.description, section.group),
+        keys: entry.keys,
+        mode: entry.mode,
+        description: entry.description,
+        })
+    endfor
+  endfor
+  if empty(rows)
+    return []
+  endif
+  var icon_width = max(mapnew(rows, (_, row) => strwidth(row.icon)))
+  var key_width = max(mapnew(rows, (_, row) => strwidth(row.keys))) + 1
+  var mode_width = max(mapnew(rows, (_, row) => strwidth(row.mode))) + 1
+  var format = printf('  %%s%%-%ds %%-%ds %%s', key_width, mode_width)
+  var lines: list<string> = []
+  var heading = ''
+  for row in rows
+    if row.group !=# heading
+      heading = row.group
+      extend(lines, ['', Heading(heading)])
+    endif
+    add(lines, printf(format, IconCell(row.icon, icon_width),
+      row.keys, row.mode, row.description))
+  endfor
+  return lines
+enddef
+
 export def Lines(): list<string>
-  var lines = [
+  var sections: list<dict<any>> = [{group: 'Start here', entries: STARTERS}]
+  sections->extend(Sections(GROUP_ORDER))
+  return [
     'chopsticks ' .. g:chopsticks_version .. ' cheatsheet',
     '',
     'SPC = Leader   , = Markdown LocalLeader',
     'Pause after SPC or , for the contextual key guide.',
     'j k Ctrl-d gg G move · / searches · CR presses the key · q closes.',
     'Modes: n normal · x visual · i insert · t terminal · * buffer-local',
-  ]
-  # Measured, not fixed at 15 and 2: `n/i/x` is five wide and overflowed a
-  # two-wide field, pushing that row's description out of the column. One
-  # column of slack past the longest entry also keeps both separators at two
-  # spaces or more, which is what syntax/chopsticks-cheatsheet.vim finds the
-  # fields by -- so widening this cannot silently uncolour them.
-  var widths = mapnew(catalog, (_, entry) => entry.keys)
-    ->extend(mapnew(STARTERS, (_, starter) => starter.keys))
-  var modes = mapnew(catalog, (_, entry) => entry.mode)
-    ->extend(mapnew(STARTERS, (_, starter) => starter.mode))
-  var key_width = max(mapnew(widths, (_, keys) => strwidth(keys))) + 1
-  var mode_width = max(mapnew(modes, (_, mode) => strwidth(mode))) + 1
-  var format = printf('  %%-%ds %%-%ds %%s', key_width, mode_width)
-  extend(lines, ['', Heading('Start here')])
-  for starter in STARTERS
-    add(lines, printf(format, starter.keys, starter.mode, starter.description))
-  endfor
-  for group in GROUP_ORDER
-    var entries = filter(copy(catalog), (_, entry) => entry.group ==# group)
-    if empty(entries)
-      continue
-    endif
-    extend(lines, ['', Heading(group)])
-    for entry in Merged(entries)
-      add(lines, printf(format, entry.keys, entry.mode, entry.description))
-    endfor
-  endfor
-  return lines
+    ] + Rendered(sections)
 enddef
 
 # Modern which-key treats a group icon and its label as one semantic unit.

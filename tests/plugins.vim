@@ -120,7 +120,7 @@ function! s:RunStartup(expected_auto_lint) abort
     call assert_match(a:expected_auto_lint
         \ ? 'linting\s\+automatic on enter and save'
         \ : 'linting\s\+manual (,l / :ALELint)', join(l:health, "\n"))
-    call assert_true(index(l:health, '[ok] all declared plugins installed') >= 0)
+    call assert_true(index(l:health, '  [ok] all declared plugins installed') >= 0)
     call assert_equal('markdown', &filetype)
     call assert_equal('markdown', &syntax)
     call assert_true(&l:wrap)
@@ -251,7 +251,8 @@ function! s:RunStartup(expected_auto_lint) abort
     " finder installed, which is the difference between the two suites.
     call assert_match('\n\%(\S\s\+\)\?Fast find\n', l:sheet)
     for l:key in chopsticks#keys#StarterCoverage()
-        call assert_match('\n  ' . escape(l:key, '\.*$^~[]') . '\s',
+        " Tolerant of the row glyph, which is absent in ASCII mode.
+        call assert_match('\n  \%(\S\+ \)\?' . escape(l:key, '\.*$^~[]') . '\s',
             \ l:sheet, 'Start here names an unbound key: ' . l:key)
     endfor
     call assert_match('Fern q / Esc', join(ChopsticksKeyLines(), "\n"))

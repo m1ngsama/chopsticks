@@ -781,6 +781,40 @@ function! s:AssertSession() abort
     call assert_true(index(l:names, 'package.json') >= 0)
 endfunction
 
+" Health rows began at column one, so the shared filter read every one as a
+" section heading and a query emptied the report.
+function! s:AssertHealthPanel() abort
+    let l:body = ChopsticksHealthLines()[2:]
+    call assert_match('ruff',
+        \ join(chopsticks#ui#window#Filtered(l:body, 'ruff'), "\n"),
+        \ 'a query drops every health row')
+    ChopHealth
+    let l:popups = popup_list()
+    call assert_equal(1, len(l:popups), 'health did not open as a popup')
+    if empty(l:popups)
+        return
+    endif
+    let l:id = l:popups[0]
+    try
+        call assert_equal('chopsticks-health',
+            \ getbufvar(winbufnr(l:id), '&filetype'))
+        for l:group in ['ChopHealthOk', 'ChopHealthBad', 'ChopHealthOff']
+            call assert_match('guifg=', execute('highlight ' . l:group),
+                \ l:group . ' has no colour behind it')
+        endfor
+        let l:status = match(getbufline(winbufnr(l:id), 1, '$'), '^  \[') + 1
+        call assert_true(l:status > 0, 'no status row in the health popup')
+        let g:chopsticks_test_syntax = ''
+        call win_execute(l:id, 'let g:chopsticks_test_syntax = '
+            \ . 'synIDattr(synIDtrans(synID(' . l:status . ', 3, 1)), "name")')
+        call assert_match('^ChopHealth', g:chopsticks_test_syntax,
+            \ 'the status column is unclassified: ' . g:chopsticks_test_syntax)
+        unlet! g:chopsticks_test_syntax
+    finally
+        call popup_close(l:id)
+    endtry
+endfunction
+
 function! s:AssertHealth() abort
     let l:lines = ChopsticksHealthLines()
     call assert_equal(type([]), type(l:lines))
@@ -801,12 +835,13 @@ function! s:AssertHealth() abort
     " The tools the fixers and linters name. Reporting a missing one is the
     " whole mechanism by which this configuration installs nothing itself.
     for l:tool in ['ruff', 'rustfmt']
-        call assert_match('\n\[\%(ok\|--\)\] ' . l:tool . '\s', join(l:lines, "\n"),
+        call assert_match('\n  \[\%(ok\|--\)\] ' . l:tool . '\s', join(l:lines, "\n"),
             \ 'health report does not mention ' . l:tool)
     endfor
     " Presence checks alone missed 149 spurious rows from $VIMRUNTIME's own
     " lang/menu_*.vim locale files; pin the exact row set so that regresses.
-    let l:header = index(l:lines, 'Language servers (on PATH; not verified to start)')
+    let l:header = match(l:lines,
+        \ '^\%(\S\s\+\)\?Language servers (on PATH; not verified to start)$')
     call assert_true(l:header >= 0, 'health report is missing the language servers header')
     let l:rows = []
     let l:i = l:header + 1
@@ -881,10 +916,13 @@ endfunction
 " text. `n/i/x` is five wide and overflowed a two-wide field, pushing that one
 " row's description out of line, and nothing here could see it.
 function! s:AssertCheatsheetLayout() abort
+    " Display width, not matchend()'s byte index: the glyphs are three and four
+    " bytes and one cell each, so bytes report a raggedness nobody sees.
     let l:starts = []
     for l:line in ChopsticksKeyLines()
         if l:line =~# '^  \S'
-            call add(l:starts, matchend(l:line, '^  .\{-}\s\{2,}\S\+\s\{2,}'))
+            call add(l:starts, strdisplaywidth(
+                \ matchstr(l:line, '^  .\{-}\s\{2,}\S\+\s\{2,}')))
         endif
     endfor
     call assert_true(len(l:starts) > 100, 'too few entry rows: ' . len(l:starts))
@@ -917,7 +955,7 @@ function! s:AssertCheatsheetSyntax() abort
         let l:lines = getbufline(l:buffer, 1, '$')
         for l:group in ['ChopCheatGroup', 'ChopCheatKey',
             \ 'ChopCheatMode', 'ChopCheatEntry', 'ChopCheatLegend',
-            \ 'ChopCheatAlias']
+            \ 'ChopCheatAlias', 'ChopCheatIcon']
             call assert_match('guifg=', execute('highlight ' . l:group),
                 \ l:group . ' has no colour behind it')
         endfor
@@ -928,18 +966,32 @@ function! s:AssertCheatsheetSyntax() abort
         " Every column, not only the first. Two contained rules cannot both
         " begin at column three; the key won, the mode rule never fired, and
         " asking only about column three could not tell.
+        " The icon column exists only with a Nerd Font, so the key column is
+        " measured rather than assumed to be column three.
         let l:line = l:lines[l:row - 1]
+        let l:key = matchend(l:line, '^  \%([^\x00-\x7F]\+\s\)\?') + 1
         let l:mode = matchend(l:line, '^  .\{-}\s\{2,}') + 1
         let l:text = matchend(l:line, '^  .\{-}\s\{2,}\S\+\s\{2,}') + 1
         let l:alias_column = match(l:lines[l:alias - 1], '(') + 1
-        for [l:row_number, l:column, l:group] in [
-            \ [l:row, 3, 'chopsticksCheatKey'],
-            \ [l:row, l:mode, 'chopsticksCheatMode'],
-            \ [l:row, l:text, 'chopsticksCheatEntry'],
-            \ [l:alias, l:alias_column, 'chopsticksCheatAlias']]
+        let l:checks = [
+            \ [l:row, l:key, 'ChopCheatKey'],
+            \ [l:row, l:mode, 'ChopCheatMode'],
+            \ [l:row, l:text, 'ChopCheatEntry'],
+            \ [l:alias, l:alias_column, 'ChopCheatAlias']]
+        let l:group_row = match(l:lines, '^[^\x00-\x7F]') + 1
+        if l:key > 3
+            call add(l:checks, [l:row, 3, 'ChopCheatIcon'])
+            call assert_true(l:group_row > 0,
+                \ 'entry rows carry a glyph but no section heading does')
+            call add(l:checks, [l:group_row, 1, 'ChopCheatIcon'])
+        endif
+        " The effective highlight, not the syntax item: with a glyph in front
+        " a second rule matches the key and links to the same group.
+        for [l:row_number, l:column, l:group] in l:checks
             let g:chopsticks_test_syntax = ''
             call win_execute(l:id, 'let g:chopsticks_test_syntax = '
-                \ . 'synIDattr(synID(' . l:row_number . ', ' . l:column . ', 1), "name")')
+                \ . 'synIDattr(synIDtrans(synID(' . l:row_number . ', '
+                \ . l:column . ', 1)), "name")')
             call assert_equal(l:group, g:chopsticks_test_syntax,
                 \ 'row ' . l:row_number . ' column ' . l:column
                 \ . ' is not classified by the syntax file')
@@ -968,6 +1020,10 @@ function! s:AssertKeystrokes() abort
         call assert_equal(l:expected, chopsticks#ui#window#Keystrokes(l:row),
             \ 'key column of: ' . l:row)
     endfor
+    " With an icon column the key no longer starts at column three.
+    call assert_equal("\<C-s>", chopsticks#ui#window#Keystrokes(
+        \ '  ' . nr2char(0xF0C7) . ' Ctrl-s           n/i/x  Save file'),
+        \ 'the row icon was parsed as part of the key')
     " The teaching row parses into something; what stops <CR> pressing it is
     " that the something is not a mapping. Both halves matter.
     call assert_equal('', maparg(';fblrh', 'n'),
@@ -991,9 +1047,12 @@ function! s:AssertCheatsheetFilter() abort
     endfor
     call assert_match('no key matches',
         \ join(chopsticks#ui#window#Filtered(l:lines, 'zzzz'), "\n"))
-    " Line one is never blank: the cursor line would paint a bar across the
-    " top of the panel above the first row.
-    call assert_notequal('', l:buffers[0], 'the filter leads with a blank line')
+    " The legend survives a query: the syntax file's line anchors are measured
+    " from it, and dropping it painted whole sections in the legend's colour.
+    call assert_equal(l:lines[0], l:buffers[0], 'the filter dropped the legend')
+    call assert_equal(l:lines[0],
+        \ chopsticks#ui#window#Filtered(l:lines, 'zzzz')[0],
+        \ 'the legend went missing when nothing matched')
 endfunction
 
 function! s:AssertKeys() abort
@@ -1403,6 +1462,7 @@ function! s:RunCase() abort
         call s:AssertSession()
     elseif s:case ==# 'health'
         call s:AssertHealth()
+        call s:AssertHealthPanel()
     elseif s:case ==# 'keys'
         call s:AssertKeys()
         call s:AssertCheatsheetLayout()

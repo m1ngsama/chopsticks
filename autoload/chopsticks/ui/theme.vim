@@ -96,6 +96,11 @@ export def DefineInterfaceColors(): void
   execute 'highlight ChopCheatKey ctermfg=173 cterm=bold guifg=' .. orange .. ' gui=bold'
   execute 'highlight ChopCheatMode ctermfg=108 cterm=none guifg=' .. muted .. ' gui=none'
   execute 'highlight ChopCheatAlias ctermfg=108 cterm=italic guifg=' .. muted .. ' gui=italic'
+  execute 'highlight ChopCheatIcon ctermfg=108 cterm=none guifg=' .. aqua .. ' gui=none'
+  execute 'highlight ChopHealthOk ctermfg=108 cterm=none guifg=' .. green .. ' gui=none'
+  execute 'highlight ChopHealthBad ctermfg=174 cterm=bold guifg=' .. red .. ' gui=bold'
+  execute 'highlight ChopHealthOff ctermfg=108 cterm=none guifg=' .. muted .. ' gui=none'
+  execute 'highlight ChopPanelCursor ctermbg=237 guibg=' .. surface
   execute 'highlight fuzzboxBorder ctermfg=108 guifg=' .. muted
   execute 'highlight fuzzboxMatching ctermfg=108 cterm=bold guifg=' .. green .. ' gui=bold'
   execute 'highlight fuzzboxSelectionSign ctermbg=237 guibg=' .. surface

@@ -40,6 +40,10 @@ var glyphs = {
   'wrap': ['󰖶', 'WRAP'],
   'startup': ['', '*'],
   'marker': ['', '*'],
+  'save': ['', ''],
+  'clipboard': ['', ''],
+  'preview': ['', ''],
+  'group_help': ['', ''],
   'group_home': ['', ''],
   'group_find': ['', ''],
   'group_buffer': ['󰓩', ''],
@@ -92,7 +96,40 @@ export def Get(name: string): string
 enddef
 
 export def Group(group: string): string
-  return Get(get(group_glyphs, group, ''))
+  # Empty in ASCII mode: a half-filled icon column misaligns the rows without.
+  return Enabled() ? Get(get(group_glyphs, group, '')) : ''
+enddef
+
+# First match wins, so order is the disambiguation: `save` before `file`,
+# headings before `table`.
+const ACTION_RULES = [
+  ['git', 'group_git'],
+  ['\<save\|\<write\>', 'save'],
+  ['heading\|outline\|table of contents\|fold', 'group_nav'],
+  ['table', 'group_table'],
+  ['find\|search\|grep', 'group_find'],
+  ['window\|split', 'group_window'],
+  ['\<buffer\|\<tabs\?\>', 'group_buffer'],
+  ['file\|tree\|explor', 'group_file'],
+  ['terminal\|shell', 'group_term'],
+  ['toggle', 'group_toggle'],
+  ['lint\|diagnostic\|error', 'group_check'],
+  ['\<run\>\|\<test\|\<build\>\|\<make\>', 'group_run'],
+  ['format\|align\|indent', 'group_edit'],
+  ['copy\|paste\|clipboard\|yank', 'clipboard'],
+  ['preview\|browser\|render', 'preview'],
+  ['help\|cheatsheet\|health', 'group_help'],
+]
+
+export def Action(description: string, group: string): string
+  for [pattern, name] in ACTION_RULES
+    if description =~? pattern
+      return Get(name)
+    endif
+  endfor
+  var fallback = Group(group)
+  # Never empty while icons are on: an empty cell reads as a column separator.
+  return !empty(fallback) || !Enabled() ? fallback : '·'
 enddef
 
 # The statusline and tabline ask for the same handful of paths on every redraw

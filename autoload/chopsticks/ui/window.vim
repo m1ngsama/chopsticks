@@ -23,14 +23,25 @@ const NAMED = {
 
 var state: dict<any> = {}
 
+# The lines before the first blank one. Kept through a query, because the
+# syntax file's line anchors are measured from it.
+def Legend(lines: list<string>): number
+  var height = 0
+  while height < len(lines) && !empty(lines[height])
+    height += 1
+  endwhile
+  return height
+enddef
+
 export def Filtered(lines: list<string>, query: string): list<string>
   if empty(query)
     return lines
   endif
+  var head = Legend(lines)
   var pattern = '\c' .. escape(query, '\.*$^~[]')
   var kept: list<string> = []
   var heading = ''
-  for line in lines
+  for line in lines[head : ]
     if line !~# '^\s'
       # A heading, or a blank line: held back until a row under it matches, so
       # a query never leaves a section title standing on its own.
@@ -47,9 +58,9 @@ export def Filtered(lines: list<string>, query: string): list<string>
       kept->add(line)
     endif
   endfor
-  # No leading blank: it would be line one, and the cursor line would paint a
-  # bar across the top of the panel before any row.
-  return empty(kept) ? ['  no key matches ' .. query] : kept[1 : ]
+  # slice(), not [0 : head - 1], which with no legend is [0 : -1] -- everything.
+  return slice(lines, 0, head)
+    + (empty(kept) ? ['', '  no key matches ' .. query] : kept)
 enddef
 
 # The key column of a row, as keystrokes. Returns an empty string for a row
@@ -57,6 +68,9 @@ enddef
 # else that is not one sequence to press.
 export def Keystrokes(row: string): string
   var column = matchstr(row, '^\s\+\zs.\{-}\ze\s\{2,}')
+  # Drop the row icon; every key the sheet prints is ASCII, so a non-ASCII
+  # run can only be the glyph.
+  column = substitute(column, '^[^\x00-\x7F]\+\s*', '', '')
   if empty(column) || column =~# '/'
     return ''
   endif
@@ -210,9 +224,13 @@ export def Scratch(name: string, lines: list<string>, filetype = '')
     filter: Filter,
     filtermode: 'a',
     })
+  # Before the filetype, which sources the syntax file that reads it.
+  setbufvar(winbufnr(state.id), 'chopsticks_legend', Legend(body))
   if !empty(filetype)
     setbufvar(winbufnr(state.id), '&filetype', filetype)
   endif
+  # PopupSelected is the finder's too; remapped window-locally, not globally.
+  win_execute(state.id, 'setlocal winhighlight=PopupSelected:ChopPanelCursor')
   win_execute(state.id, 'call cursor(' .. FirstEntry() .. ', 1)')
 enddef
 

@@ -10,6 +10,14 @@ releases of the current line.
 
 ## [Unreleased]
 
+### Changed
+
+- **The panel reads before it searches.** `SPC ?`, `SPC h` and `,?` move with
+  `j`, `k`, `Ctrl-d`, `Ctrl-u`, `gg` and `G`, `/` starts a search, `CR` presses
+  the key on the row, and `q` closes again. 0.3.3 filtered on every keystroke,
+  which meant `j` -- the first thing a Vim user presses -- searched for the
+  letter j and emptied the panel. The row under the cursor is highlighted.
+
 ## [0.3.3] - 2026-09-07
 
 ### Changed

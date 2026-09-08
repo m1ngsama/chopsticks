@@ -108,7 +108,7 @@ export def Help()
     '  ,i       paste clipboard PNG into assets/',
     '  ,l / ,f  lint now / format with Prettier',
     '',
-    'Type to filter · Esc, Ctrl-c, Ctrl-g or Ctrl-q closes.',
+    'j k Ctrl-d gg G move · / searches · q closes.',
   ]
   window.Scratch('[chopsticks-markdown]', sheet)
 enddef

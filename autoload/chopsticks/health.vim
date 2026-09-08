@@ -120,7 +120,7 @@ export def Lines(): list<string>
     '',
     'Run :PlugInstall for missing plugins.',
     'A server on PATH may still fail to start; run :LspShowAllServers to check.',
-    'Type to filter · Esc, Ctrl-c, Ctrl-g or Ctrl-q closes.',
+    'j k Ctrl-d gg G move · / searches · q closes.',
     ])
   return lines
 enddef

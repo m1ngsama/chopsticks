@@ -170,13 +170,21 @@ def Merged(entries: list<dict<string>>): list<dict<string>>
   return merged
 enddef
 
+# The same glyph the key guide puts on the same group, so the two surfaces
+# stop looking like two programs. Empty in ASCII mode, where the heading is
+# the plain word it always was.
+def Heading(group: string): string
+  var icon = icons.Group(group)
+  return empty(icon) ? group : icon .. '  ' .. group
+enddef
+
 export def Lines(): list<string>
   var lines = [
     'chopsticks ' .. g:chopsticks_version .. ' cheatsheet',
     '',
     'SPC = Leader   , = Markdown LocalLeader',
     'Pause after SPC or , for the contextual key guide.',
-    'Type to filter · arrows scroll · Esc, Ctrl-c, Ctrl-g or Ctrl-q closes.',
+    'j k Ctrl-d gg G move · / searches · CR presses the key · q closes.',
     'Modes: n normal · x visual · i insert · t terminal · * buffer-local',
   ]
   # Measured, not fixed at 15 and 2: `n/i/x` is five wide and overflowed a
@@ -191,7 +199,7 @@ export def Lines(): list<string>
   var key_width = max(mapnew(widths, (_, keys) => strwidth(keys))) + 1
   var mode_width = max(mapnew(modes, (_, mode) => strwidth(mode))) + 1
   var format = printf('  %%-%ds %%-%ds %%s', key_width, mode_width)
-  extend(lines, ['', 'Start here'])
+  extend(lines, ['', Heading('Start here')])
   for starter in STARTERS
     add(lines, printf(format, starter.keys, starter.mode, starter.description))
   endfor
@@ -200,7 +208,7 @@ export def Lines(): list<string>
     if empty(entries)
       continue
     endif
-    extend(lines, ['', group])
+    extend(lines, ['', Heading(group)])
     for entry in Merged(entries)
       add(lines, printf(format, entry.keys, entry.mode, entry.description))
     endfor

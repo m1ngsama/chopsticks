@@ -67,6 +67,7 @@ var group_glyphs = {
   'Toggles': 'group_toggle', 'Editing': 'group_edit',
   'Navigation': 'group_nav', 'Markdown': 'group_markdown',
   'Table': 'group_table',
+  'Start here': 'startup',
   }
 
 export def Enabled(): number

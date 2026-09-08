@@ -951,6 +951,31 @@ function! s:AssertCheatsheetSyntax() abort
     call assert_equal([], popup_list(), 'the cheatsheet popup outlived its close')
 endfunction
 
+" The key column of a row, as something to press. Everything here is a row the
+" sheet really prints, because the rows that must not be pressable are exactly
+" the ones a naive parse would get wrong: teaching rows that name a family,
+" and rows that offer alternatives.
+function! s:AssertKeystrokes() abort
+    for [l:row, l:expected] in [
+        \ ['  SPC fg           n      Find Git files', "\<Space>fg"],
+        \ ['  Ctrl-s           n/i/x  Save file', "\<C-s>"],
+        \ ['  ;f               n      Find files', ';f'],
+        \ ['  SPC TAB TAB      n      New tab', "\<Space>\<Tab>\<Tab>"],
+        \ ['  Alt-j / Alt-k    n/i/x  Move line', ''],
+        \ ['  Fern h / l       n*     Collapse / open', ''],
+        \ ['  ; f b l r h      n      Find fast: files', ';fblrh'],
+        \ ]
+        call assert_equal(l:expected, chopsticks#ui#window#Keystrokes(l:row),
+            \ 'key column of: ' . l:row)
+    endfor
+    " The teaching row parses into something; what stops <CR> pressing it is
+    " that the something is not a mapping. Both halves matter.
+    call assert_equal('', maparg(';fblrh', 'n'),
+        \ 'the teaching row parses into a real mapping')
+    call assert_notequal('', maparg("\<Space>e", 'n'),
+        \ 'a row that should be pressable has no mapping')
+endfunction
+
 " What the popup buys over the split it replaced: a query keeps the section a
 " row belongs to, which searching the old buffer with / never did.
 function! s:AssertCheatsheetFilter() abort
@@ -966,6 +991,9 @@ function! s:AssertCheatsheetFilter() abort
     endfor
     call assert_match('no key matches',
         \ join(chopsticks#ui#window#Filtered(l:lines, 'zzzz'), "\n"))
+    " Line one is never blank: the cursor line would paint a bar across the
+    " top of the panel above the first row.
+    call assert_notequal('', l:buffers[0], 'the filter leads with a blank line')
 endfunction
 
 function! s:AssertKeys() abort
@@ -980,7 +1008,9 @@ function! s:AssertKeys() abort
     " nothing binds the finder keys here -- so the plugin suite asserts it.
     for l:section in ['Start here', 'Essentials', 'Buffers', 'Windows',
         \ 'Files', 'Editing', 'Navigation', 'Markdown']
-        call assert_match('\n' . l:section . '\n', l:text,
+        " Tolerant of the group glyph the heading now carries, and of its
+        " absence in ASCII mode, which is the same heading either way.
+        call assert_match('\n\%(\S\s\+\)\?' . l:section . '\n', l:text,
             \ 'the cheatsheet lost its ' . l:section . ' section')
     endfor
     call assert_true(len(l:lines) > 100,
@@ -1378,6 +1408,7 @@ function! s:RunCase() abort
         call s:AssertCheatsheetLayout()
         call s:AssertCheatsheetSyntax()
         call s:AssertCheatsheetFilter()
+        call s:AssertKeystrokes()
     elseif s:case ==# 'lsp-registry'
         call s:AssertLspRegistry()
     elseif s:case ==# 'lsp-lang-files'

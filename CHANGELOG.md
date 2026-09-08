@@ -10,6 +10,16 @@ releases of the current line.
 
 ## [Unreleased]
 
+## [0.3.6] - 2026-09-08
+
+### Added
+
+- **Each window says which file it holds.** Split the screen and every window
+  gets a small label in its top-right corner -- icon, filename, `[+]` when
+  modified -- the focused one drawn in reverse. A lone window does not get one:
+  its statusline already says the same thing. `g:chopsticks_window_labels = 0`
+  turns them off; they are off at `minimal` density.
+
 ## [0.3.5] - 2026-09-08
 
 ### Fixed

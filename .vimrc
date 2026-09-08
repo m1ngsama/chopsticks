@@ -651,6 +651,8 @@ augroup ChopsticksInterface
     autocmd User ChopsticksIconsToggled call s:RefreshIconDependents()
     autocmd BufEnter * if &filetype ==# 'chopsticks-dashboard' | call chopsticks#ui#dashboard#Enter() | call chopsticks#ui#dashboard#Render() | endif
     autocmd BufLeave * if &filetype ==# 'chopsticks-dashboard' | call chopsticks#ui#dashboard#Leave() | endif
+    autocmd WinEnter,BufWinEnter * if &filetype ==# 'chopsticks-dashboard' | call chopsticks#ui#dashboard#Focus(v:true) | endif
+    autocmd WinLeave * if &filetype ==# 'chopsticks-dashboard' | call chopsticks#ui#dashboard#Focus(v:false) | endif
     autocmd BufEnter,BufAdd,BufWinEnter * call chopsticks#ui#bufferline#Refresh()
     autocmd BufDelete,BufWipeout * call chopsticks#ui#bufferline#ScheduleRefresh()
     autocmd CursorMoved * if &filetype ==# 'chopsticks-dashboard' | call chopsticks#ui#dashboard#LockCursor() | endif

@@ -204,6 +204,39 @@ function! s:AssertAutomaticDashboard(expected) abort
     call assert_equal(a:expected ? 'chopsticks-dashboard' : '', &filetype)
 endfunction
 
+" The dashboard is nomodifiable, so every editing key left unmapped raised E21
+" at the user. s is the one that matters: it is also the window prefix, so the
+" fix must silence it without swallowing ss and sv.
+function! s:AssertDashboardInert() abort
+    ChopDash
+    for l:key in ['s', 'S', 'x', 'p', 'i', 'o', 'A', 'J']
+        let v:errmsg = ''
+        silent! call feedkeys(l:key, 'xt')
+        call assert_equal('', v:errmsg, l:key . ' on the dashboard raised: '
+            \ . v:errmsg)
+    endfor
+    call assert_equal(0, get(maparg('s', 'n', 0, 1), 'nowait', 0),
+        \ 's is mapped <nowait>, which swallows the whole s window prefix')
+    " Splitting the dashboard stays possible; what it must not do is paint a
+    " band per window. :split copies 'cursorline', so every copy lit a
+    " full-width row, and matches are window-local so the copies had no
+    " highlighting at all.
+    let l:before = winnr('$')
+    for l:i in range(4)
+        silent! call feedkeys('ss', 'xt')
+    endfor
+    call assert_equal(l:before + 4, winnr('$'), 'ss no longer splits')
+    let l:lit = 0
+    for l:w in range(1, winnr('$'))
+        let l:lit += getwinvar(l:w, '&cursorline')
+        call assert_equal(5, len(getmatches(win_getid(l:w))),
+            \ 'window ' . l:w . ' shows the dashboard without its highlighting')
+    endfor
+    call assert_equal(1, l:lit,
+        \ l:lit . ' windows paint a cursor line; only the focused one may')
+    only
+endfunction
+
 function! s:AssertDashboardLayout() abort
     call s:EditOneBuffer()
     let l:showtabline = &showtabline
@@ -1411,6 +1444,7 @@ function! s:RunCase() abort
         call assert_match('Find Text', l:dashboard)
         call s:AssertBufferline(0, 2)
         call s:AssertDashboardLayout()
+        call s:AssertDashboardInert()
         call s:AssertDensityCycle()
     elseif s:case ==# 'minimal'
         call assert_equal('minimal', ChopsticksUiDensity())

@@ -115,6 +115,26 @@ export def Enter()
   &l:statusline = '%#ChopDashboardStatus#%='
 enddef
 
+# Matches are window-local and :split does not copy them, so a second window on
+# this buffer showed the menu as unhighlighted text until it painted its own.
+export def Paint()
+  clearmatches()
+  for spec in get(b:, 'chopsticks_dashboard_matches', [])
+    if !empty(spec[1])
+      matchaddpos(spec[0], spec[1], spec[2])
+    endif
+  endfor
+enddef
+
+# :split copies 'cursorline' to the new window, so every window on this buffer
+# painted a full-width band whether or not it held the cursor.
+export def Focus(on: bool)
+  &l:cursorline = on
+  if on && empty(getmatches())
+    Paint()
+  endif
+enddef
+
 export def Leave()
   if exists('b:chopsticks_dashboard_showtabline')
     &showtabline = b:chopsticks_dashboard_showtabline
@@ -132,6 +152,12 @@ enddef
 # <ScriptCmd> because <SID> in a mapping cannot reach a Vim9 module's
 # script-local functions. It also leaves @: alone and fires no
 # CmdlineEnter/CmdlineLeave.
+# A menu, not a buffer to edit: an editing key left unmapped reaches Vim's own
+# command and fails with E21. Without <nowait>, so s still waits for the global
+# ss and sv rather than swallowing the window prefix.
+const INERT = ['s', 'S', 'x', 'X', 'p', 'P', 'i', 'I', 'a', 'A', 'o', 'O',
+  'd', 'D', 'C', 'R', 'J', '~']
+
 def MapItems(items: list<dict<string>>)
   for item in ITEMS
     var mapping = maparg(item.key, 'n', 0, 1)
@@ -142,6 +168,14 @@ def MapItems(items: list<dict<string>>)
   for item in items
     execute 'nnoremap <silent><nowait><buffer> ' .. item.key
       .. ' <ScriptCmd>Run(' .. string(item.key) .. ')<CR>'
+  endfor
+  # After the items, because this runs on every render and an item that is
+  # live here must keep its own mapping.
+  var live = mapnew(items, (_, item) => item.key)
+  for key in INERT
+    if index(live, key) < 0
+      execute 'nnoremap <silent><buffer> ' .. key .. ' <Nop>'
+    endif
   endfor
 enddef
 
@@ -241,15 +275,15 @@ export def Render()
     deletebufline('%', len(lines) + 1, '$')
   endif
   setlocal nomodified nomodifiable
-  clearmatches()
-  matchaddpos('ChopDashboardLogo', logo_matches, 10)
-  matchaddpos('ChopDashboardItem', item_matches, 10)
-  if !empty(icon_matches)
-    matchaddpos('ChopDashboardIcon', icon_matches, 20)
-  endif
-  matchaddpos('ChopDashboardKey', key_matches, 20)
-  matchaddpos('ChopDashboardFooter',
-    [[len(lines), footer_column, strlen(footer)]], 10)
+  b:chopsticks_dashboard_matches = [
+    ['ChopDashboardLogo', logo_matches, 10],
+    ['ChopDashboardItem', item_matches, 10],
+    ['ChopDashboardIcon', icon_matches, 20],
+    ['ChopDashboardKey', key_matches, 20],
+    ['ChopDashboardFooter',
+      [[len(lines), footer_column, strlen(footer)]], 10],
+    ]
+  Paint()
   b:chopsticks_dashboard_item_lines = item_lines
   b:chopsticks_dashboard_desc_cols = desc_cols
   b:chopsticks_dashboard_actions = actions

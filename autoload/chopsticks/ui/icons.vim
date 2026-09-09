@@ -37,6 +37,7 @@ var glyphs = {
   'modified': ['●', '+'],
   'readonly': ['', 'RO'],
   'spell': ['󰓆', 'SPELL'],
+  'words': ['', 'w'],
   'wrap': ['󰖶', 'WRAP'],
   'startup': ['', '*'],
   'marker': ['', '*'],

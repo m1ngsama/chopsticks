@@ -140,6 +140,8 @@ function! s:AssertPublicInterface() abort
     call assert_true(exists('*ChopsticksTransparencyEnabled'))
     call assert_true(exists('*ChopsticksDashboardEnabled'))
     call assert_true(exists('*ChopsticksStatusline'))
+    call assert_true(exists('*ChopsticksStatusSignals'))
+    call assert_true(exists('*ChopsticksWordCount'))
     call assert_true(exists('*ChopsticksTabline'))
     call assert_true(exists('*ChopsticksSessionPath'))
     call assert_true(exists('*ChopsticksProjectRoot'))
@@ -488,6 +490,37 @@ function! s:AssertStatuslineBlocks() abort
     vsplit
     call assert_match('^%#ChopStatus\w\+# [NIVRC] ', ChopsticksStatusline())
     only
+endfunction
+
+" Signals earn their place by staying empty: a buffer on the defaults must add
+" nothing to the bar.
+function! s:AssertStatuslineSignals() abort
+    call s:EditOneBuffer()
+    setlocal fileencoding=utf-8 fileformat=unix expandtab shiftwidth=4
+    call assert_equal('', ChopsticksStatusSignals())
+    setlocal fileencoding=latin1
+    call assert_match('latin1', ChopsticksStatusSignals())
+    setlocal fileencoding=utf-8 fileformat=dos
+    call assert_match('CRLF', ChopsticksStatusSignals())
+    setlocal fileformat=unix shiftwidth=2
+    call assert_match('sp-2', ChopsticksStatusSignals())
+    setlocal noexpandtab shiftwidth=8
+    call assert_match('tab-8', ChopsticksStatusSignals())
+    setlocal expandtab shiftwidth=4
+    call assert_equal('', ChopsticksStatusSignals())
+endfunction
+
+" wordcount() reads the current buffer whatever it is asked about, so an
+" inactive window must not be given a count belonging to another file.
+function! s:AssertStatuslineWordCount() abort
+    new
+    setlocal filetype=markdown
+    call setline(1, ['alpha bravo charlie', 'delta echo'])
+    call assert_match('\<5\>', ChopsticksWordCount())
+    call assert_equal('', ChopsticksWordCount(0))
+    setlocal filetype=text
+    call assert_equal('', ChopsticksWordCount())
+    bwipeout!
 endfunction
 
 " %f on a drawer draws fern's own URI, which truncates to punctuation, and the
@@ -1647,6 +1680,8 @@ function! s:RunCase() abort
     elseif s:case ==# 'status-context'
         call s:AssertStatuslineContext()
         call s:AssertSpecialBufferStatusline()
+        call s:AssertStatuslineSignals()
+        call s:AssertStatuslineWordCount()
     elseif s:case ==# 'tabline-width'
         call s:AssertTablineWidth()
     elseif s:case ==# 'transparent'

@@ -612,6 +612,14 @@ function! ChopsticksWritingMode(...) abort
     return call('chopsticks#ui#statusline#WritingMode', a:000)
 endfunction
 
+function! ChopsticksStatusSignals(...) abort
+    return call('chopsticks#ui#statusline#Signals', a:000)
+endfunction
+
+function! ChopsticksWordCount(...) abort
+    return call('chopsticks#ui#statusline#WordCount', a:000)
+endfunction
+
 " Here because it is the only one needing s:ResolveSwitch(), which is this
 " file's own.
 function! ChopsticksBufferlineEnabled() abort

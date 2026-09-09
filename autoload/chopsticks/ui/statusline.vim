@@ -122,6 +122,47 @@ export def Diagnostics(buffer: number = -1): string
   return empty(parts) ? '' : join(parts, ' ') .. ' '
 enddef
 
+# Only what departs from the defaults, so the segment is empty on almost every
+# buffer and means something when it is not.
+export def Signals(buffer: number = -1): string
+  var target = buffer < 0 ? bufnr('') : buffer
+  var parts = []
+  if exists('*g:lsp#get_allowed_servers')
+    var servers = call('lsp#get_allowed_servers', [target])
+    if !empty(servers)
+      add(parts, servers[0])
+    endif
+  endif
+  var encoding = getbufvar(target, '&fileencoding')
+  if !empty(encoding) && encoding !=? 'utf-8'
+    add(parts, encoding)
+  endif
+  var format = getbufvar(target, '&fileformat')
+  if format !=# 'unix'
+    add(parts, format ==# 'dos' ? 'CRLF' : 'CR')
+  endif
+  var width = getbufvar(target, '&shiftwidth')
+  if !getbufvar(target, '&expandtab')
+    add(parts, 'tab-' .. width)
+  elseif width != 4
+    add(parts, 'sp-' .. width)
+  endif
+  return empty(parts) ? '' : ' ' .. join(parts, ' ') .. ' '
+enddef
+
+# wordcount() answers for the current buffer whatever it is asked about, so an
+# inactive window would be handed a count belonging to another file.
+export def WordCount(active: number = 1): string
+  if !active || &filetype !=# 'markdown'
+    return ''
+  endif
+  var counted = wordcount()
+  return counted->has_key('visual_words')
+    ? printf(' %s %d/%d ', icons.Get('words'),
+        counted.visual_words, counted.words)
+    : printf(' %s %d ', icons.Get('words'), counted.words)
+enddef
+
 export def WritingMode(buffer: number = -1, window: number = -1): string
   var target = buffer < 0 ? bufnr('') : buffer
   var window_id = window < 0 ? win_getid() : window
@@ -230,7 +271,8 @@ export def Render(): string
     line ..= '%#ChopStatusGit#' .. GitBranch(context.bufnr)
   endif
   if density ==# 'rich'
-    line ..= '%#ChopStatusMuted# %y '
+    line ..= '%#ChopStatusMuted#' .. Signals(context.bufnr)
+      .. WordCount(context.active) .. ' %y '
   endif
   line ..= '%#ChopStatusPosition# %l:%c'
   if density !=# 'minimal'

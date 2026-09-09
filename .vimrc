@@ -11,7 +11,7 @@ if !exists('g:chopsticks_startup_started_at')
     let g:chopsticks_startup_started_at = reltime()
 endif
 let s:is_windows = has('win32') || has('win64')
-let g:chopsticks_version = '0.3.7'
+let g:chopsticks_version = '0.3.8'
 
 if has('nvim')
     echoerr 'chopsticks targets Vim, not Neovim'

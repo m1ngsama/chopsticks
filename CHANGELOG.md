@@ -10,6 +10,50 @@ releases of the current line.
 
 ## [Unreleased]
 
+## [0.3.8] - 2026-09-09
+
+### Fixed
+
+- **Yanking put nothing on the system clipboard.** A Vim without `+X11` -- the
+  ordinary macOS and Windows build -- accepts `unnamedplus` in `'clipboard'`
+  but only put honours it, so `y` stayed in the unnamed register while `p` read
+  `"+`: every paste after a yank returned whatever the clipboard already held.
+  Chopsticks now sets the flag the build actually honours. `:ChopHealth` read
+  the same flag and would have called a working clipboard "Vim registers only".
+- The file explorer's statusline drew fern's own
+  `fern://drawer/file:///...;width=34$` URI, truncated to trailing punctuation,
+  beside a cursor position that names nothing in a drawer. A window with a
+  `'buftype'` now says what it is and stops there.
+- A drawer or the start screen counted as the second window, so opening one
+  started labelling the single file beside it -- a name the statusline and the
+  bufferline were already carrying.
+
+### Changed
+
+- **The statusline is drawn as blocks.** Every segment shared one background,
+  so a wide terminal showed a single coloured cell at the far left and a flat
+  strip for the remaining hundred-odd columns. Segments now step between three
+  background ranks -- the mode's accent, a surface, and one recessed to the
+  editor's own ground -- so neighbouring clusters separate without a separator
+  glyph to draw. Transparent backgrounds keep the recessed rank transparent.
+  The mode block spells the mode out at `rich` density; a narrow split still
+  gets the letter.
+- **The tabline's empty half names the project.** Its right end carries the
+  working directory and the branch, so the two rows divide the work: the
+  tabline says which project, the statusline which file. The branch moves up
+  out of the statusline, and the cluster is dropped on a screen too narrow to
+  afford it alongside the buffer names.
+
+### Added
+
+- `rich` density names the language server, the file encoding and format when
+  they are not UTF-8 and LF, and the indent when it is not four spaces. Each is
+  absent on a buffer that agrees with the defaults, so the segment appears only
+  when it has something to say.
+- Markdown buffers carry a word count, the selected count while a selection is
+  live. Only the focused window gets one: `wordcount()` answers for the current
+  buffer whatever buffer it is asked about.
+
 ## [0.3.7] - 2026-09-08
 
 ### Fixed

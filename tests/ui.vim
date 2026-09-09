@@ -581,9 +581,27 @@ function! s:AssertTablineWidth() abort
         execute 'badd ' . fnameescape(printf(
             \ 'test-buffer-%02d-with-a-long-name.txt', l:index))
     endfor
-    set columns=12
-    let l:visible = s:VisibleTabline(ChopsticksTabline())
-    call assert_true(strwidth(l:visible) <= &columns)
+    " The project cluster on the right comes out of the same budget the buffer
+    " segments grow into. Short names are the ones that prove it: they pack
+    " finely enough that a budget which forgets the cluster overruns the
+    " screen, where long names stop a segment early and hide the mistake.
+    for l:index in range(1, 30)
+        execute 'badd ' . fnameescape(printf('b%02d.txt', l:index))
+    endfor
+    for l:anchor in ['README.md', 'b15.txt']
+        execute 'edit ' . fnameescape(l:anchor)
+        for l:columns in [12, 20, 40, 80, 160]
+            execute 'set columns=' . l:columns
+            let l:visible = s:VisibleTabline(ChopsticksTabline())
+            call assert_true(strwidth(l:visible) <= &columns,
+                \ 'tabline is ' . strwidth(l:visible) . ' wide at '
+                \ . l:columns . ' columns on ' . l:anchor . ': '
+                \ . string(l:visible))
+        endfor
+    endfor
+    set columns=160
+    call assert_match(fnamemodify(getcwd(), ':t'),
+        \ s:VisibleTabline(ChopsticksTabline()))
 endfunction
 
 " Must match .vimrc's s:NormalizeDirectory() and

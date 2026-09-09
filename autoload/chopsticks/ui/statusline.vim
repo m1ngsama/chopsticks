@@ -68,7 +68,7 @@ enddef
 # The guard is spelled g: for a related reason: a bare name in Vim9 means the
 # script-local one, so exists('*FugitiveHead') answers 0 forever however many
 # plugins define the global, and the feature silently never appears.
-def GitBranch(buffer: number = -1): string
+export def GitBranch(buffer: number = -1): string
   if !exists('*g:FugitiveHead')
     return ''
   endif
@@ -266,9 +266,6 @@ export def Render(): string
   line ..= Diagnostics(context.bufnr)
   if density ==# 'rich'
     line ..= GitDiff(context.bufnr)
-  endif
-  if density !=# 'minimal'
-    line ..= '%#ChopStatusGit#' .. GitBranch(context.bufnr)
   endif
   if density ==# 'rich'
     line ..= '%#ChopStatusMuted#' .. Signals(context.bufnr)

@@ -44,6 +44,22 @@ export def ScheduleRefresh()
   endif
 enddef
 
+# The row's right end: which project this is, rather than a hundred blank
+# columns. getcwd(), not a walk up to the .git directory -- this runs on every
+# tabline redraw, and the working directory is what the finder searches too.
+def Context(density: string): list<string>
+  if density ==# 'minimal'
+    return ['', '']
+  endif
+  var project = fnamemodify(getcwd(), ':t')
+  if empty(project)
+    return ['', '']
+  endif
+  var icon = icons.Get('folder_open')
+  return [' ' .. (empty(icon) ? '' : icon .. ' ') .. project .. ' ',
+    density ==# 'rich' ? statusline.GitBranch() : '']
+enddef
+
 export def Render(): string
   var density = statusline.UiDensity()
   var segments = []
@@ -77,8 +93,14 @@ export def Render(): string
   var anchor = active >= 0 ? active : 0
   var left = anchor
   var right = anchor
-  var show_overflow = &columns >= 16
-  var budget = max([1, &columns - (show_overflow ? 10 : 0)])
+  var [project, branch] = Context(density)
+  # A screen this narrow belongs to the buffer names.
+  if strwidth(project .. branch) * 3 > &columns
+    [project, branch] = ['', '']
+  endif
+  var room = &columns - strwidth(project .. branch)
+  var show_overflow = room >= 16
+  var budget = max([1, room - (show_overflow ? 10 : 0)])
   segments[anchor].text = text.Truncate(segments[anchor].text, budget)
   var used = strwidth(segments[anchor].text)
   while true
@@ -108,7 +130,7 @@ export def Render(): string
   var right_hint = show_overflow && right + 1 < len(segments)
     ? ' ' .. (len(segments) - right - 1) .. '› ' : ''
   var hint_width = strwidth(left_hint) + strwidth(right_hint)
-  if hint_width >= &columns
+  if hint_width >= room
     # No room for the counts themselves: drop them and show the current
     # buffer alone.
     show_overflow = false
@@ -117,8 +139,8 @@ export def Render(): string
     left = anchor
     right = anchor
     segments[anchor].text =
-      text.Truncate(segments[anchor].text, max([1, &columns]))
-  elseif used + hint_width > &columns
+      text.Truncate(segments[anchor].text, max([1, room]))
+  elseif used + hint_width > room
     left = anchor
     right = anchor
     left_hint = anchor > 0 ? ' ‹' .. anchor .. ' ' : ''
@@ -126,7 +148,7 @@ export def Render(): string
       ? ' ' .. (len(segments) - anchor - 1) .. '› ' : ''
     hint_width = strwidth(left_hint) + strwidth(right_hint)
     segments[anchor].text = text.Truncate(segments[anchor].text,
-      max([1, &columns - hint_width]))
+      max([1, room - hint_width]))
   endif
 
   var line = empty(left_hint) ? '' : '%#TabLine#' .. left_hint
@@ -138,4 +160,7 @@ export def Render(): string
     line ..= '%#TabLine#' .. right_hint
   endif
   return line .. '%#TabLineFill#%='
+    .. (empty(project) ? ''
+      : '%#ChopStatusMuted#' .. substitute(project, '%', '%%', 'g'))
+    .. (empty(branch) ? '' : '%#ChopStatusGit#' .. branch)
 enddef

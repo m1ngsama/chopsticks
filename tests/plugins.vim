@@ -361,20 +361,23 @@ endfunction
 
 " The branch segment had no assertion at all until the guard behind it was
 " found stuck false, so nothing would have noticed it going quiet. This
-" checks the rendered statusline, not just the helper, because that is the
+" checks the rendered tabline, not just the helper, because that is the
 " surface a person actually sees.
 function! s:AssertGitBranchPresentation() abort
     call assert_true(exists('*FugitiveHead'), 'fugitive is expected here')
+    silent ChopDensity rich
+    set columns=160
     " A CI checkout is usually on a detached HEAD, where fugitive reports no
     " branch and an absent segment is correct. Only the presence of a name
     " makes this assertable, so the empty case checks the rendering path
     " runs at all rather than asserting a segment that should not be there.
     let l:branch = FugitiveHead(0, bufnr(''))
     if empty(l:branch)
-        call assert_true(type(ChopsticksStatusline()) == type(''))
+        call assert_true(type(ChopsticksTabline()) == type(''))
         return
     endif
-    call assert_match(l:branch, ChopsticksStatusline())
+    call assert_match(l:branch, ChopsticksTabline())
+    call assert_notmatch(l:branch, ChopsticksStatusline())
 endfunction
 
 function! s:AssertFernNodeToggle(key) abort

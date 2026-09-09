@@ -265,10 +265,18 @@ function! s:AssertWindowLabels() abort
         call assert_match('guibg=', execute('highlight ' . l:group),
             \ l:group . ' has no colour behind it')
     endfor
-    " A drawer, the dashboard and quickfix carry their own identity.
+    " A drawer, the dashboard and quickfix carry their own identity, and do not
+    " make the one file beside them ambiguous either.
     ChopDash
     call chopsticks#ui#winlabel#Refresh()
-    call assert_equal(1, s:LabelCount(), 'a nofile window was labelled')
+    call assert_equal(2, winnr('$'), 'the dashboard did not replace one window')
+    call assert_equal(0, s:LabelCount(),
+        \ 'a lone file window grew a label beside a nofile window')
+    wincmd w
+    split
+    call chopsticks#ui#winlabel#Refresh()
+    call assert_equal(2, s:LabelCount(),
+        \ 'a nofile window suppressed labels the splits beside it need')
     only
     call s:EditOneBuffer()
     call chopsticks#ui#winlabel#Refresh()

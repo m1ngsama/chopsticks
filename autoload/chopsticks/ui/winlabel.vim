@@ -80,14 +80,15 @@ export def Refresh()
   if busy
     return
   endif
-  # A lone window already names its file in the statusline, and saying it
-  # twice is the thing this is meant to avoid.
+  # A lone file window already names its file in the statusline; windows that
+  # name themselves do not count towards the two that make a label worth it.
   # The accessor lives in .vimrc; without this guard a partial configuration
   # turns every window event into an E117.
   if !exists('*g:ChopsticksWindowLabelsEnabled')
     return
   endif
-  if !g:ChopsticksWindowLabelsEnabled() || winnr('$') < 2
+  var labelable = range(1, winnr('$'))->filter((_, nr) => Wanted(win_getid(nr)))
+  if !g:ChopsticksWindowLabelsEnabled() || len(labelable) < 2
     Clear()
     return
   endif

@@ -188,11 +188,28 @@ def EffectiveDensity(width: number): string
   return density
 enddef
 
+const KINDS = {fern: 'EXPLORER', netrw: 'EXPLORER', qf: 'QUICKFIX', help: 'HELP'}
+
+# A drawer's name is its plugin's URI, which %f truncates to punctuation, and
+# its cursor position names nothing. Empty for an ordinary file buffer.
+def SpecialKind(buffer: number): string
+  var buftype = getbufvar(buffer, '&buftype')
+  if buftype ==# ''
+    return ''
+  endif
+  var filetype = getbufvar(buffer, '&filetype')
+  return get(KINDS, filetype, toupper(empty(filetype) ? buftype : filetype))
+enddef
+
 export def Render(): string
   var context = Context()
   var [label, group] = Mode(context.active)
   var density = EffectiveDensity(context.width)
   var line = '%#' .. group .. '#' .. label
+  var kind = SpecialKind(context.bufnr)
+  if !empty(kind)
+    return line .. '%#ChopStatusBody# ' .. kind .. ' %='
+  endif
   line ..= '%#ChopStatusBody# '
     .. (density ==# 'rich' ? icons.FileIcon(bufname(context.bufnr)) : '')
     .. '%<%f '

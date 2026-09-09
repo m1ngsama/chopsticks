@@ -467,6 +467,26 @@ function! s:AssertStatuslineDensity() abort
         \ || stridx(l:lines.balanced, l:writing) >= 0)
 endfunction
 
+" %f on a drawer draws fern's own URI, which truncates to punctuation, and the
+" cursor position in a drawer names nothing.
+function! s:AssertSpecialBufferStatusline() abort
+    silent ChopDensity rich
+    new
+    setlocal buftype=nofile
+    setlocal filetype=fern
+    execute 'silent file '
+        \ . fnameescape('fern://drawer/file:///tmp/documents;width=34$')
+    let l:line = ChopsticksStatusline()
+    call assert_match('EXPLORER', l:line)
+    call assert_notmatch('%f', l:line)
+    call assert_notmatch('%l:%c', l:line)
+    setlocal filetype=qf
+    call assert_match('QUICKFIX', ChopsticksStatusline())
+    bwipeout!
+    call s:EditOneBuffer()
+    call assert_match('%f', ChopsticksStatusline())
+endfunction
+
 function! s:AssertStatuslineContext() abort
     silent ChopDensity rich
     call s:EditOneBuffer()
@@ -1603,6 +1623,7 @@ function! s:RunCase() abort
         call s:AssertStatuslineDensity()
     elseif s:case ==# 'status-context'
         call s:AssertStatuslineContext()
+        call s:AssertSpecialBufferStatusline()
     elseif s:case ==# 'tabline-width'
         call s:AssertTablineWidth()
     elseif s:case ==# 'transparent'

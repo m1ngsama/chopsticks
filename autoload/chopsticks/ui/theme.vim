@@ -65,6 +65,11 @@ export def DefineInterfaceColors(): void
   var aqua = HighlightColor('Aqua', 'fg', HighlightColor('Identifier', 'fg', '#83c092'))
   var blue = HighlightColor('Blue', 'fg', HighlightColor('Function', 'fg', '#7fbbb3'))
   var purple = HighlightColor('Purple', 'fg', HighlightColor('Statement', 'fg', '#d699b6'))
+  # The statusline's third background rank, recessed to the editor's own
+  # ground so neighbouring segments read as separate blocks. Transparent keeps
+  # it transparent: there the terminal shows through instead.
+  var deep = TransparencyEnabled() ? 'NONE' : bg
+  var deep_cterm = TransparencyEnabled() ? 'NONE' : '234'
   execute 'highlight ChopStatusNormal ctermbg=106 ctermfg=234 cterm=bold guibg=' .. green .. ' guifg=' .. bg .. ' gui=bold'
   execute 'highlight ChopStatusInsert ctermbg=109 ctermfg=234 cterm=bold guibg=' .. blue .. ' guifg=' .. bg .. ' gui=bold'
   execute 'highlight ChopStatusVisual ctermbg=175 ctermfg=234 cterm=bold guibg=' .. purple .. ' guifg=' .. bg .. ' gui=bold'
@@ -79,7 +84,8 @@ export def DefineInterfaceColors(): void
   execute 'highlight ChopStatusGitChange ctermbg=237 ctermfg=180 cterm=none guibg=' .. surface .. ' guifg=' .. yellow .. ' gui=none'
   execute 'highlight ChopStatusGitDelete ctermbg=237 ctermfg=174 cterm=none guibg=' .. surface .. ' guifg=' .. red .. ' gui=none'
   execute 'highlight ChopStatusGit ctermbg=237 ctermfg=108 cterm=none guibg=' .. surface .. ' guifg=' .. aqua .. ' gui=none'
-  execute 'highlight ChopStatusMuted ctermbg=237 ctermfg=108 cterm=none guibg=' .. surface .. ' guifg=' .. muted .. ' gui=none'
+  execute 'highlight ChopStatusMuted ctermbg=' .. deep_cterm .. ' ctermfg=108 cterm=none guibg=' .. deep .. ' guifg=' .. muted .. ' gui=none'
+  execute 'highlight ChopStatusPosition ctermbg=237 ctermfg=108 cterm=none guibg=' .. surface .. ' guifg=' .. muted .. ' gui=none'
   execute 'highlight ChopDashboardLogo ctermfg=109 cterm=none guifg=' .. blue .. ' gui=none'
   execute 'highlight ChopDashboardItem ctermfg=187 cterm=none guifg=' .. fg .. ' gui=none'
   execute 'highlight ChopDashboardIcon ctermfg=108 cterm=bold guifg=' .. aqua .. ' gui=bold'

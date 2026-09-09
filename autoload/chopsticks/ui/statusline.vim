@@ -43,21 +43,21 @@ export def SetUiDensity(value: string)
   echo 'UI density: ' .. UiDensity()
 enddef
 
-def Mode(active: number = 1): list<string>
+const MODE_NAMES = {c: 'COMMAND', '!': 'SHELL', t: 'TERMINAL'}
+
+def Mode(active: number = 1, wide: bool = false): list<string>
   if !active
     return [' - ', 'ChopStatusMuted']
   endif
   var current = mode(1)
-  if current =~# '^i'
-    return [' I ', 'ChopStatusInsert']
-  elseif current =~# '^[vV\x16]'
-    return [' V ', 'ChopStatusVisual']
-  elseif current =~# '^R'
-    return [' R ', 'ChopStatusReplace']
-  elseif current =~# '^[c!t]'
-    return [toupper(' ' .. current[0] .. ' '), 'ChopStatusCommand']
-  endif
-  return [' N ', 'ChopStatusNormal']
+  var [short, name, group] =
+    current =~# '^i' ? ['I', 'INSERT', 'ChopStatusInsert']
+    : current =~# '^[vV\x16]' ? ['V', 'VISUAL', 'ChopStatusVisual']
+    : current =~# '^R' ? ['R', 'REPLACE', 'ChopStatusReplace']
+    : current =~# '^[c!t]' ? [toupper(current[0]),
+        MODE_NAMES[current[0]], 'ChopStatusCommand']
+    : ['N', 'NORMAL', 'ChopStatusNormal']
+  return [' ' .. (wide ? name : short) .. ' ', group]
 enddef
 
 # call(), not a plain name: Vim9 compiles a named function at :def-compile
@@ -201,10 +201,13 @@ def SpecialKind(buffer: number): string
   return get(KINDS, filetype, toupper(empty(filetype) ? buftype : filetype))
 enddef
 
+# Neighbouring segments step between the three background ranks -- accent,
+# ChopStatusBody's surface, ChopStatusMuted's recessed ground -- so the bar
+# reads as blocks without a separator glyph to draw.
 export def Render(): string
   var context = Context()
-  var [label, group] = Mode(context.active)
   var density = EffectiveDensity(context.width)
+  var [label, group] = Mode(context.active, density ==# 'rich')
   var line = '%#' .. group .. '#' .. label
   var kind = SpecialKind(context.bufnr)
   if !empty(kind)
@@ -215,7 +218,8 @@ export def Render(): string
     .. '%<%f '
   line ..= '%#ChopStatusAccent#' .. BufferFlags(context.bufnr)
   if density !=# 'minimal'
-    line ..= WritingMode(context.bufnr, context.winid)
+    var writing = WritingMode(context.bufnr, context.winid)
+    line ..= empty(writing) ? '' : '%#ChopStatusMuted#' .. writing
   endif
   line ..= '%#ChopStatusBody#%='
   line ..= Diagnostics(context.bufnr)
@@ -225,11 +229,10 @@ export def Render(): string
   if density !=# 'minimal'
     line ..= '%#ChopStatusGit#' .. GitBranch(context.bufnr)
   endif
-  line ..= '%#ChopStatusMuted# '
   if density ==# 'rich'
-    line ..= '%y  '
+    line ..= '%#ChopStatusMuted# %y '
   endif
-  line ..= '%l:%c'
+  line ..= '%#ChopStatusPosition# %l:%c'
   if density !=# 'minimal'
     line ..= '  %P'
   endif

@@ -467,6 +467,29 @@ function! s:AssertStatuslineDensity() abort
         \ || stridx(l:lines.balanced, l:writing) >= 0)
 endfunction
 
+" Every ChopStatus group shared one background, so the bar read as a flat strip
+" with a single coloured cell at the far left rather than as blocks.
+function! s:AssertStatuslineBlocks() abort
+    set columns=140 lines=40
+    silent ChopDensity rich
+    call s:EditOneBuffer()
+    let l:ranks = map(['ChopStatusNormal', 'ChopStatusBody', 'ChopStatusMuted'],
+        \ 'synIDattr(hlID(v:val), "bg", "gui")')
+    call assert_equal(3, len(uniq(sort(copy(l:ranks)))),
+        \ 'the statusline ranks share a background: ' . string(l:ranks))
+    let l:line = ChopsticksStatusline()
+    for l:group in ['ChopStatusBody', 'ChopStatusMuted', 'ChopStatusPosition']
+        call assert_match('%#' . l:group . '#', l:line)
+    endfor
+    call assert_match(
+        \ '^%#ChopStatus\w\+# \(NORMAL\|INSERT\|VISUAL\|REPLACE\|COMMAND\) ',
+        \ l:line)
+    " The short label is what a narrow split gets, whatever the setting.
+    vsplit
+    call assert_match('^%#ChopStatus\w\+# [NIVRC] ', ChopsticksStatusline())
+    only
+endfunction
+
 " %f on a drawer draws fern's own URI, which truncates to punctuation, and the
 " cursor position in a drawer names nothing.
 function! s:AssertSpecialBufferStatusline() abort
@@ -1643,6 +1666,8 @@ function! s:RunCase() abort
         call s:AssertAutomaticDashboard(1)
     elseif s:case ==# 'dashboard-wide'
         call s:AssertWideDashboardLogo()
+    elseif s:case ==# 'status-blocks'
+        call s:AssertStatuslineBlocks()
     elseif s:case ==# 'bufferline-off'
         call s:AssertBufferline(0, 0)
     elseif s:case ==# 'bufferline-on'

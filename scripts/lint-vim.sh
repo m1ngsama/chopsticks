@@ -330,13 +330,13 @@ run_ui_test() {
         "${CHOPSTICKS_TEST_SESSION_DIR:-}")
     test_local_config_for_vim=$(path_for_vim \
         "${CHOPSTICKS_TEST_LOCAL_CONFIG:-}")
-    # Ex mode reports no real window geometry, and the wide logo only renders
-    # above a width and height threshold, so that one case needs a headless
-    # mode that still has a screen.
+    # Ex mode reports no real window geometry, so the cases that depend on a
+    # width -- the wide logo, and the statusline's rich layout -- need a
+    # headless mode that still has a screen.
     test_mode=-es
-    if [ "$test_case" = dashboard-wide ]; then
-        test_mode=--not-a-term
-    fi
+    case "$test_case" in
+        dashboard-wide|status-blocks) test_mode=--not-a-term ;;
+    esac
     mkdir -p "$test_home"
 
     if ! env \
@@ -535,6 +535,8 @@ run_ui_test dashboard-on \
 run_ui_test dashboard-wide \
     --cmd "let g:chopsticks_ui_density = 'rich'" \
     --cmd 'let g:chopsticks_icons = 0'
+run_ui_test status-blocks \
+    --cmd "let g:chopsticks_ui_density = 'rich'"
 run_ui_test bufferline-off \
     --cmd "let g:chopsticks_ui_density = 'rich'" \
     --cmd 'let g:chopsticks_bufferline = 0'

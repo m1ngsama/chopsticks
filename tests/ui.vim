@@ -1480,6 +1480,29 @@ function! s:AssertTransparencyToggle(initial) abort
     call assert_equal(a:initial, s:IsTransparent('Normal'))
 endfunction
 
+function! s:AssertYankReachesClipboard() abort
+    " A Vim without +X11 -- the ordinary macOS and Windows build -- accepts
+    " 'unnamedplus' in 'clipboard' but only put honours it: an unnamed yank
+    " stays in "" while p reads "+, so every paste after a yank returns
+    " whatever the system clipboard already held.
+    if !ChopsticksSystemClipboardEnabled()
+        return
+    endif
+    let l:saved = getreg('+')
+    let l:saved_type = getregtype('+')
+    new
+    try
+        call setline(1, 'chopsticks clipboard probe')
+        normal! yy
+        call assert_equal(getreg('"'), getreg('+'),
+            \ 'yank did not reach the system register; clipboard='
+            \ . &clipboard)
+    finally
+        bwipeout!
+        call setreg('+', l:saved, l:saved_type)
+    endtry
+endfunction
+
 function! s:AssertConfigurationFallbacks() abort
     let l:saved_density = g:chopsticks_ui_density
     let l:saved_transparency = g:chopsticks_transparent_background
@@ -1539,6 +1562,7 @@ function! s:RunCase() abort
             \     || !empty($DISPLAY) || !empty($WAYLAND_DISPLAY))
         call assert_equal(l:desktop_clipboard,
             \ ChopsticksSystemClipboardEnabled())
+        call s:AssertYankReachesClipboard()
         call assert_false(ChopsticksTransparencyEnabled())
         call s:AssertConfigurationFallbacks()
         call s:AssertAutomaticDashboard(1)

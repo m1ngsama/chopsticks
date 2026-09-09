@@ -163,13 +163,18 @@ let g:chopsticks_autocomplete = s:ResolveSwitch(g:chopsticks_autocomplete, 0)
 let s:clipboard_auto_enabled = !s:is_remote && has('clipboard')
     \ && (has('macunix') || has('win32') || has('win64')
     \     || !empty($DISPLAY) || !empty($WAYLAND_DISPLAY))
+" Without +X11 -- the ordinary macOS and Windows build -- 'unnamedplus' is
+" accepted but only put honours it: yank stays in "" while p reads "+, so
+" every paste after a yank returns the previous clipboard. Keep this in step
+" with autoload/chopsticks/clipboard.vim, which reports the same flag.
+let s:clipboard_flag = has('unnamedplus') ? 'unnamedplus' : 'unnamed'
 if has('clipboard')
     \ && s:ResolveSwitch(g:chopsticks_system_clipboard,
     \     s:clipboard_auto_enabled)
-    \ && index(split(&clipboard, ','), 'unnamedplus') < 0
-    set clipboard+=unnamedplus
+    \ && index(split(&clipboard, ','), s:clipboard_flag) < 0
+    execute 'set clipboard+=' . s:clipboard_flag
 endif
-unlet s:clipboard_auto_enabled
+unlet s:clipboard_auto_enabled s:clipboard_flag
 
 function! ChopsticksDashboardEnabled() abort
     return s:ResolveSwitch(g:chopsticks_dashboard,

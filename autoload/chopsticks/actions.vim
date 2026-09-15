@@ -64,9 +64,7 @@ export def CopyPath(relative: bool)
     return
   endif
   var path = relative ? fnamemodify(expand('%:p'), ':.') : expand('%:p')
-  if has('clipboard')
-    setreg('+', path)
-  endif
+  setreg('+', path)
   setreg('"', path)
   echo 'copied: ' .. path
 enddef

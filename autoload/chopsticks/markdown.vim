@@ -103,9 +103,6 @@ def HasLongLine(): bool
 enddef
 
 export def GuardLongLines()
-  if !exists('+breakindent')
-    return
-  endif
   if HasLongLine()
     setlocal nobreakindent
   endif

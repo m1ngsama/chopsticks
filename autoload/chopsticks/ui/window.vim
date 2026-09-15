@@ -197,19 +197,11 @@ export def Scratch(name: string, lines: list<string>, filetype = '')
   if !empty(filetype)
     setbufvar(winbufnr(state.id), '&filetype', filetype)
   endif
-  if exists('+winhighlight')
-    win_execute(state.id, 'setlocal winhighlight=PopupSelected:ChopPanelCursor')
-  endif
+  win_execute(state.id, 'setlocal winhighlight=PopupSelected:ChopPanelCursor')
   win_execute(state.id, 'call cursor(' .. FirstEntry() .. ', 1)')
 enddef
 
 export def Terminal(command: list<string>, position: string)
-  if !has('terminal')
-    echohl ErrorMsg
-    echomsg 'chopsticks: this Vim has no +terminal'
-    echohl None
-    return
-  endif
   if position ==# 'tab'
     tabnew
   else

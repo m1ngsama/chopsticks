@@ -87,9 +87,7 @@ export def Enter()
   set showtabline=0 laststatus=0
   setlocal nonumber norelativenumber nolist cursorline signcolumn=no
   setlocal nowrap nospell foldcolumn=0 colorcolumn= tabstop=2
-  if exists('+winhighlight')
-    execute 'setlocal winhighlight=CursorLine:ChopDashboardCurrent'
-  endif
+  setlocal winhighlight=CursorLine:ChopDashboardCurrent
   &l:statusline = '%#ChopDashboardStatus#%='
 enddef
 

@@ -16,11 +16,7 @@ def RefreshTimer(id: number)
 enddef
 
 export def ScheduleRefresh()
-  if exists('*timer_start')
-    timer_start(0, RefreshTimer)
-  else
-    Refresh()
-  endif
+  timer_start(0, RefreshTimer)
 enddef
 
 def Context(): list<string>

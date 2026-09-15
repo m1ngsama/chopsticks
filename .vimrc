@@ -4,25 +4,9 @@ scriptencoding utf-8
 if !exists('g:chopsticks_startup_started_at')
     let g:chopsticks_startup_started_at = reltime()
 endif
-let s:is_windows = has('win32') || has('win64')
 let g:chopsticks_version = '0.3.8'
 
-if has('nvim')
-    echoerr 'chopsticks targets Vim, not Neovim'
-    finish
-endif
-if !has('patch-9.1.1947')
-    echoerr 'chopsticks requires Vim 9.1.1947 or newer'
-    finish
-endif
-
-if !has('gui_running')
-    set t_RV= t_u7= t_RF= t_RB= ambiwidth=single
-endif
-
-if empty($MYVIMRC)
-    let $MYVIMRC = expand('<sfile>:p')
-endif
+set t_RV= t_u7= t_RF= t_RB= ambiwidth=single
 
 let s:chopsticks_root = fnamemodify(resolve(expand('<sfile>:p')), ':h')
 if index(split(&runtimepath, ','), s:chopsticks_root) < 0
@@ -33,20 +17,6 @@ unlet s:chopsticks_root
 
 let g:mapleader = "\<Space>"
 let g:maplocalleader = ','
-
-let s:is_remote = !empty($SSH_CONNECTION) || !empty($SSH_CLIENT) || !empty($SSH_TTY)
-let s:is_rich_terminal = !s:is_remote && has('termguicolors')
-    \ && ($COLORTERM ==# 'truecolor' || $COLORTERM ==# '24bit')
-
-function! s:DirectoryFileType(path) abort
-    let l:path = substitute(a:path, '[/\\]$', '', '')
-    if empty(l:path)
-        let l:path = a:path
-    elseif s:is_windows && l:path =~? '^\a:$'
-        let l:path .= '/'
-    endif
-    return getftype(l:path)
-endfunction
 
 set clipboard+=unnamed
 
@@ -87,7 +57,7 @@ let g:netrw_list_hide .= ',\.pyc$,node_modules,\.git,__pycache__,\.DS_Store,dist
 let g:vsnip_snippet_dir = expand('~/.vim/vsnip')
 
 let g:fuzzbox_mappings = 0
-let g:fuzzbox_preview = s:is_remote ? 0 : 1
+let g:fuzzbox_preview = 1
 let g:fuzzbox_devicons = 1
 let g:fuzzbox_borderchars = ['─', '│', '─', '│', '╭', '╮', '╯', '╰']
 let g:fuzzbox_keymaps = {'exit': ["\<Esc>", "\<C-c>", "\<C-g>", "\<C-q>"]}
@@ -177,11 +147,7 @@ let g:table_mode_disable_mappings = 1
 let g:table_mode_corner = '|'
 
 let g:previm_enable_realtime = 1
-if has('macunix')
-    let g:previm_open_cmd = '/usr/bin/open'
-elseif executable('xdg-open') == 1
-    let g:previm_open_cmd = 'xdg-open'
-endif
+let g:previm_open_cmd = '/usr/bin/open'
 
 let g:goyo_width = 96
 let g:goyo_height = '90%'
@@ -265,10 +231,7 @@ set expandtab smarttab shiftwidth=4 tabstop=4 softtabstop=4
 set autoindent textwidth=0
 set synmaxcol=300 lazyredraw updatetime=300
 set complete-=i
-set completeopt=menuone,noinsert,noselect
-if exists('*popup_create')
-    set completeopt+=popup
-endif
+set completeopt=menuone,noinsert,noselect,popup
 set pumheight=15
 set shortmess+=cI
 set signcolumn=yes
@@ -281,30 +244,8 @@ set switchbuf=useopen,usetab,newtab
 set tags=./tags;,tags;
 set path+=**
 
-if exists('+breakindent')
-    set breakindent
-endif
-if exists('+smoothscroll')
-    set smoothscroll
-endif
-if exists('+splitkeep')
-    set splitkeep=screen
-endif
-if exists('+jumpoptions')
-    set jumpoptions=stack
-endif
-if exists('+belloff')
-    set belloff=all
-endif
-if exists('+wildoptions')
-    set wildoptions=pum,tagfile
-endif
-if exists('+spelloptions')
-    set spelloptions+=camel
-endif
-if exists('+editorconfig')
-    set editorconfig
-endif
+set breakindent smoothscroll splitkeep=screen jumpoptions=stack belloff=all
+set wildoptions=pum,tagfile spelloptions+=camel
 
 if executable('rg') == 1
     set grepprg=rg\ --vimgrep\ --smart-case
@@ -320,30 +261,18 @@ let s:state_dirs = {
     \ }
 for s:state_dir in values(s:state_dirs)
     silent! call mkdir(s:state_dir, 'p', 0700)
-    if exists('*setfperm') && s:DirectoryFileType(s:state_dir) ==# 'dir'
-        silent! call setfperm(s:state_dir, 'rwx------')
-    endif
 endfor
 set backup writebackup swapfile
 let &backupdir = s:state_dirs.backup . '//'
 let &directory = s:state_dirs.swap . '//'
 let &viewdir = s:state_dirs.view
-if has('persistent_undo')
-    let &undodir = s:state_dirs.undo
-    set undofile
-endif
+let &undodir = s:state_dirs.undo
+set undofile
 unlet s:state_dir
 
 set listchars=tab:→\ ,trail:·,extends:›,precedes:‹,nbsp:␣
 execute 'set fillchars+=eob:\ '
-if s:is_rich_terminal
-    try
-        set termguicolors
-    catch /:E954:/
-        let s:is_rich_terminal = 0
-    endtry
-endif
-set background=dark
+set termguicolors background=dark
 
 call chopsticks#ui#theme#Apply()
 
@@ -568,11 +497,9 @@ call s:LeaderN(['P'], '"0P', 'Editing', 'Paste last yank before cursor')
 call s:LeaderX(['p'], '"_dP', 'Editing', 'Paste without replacing yank')
 call chopsticks#keys#WhichKeyAdd(['p'], 'Editing', 'Paste without clobbering yank')
 call s:LeaderN(['v'], '`[v`]', 'Editing', 'Reselect last change')
-if has('clipboard')
-    call s:LeaderN(['y'], '"+y', 'Editing', 'Yank to system clipboard')
-    call s:LeaderX(['y'], '"+y', 'Editing', 'Yank to system clipboard')
-    call s:LeaderN(['Y'], '"+Y', 'Editing', 'Yank line to system clipboard')
-endif
+call s:LeaderN(['y'], '"+y', 'Editing', 'Yank to system clipboard')
+call s:LeaderX(['y'], '"+y', 'Editing', 'Yank to system clipboard')
+call s:LeaderN(['Y'], '"+Y', 'Editing', 'Yank line to system clipboard')
 call chopsticks#keys#Catalog('Editing', 'n', 'x', 'Delete character without changing registers')
 
 nnoremap n nzzzv
@@ -641,14 +568,9 @@ call s:LeaderN(['q', 'q'], ':confirm qall<CR>', 'Quit', 'Quit Vim')
 call s:LeaderN(['q', 's'], ':ChopSave<CR>', 'Quit', 'Save project session')
 call s:LeaderN(['q', 'l'], ':ChopLoad<CR>', 'Quit', 'Restore project session')
 
-if has('terminal')
-    call s:LeaderN(['t', 't'], ':call chopsticks#ui#window#Terminal([], ''tab'')<CR>', 'Terminal', 'Terminal in new tab')
-    call s:LeaderN(['t', 's'], ':call chopsticks#ui#window#Terminal([], ''split'')<CR>', 'Terminal', 'Terminal below')
-    if !empty(maparg("\<Esc>\<Esc>", 't'))
-        execute 'tunmap <Esc><Esc>'
-    endif
-    call chopsticks#keys#Catalog('Terminal', 't', 'Ctrl-w N', 'Leave terminal mode')
-endif
+call s:LeaderN(['t', 't'], ':call chopsticks#ui#window#Terminal([], ''tab'')<CR>', 'Terminal', 'Terminal in new tab')
+call s:LeaderN(['t', 's'], ':call chopsticks#ui#window#Terminal([], ''split'')<CR>', 'Terminal', 'Terminal below')
+call chopsticks#keys#Catalog('Terminal', 't', 'Ctrl-w N', 'Leave terminal mode')
 
 call s:LeaderN(['<Tab>', '<Tab>'], ':tabnew<CR>', 'Tabs', 'New tab')
 call s:LeaderN(['<Tab>', '['], ':tabprevious<CR>', 'Tabs', 'Previous tab')

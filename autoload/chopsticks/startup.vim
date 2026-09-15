@@ -2,9 +2,7 @@ vim9script
 
 export def CaptureMs()
   if !exists('g:chopsticks_startup_ms')
-    g:chopsticks_startup_ms = exists('*reltimefloat')
-      ? reltimefloat(reltime(g:chopsticks_startup_started_at)) * 1000
-      : str2float(reltimestr(reltime(g:chopsticks_startup_started_at))) * 1000
+    g:chopsticks_startup_ms = reltimefloat(reltime(g:chopsticks_startup_started_at)) * 1000
   endif
 enddef
 

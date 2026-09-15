@@ -1,7 +1,5 @@
 vim9script
 
-const IS_WINDOWS = has('win32') || has('win64')
-
 var directory_startup_opened = false
 
 def ExplorerWindow(): number
@@ -21,14 +19,6 @@ enddef
 def PathInside(path_value: string, directory_value: string): bool
   var path = resolve(fnamemodify(path_value, ':p'))
   var directory = resolve(fnamemodify(directory_value, ':p'))
-  if IS_WINDOWS
-    path = substitute(path, '\\', '/', 'g')
-    directory = substitute(directory, '\\', '/', 'g')
-    path = substitute(path, '/\+$', '', '')
-    directory = substitute(directory, '/\+$', '', '')
-    return path ==? directory
-      || stridx(tolower(path), tolower(directory .. '/')) == 0
-  endif
   path = substitute(path, '/\+$', '', '')
   directory = substitute(directory, '/\+$', '', '')
   return path ==# directory || stridx(path, directory .. '/') == 0

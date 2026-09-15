@@ -38,21 +38,22 @@ export def Save()
   endif
   mkdir(SESSION_DIR, 'p', 0o700)
   execute 'silent mksession! ' .. fnameescape(Path())
-  echo 'session saved: ' .. Root()
   if Modified() > 0
-    Warn(Modified() .. ' modified buffer(s) are not stored in the session')
+    Warn('session saved without ' .. Modified() .. ' unsaved buffer(s)')
+  else
+    echo 'session saved: ' .. fnamemodify(Root(), ':t')
   endif
 enddef
 
 export def Load(force: bool)
   if !filereadable(Path())
-    Warn('no session for ' .. Root())
+    Warn('no session for ' .. fnamemodify(Root(), ':t'))
   elseif !force && Modified() > 0
-    Warn(printf('refusing to restore with %d modified listed buffer(s); '
-      .. 'write them or use :ChopLoad! to load anyway', Modified()))
+    Warn(Modified() .. ' unsaved buffer(s): write them or :ChopLoad!')
   else
-    execute 'cd ' .. fnameescape(Root())
+    var root = Root()
     execute 'silent source ' .. fnameescape(Path())
-    echo 'session restored: ' .. Root()
+    silent execute 'cd ' .. fnameescape(root)
+    echo 'session restored: ' .. fnamemodify(root, ':t')
   endif
 enddef

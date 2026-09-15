@@ -29,9 +29,7 @@ const ITEMS = [
   {key: 'q', icon: 'quit', label: 'Quit', action: 'qall'},
 ]
 
-def Items(requested_density: string = ''): list<dict<string>>
-  var density = empty(requested_density)
-    ? g:ChopsticksUiDensity() : requested_density
+def Items(density: string = 'rich'): list<dict<string>>
   var keys = density ==# 'minimal'
     ? ['f', 'n', 'r', 'c', 'q']
     : ['f', 'n', 'g', 'r', 'c', 's', 'q']
@@ -71,13 +69,6 @@ enddef
 
 def Footer(): string
   startup.CaptureMs()
-  var density = g:ChopsticksUiDensity()
-  if density ==# 'minimal'
-    return 'SPC ? keys'
-  elseif density ==# 'balanced'
-    return printf('%s ready in %.2fms  ·  SPC ? keys',
-      icons.Get('startup'), g:chopsticks_startup_ms)
-  endif
   var [loaded, total] = PluginStats()
   return total > 0
     ? printf('%s Vim loaded %d/%d plugins in %.2fms',
@@ -157,12 +148,8 @@ export def Render()
   endif
   var width = winwidth(0)
   var height = winheight(0) + &cmdheight
-  var density = g:ChopsticksUiDensity()
-  if height < 16 || width < 34
-    density = 'minimal'
-  elseif density ==# 'rich' && (height < 24 || width < 80)
-    density = 'balanced'
-  endif
+  var density = height < 16 || width < 34 ? 'minimal'
+    : height < 24 || width < 80 ? 'balanced' : 'rich'
   var items = Items(density)
   var full_logo = density ==# 'rich' && width >= 100 && height >= 24
   var logo = full_logo ? LOGO

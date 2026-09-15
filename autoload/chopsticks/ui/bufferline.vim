@@ -4,16 +4,6 @@ import autoload 'chopsticks/ui/text.vim'
 import autoload 'chopsticks/ui/icons.vim'
 import autoload 'chopsticks/ui/statusline.vim'
 
-export def FileBufferCount(): number
-  var total = 0
-  for buffer in getbufinfo({buflisted: 1})
-    if getbufvar(buffer.bufnr, '&buftype') ==# ''
-      total += 1
-    endif
-  endfor
-  return total
-enddef
-
 export def Refresh()
   &showtabline = &filetype ==# 'chopsticks-dashboard' || exists('t:goyo_master')
     ? 0
@@ -35,21 +25,17 @@ export def ScheduleRefresh()
   endif
 enddef
 
-def Context(density: string): list<string>
-  if density ==# 'minimal'
-    return ['', '']
-  endif
+def Context(): list<string>
   var project = fnamemodify(getcwd(), ':t')
   if empty(project)
     return ['', '']
   endif
   var icon = icons.Get('folder_open')
   return [' ' .. (empty(icon) ? '' : icon .. ' ') .. project .. ' ',
-    density ==# 'rich' ? statusline.GitBranch() : '']
+    statusline.GitBranch()]
 enddef
 
 export def Render(): string
-  var density = statusline.UiDensity()
   var segments = []
   var active = -1
   for buffer in getbufinfo({buflisted: 1})
@@ -58,10 +44,10 @@ export def Render(): string
     endif
     var name = fnamemodify(buffer.name, ':t')
     name = empty(name) ? '[No Name]' : name
-    name = text.Truncate(name, density ==# 'rich' ? 28 : 22)
+    name = text.Truncate(name, 28)
     var icon = icons.FileIcon(buffer.name)
     var changed = get(buffer, 'changed', 0) ? ' ' .. icons.Get('modified') : ''
-    var number = density ==# 'rich' ? buffer.bufnr .. ' ' : ''
+    var number = buffer.bufnr .. ' '
     if buffer.bufnr == bufnr('%')
       active = len(segments)
     elseif active < 0 && buffer.bufnr == bufnr('#')
@@ -79,7 +65,7 @@ export def Render(): string
   var anchor = active >= 0 ? active : 0
   var left = anchor
   var right = anchor
-  var [project, branch] = Context(density)
+  var [project, branch] = Context()
   if strwidth(project .. branch) * 3 > &columns
     [project, branch] = ['', '']
   endif

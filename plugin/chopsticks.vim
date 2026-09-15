@@ -38,6 +38,3 @@ enddef
 command! -bar ChopSave session.Save()
 command! -bar -bang ChopLoad session.Load(<bang>0)
 command! ChopDash dashboard.Open()
-command! ChopIcons icons.Toggle()
-command! ChopTransparency theme.ToggleTransparency()
-command! -nargs=1 -complete=color ChopTheme theme.Set(<q-args>)

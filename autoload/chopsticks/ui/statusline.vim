@@ -1,36 +1,6 @@
 vim9script
 
 import autoload 'chopsticks/ui/icons.vim'
-import autoload 'chopsticks/ui/bufferline.vim'
-import autoload 'chopsticks/ui/dashboard.vim'
-
-const DENSITIES = ['minimal', 'balanced', 'rich']
-
-export def UiDensity(): string
-  var value = type(g:chopsticks_ui_density) == type('')
-    ? tolower(g:chopsticks_ui_density) : ''
-  return index(DENSITIES, value) >= 0 ? value : 'balanced'
-enddef
-
-export def SetUiDensity(value: string)
-  if empty(value)
-    var current = index(DENSITIES, UiDensity())
-    g:chopsticks_ui_density = DENSITIES[(current + 1) % len(DENSITIES)]
-  elseif index(DENSITIES, tolower(value)) >= 0
-    g:chopsticks_ui_density = tolower(value)
-  else
-    echohl WarningMsg
-    echomsg 'chopsticks: density must be minimal, balanced, or rich'
-    echohl None
-    return
-  endif
-  bufferline.Refresh()
-  if &filetype ==# 'chopsticks-dashboard'
-    dashboard.Render()
-  endif
-  redrawstatus!
-  echo 'UI density: ' .. UiDensity()
-enddef
 
 const MODE_NAMES = {c: 'COMMAND', '!': 'SHELL', t: 'TERMINAL'}
 
@@ -189,13 +159,7 @@ def Context(): dict<any>
 enddef
 
 def EffectiveDensity(width: number): string
-  var density = UiDensity()
-  if width < 70
-    return 'minimal'
-  elseif density ==# 'rich' && width < 110
-    return 'balanced'
-  endif
-  return density
+  return width < 70 ? 'minimal' : width < 110 ? 'balanced' : 'rich'
 enddef
 
 const KINDS = {fern: 'EXPLORER', netrw: 'EXPLORER', qf: 'QUICKFIX', help: 'HELP'}
@@ -230,8 +194,6 @@ export def Render(): string
   line ..= Diagnostics(context.bufnr)
   if density ==# 'rich'
     line ..= GitDiff(context.bufnr)
-  endif
-  if density ==# 'rich'
     line ..= '%#ChopStatusMuted#' .. Signals(context.bufnr)
       .. WordCount(context.active) .. ' %y '
   endif

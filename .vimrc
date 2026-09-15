@@ -86,7 +86,6 @@ let g:chopsticks_cmdline_autocomplete =
 let g:chopsticks_autocomplete = get(g:, 'chopsticks_autocomplete', 0)
 let g:chopsticks_long_line_threshold =
     \ get(g:, 'chopsticks_long_line_threshold', 4096)
-let g:chopsticks_ui_density = get(g:, 'chopsticks_ui_density', 'balanced')
 let g:chopsticks_colorscheme = get(g:, 'chopsticks_colorscheme', 'everforest')
 let g:chopsticks_transparent_background = get(g:, 'chopsticks_transparent_background', 'auto')
 let g:chopsticks_dashboard = get(g:, 'chopsticks_dashboard', 'auto')
@@ -136,8 +135,7 @@ endif
 unlet s:clipboard_auto_enabled s:clipboard_flag
 
 function! ChopsticksDashboardEnabled() abort
-    return s:ResolveSwitch(g:chopsticks_dashboard,
-        \ ChopsticksUiDensity() !=# 'minimal')
+    return s:ResolveSwitch(g:chopsticks_dashboard, 1)
 endfunction
 
 let g:fern#renderer = chopsticks#ui#icons#Enabled() ? 'nerdfont' : 'default'
@@ -452,10 +450,6 @@ set background=dark
 
 call chopsticks#ui#theme#Apply()
 
-function! ChopsticksUiDensity() abort
-    return chopsticks#ui#statusline#UiDensity()
-endfunction
-
 function! ChopsticksStatusline() abort
     return chopsticks#ui#statusline#Render()
 endfunction
@@ -485,32 +479,16 @@ function! ChopsticksWordCount(...) abort
 endfunction
 
 function! ChopsticksBufferlineEnabled() abort
-    let l:density = ChopsticksUiDensity()
-    return s:ResolveSwitch(g:chopsticks_bufferline,
-        \ l:density ==# 'rich'
-        \ || (l:density ==# 'balanced'
-        \     && chopsticks#ui#bufferline#FileBufferCount() > 1))
+    return s:ResolveSwitch(g:chopsticks_bufferline, 1)
 endfunction
 
 function! ChopsticksWindowLabelsEnabled() abort
-    return s:ResolveSwitch(g:chopsticks_window_labels,
-        \ ChopsticksUiDensity() !=# 'minimal')
+    return s:ResolveSwitch(g:chopsticks_window_labels, 1)
 endfunction
 
 set statusline=%!ChopsticksStatusline()
 set tabline=%!ChopsticksTabline()
 call chopsticks#ui#bufferline#Refresh()
-
-function! s:RefreshIconDependents() abort
-    let g:fuzzbox_devicons = chopsticks#ui#icons#Enabled()
-    if &filetype ==# 'chopsticks-dashboard'
-        call chopsticks#ui#dashboard#Render()
-    endif
-    redrawstatus!
-    execute 'redrawtabline'
-endfunction
-
-command! -nargs=? ChopDensity call chopsticks#ui#statusline#SetUiDensity(<q-args>)
 
 function! s:HandleResize() abort
     wincmd =
@@ -522,7 +500,6 @@ endfunction
 augroup ChopsticksInterface
     autocmd!
     autocmd ColorScheme * call chopsticks#ui#theme#DefineInterfaceColors()
-    autocmd User ChopsticksIconsToggled call s:RefreshIconDependents()
     autocmd BufEnter * if &filetype ==# 'chopsticks-dashboard' | call chopsticks#ui#dashboard#Enter() | call chopsticks#ui#dashboard#Render() | endif
     autocmd BufLeave * if &filetype ==# 'chopsticks-dashboard' | call chopsticks#ui#dashboard#Leave() | endif
     autocmd WinEnter,BufWinEnter * if &filetype ==# 'chopsticks-dashboard' | call chopsticks#ui#dashboard#Focus(v:true) | endif
@@ -765,9 +742,6 @@ call s:LeaderN(['u', 'r'], ':set relativenumber! relativenumber?<CR>', 'Toggles'
 call s:LeaderN(['u', 'l'], ':set list! list?<CR>', 'Toggles', 'Toggle invisible characters')
 call s:LeaderN(['u', 'w'], ':set wrap! wrap?<CR>', 'Toggles', 'Toggle wrapping')
 call s:LeaderN(['u', 's'], ':set spell! spell?<CR>', 'Toggles', 'Toggle spelling')
-call s:LeaderN(['u', 'i'], ':ChopIcons<CR>', 'Toggles', 'Toggle Nerd Font icons')
-call s:LeaderN(['u', 'b'], ':ChopTransparency<CR>', 'Toggles', 'Toggle background transparency')
-call s:LeaderN(['u', 'd'], ':ChopDensity<CR>', 'Toggles', 'Cycle UI density')
 
 call chopsticks#keys#Catalog('Files', 'n*', 'Fern h / l', 'Collapse / open node')
 call chopsticks#keys#Catalog('Files', 'n*', 'Fern s / v / t', 'Open in split / vsplit / tab')

@@ -145,23 +145,3 @@ export def FileIcon(path: string): string
   var icon = file_icon_cache[key]
   return empty(icon) ? '' : icon .. ' '
 enddef
-
-export def Apply(): void
-  file_icon_cache = {}
-  g:fern#renderer = Enabled() ? 'nerdfont' : 'default'
-  g:fern#renderer#nerdfont#root_symbol = Get('folder_open')
-  g:fern#mark_symbol = Get('marker')
-  g:ale_sign_error = Get('error')
-  g:ale_sign_warning = Get('warning')
-  g:ale_sign_info = Get('info')
-enddef
-
-export def Toggle(): void
-  g:chopsticks_icons = Enabled() ? 0 : 1
-  Apply()
-  if exists('#User#ChopsticksIconsToggled')
-    doautocmd User ChopsticksIconsToggled
-  endif
-  echo 'icons: ' .. (Enabled() ? 'Nerd Font' : 'ASCII')
-    .. ' (restart Vim to refresh Fern and key groups)'
-enddef

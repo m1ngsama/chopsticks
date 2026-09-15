@@ -101,19 +101,3 @@ export def DefineInterfaceColors(): void
     highlight SignColumn ctermbg=NONE guibg=NONE
   endif
 enddef
-
-export def Set(name: string): void
-  g:chopsticks_colorscheme = name
-  Apply()
-  DefineInterfaceColors()
-  redraw!
-  echo 'theme: ' .. get(g:, 'colors_name', 'default')
-enddef
-
-export def ToggleTransparency(): void
-  g:chopsticks_transparent_background = TransparencyEnabled() ? 0 : 1
-  Apply()
-  DefineInterfaceColors()
-  redraw!
-  echo 'background: ' .. (TransparencyEnabled() ? 'transparent' : 'opaque')
-enddef

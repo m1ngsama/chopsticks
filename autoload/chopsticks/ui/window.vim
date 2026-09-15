@@ -205,7 +205,7 @@ export def Terminal(command: list<string>, position: string)
   if position ==# 'tab'
     tabnew
   else
-    execute 'botright 12new'
+    botright :12new
   endif
   if empty(command)
     term_start(&shell, {curwin: 1})

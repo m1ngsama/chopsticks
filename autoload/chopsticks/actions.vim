@@ -67,7 +67,8 @@ export def CopyPath(relative: bool)
   var path = relative ? fnamemodify(expand('%:p'), ':.') : expand('%:p')
   setreg('+', path)
   setreg('"', path)
-  echo 'copied: ' .. path
+  var shown = relative ? path : fnamemodify(path, ':~')
+  echo 'copied: ' .. (strwidth(shown) < &columns - 10 ? shown : pathshorten(shown))
 enddef
 
 export def Lazygit()

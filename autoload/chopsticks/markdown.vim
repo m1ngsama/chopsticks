@@ -38,7 +38,7 @@ export def PasteImage(requested_name: string)
   var absolute_path = absolute_dir .. '/' .. name
   if filereadable(absolute_path)
     echohl ErrorMsg
-    echomsg 'chopsticks: image already exists: ' .. absolute_path
+    echomsg 'chopsticks: image already exists: ' .. relative_dir .. '/' .. name
     echohl None
     return
   endif

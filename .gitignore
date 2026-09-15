@@ -1,7 +1,0 @@
-*.sw?
-*.py[cod]
-.DS_Store
-__pycache__/
-node_modules/
-/Session.vim
-docs/superpowers/

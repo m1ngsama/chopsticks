@@ -189,6 +189,7 @@ export def Scratch(name: string, lines: list<string>, filetype = '')
     maxheight: float2nr(&lines * 0.82),
     cursorline: true,
     scrollbar: true,
+    wrap: false,
     mapping: false,
     filter: Filter,
     filtermode: 'a',

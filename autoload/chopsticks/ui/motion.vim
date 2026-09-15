@@ -1,6 +1,11 @@
 vim9script
 
 const FLASH_MS = 200
+const BEACON_MS = 300
+
+var scroll_timer = 0
+var scroll_window = 0
+var scroll_final: dict<number> = {}
 
 def Flash(group: string, first: list<number>, last: list<number>, type: string, ms: number)
   if first[1] <= 0 || last[1] <= 0
@@ -26,6 +31,17 @@ export def Changed()
   var [first, last] = [getpos("'["), getpos("']")]
   var linewise = first[2] == 1 && last[2] == 1 && last[1] > first[1]
   Flash('ChopFlash', first, last, linewise ? 'V' : 'v', FLASH_MS)
+enddef
+
+export def Moved()
+  var here = [bufnr(), line('.')]
+  var last = get(w:, 'chopsticks_position', here)
+  w:chopsticks_position = here
+  if scroll_timer == 0 && &buftype ==# ''
+      && (here[0] != last[0] || abs(here[1] - last[1]) > winheight(0) / 2)
+    var position = getpos('.')
+    Flash('ChopBeacon', position, position, 'V', BEACON_MS)
+  endif
 enddef
 
 export def Focus()

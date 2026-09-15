@@ -560,7 +560,7 @@ call s:DirectN(';l', ':FuzzyInBuffer<CR>', ';l', 'Fast find', 'Search current bu
 call s:DirectN(';h', ':FuzzyHelp<CR>', ';h', 'Fast find', 'Search Vim help')
 call s:DirectN(';r', ':ChopGrep<CR>', ';r', 'Fast find', 'Grep project')
 call s:DirectN('<Bslash>', ':FuzzyBuffers<CR>', '\', 'Fast find', 'Find open buffers')
-call s:LeaderN(['g', 's'], ':Git status<CR>', 'Git', 'Git status')
+call s:LeaderN(['g', 's'], ':Git<CR>', 'Git', 'Git status')
 call s:LeaderN(['g', 'd'], ':Gdiffsplit<CR>', 'Git', 'Diff current file')
 call s:LeaderN(['g', 'b'], ':Git blame<CR>', 'Git', 'Blame current file')
 call s:LeaderN(['g', 'o'], ':GBrowse<CR>', 'Git', 'Open remote file')

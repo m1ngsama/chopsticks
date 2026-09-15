@@ -63,7 +63,8 @@ export def Render(): string
   if strwidth(project .. branch) * 3 > &columns
     [project, branch] = ['', '']
   endif
-  var room = &columns - strwidth(project .. branch)
+  var pages = tabpagenr('$') > 1 ? printf(' %d/%d ', tabpagenr(), tabpagenr('$')) : ''
+  var room = &columns - strwidth(pages .. project .. branch)
   var show_overflow = room >= 16
   var budget = max([1, room - (show_overflow ? 10 : 0)])
   segments[anchor].text = text.Truncate(segments[anchor].text, budget)
@@ -123,6 +124,7 @@ export def Render(): string
     line ..= '%#TabLine#' .. right_hint
   endif
   return line .. '%#TabLineFill#%='
+    .. (empty(pages) ? '' : '%#ChopStatusAccent#' .. pages)
     .. (empty(project) ? ''
       : '%#ChopStatusMuted#' .. substitute(project, '%', '%%', 'g'))
     .. (empty(branch) ? '' : '%#ChopStatusGit#' .. branch)

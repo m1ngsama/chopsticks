@@ -134,6 +134,7 @@ let g:bullets_nested_checkboxes = 1
 let g:bullets_checkbox_markers = ' .oOX'
 
 let g:table_mode_disable_mappings = 1
+let g:table_mode_disable_tableize_mappings = 1
 let g:table_mode_corner = '|'
 
 let g:previm_enable_realtime = 1

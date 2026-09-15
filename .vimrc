@@ -314,6 +314,7 @@ augroup ChopsticksInterface
     autocmd WinScrolled,WinResized,VimResized * call chopsticks#ui#winlabel#Refresh()
     autocmd TextChanged,TextChangedI * call chopsticks#ui#winlabel#OnTextChanged()
     autocmd TextYankPost * call chopsticks#ui#motion#Yanked()
+    autocmd VimEnter,WinEnter,BufWinEnter,InsertEnter,InsertLeave * call chopsticks#ui#motion#Focus()
     autocmd BufEnter,BufAdd,BufWinEnter,WinEnter * call chopsticks#ui#bufferline#Refresh()
     autocmd BufDelete,BufWipeout,WinClosed * call chopsticks#ui#bufferline#ScheduleRefresh()
     autocmd CursorMoved * if &filetype ==# 'chopsticks-dashboard' | call chopsticks#ui#dashboard#LockCursor() | endif

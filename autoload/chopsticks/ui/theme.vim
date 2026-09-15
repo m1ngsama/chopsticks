@@ -6,6 +6,7 @@ export def Apply(): void
   g:everforest_enable_italic = 1
   g:everforest_ui_contrast = 'high'
   g:everforest_current_word = 'high contrast background'
+  g:everforest_dim_inactive_windows = 1
   silent! colorscheme everforest
 enddef
 

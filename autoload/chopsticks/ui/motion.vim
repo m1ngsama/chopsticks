@@ -27,3 +27,16 @@ export def Changed()
   var linewise = first[2] == 1 && last[2] == 1 && last[1] > first[1]
   Flash('ChopFlash', first, last, linewise ? 'V' : 'v', FLASH_MS)
 enddef
+
+export def Focus()
+  var current = win_getid()
+  var dim = winnr('$') > 1 && !empty(synIDattr(synIDtrans(hlID('NormalNC')), 'bg'))
+  for window in getwininfo()
+    if window.tabnr != tabpagenr() || getbufvar(window.bufnr, '&buftype') !=# ''
+      continue
+    endif
+    var focused = window.winid == current
+    setwinvar(window.winid, '&cursorline', focused && mode() !~# '^i')
+    setwinvar(window.winid, '&wincolor', focused || !dim ? '' : 'NormalNC')
+  endfor
+enddef

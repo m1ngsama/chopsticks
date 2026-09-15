@@ -57,11 +57,7 @@ export def Root()
 enddef
 
 export def Here()
-  if &filetype ==# 'fern'
-    Toggle(getcwd())
-    return
-  endif
-  Toggle(empty(expand('%:p')) ? getcwd() : expand('%:p:h'))
+  Toggle(&buftype ==# '' && !empty(expand('%:p')) ? expand('%:p:h') : getcwd())
 enddef
 
 export def MaybeOpenDirectory()

@@ -7,6 +7,15 @@ if has('nvim') || !has('patch-9.1.1947')
 endif
 let g:chopsticks_startup_started_at = reltime()
 set t_RV= t_u7= t_RF= t_RB= ambiwidth=single
+if !has('gui_running') && $TERM !=# 'linux'
+    let &t_SI = "\<Esc>[6 q"
+    let &t_SR = "\<Esc>[4 q"
+    let &t_EI = "\<Esc>[2 q"
+    if &t_te !~# '\[0 q'
+        let &t_ti .= "\<Esc>[2 q"
+        let &t_te .= "\<Esc>[0 q"
+    endif
+endif
 execute 'set runtimepath^=' . fnameescape(fnamemodify(resolve(expand('<sfile>:p')), ':h'))
 
 let g:mapleader = "\<Space>"

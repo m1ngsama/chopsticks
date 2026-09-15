@@ -6,11 +6,7 @@ export def Apply(): void
   g:everforest_enable_italic = 1
   g:everforest_ui_contrast = 'high'
   g:everforest_current_word = 'high contrast background'
-  try
-    colorscheme everforest
-  catch /^Vim\%((\a\+)\)\=:E185/
-    colorscheme default
-  endtry
+  colorscheme everforest
 enddef
 
 export def HighlightColor(group: string, attribute: string, fallback: string): string

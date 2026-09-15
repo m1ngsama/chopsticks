@@ -28,18 +28,7 @@ export def Start(arguments: string)
     Warn('debugging needs gdb; lldb speaks a protocol termdebug does not')
     return
   endif
-  if exists(':Termdebug') != 2
-    try
-      packadd termdebug
-    catch
-      Warn('this Vim ships no termdebug package')
-      return
-    endtry
-  endif
-  if exists(':Termdebug') != 2
-    Warn('this Vim ships no termdebug package')
-    return
-  endif
+  packadd termdebug
   g:termdebugger = debugger
   execute 'Termdebug' arguments
 enddef

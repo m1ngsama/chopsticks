@@ -76,12 +76,6 @@ enddef
 export def Signals(buffer: number = -1): string
   var target = buffer < 0 ? bufnr('') : buffer
   var parts = []
-  if exists('*g:lsp#get_allowed_servers')
-    var servers = call('lsp#get_allowed_servers', [target])
-    if !empty(servers)
-      add(parts, servers[0])
-    endif
-  endif
   var encoding = getbufvar(target, '&fileencoding')
   if !empty(encoding) && encoding !=? 'utf-8'
     add(parts, encoding)

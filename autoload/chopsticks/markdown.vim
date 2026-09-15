@@ -10,12 +10,6 @@ export def ToggleConceal()
 enddef
 
 export def Glow()
-  if executable('glow') != 1
-    echohl WarningMsg
-    echomsg 'chopsticks: install glow for terminal Markdown preview'
-    echohl None
-    return
-  endif
   if empty(expand('%:p'))
     echohl WarningMsg
     echomsg 'chopsticks: save the Markdown file before previewing it'
@@ -27,12 +21,6 @@ export def Glow()
 enddef
 
 export def PasteImage(requested_name: string)
-  if executable('pngpaste') != 1
-    echohl WarningMsg
-    echomsg 'chopsticks: Markdown image paste needs pngpaste (brew install pngpaste)'
-    echohl None
-    return
-  endif
   if empty(expand('%:p'))
     echohl WarningMsg
     echomsg 'chopsticks: save the Markdown file before pasting an image'
@@ -112,55 +100,36 @@ export def Setup()
   setlocal wrap linebreak breakindent textwidth=0 colorcolumn=0
   setlocal norelativenumber nolist signcolumn=auto foldlevel=99
   setlocal spell spelllang=en_us,cjk
-  if exists(':Pencil') == 2
-    pencil#init({wrap: 'soft'})
-  endif
+  pencil#init({wrap: 'soft'})
   setlocal conceallevel=0
-
-  if !empty(maparg('<Plug>(bullets-newline)', 'i'))
-    imap <silent><buffer> <CR> <Plug>(bullets-newline)
-    nmap <silent><buffer> o <Plug>(bullets-newline)
-    nmap <silent><buffer> gN <Plug>(bullets-renumber)
-    xmap <silent><buffer> gN <Plug>(bullets-renumber)
-    nmap <silent><buffer> <localleader>x <Plug>(bullets-toggle-checkbox)
-  endif
-  if exists(':Toc') == 2
-    nnoremap <silent><buffer> <localleader>o :Toc<CR>
-    nnoremap <silent><buffer> <localleader>O :InsertToc 3<CR>
-  endif
-  if exists(':TableModeToggle') == 2
-    nnoremap <silent><buffer> <localleader>tt :TableModeToggle<CR>
-    nnoremap <silent><buffer> <localleader>tr :TableModeRealign<CR>
-    xnoremap <silent><buffer> <localleader>tc :Tableize<CR>
-  endif
-  if exists(':PrevimOpen') == 2
-    nnoremap <silent><buffer> <localleader>p :PrevimOpen<CR>
-  endif
-  if exists(':Goyo') == 2
-    nnoremap <silent><buffer> <localleader>z :Goyo<CR>
-  endif
+  imap <silent><buffer> <CR> <Plug>(bullets-newline)
+  nmap <silent><buffer> o <Plug>(bullets-newline)
+  nmap <silent><buffer> gN <Plug>(bullets-renumber)
+  xmap <silent><buffer> gN <Plug>(bullets-renumber)
+  nmap <silent><buffer> <localleader>x <Plug>(bullets-toggle-checkbox)
+  nnoremap <silent><buffer> <localleader>o :Toc<CR>
+  nnoremap <silent><buffer> <localleader>O :InsertToc 3<CR>
+  nnoremap <silent><buffer> <localleader>tt :TableModeToggle<CR>
+  nnoremap <silent><buffer> <localleader>tr :TableModeRealign<CR>
+  xnoremap <silent><buffer> <localleader>tc :Tableize<CR>
+  nnoremap <silent><buffer> <localleader>p :PrevimOpen<CR>
+  nnoremap <silent><buffer> <localleader>z :Goyo<CR>
   nnoremap <silent><buffer> <localleader>? <ScriptCmd>Help()<CR>
   nnoremap <silent><buffer> <localleader>s :setlocal spell! spell?<CR>
   nnoremap <silent><buffer> <localleader>c <ScriptCmd>ToggleConceal()<CR>
   nnoremap <silent><buffer> <localleader>g <ScriptCmd>Glow()<CR>
   nnoremap <silent><buffer> <localleader>i :MdPaste<CR>
-  if exists(':WhichKey') == 2
-    nnoremap <silent><buffer> <localleader> :<C-u>WhichKey ','<CR>
-    xnoremap <silent><buffer> <localleader> :<C-u>WhichKeyVisual ','<CR>
-  endif
-  if exists(':ALELint') == 2
-    nnoremap <silent><buffer> <localleader>l :ALELint<CR>
-    nnoremap <silent><buffer> <localleader>f :ALEFix<CR>
-  endif
+  nnoremap <silent><buffer> <localleader> :<C-u>WhichKey ','<CR>
+  xnoremap <silent><buffer> <localleader> :<C-u>WhichKeyVisual ','<CR>
+  nnoremap <silent><buffer> <localleader>l :ALELint<CR>
+  nnoremap <silent><buffer> <localleader>f :ALEFix<CR>
   GuardLongLines()
 enddef
 
 export def ProseSetup()
   setlocal wrap linebreak breakindent textwidth=0 colorcolumn=0
   setlocal norelativenumber
-  if exists(':Pencil') == 2
-    pencil#init({wrap: 'soft'})
-  endif
+  pencil#init({wrap: 'soft'})
   if &filetype ==# 'gitcommit' || &filetype ==# 'mail'
     setlocal spell spelllang=en_us,cjk
   endif
@@ -168,7 +137,7 @@ export def ProseSetup()
 enddef
 
 export def GoyoEnter()
-  if &filetype =~# '^\%(markdown\|text\|gitcommit\)$' && exists(':Limelight') == 2
+  if &filetype =~# '^\%(markdown\|text\|gitcommit\)$'
     silent execute 'Limelight'
   endif
   setlocal wrap linebreak
@@ -176,8 +145,6 @@ export def GoyoEnter()
 enddef
 
 export def GoyoLeave()
-  if exists(':Limelight') == 2
-    silent! execute 'Limelight!'
-  endif
+  silent! execute 'Limelight!'
   bufferline.Refresh()
 enddef

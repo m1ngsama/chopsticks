@@ -103,15 +103,7 @@ var file_icon_cache = {}
 export def FileIcon(path: string): string
   var key = empty(path) ? '[No Name]' : path
   if !has_key(file_icon_cache, key)
-    if empty(globpath(&runtimepath, 'autoload/nerdfont.vim'))
-      file_icon_cache[key] = Get('file')
-    else
-      try
-        file_icon_cache[key] = nerdfont#find(key, isdirectory(key))
-      catch
-        file_icon_cache[key] = Get('file')
-      endtry
-    endif
+    file_icon_cache[key] = nerdfont#find(key, isdirectory(key))
   endif
   var icon = file_icon_cache[key]
   return empty(icon) ? '' : icon .. ' '

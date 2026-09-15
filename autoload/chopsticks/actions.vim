@@ -70,11 +70,5 @@ export def CopyPath(relative: bool)
 enddef
 
 export def Lazygit()
-  if executable('lazygit') != 1
-    echohl WarningMsg
-    echomsg 'chopsticks: lazygit is not installed'
-    echohl None
-    return
-  endif
   window.Terminal(['lazygit', '--path', g:ChopsticksProjectRoot()], 'tab')
 enddef

@@ -34,9 +34,6 @@ def Items(density: string = 'rich'): list<dict<string>>
     ? ['f', 'n', 'r', 'c', 'q']
     : ['f', 'n', 'g', 'r', 'c', 's', 'q']
   var items = filter(copy(ITEMS), (_, item) => index(keys, item.key) >= 0)
-  if exists(':FuzzyGrep') != 2
-    filter(items, (_, item) => item.key !=# 'g')
-  endif
   if !exists('*g:ChopsticksSessionPath')
       || !filereadable(g:ChopsticksSessionPath())
     filter(items, (_, item) => item.key !=# 's')

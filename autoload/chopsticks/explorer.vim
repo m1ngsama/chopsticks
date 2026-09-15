@@ -2,20 +2,6 @@ vim9script
 
 var directory_startup_opened = false
 
-def ExplorerWindow(): number
-  for window in getwininfo()
-    if window.tabnr == tabpagenr()
-        && index(['fern', 'netrw'], getbufvar(window.bufnr, '&filetype')) >= 0
-      return window.winid
-    endif
-  endfor
-  return 0
-enddef
-
-export def FernAvailable(): bool
-  return exists(':Fern') == 2
-enddef
-
 def PathInside(path_value: string, directory_value: string): bool
   var path = resolve(fnamemodify(path_value, ':p'))
   var directory = resolve(fnamemodify(directory_value, ':p'))
@@ -25,29 +11,14 @@ def PathInside(path_value: string, directory_value: string): bool
 enddef
 
 export def Toggle(directory_arg: string)
-  if FernAvailable()
-    var directory = fnamemodify(directory_arg, ':p')
-    var command = 'Fern ' .. fnameescape(directory)
-      .. ' -drawer -toggle -width=' .. g:fern#drawer_width
-    var current = expand('%:p')
-    if filereadable(current) && PathInside(current, directory)
-      command ..= ' -reveal=' .. fnameescape(current)
-    endif
-    execute command
-    return
+  var directory = fnamemodify(directory_arg, ':p')
+  var command = 'Fern ' .. fnameescape(directory)
+    .. ' -drawer -toggle -width=' .. g:fern#drawer_width
+  var current = expand('%:p')
+  if filereadable(current) && PathInside(current, directory)
+    command ..= ' -reveal=' .. fnameescape(current)
   endif
-  var explorer = ExplorerWindow()
-  if explorer != 0
-    var origin = win_getid()
-    if win_gotoid(explorer)
-      close
-    endif
-    if origin != explorer && win_id2win(origin) > 0
-      win_gotoid(origin)
-    endif
-    return
-  endif
-  execute 'Lexplore ' .. fnameescape(directory_arg)
+  execute command
 enddef
 
 export def FernSetup()
@@ -76,10 +47,7 @@ export def FernSetup()
   nmap <silent><buffer> R <Plug>(fern-action-reload:all)
   nnoremap <silent><buffer> q :close<CR>
   nnoremap <silent><buffer> <Esc> :close<CR>
-  try
-    glyph_palette#apply()
-  catch /^Vim\%((\a\+)\)\=:E117/
-  endtry
+  glyph_palette#apply()
 enddef
 
 export def Root()

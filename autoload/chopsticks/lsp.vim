@@ -5,14 +5,7 @@ import autoload 'chopsticks/keys.vim'
 const ALIASES = {cpp: 'c', javascript: 'typescript'}
 var registered: dict<bool> = {}
 
-export def SnippetSupport(): bool
-  return exists('g:loaded_vsnip') == 1
-enddef
-
 export def Options()
-  if !exists('*g:LspOptionsSet')
-    return
-  endif
   g:LspOptionsSet({
     autoComplete: false,
     omniComplete: true,
@@ -21,7 +14,7 @@ export def Options()
     semanticHighlight: true,
     aleSupport: true,
     outlineOnRight: true,
-    vsnipSupport: SnippetSupport(),
+    vsnipSupport: true,
   })
 enddef
 
@@ -34,9 +27,6 @@ export def Ensure(ft: string)
     return
   endif
   registered[name] = true
-  if !exists('*g:LspAddServer')
-    return
-  endif
   Options()
   var found = globpath(&runtimepath, $'lang/{name}.vim', false, true)
   if !empty(found)
@@ -44,14 +34,7 @@ export def Ensure(ft: string)
   endif
 enddef
 
-export def Registered(): list<string>
-  return sort(registered->items()->mapnew((_, v) => v[0]))
-enddef
-
 export def Maps()
-  if !exists('*g:LspAddServer')
-    return
-  endif
   nnoremap <silent><buffer> gd <Cmd>LspGotoDefinition<CR>
   nnoremap <silent><buffer> gr <Cmd>LspShowReferences<CR>
   nnoremap <silent><buffer> gI <Cmd>LspGotoImpl<CR>
@@ -95,8 +78,7 @@ def AfterWhitespace(): bool
 enddef
 
 def SnippetReady(direction: number): bool
-  return exists('g:loaded_vsnip')
-    && (vsnip#jumpable(direction) || (direction > 0 && vsnip#expandable()))
+  return vsnip#jumpable(direction) || (direction > 0 && vsnip#expandable())
 enddef
 
 export def SnippetAdvance(direction: number)

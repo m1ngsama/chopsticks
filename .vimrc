@@ -204,6 +204,7 @@ if !empty(globpath(&runtimepath, 'autoload/plug.vim'))
     call plug#end()
 endif
 
+packadd! editorconfig
 filetype plugin indent on
 syntax enable
 

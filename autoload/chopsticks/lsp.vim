@@ -29,7 +29,7 @@ enddef
 
 export def Ensure(ft: string)
   var name = ALIASES->get(ft, ft)
-  if registered->has_key(name) || !SERVERS->has_key(name)
+  if registered->has_key(name) || !SERVERS->has_key(name) || !exists('g:loaded_lsp')
     return
   endif
   registered[name] = true
@@ -89,7 +89,8 @@ def AfterWhitespace(): bool
 enddef
 
 def SnippetReady(direction: number): bool
-  return vsnip#jumpable(direction) || (direction > 0 && vsnip#expandable())
+  return exists('g:loaded_vsnip')
+    && (vsnip#jumpable(direction) || (direction > 0 && vsnip#expandable()))
 enddef
 
 export def SnippetAdvance(direction: number)

@@ -111,13 +111,17 @@ export def Setup()
   setlocal wrap linebreak breakindent textwidth=0 colorcolumn=0
   setlocal norelativenumber nolist signcolumn=auto foldlevel=99
   setlocal spell spelllang=en_us,cjk
-  pencil#init({wrap: 'soft'})
+  if exists('g:loaded_pencil')
+    pencil#init({wrap: 'soft'})
+  endif
   setlocal conceallevel=0
-  imap <silent><buffer> <CR> <Plug>(bullets-newline)
-  nmap <silent><buffer> o <Plug>(bullets-newline)
-  nmap <silent><buffer> gN <Plug>(bullets-renumber)
-  xmap <silent><buffer> gN <Plug>(bullets-renumber)
-  nmap <silent><buffer> <localleader>x <Plug>(bullets-toggle-checkbox)
+  if !empty(maparg('<Plug>(bullets-newline)', 'i'))
+    imap <silent><buffer> <CR> <Plug>(bullets-newline)
+    nmap <silent><buffer> o <Plug>(bullets-newline)
+    nmap <silent><buffer> gN <Plug>(bullets-renumber)
+    xmap <silent><buffer> gN <Plug>(bullets-renumber)
+    nmap <silent><buffer> <localleader>x <Plug>(bullets-toggle-checkbox)
+  endif
   nnoremap <silent><buffer> <localleader>o :Toc<CR>
   nnoremap <silent><buffer> <localleader>O :InsertToc 3<CR>
   nnoremap <silent><buffer> <localleader>tt :TableModeToggle<CR>
@@ -140,7 +144,9 @@ enddef
 export def ProseSetup()
   setlocal wrap linebreak breakindent textwidth=0 colorcolumn=0
   setlocal norelativenumber
-  pencil#init({wrap: 'soft'})
+  if exists('g:loaded_pencil')
+    pencil#init({wrap: 'soft'})
+  endif
   if &filetype ==# 'gitcommit' || &filetype ==# 'mail'
     setlocal spell spelllang=en_us,cjk
   endif

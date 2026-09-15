@@ -6,7 +6,7 @@ export def Apply(): void
   g:everforest_enable_italic = 1
   g:everforest_ui_contrast = 'high'
   g:everforest_current_word = 'high contrast background'
-  colorscheme everforest
+  silent! colorscheme everforest
 enddef
 
 def HighlightColor(group: string, attribute: string, fallback: string): string

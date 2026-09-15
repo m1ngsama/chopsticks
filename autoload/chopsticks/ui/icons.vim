@@ -121,7 +121,7 @@ enddef
 var file_icon_cache = {}
 
 export def FileIcon(path: string): string
-  if !ENABLED
+  if !ENABLED || !exists('g:loaded_nerdfont')
     return ''
   endif
   var key = empty(path) ? '[No Name]' : path

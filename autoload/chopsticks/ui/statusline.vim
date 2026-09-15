@@ -119,6 +119,15 @@ def WritingMode(buffer: number, window: number): string
   return empty(parts) ? '' : ' ' .. join(parts, ' ') .. ' '
 enddef
 
+def SearchCount(): string
+  if !v:hlsearch || empty(@/)
+    return ''
+  endif
+  var count = searchcount({maxcount: 999, timeout: 10})
+  return get(count, 'total', 0) == 0 ? '' : printf('%%#ChopStatusAccent# %d/%s ', count.current,
+    count.incomplete > 0 ? '>' .. count.maxcount : string(count.total))
+enddef
+
 def BufferFlags(buffer: number): string
   var parts = []
   if getbufvar(buffer, '&modified')
@@ -180,6 +189,7 @@ export def Render(): string
     line ..= empty(writing) ? '' : '%#ChopStatusMuted#' .. writing
   endif
   line ..= '%#ChopStatusBody#%='
+  line ..= context.active ? SearchCount() : ''
   line ..= Diagnostics(context.bufnr)
   if density ==# 'rich'
     line ..= GitDiff(context.bufnr)

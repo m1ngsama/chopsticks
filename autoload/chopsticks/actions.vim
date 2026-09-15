@@ -39,6 +39,29 @@ export def ToggleLocationList()
   endtry
 enddef
 
+export def DeleteBuffer()
+  var target = bufnr('%')
+  if &buftype !=# ''
+    execute 'bdelete ' .. target
+    return
+  endif
+  if getbufvar(target, '&modified')
+    echohl WarningMsg
+    echomsg 'chopsticks: write or undo the changes first'
+    echohl None
+    return
+  endif
+  var files = getbufinfo({buflisted: 1})
+    ->filter((_, b) => b.bufnr != target && getbufvar(b.bufnr, '&buftype') ==# '')
+    ->mapnew((_, b) => b.bufnr)
+  var alternate = index(files, bufnr('#')) >= 0 ? bufnr('#') : get(files, 0, -1)
+  for window in win_findbuf(target)
+    win_execute(window, alternate < 0 ? 'enew' : 'buffer ' .. alternate)
+    alternate = alternate < 0 ? winbufnr(window) : alternate
+  endfor
+  execute 'bdelete ' .. target
+enddef
+
 export def DeleteOtherBuffers()
   var current = bufnr('%')
   var deleted = 0

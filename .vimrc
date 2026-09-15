@@ -485,7 +485,7 @@ call s:LeaderN(['x', 'q'], ':call chopsticks#actions#ToggleQuickfix()<CR>', 'Dia
 call s:LeaderN(['x', 'l'], ':call chopsticks#actions#ToggleLocationList()<CR>', 'Diagnostics', 'Toggle location list')
 
 call s:LeaderN(['b', 'b'], ':buffer #<CR>', 'Buffers', 'Switch to other buffer')
-call s:LeaderN(['b', 'd'], ':bdelete<CR>', 'Buffers', 'Delete buffer')
+call s:LeaderN(['b', 'd'], ':call chopsticks#actions#DeleteBuffer()<CR>', 'Buffers', 'Delete buffer')
 call s:LeaderN(['b', 'n'], ':bnext<CR>', 'Buffers', 'Next buffer')
 call s:LeaderN(['b', 'p'], ':bprevious<CR>', 'Buffers', 'Previous buffer')
 call s:LeaderN(['b', 'o'], ':call chopsticks#actions#DeleteOtherBuffers()<CR>', 'Buffers', 'Delete other unmodified buffers')

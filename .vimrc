@@ -38,16 +38,6 @@ let s:is_remote = !empty($SSH_CONNECTION) || !empty($SSH_CLIENT) || !empty($SSH_
 let s:is_rich_terminal = !s:is_remote && has('termguicolors')
     \ && ($COLORTERM ==# 'truecolor' || $COLORTERM ==# '24bit')
 
-function! s:NormalizeDirectory(value, fallback) abort
-    let l:value = type(a:value) == type('') && !empty(a:value)
-        \ ? a:value : a:fallback
-    let l:directory = simplify(fnamemodify(expand(l:value), ':p'))
-    if l:directory !~# '[/\\]$'
-        let l:directory .= s:is_windows && l:directory =~# '\\' ? '\' : '/'
-    endif
-    return l:directory
-endfunction
-
 function! s:DirectoryFileType(path) abort
     let l:path = substitute(a:path, '[/\\]$', '', '')
     if empty(l:path)
@@ -58,87 +48,9 @@ function! s:DirectoryFileType(path) abort
     return getftype(l:path)
 endfunction
 
-let s:default_data_dir = s:is_windows ? '~/vimfiles' : '~/.vim'
-let g:chopsticks_data_dir = s:NormalizeDirectory(
-    \ get(g:, 'chopsticks_data_dir', s:default_data_dir),
-    \ s:default_data_dir)
+set clipboard+=unnamed
 
-let s:local_config = get(g:, 'chopsticks_local_config',
-    \ g:chopsticks_data_dir . 'chopsticks.local.vim')
-if type(s:local_config) == type('') && !empty(s:local_config)
-    let s:local_config = expand(s:local_config)
-    if filereadable(s:local_config)
-        execute 'source ' . fnameescape(s:local_config)
-    endif
-endif
-unlet s:local_config
-
-let g:chopsticks_data_dir = s:NormalizeDirectory(
-    \ get(g:, 'chopsticks_data_dir', s:default_data_dir),
-    \ s:default_data_dir)
-
-let g:chopsticks_markdown_spell = get(g:, 'chopsticks_markdown_spell', 1)
-let g:chopsticks_markdown_conceal = get(g:, 'chopsticks_markdown_conceal', 0)
-let g:chopsticks_markdown_image_dir = get(g:, 'chopsticks_markdown_image_dir', 'assets')
-let g:chopsticks_auto_lint = get(g:, 'chopsticks_auto_lint', 0)
-let g:chopsticks_cmdline_autocomplete =
-    \ get(g:, 'chopsticks_cmdline_autocomplete', 1)
-let g:chopsticks_autocomplete = get(g:, 'chopsticks_autocomplete', 0)
-let g:chopsticks_long_line_threshold =
-    \ get(g:, 'chopsticks_long_line_threshold', 4096)
-let g:chopsticks_colorscheme = get(g:, 'chopsticks_colorscheme', 'everforest')
-let g:chopsticks_transparent_background = get(g:, 'chopsticks_transparent_background', 'auto')
-let g:chopsticks_dashboard = get(g:, 'chopsticks_dashboard', 'auto')
-let g:chopsticks_bufferline = get(g:, 'chopsticks_bufferline', 'auto')
-let g:chopsticks_window_labels = get(g:, 'chopsticks_window_labels', 'auto')
-let g:chopsticks_system_clipboard = get(g:, 'chopsticks_system_clipboard', 'auto')
-let s:default_session_dir = g:chopsticks_data_dir . '.sessions'
-let g:chopsticks_session_dir = get(g:, 'chopsticks_session_dir',
-    \ s:default_session_dir)
-let g:chopsticks_session_dir = s:NormalizeDirectory(
-    \ g:chopsticks_session_dir, s:default_session_dir)
-let g:chopsticks_icons = get(g:, 'chopsticks_icons', 'auto')
-let g:chopsticks_use_fern = get(g:, 'chopsticks_use_fern', 1)
-
-function! s:ResolveSwitch(value, automatic) abort
-    if type(a:value) == type(0)
-        return a:value != 0
-    elseif type(a:value) == type(v:true)
-        return a:value
-    elseif type(a:value) == type('')
-        let l:value = tolower(a:value)
-        if index(['0', 'off', 'false', 'no'], l:value) >= 0
-            return 0
-        elseif index(['1', 'on', 'true', 'yes'], l:value) >= 0
-            return 1
-        endif
-    endif
-    return a:automatic
-endfunction
-
-let g:chopsticks_auto_lint = s:ResolveSwitch(
-    \ g:chopsticks_auto_lint, 0)
-let g:chopsticks_cmdline_autocomplete = s:ResolveSwitch(
-    \ g:chopsticks_cmdline_autocomplete, 1)
-let g:chopsticks_autocomplete = s:ResolveSwitch(g:chopsticks_autocomplete, 0)
-
-let s:clipboard_auto_enabled = !s:is_remote && has('clipboard')
-    \ && (has('macunix') || has('win32') || has('win64')
-    \     || !empty($DISPLAY) || !empty($WAYLAND_DISPLAY))
-let s:clipboard_flag = has('unnamedplus') ? 'unnamedplus' : 'unnamed'
-if has('clipboard')
-    \ && s:ResolveSwitch(g:chopsticks_system_clipboard,
-    \     s:clipboard_auto_enabled)
-    \ && index(split(&clipboard, ','), s:clipboard_flag) < 0
-    execute 'set clipboard+=' . s:clipboard_flag
-endif
-unlet s:clipboard_auto_enabled s:clipboard_flag
-
-function! ChopsticksDashboardEnabled() abort
-    return s:ResolveSwitch(g:chopsticks_dashboard, 1)
-endfunction
-
-let g:fern#renderer = chopsticks#ui#icons#Enabled() ? 'nerdfont' : 'default'
+let g:fern#renderer = 'nerdfont'
 let g:fern#renderer#nerdfont#indent_markers = 1
 let g:fern#renderer#nerdfont#leading = '  '
 let g:fern#renderer#nerdfont#padding = ' '
@@ -172,27 +84,20 @@ let g:netrw_keepdir = 0
 let g:netrw_list_hide = '\(^\|\s\s\)\zs\.\S\+'
 let g:netrw_list_hide .= ',\.pyc$,node_modules,\.git,__pycache__,\.DS_Store,dist,build'
 
-let g:vsnip_snippet_dir = g:chopsticks_data_dir . 'vsnip'
+let g:vsnip_snippet_dir = expand('~/.vim/vsnip')
 
 let g:fuzzbox_mappings = 0
 let g:fuzzbox_preview = s:is_remote ? 0 : 1
-let g:fuzzbox_devicons = chopsticks#ui#icons#Enabled()
+let g:fuzzbox_devicons = 1
 let g:fuzzbox_borderchars = ['─', '│', '─', '│', '╭', '╮', '╯', '╰']
 let g:fuzzbox_keymaps = {'exit': ["\<Esc>", "\<C-c>", "\<C-g>", "\<C-q>"]}
 let g:fuzzbox_window_defaults = {'width': 0.92, 'height': 0.84}
 
-let s:default_finder_exclude = [
-    \ '.git', '.cache', '.cargo', '.npm', '.pnpm-store', '.rustup',
-    \ '.bun', '.codex', 'Library', 'node_modules', 'plugged',
-    \ '.venv', 'venv', '__pycache__', 'build', 'dist', 'target', 'vendor',
+let g:fuzzbox_files_exclude_dir = [
+    \ '.git/', '.cache/', '.cargo/', '.npm/', '.pnpm-store/', '.rustup/',
+    \ '.bun/', '.codex/', 'Library/', 'node_modules/', 'plugged/',
+    \ '.venv/', 'venv/', '__pycache__/', 'build/', 'dist/', 'target/', 'vendor/',
     \ ]
-let s:finder_exclude = get(g:, 'chopsticks_finder_exclude_dir',
-    \ s:default_finder_exclude)
-if type(s:finder_exclude) != type([])
-    let s:finder_exclude = s:default_finder_exclude
-endif
-let g:fuzzbox_files_exclude_dir = map(copy(s:finder_exclude),
-    \ 'v:val =~# "/$" ? v:val : v:val . "/"')
 
 let g:ale_disable_lsp = 1
 let g:ale_linters_explicit = 1
@@ -222,9 +127,9 @@ let g:ale_fixers = {
     \ 'markdown': ['prettier'],
     \ }
 let g:ale_fix_on_save = 0
-let g:ale_lint_on_save = g:chopsticks_auto_lint
-let g:ale_lint_on_enter = g:chopsticks_auto_lint
-let g:ale_lint_on_filetype_changed = g:chopsticks_auto_lint
+let g:ale_lint_on_save = 0
+let g:ale_lint_on_enter = 0
+let g:ale_lint_on_filetype_changed = 0
 let g:ale_lint_on_insert_leave = 0
 let g:ale_lint_on_text_changed = 'never'
 let g:ale_virtualtext_cursor = 'disabled'
@@ -235,7 +140,7 @@ let g:ale_sign_info = chopsticks#ui#icons#Get('info')
 
 let g:vim_markdown_folding_disabled = 1
 let g:vim_markdown_toc_autofit = 1
-let g:vim_markdown_conceal = g:chopsticks_markdown_conceal
+let g:vim_markdown_conceal = 0
 let g:vim_markdown_conceal_code_blocks = 0
 let g:vim_markdown_frontmatter = 1
 let g:vim_markdown_toml_frontmatter = 1
@@ -285,10 +190,10 @@ let g:limelight_default_coefficient = 0.7
 let g:limelight_paragraph_span = 1
 let g:limelight_priority = -1
 
-let s:vim_plug = g:chopsticks_data_dir . 'autoload/plug.vim'
+let s:vim_plug = expand('~/.vim/autoload/plug.vim')
 if filereadable(s:vim_plug)
     execute 'source ' . fnameescape(s:vim_plug)
-    call plug#begin(g:chopsticks_data_dir . 'plugged')
+    call plug#begin('~/.vim/plugged')
 
     Plug 'vim-fuzzbox/fuzzbox.vim', {'commit': '4f9f653158b1d27e6217c97a9da6fbcc00c31cb3'}
     Plug 'lambdalisue/vim-fern', {'commit': '3bbca3c87a57cdc87495b91a695b8eda722a1de1'}
@@ -342,11 +247,7 @@ set scrolloff=10 sidescrolloff=5 nowrap
 set incsearch hlsearch ignorecase smartcase
 set noexrc nomodeline
 set showcmd showmatch wildmenu wildignorecase
-if g:chopsticks_cmdline_autocomplete
-    set wildmode=noselect:lastused,full
-else
-    set wildmode=longest:full,full
-endif
+set wildmode=noselect:lastused,full
 set wildignore=*.pyc
 set wildignore+=*/node_modules/*,*/.git/*,*/__pycache__/*,*/dist/*,*/build/*
 set mouse=a
@@ -367,10 +268,6 @@ set complete-=i
 set completeopt=menuone,noinsert,noselect
 if exists('*popup_create')
     set completeopt+=popup
-endif
-if g:chopsticks_autocomplete && exists('+autocomplete')
-    set complete=.^5,w^5,b^5,u^5
-    set autocomplete
 endif
 set pumheight=15
 set shortmess+=cI
@@ -415,11 +312,11 @@ if executable('rg') == 1
 endif
 
 let s:state_dirs = {
-    \ 'backup': g:chopsticks_data_dir . '.backup',
-    \ 'swap': g:chopsticks_data_dir . '.swap',
-    \ 'undo': g:chopsticks_data_dir . '.undo',
-    \ 'view': g:chopsticks_data_dir . '.view',
-    \ 'session': g:chopsticks_session_dir,
+    \ 'backup': expand('~/.vim/.backup'),
+    \ 'swap': expand('~/.vim/.swap'),
+    \ 'undo': expand('~/.vim/.undo'),
+    \ 'view': expand('~/.vim/.view'),
+    \ 'session': expand('~/.vim/.sessions'),
     \ }
 for s:state_dir in values(s:state_dirs)
     silent! call mkdir(s:state_dir, 'p', 0700)
@@ -476,14 +373,6 @@ endfunction
 
 function! ChopsticksWordCount(...) abort
     return call('chopsticks#ui#statusline#WordCount', a:000)
-endfunction
-
-function! ChopsticksBufferlineEnabled() abort
-    return s:ResolveSwitch(g:chopsticks_bufferline, 1)
-endfunction
-
-function! ChopsticksWindowLabelsEnabled() abort
-    return s:ResolveSwitch(g:chopsticks_window_labels, 1)
 endfunction
 
 set statusline=%!ChopsticksStatusline()
@@ -611,12 +500,10 @@ inoremap <silent><expr> <S-Tab> chopsticks#lsp#CompletionBackTab()
 snoremap <silent><expr> <Tab> chopsticks#lsp#SelectTab(1)
 snoremap <silent><expr> <S-Tab> chopsticks#lsp#SelectTab(-1)
 
-if g:chopsticks_cmdline_autocomplete
-    cnoremap <expr> <Up> wildmenumode() ? "\<C-e>\<Up>" : "\<Up>"
-    cnoremap <expr> <Down> wildmenumode() ? "\<C-e>\<Down>" : "\<Down>"
-    call chopsticks#keys#Catalog('Essentials', 'c', 'Tab / Up / Down',
-        \ 'Command-line suggestions, then history')
-endif
+cnoremap <expr> <Up> wildmenumode() ? "\<C-e>\<Up>" : "\<Up>"
+cnoremap <expr> <Down> wildmenumode() ? "\<C-e>\<Down>" : "\<Down>"
+call chopsticks#keys#Catalog('Essentials', 'c', 'Tab / Up / Down',
+    \ 'Command-line suggestions, then history')
 
 nnoremap <silent> <C-s> :update<CR>
 inoremap <silent> <C-s> <C-o>:update<CR>
@@ -866,9 +753,7 @@ augroup Chopsticks
     autocmd QuickFixCmdPost l* lwindow
     autocmd FileType fern call chopsticks#explorer#FernSetup()
     autocmd FileType which_key call chopsticks#keys#Setup()
-    if g:chopsticks_cmdline_autocomplete
-        autocmd CmdlineChanged [:\/\?] call wildtrigger()
-    endif
+    autocmd CmdlineChanged [:\/\?] call wildtrigger()
     autocmd FileType netrw setlocal bufhidden=wipe
     autocmd FileType qf nnoremap <silent><buffer> q :close<CR>
     autocmd BufNewFile,BufRead *.mdx setfiletype markdown
@@ -883,9 +768,6 @@ augroup Chopsticks
     autocmd FileType sh setlocal expandtab shiftwidth=2 tabstop=2 softtabstop=2 textwidth=80
     autocmd FileType make setlocal noexpandtab shiftwidth=8 tabstop=8 softtabstop=0
     autocmd User LspAttached call chopsticks#lsp#Maps()
-    if g:chopsticks_autocomplete && exists('+autocomplete')
-        autocmd User LspAttached setlocal complete+=o
-    endif
     autocmd FileType * call chopsticks#lsp#Ensure(expand('<amatch>'))
     autocmd User GoyoEnter nested call chopsticks#markdown#GoyoEnter()
     autocmd User GoyoLeave nested call chopsticks#markdown#GoyoLeave()

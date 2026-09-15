@@ -1,6 +1,7 @@
 vim9script
 
 const IsWindows: bool = has('win32') || has('win64')
+const SESSION_DIR = expand('~/.vim/.sessions/')
 
 def NormalizeDirectory(value: string, fallback: string): string
   var chosen = empty(value) ? fallback : value
@@ -62,7 +63,7 @@ export def Path(): string
   name = strpart(name, 0, 64)
   var filename = printf('%s-%s-vim%d.vim', name,
     SessionDigest(root), v:version)
-  return simplify(g:chopsticks_session_dir .. filename)
+  return simplify(SESSION_DIR .. filename)
 enddef
 
 def SessionPermissionsAreSafe(path: string): bool
@@ -76,8 +77,8 @@ def SessionPermissionsAreSafe(path: string): bool
 enddef
 
 def SessionDirectoryIsSafe(): bool
-  return DirectoryFileType(g:chopsticks_session_dir) ==# 'dir'
-    && SessionPermissionsAreSafe(g:chopsticks_session_dir)
+  return DirectoryFileType(SESSION_DIR) ==# 'dir'
+    && SessionPermissionsAreSafe(SESSION_DIR)
 enddef
 
 def SessionPathIsSafe(path: string): bool
@@ -94,15 +95,15 @@ export def Save(): void
     echohl None
     return
   endif
-  mkdir(g:chopsticks_session_dir, 'p', 0o700)
-  if DirectoryFileType(g:chopsticks_session_dir) !=# 'dir'
+  mkdir(SESSION_DIR, 'p', 0o700)
+  if DirectoryFileType(SESSION_DIR) !=# 'dir'
     echohl ErrorMsg
     echom 'chopsticks: session directory is not a regular directory'
     echohl None
     return
   endif
   if exists('*setfperm')
-    setfperm(g:chopsticks_session_dir, 'rwx------')
+    setfperm(SESSION_DIR, 'rwx------')
   endif
   if !SessionDirectoryIsSafe()
     echohl ErrorMsg

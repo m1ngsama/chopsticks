@@ -1,8 +1,5 @@
 vim9script
 
-import autoload 'chopsticks/ui/icons.vim'
-import autoload 'chopsticks/switch.vim'
-
 const IS_WINDOWS = has('win32') || has('win64')
 
 var directory_startup_opened = false
@@ -18,7 +15,7 @@ def ExplorerWindow(): number
 enddef
 
 export def FernAvailable(): bool
-  return switch.Truthy(get(g:, 'chopsticks_use_fern', 1)) && exists(':Fern') == 2
+  return exists(':Fern') == 2
 enddef
 
 def PathInside(path_value: string, directory_value: string): bool
@@ -89,12 +86,10 @@ export def FernSetup()
   nmap <silent><buffer> R <Plug>(fern-action-reload:all)
   nnoremap <silent><buffer> q :close<CR>
   nnoremap <silent><buffer> <Esc> :close<CR>
-  if icons.Enabled()
-    try
-      glyph_palette#apply()
-    catch /^Vim\%((\a\+)\)\=:E117/
-    endtry
-  endif
+  try
+    glyph_palette#apply()
+  catch /^Vim\%((\a\+)\)\=:E117/
+  endtry
 enddef
 
 export def Root()

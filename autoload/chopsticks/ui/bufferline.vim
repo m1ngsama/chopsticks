@@ -5,9 +5,7 @@ import autoload 'chopsticks/ui/icons.vim'
 import autoload 'chopsticks/ui/statusline.vim'
 
 export def Refresh()
-  &showtabline = &filetype ==# 'chopsticks-dashboard' || exists('t:goyo_master')
-    ? 0
-    : (g:ChopsticksBufferlineEnabled() ? 2 : 0)
+  &showtabline = &filetype ==# 'chopsticks-dashboard' || exists('t:goyo_master') ? 0 : 2
   execute 'redrawtabline'
 enddef
 

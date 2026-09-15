@@ -69,11 +69,8 @@ export def Refresh()
   if busy
     return
   endif
-  if !exists('*g:ChopsticksWindowLabelsEnabled')
-    return
-  endif
   var labelable = range(1, winnr('$'))->filter((_, nr) => Wanted(win_getid(nr)))
-  if !g:ChopsticksWindowLabelsEnabled() || len(labelable) < 2
+  if len(labelable) < 2
     Clear()
     return
   endif

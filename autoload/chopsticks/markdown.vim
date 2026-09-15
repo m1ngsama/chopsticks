@@ -2,7 +2,6 @@ vim9script
 
 import autoload 'chopsticks/ui/window.vim'
 import autoload 'chopsticks/keys.vim'
-import autoload 'chopsticks/switch.vim'
 import autoload 'chopsticks/ui/bufferline.vim'
 
 export def ToggleConceal()
@@ -46,7 +45,7 @@ export def PasteImage(requested_name: string)
   if name !~? '\.png$'
     name ..= '.png'
   endif
-  var relative_dir = g:chopsticks_markdown_image_dir
+  var relative_dir = 'assets'
   var absolute_dir = expand('%:p:h') .. '/' .. relative_dir
   var absolute_path = absolute_dir .. '/' .. name
   if filereadable(absolute_path)
@@ -86,9 +85,7 @@ export def Help()
   window.Scratch('[chopsticks-markdown]', sheet, 'chopsticks-cheatsheet')
 enddef
 
-def Threshold(): number
-  return switch.Number(g:chopsticks_long_line_threshold, 0)
-enddef
+const THRESHOLD = 4096
 
 def HasLongLine(): bool
   var lines = line('$')
@@ -96,17 +93,17 @@ def HasLongLine(): bool
     return false
   endif
   var bytes = line2byte(lines + 1)
-  if bytes > 0 && bytes / lines > Threshold()
+  if bytes > 0 && bytes / lines > THRESHOLD
     return true
   endif
   if lines > 2000
     return false
   endif
-  return max(mapnew(range(1, lines), (_, l) => col([l, '$']))) > Threshold()
+  return max(mapnew(range(1, lines), (_, l) => col([l, '$']))) > THRESHOLD
 enddef
 
 export def GuardLongLines()
-  if !exists('+breakindent') || Threshold() <= 0
+  if !exists('+breakindent')
     return
   endif
   if HasLongLine()
@@ -117,16 +114,11 @@ enddef
 export def Setup()
   setlocal wrap linebreak breakindent textwidth=0 colorcolumn=0
   setlocal norelativenumber nolist signcolumn=auto foldlevel=99
-  &l:conceallevel = switch.Truthy(g:chopsticks_markdown_conceal) ? 2 : 0
-  if switch.Truthy(g:chopsticks_markdown_spell)
-    setlocal spell spelllang=en_us,cjk
-  else
-    setlocal nospell
-  endif
+  setlocal spell spelllang=en_us,cjk
   if exists(':Pencil') == 2
     pencil#init({wrap: 'soft'})
-    &l:conceallevel = switch.Truthy(g:chopsticks_markdown_conceal) ? 2 : 0
   endif
+  setlocal conceallevel=0
 
   if !empty(maparg('<Plug>(bullets-newline)', 'i'))
     imap <silent><buffer> <CR> <Plug>(bullets-newline)

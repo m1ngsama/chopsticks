@@ -1,36 +1,13 @@
 vim9script
 
-def ResolveSwitch(value: any, automatic: number): number
-  if type(value) == v:t_number
-    return value != 0 ? 1 : 0
-  elseif type(value) == v:t_bool
-    return value ? 1 : 0
-  elseif type(value) == v:t_string
-    var lowered = tolower(value)
-    if index(['0', 'off', 'false', 'no'], lowered) >= 0
-      return 0
-    elseif index(['1', 'on', 'true', 'yes'], lowered) >= 0
-      return 1
-    endif
-  endif
-  return automatic
-enddef
-
-export def TransparencyEnabled(): number
-  return ResolveSwitch(g:chopsticks_transparent_background, 0)
-enddef
-
 export def Apply(): void
-  var scheme = type(g:chopsticks_colorscheme) == v:t_string
-    && !empty(g:chopsticks_colorscheme)
-    ? g:chopsticks_colorscheme : 'everforest'
-  if scheme ==# 'everforest'
-    g:everforest_background = get(g:, 'everforest_background', 'medium')
-    g:everforest_better_performance = 1
-    g:everforest_transparent_background = TransparencyEnabled()
-  endif
+  g:everforest_background = 'hard'
+  g:everforest_better_performance = 1
+  g:everforest_enable_italic = 1
+  g:everforest_ui_contrast = 'high'
+  g:everforest_current_word = 'high contrast background'
   try
-    execute 'colorscheme ' .. fnameescape(scheme)
+    colorscheme everforest
   catch /^Vim\%((\a\+)\)\=:E185/
     colorscheme default
   endtry
@@ -54,8 +31,6 @@ export def DefineInterfaceColors(): void
   var aqua = HighlightColor('Aqua', 'fg', HighlightColor('Identifier', 'fg', '#83c092'))
   var blue = HighlightColor('Blue', 'fg', HighlightColor('Function', 'fg', '#7fbbb3'))
   var purple = HighlightColor('Purple', 'fg', HighlightColor('Statement', 'fg', '#d699b6'))
-  var deep = TransparencyEnabled() ? 'NONE' : bg
-  var deep_cterm = TransparencyEnabled() ? 'NONE' : '234'
   execute 'highlight ChopStatusNormal ctermbg=106 ctermfg=234 cterm=bold guibg=' .. green .. ' guifg=' .. bg .. ' gui=bold'
   execute 'highlight ChopStatusInsert ctermbg=109 ctermfg=234 cterm=bold guibg=' .. blue .. ' guifg=' .. bg .. ' gui=bold'
   execute 'highlight ChopStatusVisual ctermbg=175 ctermfg=234 cterm=bold guibg=' .. purple .. ' guifg=' .. bg .. ' gui=bold'
@@ -70,7 +45,7 @@ export def DefineInterfaceColors(): void
   execute 'highlight ChopStatusGitChange ctermbg=237 ctermfg=180 cterm=none guibg=' .. surface .. ' guifg=' .. yellow .. ' gui=none'
   execute 'highlight ChopStatusGitDelete ctermbg=237 ctermfg=174 cterm=none guibg=' .. surface .. ' guifg=' .. red .. ' gui=none'
   execute 'highlight ChopStatusGit ctermbg=237 ctermfg=108 cterm=none guibg=' .. surface .. ' guifg=' .. aqua .. ' gui=none'
-  execute 'highlight ChopStatusMuted ctermbg=' .. deep_cterm .. ' ctermfg=108 cterm=none guibg=' .. deep .. ' guifg=' .. muted .. ' gui=none'
+  execute 'highlight ChopStatusMuted ctermbg=234 ctermfg=108 cterm=none guibg=' .. bg .. ' guifg=' .. muted .. ' gui=none'
   execute 'highlight ChopStatusPosition ctermbg=237 ctermfg=108 cterm=none guibg=' .. surface .. ' guifg=' .. muted .. ' gui=none'
   execute 'highlight ChopDashboardLogo ctermfg=109 cterm=none guifg=' .. blue .. ' gui=none'
   execute 'highlight ChopDashboardItem ctermfg=187 cterm=none guifg=' .. fg .. ' gui=none'
@@ -93,11 +68,4 @@ export def DefineInterfaceColors(): void
   execute 'highlight fuzzboxBorder ctermfg=108 guifg=' .. muted
   execute 'highlight fuzzboxMatching ctermfg=108 cterm=bold guifg=' .. green .. ' gui=bold'
   execute 'highlight fuzzboxSelectionSign ctermbg=237 guibg=' .. surface
-  if TransparencyEnabled()
-    highlight Normal ctermbg=NONE guibg=NONE
-    highlight NormalNC ctermbg=NONE guibg=NONE
-    highlight NonText ctermbg=NONE guibg=NONE
-    highlight EndOfBuffer ctermbg=NONE guibg=NONE
-    highlight SignColumn ctermbg=NONE guibg=NONE
-  endif
 enddef

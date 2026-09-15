@@ -1,59 +1,50 @@
 vim9script
 
-var auto_enabled = &encoding ==# 'utf-8'
-  && empty($SSH_CONNECTION) && empty($SSH_CLIENT) && empty($SSH_TTY)
-  && $TERM !=# 'dumb'
-  && (index(['iTerm.app', 'WezTerm', 'vscode'], $TERM_PROGRAM) >= 0
-    || !empty($KITTY_WINDOW_ID) || !empty($WEZTERM_PANE)
-    || !empty($WT_SESSION) || !empty($GHOSTTY_RESOURCES_DIR)
-    || $TERM =~# '\<\%(xterm-kitty\|xterm-ghostty\|wezterm\)\>')
-  ? 1 : 0
-
 var glyphs = {
-  'search': ['', '?'],
-  'new_file': ['', '+'],
-  'grep': ['', '/'],
-  'recent': ['', '~'],
-  'config': ['', '#'],
-  'session': ['', '@'],
-  'quit': ['', 'q'],
-  'file': ['', '-'],
-  'folder_open': ['', ''],
-  'git_branch': ['', 'git:'],
-  'git_add': ['', '+'],
-  'git_change': ['', '~'],
-  'git_delete': ['', '-'],
-  'error': ['', 'E'],
-  'warning': ['', 'W'],
-  'info': ['', 'I'],
-  'modified': ['●', '+'],
-  'readonly': ['', 'RO'],
-  'spell': ['󰓆', 'SPELL'],
-  'words': ['', 'w'],
-  'wrap': ['󰖶', 'WRAP'],
-  'startup': ['', '*'],
-  'marker': ['', '*'],
-  'save': ['', ''],
-  'clipboard': ['', ''],
-  'preview': ['', ''],
-  'group_help': ['', ''],
-  'group_link': ['', ''],
-  'group_home': ['', ''],
-  'group_find': ['', ''],
-  'group_buffer': ['󰓩', ''],
-  'group_window': ['', ''],
-  'group_file': ['󰈔', ''],
-  'group_git': ['', ''],
-  'group_code': ['', ''],
-  'group_check': ['󰒡', ''],
-  'group_run': ['', ''],
-  'group_term': ['', ''],
-  'group_toggle': ['', ''],
-  'group_edit': ['', ''],
-  'group_nav': ['', ''],
-  'group_markdown': ['', ''],
-  'group_table': ['', ''],
-  'group_quit': ['', ''],
+  'search': '',
+  'new_file': '',
+  'grep': '',
+  'recent': '',
+  'config': '',
+  'session': '',
+  'quit': '',
+  'file': '',
+  'folder_open': '',
+  'git_branch': '',
+  'git_add': '',
+  'git_change': '',
+  'git_delete': '',
+  'error': '',
+  'warning': '',
+  'info': '',
+  'modified': '●',
+  'readonly': '',
+  'spell': '󰓆',
+  'words': '',
+  'wrap': '󰖶',
+  'startup': '',
+  'marker': '',
+  'save': '',
+  'clipboard': '',
+  'preview': '',
+  'group_help': '',
+  'group_link': '',
+  'group_home': '',
+  'group_find': '',
+  'group_buffer': '󰓩',
+  'group_window': '',
+  'group_file': '󰈔',
+  'group_git': '',
+  'group_code': '',
+  'group_check': '󰒡',
+  'group_run': '',
+  'group_term': '',
+  'group_toggle': '',
+  'group_edit': '',
+  'group_nav': '',
+  'group_markdown': '',
+  'group_table': '',
+  'group_quit': '',
   }
 var group_glyphs = {
   'Essentials': 'group_home', 'Fast find': 'group_find',
@@ -70,29 +61,12 @@ var group_glyphs = {
   'Links': 'group_link',
   }
 
-export def Enabled(): number
-  if type(g:chopsticks_icons) == v:t_number
-    return g:chopsticks_icons != 0 ? 1 : 0
-  elseif type(g:chopsticks_icons) == v:t_bool
-    return g:chopsticks_icons ? 1 : 0
-  elseif type(g:chopsticks_icons) == v:t_string
-    var value = tolower(g:chopsticks_icons)
-    if index(['0', 'off', 'false', 'ascii'], value) >= 0
-      return 0
-    elseif index(['1', 'on', 'true', 'nerd'], value) >= 0
-      return 1
-    endif
-  endif
-  return auto_enabled
-enddef
-
 export def Get(name: string): string
-  var icon = get(glyphs, name, ['', ''])
-  return icon[Enabled() ? 0 : 1]
+  return get(glyphs, name, '')
 enddef
 
 export def Group(group: string): string
-  return Enabled() ? Get(get(group_glyphs, group, '')) : ''
+  return Get(get(group_glyphs, group, ''))
 enddef
 
 const ACTION_RULES = [
@@ -121,15 +95,12 @@ export def Action(description: string, group: string): string
     endif
   endfor
   var fallback = Group(group)
-  return !empty(fallback) || !Enabled() ? fallback : '·'
+  return empty(fallback) ? '·' : fallback
 enddef
 
 var file_icon_cache = {}
 
 export def FileIcon(path: string): string
-  if !Enabled()
-    return ''
-  endif
   var key = empty(path) ? '[No Name]' : path
   if !has_key(file_icon_cache, key)
     if empty(globpath(&runtimepath, 'autoload/nerdfont.vim'))

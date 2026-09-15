@@ -9,7 +9,7 @@ export def CaptureMs()
 enddef
 
 export def MaybeOpenDashboard()
-  if g:ChopsticksDashboardEnabled() && argc() == 0
+  if argc() == 0
       && bufname('%') ==# '' && &buftype ==# ''
       && line('$') == 1 && getline(1) ==# '' && !&modified
     chopsticks#ui#dashboard#Open()

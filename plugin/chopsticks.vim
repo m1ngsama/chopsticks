@@ -8,7 +8,6 @@ g:loaded_chopsticks = true
 import autoload 'chopsticks/clipboard.vim'
 import autoload 'chopsticks/session.vim'
 import autoload 'chopsticks/ui/icons.vim'
-import autoload 'chopsticks/ui/theme.vim'
 import autoload 'chopsticks/ui/dashboard.vim'
 
 def g:ChopsticksSystemClipboardEnabled(): number
@@ -17,14 +16,6 @@ enddef
 
 def g:ChopsticksIcon(name: string): string
   return icons.Get(name)
-enddef
-
-def g:ChopsticksIconsEnabled(): number
-  return icons.Enabled()
-enddef
-
-def g:ChopsticksTransparencyEnabled(): number
-  return theme.TransparencyEnabled()
 enddef
 
 def g:ChopsticksSessionPath(): string

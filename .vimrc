@@ -390,9 +390,9 @@ cnoremap <expr> <Down> wildmenumode() ? "\<C-e>\<Down>" : "\<Down>"
 call chopsticks#keys#Catalog('Essentials', 'c', 'Tab / Up / Down',
     \ 'Command-line suggestions, then history')
 
-nnoremap <silent> <C-s> :update<CR>
-inoremap <silent> <C-s> <C-o>:update<CR>
-xnoremap <silent> <C-s> :<C-u>update<CR>gv
+nnoremap <silent> <C-s> <Cmd>call chopsticks#actions#Save()<CR>
+inoremap <silent> <C-s> <Cmd>call chopsticks#actions#Save()<CR>
+xnoremap <silent> <C-s> <Cmd>call chopsticks#actions#Save()<CR>
 call chopsticks#keys#Catalog('Essentials', 'n/i/x', 'Ctrl-s', 'Save file')
 call s:LeaderN(['?'], ':ChopKeys<CR>', 'Essentials', 'Full cheatsheet')
 call s:LeaderN(['e'], ':call chopsticks#explorer#Root()<CR>', 'Files', 'Explore project root')
@@ -494,9 +494,9 @@ call s:LeaderN(['b', 'p'], ':bprevious<CR>', 'Buffers', 'Previous buffer')
 call s:LeaderN(['b', 'o'], ':call chopsticks#actions#DeleteOtherBuffers()<CR>', 'Buffers', 'Delete other unmodified buffers')
 
 call s:LeaderN(['f', 'n'], ':enew<CR>', 'Files', 'New file')
-call s:LeaderN(['f', 's'], ':update<CR>', 'Files', 'Save file')
+call s:LeaderN(['f', 's'], '<Cmd>call chopsticks#actions#Save()<CR>', 'Files', 'Save file')
 call s:LeaderN(['f', 'S'], ':wall<CR>', 'Files', 'Save all files')
-call s:LeaderN(['f', 'd'], ':lcd %:p:h<CR>:pwd<CR>', 'Files', 'Use file directory locally')
+call s:LeaderN(['f', 'd'], ':silent lcd %:p:h<Bar>echo fnamemodify(getcwd(), '':~'')<CR>', 'Files', 'Use file directory locally')
 call s:LeaderN(['f', 'e'], ':call chopsticks#explorer#Root()<CR>', 'Files', 'Explore project root')
 call s:LeaderN(['f', 'E'], ':call chopsticks#explorer#Here()<CR>', 'Files', 'Explore current file directory')
 call s:LeaderN(['f', 'v'], ':edit $MYVIMRC<CR>', 'Files', 'Edit Vim config')

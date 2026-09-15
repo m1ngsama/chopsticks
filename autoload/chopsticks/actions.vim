@@ -13,6 +13,17 @@ export def MakeParent(path: string)
   endif
 enddef
 
+export def Save()
+  if &buftype ==# '' && empty(bufname('%'))
+    var name = input('Save as: ', '', 'file')
+    if !empty(name)
+      execute 'saveas ' .. fnameescape(name)
+    endif
+  else
+    update
+  endif
+enddef
+
 export def ToggleQuickfix()
   for window in getwininfo()
     if get(window, 'quickfix', 0) && !get(window, 'loclist', 0)

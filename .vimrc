@@ -471,9 +471,9 @@ call s:LeaderN(['P'], '"0P', 'Editing', 'Paste last yank before cursor')
 call s:LeaderX(['p'], '"_dP', 'Editing', 'Paste without replacing yank')
 call chopsticks#keys#WhichKeyAdd(['p'], 'Editing', 'Paste without clobbering yank')
 call s:LeaderN(['v'], '`[v`]', 'Editing', 'Reselect last change')
-call s:LeaderN(['y'], '"+y', 'Editing', 'Yank to system clipboard')
-call s:LeaderX(['y'], '"+y', 'Editing', 'Yank to system clipboard')
-call s:LeaderN(['Y'], '"+Y', 'Editing', 'Yank line to system clipboard')
+call s:LeaderN(['y'], '<Cmd>set operatorfunc=chopsticks#actions#YankOperator<CR>g@', 'Editing', 'Yank to system clipboard')
+call s:LeaderX(['y'], 'y<Cmd>call chopsticks#actions#Clip()<CR>', 'Editing', 'Yank to system clipboard')
+call s:LeaderN(['Y'], '<Cmd>execute "normal! " . v:count1 . "yy"<Bar>call chopsticks#actions#Clip()<CR>', 'Editing', 'Yank line to system clipboard')
 call chopsticks#keys#Catalog('Editing', 'n', 'x', 'Delete character without changing registers')
 
 nnoremap n nzzzv

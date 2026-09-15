@@ -91,6 +91,21 @@ export def DeleteOtherBuffers()
   echo printf('buffers: deleted %d, kept %d modified', deleted, kept)
 enddef
 
+export def Clip()
+  if !empty(&clipboard)
+    setreg('+', getreg('"', 1, 1), getregtype('"'))
+    return
+  endif
+  var lines = getreg('"', 1, 1) + (getregtype('"') ==# 'V' ? [''] : [])
+  echoraw("\e]52;c;" .. base64_encode(str2blob(lines)) .. "\x07")
+enddef
+
+export def YankOperator(type: string)
+  var mode = type ==# 'line' ? "'[V']" : type ==# 'block' ? "`[\<C-v>`]" : '`[v`]'
+  execute 'normal! ' .. mode .. 'y'
+  Clip()
+enddef
+
 export def CopyPath(relative: bool)
   if empty(expand('%:p'))
     echohl WarningMsg
@@ -99,8 +114,8 @@ export def CopyPath(relative: bool)
     return
   endif
   var path = relative ? fnamemodify(expand('%:p'), ':.') : expand('%:p')
-  setreg('+', path)
   setreg('"', path)
+  Clip()
   var shown = relative ? path : fnamemodify(path, ':~')
   echo 'copied: ' .. (strwidth(shown) < &columns - 10 ? shown : pathshorten(shown))
 enddef

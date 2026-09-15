@@ -3,8 +3,8 @@ vim9script
 const SESSION_DIR = expand('~/.vim/.sessions/')
 
 export def ProjectRoot(): string
-  var directory = empty(expand('%:p')) ? getcwd() : expand('%:p:h')
-  while directory !=# '/'
+  var directory = &buftype ==# '' && !empty(expand('%:p')) ? expand('%:p:h') : getcwd()
+  while directory !=# fnamemodify(directory, ':h')
     if !empty(getftype(directory .. '/.git'))
       return directory .. '/'
     endif

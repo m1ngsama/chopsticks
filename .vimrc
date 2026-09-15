@@ -462,8 +462,8 @@ xnoremap <C-u> <C-u>zz
 call chopsticks#keys#Catalog('Navigation', 'n', 'n / N', 'Search result centered')
 call chopsticks#keys#Catalog('Navigation', 'n/x', 'Ctrl-d / Ctrl-u', 'Half-page centered')
 
-nnoremap <silent> [<Space> :<C-u>put! =repeat(nr2char(10), v:count1)<CR>'[
-nnoremap <silent> ]<Space> :<C-u>put =repeat(nr2char(10), v:count1)<CR>
+nnoremap <silent> [<Space> :<C-u>put! =repeat(nr2char(10), v:count1)<CR>']+
+nnoremap <silent> ]<Space> :<C-u>put =repeat(nr2char(10), v:count1)<CR>'[-
 call chopsticks#keys#Catalog('Editing', 'n', '[SPC / ]SPC', 'Insert blank line above / below')
 call s:LeaderN(['s', 'r'], ':%s/\<<C-r><C-w>\>//g<Left><Left>', 'Search', 'Replace word under cursor')
 call s:LeaderX(['s', 'r'], ':s///g<Left><Left><Left>', 'Search', 'Replace in selection')

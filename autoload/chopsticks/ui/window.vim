@@ -17,7 +17,7 @@ def Legend(lines: list<string>): number
   return height
 enddef
 
-export def Filtered(lines: list<string>, query: string): list<string>
+def Filtered(lines: list<string>, query: string): list<string>
   if empty(query)
     return lines
   endif
@@ -44,7 +44,7 @@ export def Filtered(lines: list<string>, query: string): list<string>
     + (empty(kept) ? ['', '  no key matches ' .. query] : kept)
 enddef
 
-export def Keystrokes(row: string): string
+def Keystrokes(row: string): string
   var column = matchstr(row, '^\s\+\zs.\{-}\ze\s\{2,}')
   column = substitute(column, '^[^\x00-\x7F]\+\s*', '', '')
   if empty(column) || column =~# '/'

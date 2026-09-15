@@ -1,5 +1,7 @@
 vim9script
 
+import autoload 'chopsticks/session.vim'
+
 var directory_startup_opened = false
 
 def PathInside(path_value: string, directory_value: string): bool
@@ -51,7 +53,7 @@ export def FernSetup()
 enddef
 
 export def Root()
-  Toggle(g:ChopsticksProjectRoot())
+  Toggle(session.ProjectRoot())
 enddef
 
 export def Here()

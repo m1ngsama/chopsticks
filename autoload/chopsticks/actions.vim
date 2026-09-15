@@ -1,5 +1,6 @@
 vim9script
 
+import autoload 'chopsticks/session.vim'
 import autoload 'chopsticks/ui/window.vim'
 
 export def MakeParent(path: string)
@@ -70,5 +71,5 @@ export def CopyPath(relative: bool)
 enddef
 
 export def Lazygit()
-  window.Terminal(['lazygit', '--path', g:ChopsticksProjectRoot()], 'tab')
+  window.Terminal(['lazygit', '--path', session.ProjectRoot()], 'tab')
 enddef

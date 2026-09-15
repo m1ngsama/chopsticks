@@ -29,7 +29,7 @@ const STARTERS = [
 var catalog: list<dict<string>> = []
 var catalog_index: dict<number> = {}
 
-export def StarterCoverage(): list<string>
+def StarterCoverage(): list<string>
   var covered: list<string> = []
   for starter in STARTERS
     extend(covered, starter.covers)
@@ -192,7 +192,7 @@ export def Lines(): list<string>
   var sections: list<dict<any>> = [{group: 'Start here', entries: STARTERS}]
   sections->extend(Sections(GROUP_ORDER))
   return [
-    'chopsticks ' .. g:chopsticks_version .. ' cheatsheet',
+    'chopsticks cheatsheet',
     '',
     'SPC = Leader   , = Markdown LocalLeader',
     'Pause after SPC or , for the contextual key guide.',

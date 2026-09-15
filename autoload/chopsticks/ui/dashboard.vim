@@ -2,7 +2,7 @@ vim9script
 
 import autoload 'chopsticks/ui/text.vim'
 import autoload 'chopsticks/ui/icons.vim'
-import autoload 'chopsticks/startup.vim'
+import autoload 'chopsticks/session.vim'
 
 const LOGO = [
   '███╗   ███╗ ██╗███╗   ██╗ ██████╗ ███████╗ █████╗ ███╗   ███╗ █████╗',
@@ -34,8 +34,7 @@ def Items(density: string = 'rich'): list<dict<string>>
     ? ['f', 'n', 'r', 'c', 'q']
     : ['f', 'n', 'g', 'r', 'c', 's', 'q']
   var items = filter(copy(ITEMS), (_, item) => index(keys, item.key) >= 0)
-  if !exists('*g:ChopsticksSessionPath')
-      || !filereadable(g:ChopsticksSessionPath())
+  if !filereadable(session.Path())
     filter(items, (_, item) => item.key !=# 's')
   endif
   return items
@@ -65,7 +64,6 @@ def PluginStats(): list<number>
 enddef
 
 def Footer(): string
-  startup.CaptureMs()
   var [loaded, total] = PluginStats()
   return total > 0
     ? printf('%s Vim loaded %d/%d plugins in %.2fms',
@@ -317,7 +315,7 @@ enddef
 
 export def Open()
   if &filetype !=# 'chopsticks-dashboard'
-    var project_root = g:ChopsticksProjectRoot()
+    var project_root = session.ProjectRoot()
     silent keepalt enew
     silent file [chopsticks]
     setlocal buftype=nofile bufhidden=wipe noswapfile nobuflisted

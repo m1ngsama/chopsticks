@@ -1,19 +1,9 @@
 set encoding=utf-8
 scriptencoding utf-8
 
-if !exists('g:chopsticks_startup_started_at')
-    let g:chopsticks_startup_started_at = reltime()
-endif
-let g:chopsticks_version = '0.3.8'
-
+let g:chopsticks_startup_started_at = reltime()
 set t_RV= t_u7= t_RF= t_RB= ambiwidth=single
-
-let s:chopsticks_root = fnamemodify(resolve(expand('<sfile>:p')), ':h')
-if index(split(&runtimepath, ','), s:chopsticks_root) < 0
-    execute 'set runtimepath^=' . fnameescape(s:chopsticks_root)
-endif
-
-unlet s:chopsticks_root
+execute 'set runtimepath^=' . fnameescape(fnamemodify(resolve(expand('<sfile>:p')), ':h'))
 
 let g:mapleader = "\<Space>"
 let g:maplocalleader = ','
@@ -269,36 +259,8 @@ set termguicolors background=dark
 
 call chopsticks#ui#theme#Apply()
 
-function! ChopsticksStatusline() abort
-    return chopsticks#ui#statusline#Render()
-endfunction
-
-function! ChopsticksTabline() abort
-    return chopsticks#ui#bufferline#Render()
-endfunction
-
-function! ChopsticksGitDiff(...) abort
-    return call('chopsticks#ui#statusline#GitDiff', a:000)
-endfunction
-
-function! ChopsticksDiagnostics(...) abort
-    return call('chopsticks#ui#statusline#Diagnostics', a:000)
-endfunction
-
-function! ChopsticksWritingMode(...) abort
-    return call('chopsticks#ui#statusline#WritingMode', a:000)
-endfunction
-
-function! ChopsticksStatusSignals(...) abort
-    return call('chopsticks#ui#statusline#Signals', a:000)
-endfunction
-
-function! ChopsticksWordCount(...) abort
-    return call('chopsticks#ui#statusline#WordCount', a:000)
-endfunction
-
-set statusline=%!ChopsticksStatusline()
-set tabline=%!ChopsticksTabline()
+set statusline=%!chopsticks#ui#statusline#Render()
+set tabline=%!chopsticks#ui#bufferline#Render()
 call chopsticks#ui#bufferline#Refresh()
 
 function! s:HandleResize() abort
@@ -336,7 +298,6 @@ command! -nargs=* -complete=file ChopDebug
 
 call chopsticks#keys#Reset()
 let g:which_key_map = {}
-let g:which_key_local_map = {'name': chopsticks#keys#Group('Markdown')}
 
 function! s:LeaderN(parts, rhs, group, description) abort
     execute 'nnoremap <silent> <leader>' . join(a:parts, '') . ' ' . a:rhs
@@ -355,11 +316,10 @@ function! s:DirectN(lhs, rhs, label, group, description) abort
     call chopsticks#keys#Catalog(a:group, 'n', a:label, a:description)
 endfunction
 
-function! ChopsticksKeyLines() abort
-    return chopsticks#keys#Lines()
-endfunction
-
 command! ChopKeys call chopsticks#keys#Show()
+command! -bar ChopSave call chopsticks#session#Save()
+command! -bar -bang ChopLoad call chopsticks#session#Load(<bang>0)
+command! ChopDash call chopsticks#ui#dashboard#Open()
 
 let g:which_key_local_map = {
     \ 'name': chopsticks#keys#Group('Markdown'),
@@ -461,9 +421,7 @@ call s:DirectN('<C-Down>', ':resize -2<CR>', 'Ctrl-Down', 'Windows', 'Decrease h
 call s:DirectN('<C-Left>', ':vertical resize -2<CR>', 'Ctrl-Left', 'Windows', 'Decrease width')
 call s:DirectN('<C-Right>', ':vertical resize +2<CR>', 'Ctrl-Right', 'Windows', 'Increase width')
 call s:LeaderN(['-'], '<C-w>s', 'Windows', 'Split below')
-nnoremap <silent> <leader><Bar> <C-w>v
-call chopsticks#keys#WhichKeyAdd(['<Bar>'], 'Windows', 'Split right')
-call chopsticks#keys#Catalog('Windows', 'n', 'SPC |', 'Split right')
+call s:LeaderN(['<Bar>'], '<C-w>v', 'Windows', 'Split right')
 call s:LeaderN(['w', 'h'], '<C-w>h', 'Windows', 'Focus left window')
 call s:LeaderN(['w', 'j'], '<C-w>j', 'Windows', 'Focus lower window')
 call s:LeaderN(['w', 'k'], '<C-w>k', 'Windows', 'Focus upper window')
@@ -655,17 +613,9 @@ augroup Chopsticks
     autocmd FileType * call chopsticks#lsp#Ensure(expand('<amatch>'))
     autocmd User GoyoEnter nested call chopsticks#markdown#GoyoEnter()
     autocmd User GoyoLeave nested call chopsticks#markdown#GoyoLeave()
-augroup END
-
-augroup ChopsticksDirectory
-    autocmd!
     autocmd BufEnter * nested call chopsticks#explorer#MaybeOpenDirectory()
-augroup END
-
-augroup ChopsticksDashboard
-    autocmd!
-    autocmd VimEnter * call chopsticks#startup#CaptureMs()
-    autocmd VimEnter * call chopsticks#startup#MaybeOpenDashboard()
+    autocmd VimEnter * let g:chopsticks_startup_ms = reltimefloat(reltime(g:chopsticks_startup_started_at)) * 1000
+    autocmd VimEnter * if argc() == 0 && bufname('%') ==# '' && &buftype ==# '' && line('$') == 1 && getline(1) ==# '' && !&modified | call chopsticks#ui#dashboard#Open() | endif
 augroup END
 
 if &filetype ==# 'markdown'

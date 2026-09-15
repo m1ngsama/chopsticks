@@ -1,15 +1,17 @@
 vim9script
 
+import autoload 'chopsticks/session.vim'
+
 export def FindFiles()
-  fuzzbox#Launch('files', {cwd: g:ChopsticksProjectRoot()})
+  fuzzbox#Launch('files', {cwd: session.ProjectRoot()})
 enddef
 
 export def Grep(query: string)
-  fuzzbox#Launch('grep', {cwd: g:ChopsticksProjectRoot(), prompt_text: query})
+  fuzzbox#Launch('grep', {cwd: session.ProjectRoot(), prompt_text: query})
 enddef
 
 export def GitFiles()
-  var root = g:ChopsticksProjectRoot()
+  var root = session.ProjectRoot()
   system('git -C ' .. shellescape(root) .. ' rev-parse --is-inside-work-tree')
   if v:shell_error != 0
     echohl WarningMsg

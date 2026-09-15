@@ -2,6 +2,14 @@ vim9script
 
 import autoload 'chopsticks/keys.vim'
 
+const SERVERS = {
+  c: {name: 'clangd', filetype: ['c', 'cpp'], path: 'clangd', args: ['--background-index']},
+  go: {name: 'gopls', filetype: ['go'], path: 'gopls', args: ['serve'], syncInit: true},
+  python: {name: 'pyright', filetype: ['python'], path: 'pyright-langserver', args: ['--stdio']},
+  rust: {name: 'rust-analyzer', filetype: ['rust'], path: 'rust-analyzer', args: [], syncInit: true},
+  sh: {name: 'bash-language-server', filetype: ['sh'], path: 'bash-language-server', args: ['start']},
+  typescript: {name: 'typescript-language-server', filetype: ['typescript', 'javascript'], path: 'typescript-language-server', args: ['--stdio']},
+}
 const ALIASES = {cpp: 'c', javascript: 'typescript'}
 var registered: dict<bool> = {}
 
@@ -19,19 +27,13 @@ export def Options()
 enddef
 
 export def Ensure(ft: string)
-  if empty(ft)
-    return
-  endif
   var name = ALIASES->get(ft, ft)
-  if registered->has_key(name)
+  if registered->has_key(name) || !SERVERS->has_key(name)
     return
   endif
   registered[name] = true
   Options()
-  var found = globpath(&runtimepath, $'lang/{name}.vim', false, true)
-  if !empty(found)
-    execute 'source' fnameescape(found[0])
-  endif
+  g:LspAddServer([SERVERS[name]->extendnew({path: exepath(SERVERS[name].path)})])
 enddef
 
 export def Maps()

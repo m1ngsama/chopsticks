@@ -1,12 +1,5 @@
 vim9script
 
-# .vimrc calls Apply() and DefineInterfaceColors() at its own top level, before
-# plugin/chopsticks.vim exists, so it reaches them by dotted name. This module
-# therefore loads early in every startup rather than on a user action.
-#
-# ResolveSwitch duplicates .vimrc's s:ResolveSwitch(): Vim9 script-local names
-# cannot cross files, and this is the only piece of it needed here.
-
 def ResolveSwitch(value: any, automatic: number): number
   if type(value) == v:t_number
     return value != 0 ? 1 : 0
@@ -24,8 +17,6 @@ def ResolveSwitch(value: any, automatic: number): number
 enddef
 
 export def TransparencyEnabled(): number
-  # Terminals expose color depth, not whether their compositor is
-  # transparent.
   return ResolveSwitch(g:chopsticks_transparent_background, 0)
 enddef
 
@@ -55,8 +46,6 @@ export def DefineInterfaceColors(): void
   var bg = HighlightColor('Normal', 'bg', '#2d353b')
   var surface = HighlightColor('CursorLine', 'bg', '#343f44')
   var fg = HighlightColor('Normal', 'fg', '#d3c6aa')
-  # Everforest names its palette groups; other themes fall back to canonical
-  # syntax groups rather than to hard-coded colors.
   var muted = HighlightColor('Grey', 'fg', HighlightColor('Comment', 'fg', '#859289'))
   var red = HighlightColor('Red', 'fg', HighlightColor('ErrorMsg', 'fg', '#e67e80'))
   var orange = HighlightColor('Orange', 'fg', HighlightColor('Special', 'fg', '#e69875'))
@@ -65,9 +54,6 @@ export def DefineInterfaceColors(): void
   var aqua = HighlightColor('Aqua', 'fg', HighlightColor('Identifier', 'fg', '#83c092'))
   var blue = HighlightColor('Blue', 'fg', HighlightColor('Function', 'fg', '#7fbbb3'))
   var purple = HighlightColor('Purple', 'fg', HighlightColor('Statement', 'fg', '#d699b6'))
-  # The statusline's third background rank, recessed to the editor's own
-  # ground so neighbouring segments read as separate blocks. Transparent keeps
-  # it transparent: there the terminal shows through instead.
   var deep = TransparencyEnabled() ? 'NONE' : bg
   var deep_cterm = TransparencyEnabled() ? 'NONE' : '234'
   execute 'highlight ChopStatusNormal ctermbg=106 ctermfg=234 cterm=bold guibg=' .. green .. ' guifg=' .. bg .. ' gui=bold'
@@ -93,8 +79,6 @@ export def DefineInterfaceColors(): void
   execute 'highlight ChopDashboardCurrent ctermbg=237 cterm=none guibg=' .. surface .. ' gui=none'
   execute 'highlight ChopDashboardFooter ctermfg=180 cterm=italic guifg=' .. yellow .. ' gui=italic'
   execute 'highlight ChopDashboardStatus ctermbg=237 ctermfg=237 guibg=' .. surface .. ' guifg=' .. surface
-  # The cheatsheet's own groups, defined here with the rest so a live theme
-  # change repaints it: syntax/chopsticks-cheatsheet.vim only links to these.
   execute 'highlight ChopCheatTitle ctermfg=109 cterm=bold guifg=' .. blue .. ' gui=bold'
   execute 'highlight ChopCheatLegend ctermfg=108 cterm=italic guifg=' .. muted .. ' gui=italic'
   execute 'highlight ChopCheatGroup ctermfg=108 cterm=bold guifg=' .. aqua .. ' gui=bold'

@@ -1,15 +1,9 @@
 vim9script
 
-# Vim's tabline reused to list open file buffers. Render() runs on every tabline
-# redraw. .vimrc calls Refresh() from its own top level, which is why this
-# module's globals are declared there and not in plugin/chopsticks.vim.
-
 import autoload 'chopsticks/ui/text.vim'
 import autoload 'chopsticks/ui/icons.vim'
 import autoload 'chopsticks/ui/statusline.vim'
 
-# Terminals, quickfix, help and the dashboard all set 'buftype' and are not
-# open files.
 export def FileBufferCount(): number
   var total = 0
   for buffer in getbufinfo({buflisted: 1})
@@ -33,9 +27,6 @@ def RefreshTimer(id: number)
   endif
 enddef
 
-# Deferred by a zero-delay timer so the count reflects the buffer list after
-# the current command finishes, not part-way through it: a :bdelete or an
-# :argadd is not visible in getbufinfo() until its autocommands have run.
 export def ScheduleRefresh()
   if exists('*timer_start')
     timer_start(0, RefreshTimer)
@@ -44,9 +35,6 @@ export def ScheduleRefresh()
   endif
 enddef
 
-# The row's right end: which project this is, rather than a hundred blank
-# columns. getcwd(), not a walk up to the .git directory -- this runs on every
-# tabline redraw, and the working directory is what the finder searches too.
 def Context(density: string): list<string>
   if density ==# 'minimal'
     return ['', '']
@@ -88,13 +76,10 @@ export def Render(): string
     return '%#TabLineFill#%='
   endif
 
-  # Grow outward from the current buffer until the row is full, so the
-  # buffer you are in stays visible however many others are open.
   var anchor = active >= 0 ? active : 0
   var left = anchor
   var right = anchor
   var [project, branch] = Context(density)
-  # A screen this narrow belongs to the buffer names.
   if strwidth(project .. branch) * 3 > &columns
     [project, branch] = ['', '']
   endif
@@ -131,8 +116,6 @@ export def Render(): string
     ? ' ' .. (len(segments) - right - 1) .. '› ' : ''
   var hint_width = strwidth(left_hint) + strwidth(right_hint)
   if hint_width >= room
-    # No room for the counts themselves: drop them and show the current
-    # buffer alone.
     show_overflow = false
     left_hint = ''
     right_hint = ''

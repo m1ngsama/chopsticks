@@ -1,9 +1,5 @@
 vim9script
 
-# Deliberately not here: the VimEnter decision about whether a start should
-# land on a dashboard at all. That lives in startup.vim, so a start that opens
-# a file never sources this file.
-
 import autoload 'chopsticks/ui/text.vim'
 import autoload 'chopsticks/ui/icons.vim'
 import autoload 'chopsticks/startup.vim'
@@ -33,8 +29,6 @@ const ITEMS = [
   {key: 'q', icon: 'quit', label: 'Quit', action: 'qall'},
 ]
 
-# Availability, not only density: the grep entry needs the finder plugin, and
-# the session entry needs a session file for this project.
 def Items(requested_density: string = ''): list<dict<string>>
   var density = empty(requested_density)
     ? g:ChopsticksUiDensity() : requested_density
@@ -45,8 +39,6 @@ def Items(requested_density: string = ''): list<dict<string>>
   if exists(':FuzzyGrep') != 2
     filter(items, (_, item) => item.key !=# 'g')
   endif
-  # g:, not a bare name: a bare name is the script-local one, so the guard
-  # would be false forever and the entry would silently never appear.
   if !exists('*g:ChopsticksSessionPath')
       || !filereadable(g:ChopsticksSessionPath())
     filter(items, (_, item) => item.key !=# 's')
@@ -78,7 +70,6 @@ def PluginStats(): list<number>
 enddef
 
 def Footer(): string
-  # Normally a no-op; covers a dashboard rendered before VimEnter fires.
   startup.CaptureMs()
   var density = g:ChopsticksUiDensity()
   if density ==# 'minimal'
@@ -105,18 +96,12 @@ export def Enter()
   set showtabline=0 laststatus=0
   setlocal nonumber norelativenumber nolist cursorline signcolumn=no
   setlocal nowrap nospell foldcolumn=0 colorcolumn= tabstop=2
-  # :execute, because the guard alone is not enough: Vim9 resolves an option
-  # name at :def-compile time too, so naming one this Vim lacks fails the whole
-  # module with E113 before the guard runs. 'winhighlight' is missing from
-  # older builds, which is why this surfaced on CI and not locally.
   if exists('+winhighlight')
     execute 'setlocal winhighlight=CursorLine:ChopDashboardCurrent'
   endif
   &l:statusline = '%#ChopDashboardStatus#%='
 enddef
 
-# Matches are window-local and :split does not copy them, so a second window on
-# this buffer showed the menu as unhighlighted text until it painted its own.
 export def Paint()
   clearmatches()
   for spec in get(b:, 'chopsticks_dashboard_matches', [])
@@ -126,8 +111,6 @@ export def Paint()
   endfor
 enddef
 
-# :split copies 'cursorline' to the new window, so every window on this buffer
-# painted a full-width band whether or not it held the cursor.
 export def Focus(on: bool)
   &l:cursorline = on
   if on && empty(getmatches())
@@ -146,15 +129,6 @@ export def Leave()
   endif
 enddef
 
-# The unmap loop walks the full ITEMS list, not the filtered one, so a key that
-# existed at the previous density is cleared at this one.
-#
-# <ScriptCmd> because <SID> in a mapping cannot reach a Vim9 module's
-# script-local functions. It also leaves @: alone and fires no
-# CmdlineEnter/CmdlineLeave.
-# A menu, not a buffer to edit: an editing key left unmapped reaches Vim's own
-# command and fails with E21. Without <nowait>, so s still waits for the global
-# ss and sv rather than swallowing the window prefix.
 const INERT = ['s', 'S', 'x', 'X', 'p', 'P', 'i', 'I', 'a', 'A', 'o', 'O',
   'd', 'D', 'C', 'R', 'J', '~']
 
@@ -169,8 +143,6 @@ def MapItems(items: list<dict<string>>)
     execute 'nnoremap <silent><nowait><buffer> ' .. item.key
       .. ' <ScriptCmd>Run(' .. string(item.key) .. ')<CR>'
   endfor
-  # After the items, because this runs on every render and an item that is
-  # live here must keep its own mapping.
   var live = mapnew(items, (_, item) => item.key)
   for key in INERT
     if index(live, key) < 0
@@ -308,8 +280,6 @@ def SelectNearest()
   cursor(target, get(b:chopsticks_dashboard_desc_cols, string(target), 1))
 enddef
 
-# The cursor may only rest on an item line, at that item's description
-# column, so the highlighted row always matches what <CR> would run.
 export def LockCursor()
   if &filetype !=# 'chopsticks-dashboard'
     return

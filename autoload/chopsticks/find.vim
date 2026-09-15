@@ -22,9 +22,6 @@ export def Grep(query: string)
   fuzzbox#Launch('grep', {cwd: g:ChopsticksProjectRoot(), prompt_text: query})
 enddef
 
-# The worktree check is why this is a function and not a bare :FuzzyGitFiles
-# mapping: outside a repository the command would push git's own error into
-# the popup instead of saying what is wrong.
 export def GitFiles()
   if !Available()
     echohl WarningMsg

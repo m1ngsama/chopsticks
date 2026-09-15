@@ -1,14 +1,9 @@
 vim9script
 
-# Duplicates .vimrc's s:FernAvailable(), which the two must keep agreeing on:
-# Vim9 script-local names cannot cross files, and three lines beat a global.
-
 import autoload 'chopsticks/ui/window.vim'
 import autoload 'chopsticks/ui/icons.vim'
 import autoload 'chopsticks/switch.vim'
 
-# The status column stays [ok] / [!!] / [--]: bug_report.yml asks for this
-# report pasted into an issue, where a Nerd Font codepoint is a box.
 def Heading(glyph: string, title: string): string
   var icon = icons.Get(glyph)
   return empty(icon) ? title : icon .. '  ' .. title
@@ -21,14 +16,7 @@ enddef
 
 const IS_WINDOWS = has('win32') || has('win64')
 
-# Directory equality, not a string prefix: a sibling of $VIMRUNTIME whose
-# name merely extends it (…/vim92-sibling/lang/x.vim) must not match.
-# Windows normalises separators and compares case-insensitively, matching
-# explorer.vim's PathInside().
 def UnderVimRuntimeLang(file: string): bool
-  # Resolved, as explorer.vim's PathInside() does: a runtimepath entry can
-  # reach this same directory through a symlink, and then two strings that
-  # differ name one directory.
   var parent = resolve(fnamemodify(file, ':p:h'))
   var target = resolve($VIMRUNTIME .. '/lang')
   if IS_WINDOWS
@@ -117,8 +105,6 @@ export def Lines(): list<string>
   lines->extend(['',
     Heading('group_check',
       'Language servers (on PATH; not verified to start)')])
-  # $VIMRUNTIME ships its own lang/ full of menu_*.vim locale files that
-  # otherwise swamp this section with irrelevant "no binary named" rows.
   for file in sort(globpath(&runtimepath, 'lang/*.vim', false, true)
       ->filter((_, val) => !UnderVimRuntimeLang(val)))
     var language = fnamemodify(file, ':t:r')

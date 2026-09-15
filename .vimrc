@@ -1,12 +1,6 @@
 set encoding=utf-8
 scriptencoding utf-8
 
-" chopsticks — a modern, Vim-only development and Markdown writing setup
-
-" Global because the dashboard footer that reports it cannot see this file's
-" s: scope, and captured in the first lines so it covers the whole of startup.
-" The guard honours an existing value: a user could skew it, but it is a
-" cosmetic number nothing decides anything from.
 if !exists('g:chopsticks_startup_started_at')
     let g:chopsticks_startup_started_at = reltime()
 endif
@@ -22,8 +16,6 @@ if !has('patch-9.1.1947')
     finish
 endif
 
-" Terminal capability replies can arrive too late and leak onto a transparent
-" dashboard. The interface sets its colors and width policy explicitly.
 if !has('gui_running')
     set t_RV= t_u7= t_RF= t_RB= ambiwidth=single
 endif
@@ -32,17 +24,6 @@ if empty($MYVIMRC)
     let $MYVIMRC = expand('<sfile>:p')
 endif
 
-" Vim's plugin-loading pass only sources plugin/**/*.vim from directories
-" already on 'runtimepath', and -u pointing here does not add this one, so it
-" is added before that pass runs.
-"
-" $MYVIMRC cannot locate it: the documented install symlinks this file to
-" ~/.vimrc, so $MYVIMRC names the symlink and ':h' gives $HOME; the Windows
-" install sources this file from a separate _vimrc entirely. <sfile> gives this
-" file's real location in both. The rule that Vim9 modules must not read their
-" own path does not apply here -- this file is never copied.
-"
-" The guard keeps :source $MYVIMRC from duplicating the entry.
 let s:chopsticks_root = fnamemodify(resolve(expand('<sfile>:p')), ':h')
 if index(split(&runtimepath, ','), s:chopsticks_root) < 0
     execute 'set runtimepath^=' . fnameescape(s:chopsticks_root)
@@ -62,18 +43,12 @@ function! s:NormalizeDirectory(value, fallback) abort
         \ ? a:value : a:fallback
     let l:directory = simplify(fnamemodify(expand(l:value), ':p'))
     if l:directory !~# '[/\\]$'
-        " ':p' appends a separator only for a directory that exists, so this
-        " runs for one that does not, where a hardcoded '/' gave 'C:\dir/'.
-        " tests/ui.vim and session.vim repeat this rule; all three must agree,
-        " or fixing one moves the failure to whichever comparison the others
-        " feed.
         let l:directory .= s:is_windows && l:directory =~# '\\' ? '\' : '/'
     endif
     return l:directory
 endfunction
 
 function! s:DirectoryFileType(path) abort
-    " getftype() follows a directory symlink when its name ends in a slash.
     let l:path = substitute(a:path, '[/\\]$', '', '')
     if empty(l:path)
         let l:path = a:path
@@ -83,16 +58,11 @@ function! s:DirectoryFileType(path) abort
     return getftype(l:path)
 endfunction
 
-" Vim's native user runtime is ~/.vim on Unix and ~/vimfiles on Windows.
-" Keep generated state and optional plugins together under the same root.
 let s:default_data_dir = s:is_windows ? '~/vimfiles' : '~/.vim'
 let g:chopsticks_data_dir = s:NormalizeDirectory(
     \ get(g:, 'chopsticks_data_dir', s:default_data_dir),
     \ s:default_data_dir)
 
-" Keep machine-specific preferences outside this tracked configuration.  The
-" path is overridable so repeatable harnesses can opt out without changing a
-" user's file.
 let s:local_config = get(g:, 'chopsticks_local_config',
     \ g:chopsticks_data_dir . 'chopsticks.local.vim')
 if type(s:local_config) == type('') && !empty(s:local_config)
@@ -103,23 +73,16 @@ if type(s:local_config) == type('') && !empty(s:local_config)
 endif
 unlet s:local_config
 
-" A local config is executable code and may replace the public value.  Restore
-" the invariant before any path is derived from it.
 let g:chopsticks_data_dir = s:NormalizeDirectory(
     \ get(g:, 'chopsticks_data_dir', s:default_data_dir),
     \ s:default_data_dir)
 
-" Personal switches. Override these before sourcing this file when needed.
 let g:chopsticks_markdown_spell = get(g:, 'chopsticks_markdown_spell', 1)
 let g:chopsticks_markdown_conceal = get(g:, 'chopsticks_markdown_conceal', 0)
 let g:chopsticks_markdown_image_dir = get(g:, 'chopsticks_markdown_image_dir', 'assets')
 let g:chopsticks_auto_lint = get(g:, 'chopsticks_auto_lint', 0)
 let g:chopsticks_cmdline_autocomplete =
     \ get(g:, 'chopsticks_cmdline_autocomplete', 1)
-" Insert-mode autocompletion, the last piece of the Vim9 migration and the one
-" its own design flagged as least proven. The mechanism ships; the default
-" does not, because unlike the command line this rebuilds a menu on every
-" keystroke of every buffer and asks the language server for it.
 let g:chopsticks_autocomplete = get(g:, 'chopsticks_autocomplete', 0)
 let g:chopsticks_long_line_threshold =
     \ get(g:, 'chopsticks_long_line_threshold', 4096)
@@ -163,10 +126,6 @@ let g:chopsticks_autocomplete = s:ResolveSwitch(g:chopsticks_autocomplete, 0)
 let s:clipboard_auto_enabled = !s:is_remote && has('clipboard')
     \ && (has('macunix') || has('win32') || has('win64')
     \     || !empty($DISPLAY) || !empty($WAYLAND_DISPLAY))
-" Without +X11 -- the ordinary macOS and Windows build -- 'unnamedplus' is
-" accepted but only put honours it: yank stays in "" while p reads "+, so
-" every paste after a yank returns the previous clipboard. Keep this in step
-" with autoload/chopsticks/clipboard.vim, which reports the same flag.
 let s:clipboard_flag = has('unnamedplus') ? 'unnamedplus' : 'unnamed'
 if has('clipboard')
     \ && s:ResolveSwitch(g:chopsticks_system_clipboard,
@@ -181,12 +140,6 @@ function! ChopsticksDashboardEnabled() abort
         \ ChopsticksUiDensity() !=# 'minimal')
 endfunction
 
-" From here down this file reaches the modules by dotted autoload name
-" (chopsticks#ui#icons#Get()) rather than through the g:Chopsticks* shims.
-" Much of the setup below runs at this file's top level, before the shims
-" exist, and a redraw can force even a deferred-looking call to run there, so
-" one convention everywhere beats proving which case applies per call site.
-" See plugin/chopsticks.vim's header.
 let g:fern#renderer = chopsticks#ui#icons#Enabled() ? 'nerdfont' : 'default'
 let g:fern#renderer#nerdfont#indent_markers = 1
 let g:fern#renderer#nerdfont#leading = '  '
@@ -200,8 +153,6 @@ let g:fern#default_hidden = 1
 let g:fern#default_exclude =
     \ '^\%(\.git\|node_modules\|\.venv\|__pycache__\|dist\|build\|target\)$'
 let g:fern_git_status#disable_ignored = 1
-
-" ── Plugin policy ───────────────────────────────────────────────────────────
 
 let g:surround_no_insert_mappings = 1
 let g:gitgutter_map_keys = 0
@@ -223,34 +174,6 @@ let g:netrw_keepdir = 0
 let g:netrw_list_hide = '\(^\|\s\s\)\zs\.\S\+'
 let g:netrw_list_hide .= ',\.pyc$,node_modules,\.git,__pycache__,\.DS_Store,dist,build'
 
-" g:fuzzbox_keymaps is merged into the plugin's defaults, so naming only exit
-" replaces that one list. Ctrl-q is listed because the default binds it to a
-" send-to-quickfix action that unpacks three values from a four-value function
-" and raises E1093 on Unix at this pin; it was already an abort key in the
-" finder this replaced.
-" vim-nerdfont and vim-glyph-palette are configured by the plugin's own
-" after/plugin when they are loaded, so no glyph or colour function is set here.
-"
-" width and height, not maxwidth and maxheight: the plugin reads maxheight
-" nowhere, takes height from maxwidth when a preview is shown, and falls back to
-" minwidth/minheight of 0.5 when one is not -- so over SSH, or below the preview
-" cutoff, max* alone would shrink the finder to half the screen.
-"
-" The exclusion list is scoped to files. It replaced a file-source filter and
-" never applied to grep or to recent files; left global it would silently drop
-" matches under tracked build/, dist/, target/ and vendor/ trees, and hide most
-" of the MRU list.
-"
-" Every entry reaches the plugin ending in a slash. It passes them to rg as
-" -g '!<entry>' and to fd as -E <entry>, and without the slash both match the
-" name at any depth, files included: a ./build script or a vendor file would
-" vanish from the finder with nothing said. The slash costs the `find` and
-" PowerShell fallbacks their exclusions, which is the cheaper failure -- a
-" noisy list rather than a hidden file -- and neither is reached while ripgrep
-" is installed.
-" Snippets live with sessions and plugins under the data root, not in the
-" plugin's own ~/.vsnip. Set before plug#end(), because the plugin reads it
-" with get(g:, ...) when its plugin/ file runs.
 let g:vsnip_snippet_dir = g:chopsticks_data_dir . 'vsnip'
 
 let g:fuzzbox_mappings = 0
@@ -260,10 +183,6 @@ let g:fuzzbox_borderchars = ['─', '│', '─', '│', '╭', '╮', '╯', '�
 let g:fuzzbox_keymaps = {'exit': ["\<Esc>", "\<C-c>", "\<C-g>", "\<C-q>"]}
 let g:fuzzbox_window_defaults = {'width': 0.92, 'height': 0.84}
 
-" The one finder setting whose right value belongs to the project rather than
-" to this configuration -- a Go tree with a tracked vendor/ is the usual case
-" -- so it is the one a local configuration may replace. The rest of the block
-" above carries reasoning a machine-local value would quietly undo.
 let s:default_finder_exclude = [
     \ '.git', '.cache', '.cargo', '.npm', '.pnpm-store', '.rustup',
     \ '.bun', '.codex', 'Library', 'node_modules', 'plugged',
@@ -274,21 +193,11 @@ let s:finder_exclude = get(g:, 'chopsticks_finder_exclude_dir',
 if type(s:finder_exclude) != type([])
     let s:finder_exclude = s:default_finder_exclude
 endif
-" The slash is added here rather than asked for, because a list written
-" without it is the trap this normalisation exists to close.
 let g:fuzzbox_files_exclude_dir = map(copy(s:finder_exclude),
     \ 'v:val =~# "/$" ? v:val : v:val . "/"')
 
 let g:ale_disable_lsp = 1
 let g:ale_linters_explicit = 1
-" These stay here rather than in lang/, where the design first put them.
-" Ensure() returns early when the LSP plugin is absent, so a lang/ file is
-" never sourced without it -- linting Python would then depend on having an
-" LSP client installed, which is a coupling neither tool asks for.
-"
-" ruff replaces flake8, black and isort in one binary; cargo runs clippy rather
-" than plain check, because rust-analyzer already reports what `cargo check`
-" would through ALE's LSP bridge and clippy is the part it does not.
 let g:ale_linters = {
     \ 'javascript': ['eslint'],
     \ 'typescript': ['eslint'],
@@ -298,8 +207,6 @@ let g:ale_linters = {
     \ 'sh': ['shellcheck'],
     \ 'markdown': ['markdownlint', 'vale'],
     \ }
-" == 1, not the bare call: executable() answers -1 where it cannot tell, and
-" -1 is true, which would turn clippy on precisely where nothing can run it.
 let g:ale_rust_cargo_use_clippy = executable('cargo-clippy') == 1
 let g:ale_fixers = {
     \ '*': ['remove_trailing_lines', 'trim_whitespace'],
@@ -350,8 +257,6 @@ let g:pencil#conceallevel = 0
 let g:pencil#cursorwrap = 0
 let g:pencil#mode_indicators = {'hard': 'H', 'auto': 'A', 'soft': 'S', 'off': ''}
 
-" Pencil clears these buffer-local groups before first use. Pre-create them so
-" Vim 9 does not emit E216 while doing that initial cleanup.
 augroup pencil_autoformat
     autocmd!
 augroup END
@@ -382,14 +287,11 @@ let g:limelight_default_coefficient = 0.7
 let g:limelight_paragraph_span = 1
 let g:limelight_priority = -1
 
-" vim-plug is optional. Startup never downloads software. Source it directly
-" because a custom data directory is not necessarily on 'runtimepath'.
 let s:vim_plug = g:chopsticks_data_dir . 'autoload/plug.vim'
 if filereadable(s:vim_plug)
     execute 'source ' . fnameescape(s:vim_plug)
     call plug#begin(g:chopsticks_data_dir . 'plugged')
 
-    " Find and navigate.
     Plug 'vim-fuzzbox/fuzzbox.vim', {'commit': '4f9f653158b1d27e6217c97a9da6fbcc00c31cb3'}
     Plug 'lambdalisue/vim-fern', {'commit': '3bbca3c87a57cdc87495b91a695b8eda722a1de1'}
     Plug 'lambdalisue/vim-nerdfont', {'commit': '3a28b3f061a8b6de751175cc3f91f072d4bfc811'}
@@ -399,13 +301,11 @@ if filereadable(s:vim_plug)
     Plug 'tpope/vim-vinegar', {'commit': 'bb1bcddf43cfebe05eb565a84ab069b357d0b3d6'}
     Plug 'easymotion/vim-easymotion', {'commit': 'b3cfab2a6302b3b39f53d9fd2cd997e1127d7878', 'on': '<Plug>(easymotion'}
 
-    " Git and project commands.
     Plug 'tpope/vim-fugitive', {'commit': '3b753cf8c6a4dcde6edee8827d464ba9b8c4a6f0'}
     Plug 'tpope/vim-rhubarb', {'commit': '5496d7c94581c4c9ad7430357449bb57fc59f501'}
     Plug 'airblade/vim-gitgutter', {'commit': '90b75207bd9b55d8ac4af15f72b4e935462014d0'}
     Plug 'tpope/vim-dispatch', {'commit': 'a2ff28abdb2d89725192db5b8562977d392a4d3f'}
 
-    " Editing language.
     Plug 'tpope/vim-surround', {'commit': '3d188ed2113431cf8dac77be61b842acb64433d9'}
     Plug 'tpope/vim-commentary', {'commit': '64a654ef4a20db1727938338310209b6a63f60c9'}
     Plug 'tpope/vim-repeat', {'commit': '65846025c15494983dafe5e3b46c8f88ab2e9635'}
@@ -416,15 +316,12 @@ if filereadable(s:vim_plug)
     Plug 'jiangmiao/auto-pairs', {'commit': '39f06b873a8449af8ff6a3eee716d3da14d63a76'}
     Plug 'mbbill/undotree', {'commit': '6fa6b57cda8459e1e4b2ca34df702f55242f4e4d', 'on': 'UndotreeToggle'}
 
-    " Diagnostics, formatting, LSP, completion.
     Plug 'dense-analysis/ale', {'commit': '199a95d386cb856c27e5b90d4e3ea8bd45a58c23'}
     Plug 'yegappan/lsp', {'commit': 'e38a68d3de2e6afe45139fcaa6814eec69f3f8fe'}
     Plug 'hrsh7th/vim-vsnip', {'commit': '9bcfabea653abdcdac584283b5097c3f8760abaa'}
     Plug 'hrsh7th/vim-vsnip-integ', {'commit': 'c7c93934dece8315db3649bdc6898b76358a8b8d'}
 
-    " Markdown and prose.
     Plug 'preservim/vim-markdown', {'commit': '1bc9d0cd8e1cc3e901b0a49c2b50a843f1c89397', 'for': 'markdown'}
-    " Pencil defines shared autocommand groups during startup; do not lazy-load it.
     Plug 'preservim/vim-pencil', {'commit': '6d70438a8886eaf933c38a7a43a61adb0a7815ed'}
     Plug 'bullets-vim/bullets.vim', {'commit': '81570b98ca44b4100b3ddcf8d9ca74b9a9b0c884', 'for': ['markdown', 'text', 'gitcommit']}
     Plug 'dhruvasagar/vim-table-mode', {'commit': 'bb025308a45c67c7c8f0763ba37bc2ee3f534df0', 'for': 'markdown'}
@@ -432,7 +329,6 @@ if filereadable(s:vim_plug)
     Plug 'junegunn/goyo.vim', {'commit': '9c72fdf2d202914318581f9f0dd09fd102f8504d', 'on': 'Goyo'}
     Plug 'junegunn/limelight.vim', {'commit': '617064e84e896f6f36b5e559f8e6486d632f68ed', 'on': 'Limelight'}
 
-    " Interface.
     Plug 'liuchengxu/vim-which-key', {'commit': '72a4267b46a76f541b3e9500a7503575575d4f57'}
     Plug 'sainnhe/everforest', {'commit': '85a86eb62409e3ec88713bff3d1b9d7374e112e4'}
 
@@ -443,18 +339,11 @@ unlet s:vim_plug
 filetype plugin indent on
 syntax enable
 
-" ── Vim defaults ────────────────────────────────────────────────────────────
-
 set number relativenumber cursorline
 set scrolloff=10 sidescrolloff=5 nowrap
 set incsearch hlsearch ignorecase smartcase
 set noexrc nomodeline
 set showcmd showmatch wildmenu wildignorecase
-" longest:full completes the shared prefix on the first <Tab>, which is what
-" you want when you asked for completion. Autocompletion asks on every
-" keystroke instead, so the same setting would rewrite the line while it is
-" being typed; noselect offers without inserting, and lastused puts the buffer
-" you came from at the top of :b.
 if g:chopsticks_cmdline_autocomplete
     set wildmode=noselect:lastused,full
 else
@@ -482,14 +371,6 @@ if exists('*popup_create')
     set completeopt+=popup
 endif
 if g:chopsticks_autocomplete && exists('+autocomplete')
-    " Per-source caps, and no tag scan: this list is walked on every keystroke
-    " where <Tab> used to ask for it once.
-    "
-    " o is deliberately absent here and added per buffer when a language
-    " server attaches. The design said complete+=o globally; at keystroke rate
-    " that runs whatever omni-completion the filetype happens to ship, and
-    " Vim's own Python one answers a half-typed line with
-    " "function: syntax error" on the message line, once per character.
     set complete=.^5,w^5,b^5,u^5
     set autocomplete
 endif
@@ -535,7 +416,6 @@ if executable('rg') == 1
     set grepformat=%f:%l:%c:%m
 endif
 
-" Keep all recovery files out of projects.
 let s:state_dirs = {
     \ 'backup': g:chopsticks_data_dir . '.backup',
     \ 'swap': g:chopsticks_data_dir . '.swap',
@@ -561,16 +441,10 @@ unlet s:state_dir
 
 set listchars=tab:→\ ,trail:·,extends:›,precedes:‹,nbsp:␣
 execute 'set fillchars+=eob:\ '
-" has('termguicolors') only reports that Vim was built with the feature. The
-" Windows console rejects the option at assignment time with E954, so the
-" capability is only known once it has been set.
 if s:is_rich_terminal
     try
         set termguicolors
     catch /:E954:/
-        " The console rejects the assignment in either direction, so clearing
-        " the option explicitly raises E954 a second time. The failed set left
-        " it off already.
         let s:is_rich_terminal = 0
     endtry
 endif
@@ -578,16 +452,6 @@ set background=dark
 
 call chopsticks#ui#theme#Apply()
 
-" ── Interface: statusline and buffer tabline ───────────────────────────────
-
-" These wrappers stay here, not in plugin/chopsticks.vim: 'statusline' and
-" 'tabline' name two of them and the `redrawtabline` below evaluates 'tabline'
-" during this file's own execution, where a global that does not exist yet is
-" E117 at startup.
-"
-" Only globals something outside the modules calls are here. The variadic
-" signatures are fixed by their callers: tests/plugins.vim passes a buffer
-" argument where tests/ui.vim passes none.
 function! ChopsticksUiDensity() abort
     return chopsticks#ui#statusline#UiDensity()
 endfunction
@@ -620,8 +484,6 @@ function! ChopsticksWordCount(...) abort
     return call('chopsticks#ui#statusline#WordCount', a:000)
 endfunction
 
-" Here because it is the only one needing s:ResolveSwitch(), which is this
-" file's own.
 function! ChopsticksBufferlineEnabled() abort
     let l:density = ChopsticksUiDensity()
     return s:ResolveSwitch(g:chopsticks_bufferline,
@@ -639,10 +501,6 @@ set statusline=%!ChopsticksStatusline()
 set tabline=%!ChopsticksTabline()
 call chopsticks#ui#bufferline#Refresh()
 
-" icons.vim owns the fern/ALE variables a toggle re-applies. What a toggle also
-" has to refresh but is not an icon concern -- g:fuzzbox_devicons, the
-" dashboard, the status and tab lines -- stays here, driven by the guarded
-" `User ChopsticksIconsToggled` icons.vim fires (see the augroup below).
 function! s:RefreshIconDependents() abort
     let g:fuzzbox_devicons = chopsticks#ui#icons#Enabled()
     if &filetype ==# 'chopsticks-dashboard'
@@ -663,9 +521,6 @@ endfunction
 
 augroup ChopsticksInterface
     autocmd!
-    " Apply()'s :colorscheme triggers this synchronously at top level, before
-    " the shims exist. :ChopTheme fires it again long after startup; the
-    " dotted name covers both.
     autocmd ColorScheme * call chopsticks#ui#theme#DefineInterfaceColors()
     autocmd User ChopsticksIconsToggled call s:RefreshIconDependents()
     autocmd BufEnter * if &filetype ==# 'chopsticks-dashboard' | call chopsticks#ui#dashboard#Enter() | call chopsticks#ui#dashboard#Render() | endif
@@ -682,12 +537,6 @@ augroup ChopsticksInterface
     autocmd VimResized * call s:HandleResize()
 augroup END
 call chopsticks#ui#theme#DefineInterfaceColors()
-
-" ── Shared actions ─────────────────────────────────────────────────────────
-
-" This file cannot use a Vim9 :import: vimlint's legacy parser does not
-" understand `import autoload` and fails to parse the file if one is added.
-" Sessions are reached through the plugin/chopsticks.vim shims instead.
 
 command! -nargs=* ChopGrep call chopsticks#find#Grep(<q-args>)
 
@@ -718,15 +567,11 @@ function! s:DirectN(lhs, rhs, label, group, description) abort
     call chopsticks#keys#Catalog(a:group, 'n', a:label, a:description)
 endfunction
 
-" tests/ui.vim asserts this global, and it is the one piece of the key
-" catalogue anything outside these files reads.
 function! ChopsticksKeyLines() abort
     return chopsticks#keys#Lines()
 endfunction
 
 command! ChopKeys call chopsticks#keys#Show()
-
-" ── Markdown and prose ─────────────────────────────────────────────────────
 
 let g:which_key_local_map = {
     \ 'name': chopsticks#keys#Group('Markdown'),
@@ -750,8 +595,6 @@ let g:which_key_local_map = {
     \ 'z': 'Focus mode',
     \ }
 
-" Grouped, because the , panel renders these sections straight from the
-" catalogue rather than keeping the second copy that had drifted from it.
 for s:markdown_key in [
     \ ['Writing', 'n*', ',?', 'Markdown help'],
     \ ['Writing', 'n*', ',z', 'Focus mode'],
@@ -786,16 +629,11 @@ command! -nargs=? -complete=file MdPaste call chopsticks#markdown#PasteImage(<q-
 command! MdGlow call chopsticks#markdown#Glow()
 command! MdHelp call chopsticks#markdown#Help()
 
-" ── LSP and completion ─────────────────────────────────────────────────────
-
 inoremap <silent><expr> <Tab> chopsticks#lsp#CompletionTab()
 inoremap <silent><expr> <S-Tab> chopsticks#lsp#CompletionBackTab()
 snoremap <silent><expr> <Tab> chopsticks#lsp#SelectTab(1)
 snoremap <silent><expr> <S-Tab> chopsticks#lsp#SelectTab(-1)
 
-" With a suggestion popup open on the command line, Up and Down move inside it
-" and command-line history becomes unreachable. Dismissing the popup first
-" gives the keys back their usual meaning without giving up the suggestions.
 if g:chopsticks_cmdline_autocomplete
     cnoremap <expr> <Up> wildmenumode() ? "\<C-e>\<Up>" : "\<Up>"
     cnoremap <expr> <Down> wildmenumode() ? "\<C-e>\<Down>" : "\<Down>"
@@ -803,9 +641,6 @@ if g:chopsticks_cmdline_autocomplete
         \ 'Command-line suggestions, then history')
 endif
 
-" ── Core mappings ──────────────────────────────────────────────────────────
-
-" Save from any editing mode without moving either hand off the home row.
 nnoremap <silent> <C-s> :update<CR>
 inoremap <silent> <C-s> <C-o>:update<CR>
 xnoremap <silent> <C-s> :<C-u>update<CR>gv
@@ -815,7 +650,6 @@ call s:LeaderN(['h'], ':ChopHealth<CR>', 'Essentials', 'Health report')
 call s:LeaderN(['e'], ':call chopsticks#explorer#Root()<CR>', 'Files', 'Explore project root')
 call s:LeaderN(['E'], ':call chopsticks#explorer#Here()<CR>', 'Files', 'Explore current file directory')
 
-" Wrapped prose moves by screen line; counts retain physical-line semantics.
 nnoremap <silent><expr> j v:count == 0 ? 'gj' : 'j'
 nnoremap <silent><expr> k v:count == 0 ? 'gk' : 'k'
 xnoremap <silent><expr> j v:count == 0 ? 'gj' : 'j'
@@ -966,8 +800,6 @@ call s:LeaderN(['<Tab>', 'l'], ':tablast<CR>', 'Tabs', 'Last tab')
 
 call s:LeaderN(['g', 'g'], ':call chopsticks#actions#Lazygit()<CR>', 'Git', 'Lazygit at project root')
 
-" ── Plugin mappings ────────────────────────────────────────────────────────
-
 function! s:PluginMaps() abort
     if exists(':FuzzyFiles') == 2
         call chopsticks#keys#Catalog('Fast find', 't', 'Esc / Ctrl-q', 'Close finder')
@@ -1040,12 +872,8 @@ function! s:PluginsReady() abort
     call s:RegisterWhichKey()
 endfunction
 
-" Plugin commands are available after plug#end(), including vim-plug's lazy
-" command shims. Install the maps now and repeat on VimEnter for fresh installs.
 call s:PluginMaps()
 call s:RegisterWhichKey()
-
-" ── Autocommands ───────────────────────────────────────────────────────────
 
 augroup Chopsticks
     autocmd!
@@ -1060,18 +888,11 @@ augroup Chopsticks
     autocmd BufWritePre * call chopsticks#actions#MakeParent(expand('<afile>'))
     autocmd BufReadPost * if getfsize(expand('<afile>')) > 10 * 1024 * 1024 |
         \ setlocal syntax= | let b:ale_enabled = 0 | endif
-    " 'breakindent' is global, so guard every buffer and not only prose ones.
-    " BufWinEnter runs after filetype setup, which is where it gets re-enabled.
     autocmd BufWinEnter * call chopsticks#markdown#GuardLongLines()
     autocmd QuickFixCmdPost [^l]* cwindow
     autocmd QuickFixCmdPost l* lwindow
     autocmd FileType fern call chopsticks#explorer#FernSetup()
     autocmd FileType which_key call chopsticks#keys#Setup()
-    " Registered only when enabled, because this fires on every keystroke of
-    " every command line. wildtrigger() is the quiet form of 'wildchar': it
-    " does not beep when nothing matches, which is what makes it usable as an
-    " automatic trigger. The pattern covers searches too, where it completes
-    " from the buffer.
     if g:chopsticks_cmdline_autocomplete
         autocmd CmdlineChanged [:\/\?] call wildtrigger()
     endif
@@ -1092,8 +913,6 @@ augroup Chopsticks
     if g:chopsticks_autocomplete && exists('+autocomplete')
         autocmd User LspAttached setlocal complete+=o
     endif
-    " <amatch> is the filetype the event fired for, which &filetype may not yet
-    " be during a nested FileType.
     autocmd FileType * call chopsticks#lsp#Ensure(expand('<amatch>'))
     autocmd User GoyoEnter nested call chopsticks#markdown#GoyoEnter()
     autocmd User GoyoLeave nested call chopsticks#markdown#GoyoLeave()
@@ -1119,9 +938,6 @@ if v:vim_did_enter
     call s:PluginMaps()
     call s:RegisterWhichKey()
 endif
-" A command-line :source can run after the first file was read but before
-" VimEnter.  Reapply buffer-local writing defaults without relying on an LSP
-" plugin to replay FileType as a side effect.
 if &filetype ==# 'markdown'
     call chopsticks#markdown#Setup()
 endif

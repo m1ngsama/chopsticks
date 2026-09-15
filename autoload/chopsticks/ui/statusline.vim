@@ -1,13 +1,5 @@
 vim9script
 
-# Render() runs on every redraw of every window. Everything here must be cheap
-# and must not throw: a statusline that errors makes Vim unusable, not just
-# ugly, so every segment checks for its plugin before asking it anything.
-#
-# The Chopsticks* wrappers for this module stay in .vimrc, not
-# plugin/chopsticks.vim, because a redraw can evaluate 'statusline' during
-# .vimrc's own execution, before the plugin-loading pass has run.
-
 import autoload 'chopsticks/ui/icons.vim'
 import autoload 'chopsticks/ui/bufferline.vim'
 import autoload 'chopsticks/ui/dashboard.vim'
@@ -20,9 +12,6 @@ export def UiDensity(): string
   return index(DENSITIES, value) >= 0 ? value : 'balanced'
 enddef
 
-# This and bufferline.vim import each other, which is fine: `import autoload`
-# binds at call time, not source time. The dashboard import is lazy the same
-# way, so declaring it costs nothing on a start with no dashboard.
 export def SetUiDensity(value: string)
   if empty(value)
     var current = index(DENSITIES, UiDensity())
@@ -60,14 +49,6 @@ def Mode(active: number = 1, wide: bool = false): list<string>
   return [' ' .. (wide ? name : short) .. ' ', group]
 enddef
 
-# call(), not a plain name: Vim9 compiles a named function at :def-compile
-# time, so naming an optional plugin's global makes the whole module fail to
-# compile where that plugin is absent, before the guard can run. Autoload-style
-# names (ale#statusline#Count) are exempt and appear literally.
-#
-# The guard is spelled g: for a related reason: a bare name in Vim9 means the
-# script-local one, so exists('*FugitiveHead') answers 0 forever however many
-# plugins define the global, and the feature silently never appears.
 export def GitBranch(buffer: number = -1): string
   if !exists('*g:FugitiveHead')
     return ''
@@ -122,8 +103,6 @@ export def Diagnostics(buffer: number = -1): string
   return empty(parts) ? '' : join(parts, ' ') .. ' '
 enddef
 
-# Only what departs from the defaults, so the segment is empty on almost every
-# buffer and means something when it is not.
 export def Signals(buffer: number = -1): string
   var target = buffer < 0 ? bufnr('') : buffer
   var parts = []
@@ -150,8 +129,6 @@ export def Signals(buffer: number = -1): string
   return empty(parts) ? '' : ' ' .. join(parts, ' ') .. ' '
 enddef
 
-# wordcount() answers for the current buffer whatever it is asked about, so an
-# inactive window would be handed a count belonging to another file.
 export def WordCount(active: number = 1): string
   if !active || &filetype !=# 'markdown'
     return ''
@@ -171,8 +148,6 @@ export def WritingMode(buffer: number = -1, window: number = -1): string
   if window_number > 0 && getwinvar(window_number, '&spell')
     add(parts, icons.Get('spell'))
   endif
-  # getbufvar() returns any, and comparing that to a Number raises E1030 if a
-  # plugin ever sets this to a String.
   var pencil = str2nr(string(getbufvar(target, 'pencil_wrap_mode', 0)))
   if pencil == 2
     add(parts, icons.Get('wrap') .. ':'
@@ -198,8 +173,6 @@ def BufferFlags(buffer: number = -1): string
   return empty(parts) ? '' : ' ' .. join(parts, ' ') .. ' '
 enddef
 
-# Vim sets g:statusline_winid while drawing an inactive window's statusline,
-# which is how one function renders every window's line differently.
 def Context(): dict<any>
   var window = get(g:, 'statusline_winid', win_getid())
   var info = getwininfo(window)
@@ -211,14 +184,10 @@ def Context(): dict<any>
     winid: window,
     bufnr: empty(info) ? bufnr('') : info[0].bufnr,
     width: empty(info) ? winwidth(0) : info[0].width,
-    # Number, not the bool a Vim9 comparison produces: Mode() takes a number,
-    # so without the coercion Render()'s call is E1013.
     active: window == win_getid() ? 1 : 0,
   }
 enddef
 
-# A narrow window steps the density down whatever is configured, so a split
-# never renders a line wider than itself.
 def EffectiveDensity(width: number): string
   var density = UiDensity()
   if width < 70
@@ -231,8 +200,6 @@ enddef
 
 const KINDS = {fern: 'EXPLORER', netrw: 'EXPLORER', qf: 'QUICKFIX', help: 'HELP'}
 
-# A drawer's name is its plugin's URI, which %f truncates to punctuation, and
-# its cursor position names nothing. Empty for an ordinary file buffer.
 def SpecialKind(buffer: number): string
   var buftype = getbufvar(buffer, '&buftype')
   if buftype ==# ''
@@ -242,9 +209,6 @@ def SpecialKind(buffer: number): string
   return get(KINDS, filetype, toupper(empty(filetype) ? buftype : filetype))
 enddef
 
-# Neighbouring segments step between the three background ranks -- accent,
-# ChopStatusBody's surface, ChopStatusMuted's recessed ground -- so the bar
-# reads as blocks without a separator glyph to draw.
 export def Render(): string
   var context = Context()
   var density = EffectiveDensity(context.width)

@@ -1,8 +1,5 @@
 vim9script
 
-# Same panel as the cheatsheet, so it borrows those groups; only the bracketed
-# status column differs.
-
 if exists('b:current_syntax')
   finish
 endif
@@ -15,8 +12,6 @@ execute 'syntax match chopsticksHealthGroup /^\%>' .. legend .. 'l\S.*/'
 syntax match chopsticksHealthGroupIcon /^[^\x00-\x7F]\+/ contained
 syntax match chopsticksHealthRow /^ \{2}\S.*/
   \ contains=chopsticksHealthOk,chopsticksHealthBad,chopsticksHealthOff
-# Two trailing spaces, so this is the padded name column and not the first
-# word of a Notes sentence.
 syntax match chopsticksHealthName /\S\+\ze\s\{2,}/ contained
 syntax match chopsticksHealthOk /\%3c\[ok\]/ contained
   \ nextgroup=chopsticksHealthName skipwhite

@@ -1,13 +1,5 @@
 vim9script
 
-# .vimrc reaches this module by dotted name from its own top level, so it loads
-# early in every startup rather than on a user action.
-#
-# A live icon toggle also has to refresh things that are not icon concerns --
-# fuzzbox's devicon switch, the dashboard, the status and tab lines -- which
-# stay in .vimrc because they are script-local there. Toggle() fires a guarded
-# `User ChopsticksIconsToggled` so .vimrc can run that refresh in its old order.
-
 var auto_enabled = &encoding ==# 'utf-8'
   && empty($SSH_CONNECTION) && empty($SSH_CLIENT) && empty($SSH_TTY)
   && $TERM !=# 'dumb'
@@ -100,12 +92,9 @@ export def Get(name: string): string
 enddef
 
 export def Group(group: string): string
-  # Empty in ASCII mode: a half-filled icon column misaligns the rows without.
   return Enabled() ? Get(get(group_glyphs, group, '')) : ''
 enddef
 
-# First match wins, so order is the disambiguation: `save` before `file`,
-# headings before `table`.
 const ACTION_RULES = [
   ['git', 'group_git'],
   ['\<save\|\<write\>', 'save'],
@@ -132,13 +121,9 @@ export def Action(description: string, group: string): string
     endif
   endfor
   var fallback = Group(group)
-  # Never empty while icons are on: an empty cell reads as a column separator.
   return !empty(fallback) || !Enabled() ? fallback : '·'
 enddef
 
-# The statusline and tabline ask for the same handful of paths on every redraw
-# and nerdfont#find() is a pattern walk. Apply() clears this, so an icon-mode
-# change cannot leave stale glyphs behind.
 var file_icon_cache = {}
 
 export def FileIcon(path: string): string

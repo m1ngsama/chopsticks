@@ -1,30 +1,14 @@
 vim9script
 
-# One copy, because these had started to be transcribed per feature. The
-# cheatsheet, Markdown help, :ChopHealth, Glow, lazygit and the terminal
-# mappings all come through here so their windows stay identical.
-
-# A popup rather than a split, drawn with the border the finder already uses,
-# so the two reading surfaces of this configuration look like one thing.
-#
-# It reads before it searches. Typing filtered on every key once, which meant
-# j -- the first thing a Vim user presses -- searched for the letter j and
-# emptied the panel. Navigation is the default and / starts a search, the way
-# every other read-only window in Vim behaves.
 const BORDER = ['─', '│', '─', '│', '╭', '╮', '╯', '╰']
 const CLOSE = ["\<Esc>", "\<C-c>", "\<C-g>", "\<C-q>", 'q']
 
-# Keys the sheet prints as words. Anything else in a key column is taken
-# literally, and a row whose column does not resolve to a real mapping is not
-# something <CR> can press -- see Press().
 const NAMED = {
   'SPC': "\<Space>", 'TAB': "\<Tab>", 'Esc': "\<Esc>", 'CR': "\<CR>",
   }
 
 var state: dict<any> = {}
 
-# The lines before the first blank one. Kept through a query, because the
-# syntax file's line anchors are measured from it.
 def Legend(lines: list<string>): number
   var height = 0
   while height < len(lines) && !empty(lines[height])
@@ -43,8 +27,6 @@ export def Filtered(lines: list<string>, query: string): list<string>
   var heading = ''
   for line in lines[head : ]
     if line !~# '^\s'
-      # A heading, or a blank line: held back until a row under it matches, so
-      # a query never leaves a section title standing on its own.
       if !empty(line)
         heading = line
       endif
@@ -58,18 +40,12 @@ export def Filtered(lines: list<string>, query: string): list<string>
       kept->add(line)
     endif
   endfor
-  # slice(), not [0 : head - 1], which with no legend is [0 : -1] -- everything.
   return slice(lines, 0, head)
     + (empty(kept) ? ['', '  no key matches ' .. query] : kept)
 enddef
 
-# The key column of a row, as keystrokes. Returns an empty string for a row
-# that names alternatives (Fern h / l), a family (; f b l r h) or anything
-# else that is not one sequence to press.
 export def Keystrokes(row: string): string
   var column = matchstr(row, '^\s\+\zs.\{-}\ze\s\{2,}')
-  # Drop the row icon; every key the sheet prints is ASCII, so a non-ASCII
-  # run can only be the glyph.
   column = substitute(column, '^[^\x00-\x7F]\+\s*', '', '')
   if empty(column) || column =~# '/'
     return ''
@@ -94,8 +70,6 @@ enddef
 def Press()
   var row = getbufline(winbufnr(state.id), line('.', state.id))
   var keys = empty(row) ? '' : Keystrokes(row[0])
-  # Checked against the mappings rather than trusted: it is what rejects the
-  # teaching rows, whose key column reads as a family and not a sequence.
   if empty(keys) || empty(maparg(keys, 'n'))
     return
   endif
@@ -109,8 +83,6 @@ def Move(delta: number)
   win_execute(state.id, 'call cursor(' .. target .. ', 1)')
 enddef
 
-# The first row, not the first line: a heading or a blank under the cursor
-# line reads as a selection of nothing.
 def FirstEntry(): number
   var found = match(getbufline(winbufnr(state.id), 1, '$'), '^\s\+\S')
   return found < 0 ? 1 : found + 1
@@ -196,9 +168,6 @@ def Filter(id: number, key: string): bool
   return true
 enddef
 
-# A report writes its own title as the first line and a blank after it. That
-# was the only place to put it in a split; the popup has a border to carry it,
-# and repeating it inside would say the same thing twice.
 def Titled(name: string, lines: list<string>): list<any>
   if len(lines) > 1 && !empty(lines[0]) && empty(lines[1])
     return [lines[0], lines[2 : ]]
@@ -224,14 +193,10 @@ export def Scratch(name: string, lines: list<string>, filetype = '')
     filter: Filter,
     filtermode: 'a',
     })
-  # Before the filetype, which sources the syntax file that reads it.
   setbufvar(winbufnr(state.id), 'chopsticks_legend', Legend(body))
   if !empty(filetype)
     setbufvar(winbufnr(state.id), '&filetype', filetype)
   endif
-  # PopupSelected is the finder's too; remapped window-locally, not globally.
-  # Guarded like dashboard.vim's: the option is missing before Vim 9.2 and
-  # 9.1.1947 is the floor, so the cursor line falls back to PopupSelected.
   if exists('+winhighlight')
     win_execute(state.id, 'setlocal winhighlight=PopupSelected:ChopPanelCursor')
   endif
@@ -248,8 +213,6 @@ export def Terminal(command: list<string>, position: string)
   if position ==# 'tab'
     tabnew
   else
-    # Through :execute because Vim9 reads the leading 12 of `botright 12new`
-    # as a range and refuses it (E1050).
     execute 'botright 12new'
   endif
   if empty(command)

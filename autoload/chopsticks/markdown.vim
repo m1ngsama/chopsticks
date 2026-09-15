@@ -1,8 +1,5 @@
 vim9script
 
-# The buffer-local mappings here use <ScriptCmd>, not <SID>: <SID> in a mapping
-# cannot reach a Vim9 module's script-local functions.
-
 import autoload 'chopsticks/ui/window.vim'
 import autoload 'chopsticks/keys.vim'
 import autoload 'chopsticks/switch.vim'
@@ -10,8 +7,6 @@ import autoload 'chopsticks/ui/bufferline.vim'
 
 export def ToggleConceal()
   &l:conceallevel = &l:conceallevel == 0 ? 2 : 0
-  # != 0, not a bare truthiness test: 'conceallevel' is 2 here and Vim9 refuses
-  # any Number but 0 or 1 in a boolean position (E1023).
   echo 'Markdown conceal: ' .. (&l:conceallevel != 0 ? 'ON' : 'OFF')
 enddef
 
@@ -32,8 +27,6 @@ export def Glow()
   window.Terminal(['glow', '-p', expand('%:p')], 'split')
 enddef
 
-# Refuses rather than overwrites a taken name, and cleans up the partial file
-# when pngpaste finds no image.
 export def PasteImage(requested_name: string)
   if executable('pngpaste') != 1
     echohl WarningMsg
@@ -82,9 +75,6 @@ export def PasteImage(requested_name: string)
   echo 'saved: ' .. relative_dir .. '/' .. name
 enddef
 
-# Bound to a variable rather than written as a multi-line list literal in the
-# argument position: through a <ScriptCmd> mapping under the headless harness
-# the literal form failed to compile with E697, though a direct call was fine.
 export def Help()
   var sheet = [
     'chopsticks Markdown',
@@ -96,29 +86,19 @@ export def Help()
   window.Scratch('[chopsticks-markdown]', sheet, 'chopsticks-cheatsheet')
 enddef
 
-# A raw user value, never normalised, so it goes through switch.vim: comparing
-# a String to a Number is E1030, on every buffer.
 def Threshold(): number
   return switch.Number(g:chopsticks_long_line_threshold, 0)
 enddef
 
-# Vim recomputes the break indent for every wrapped screen line, so one very
-# long line degrades far worse than linearly -- a 1 MiB single-line file turns
-# a redraw into tens of seconds. Total bytes do not predict it, so the file-size
-# guard elsewhere misses it. Detection runs for every buffer reaching a window
-# and so must stay cheap: a virtual-column search would cost more than the
-# problem it looks for.
 def HasLongLine(): bool
   var lines = line('$')
   if lines <= 0
     return false
   endif
-  # Constant time, and decisive for a buffer that is mostly one long line.
   var bytes = line2byte(lines + 1)
   if bytes > 0 && bytes / lines > Threshold()
     return true
   endif
-  # Exact, but only where walking the buffer costs well under a millisecond.
   if lines > 2000
     return false
   endif
@@ -198,9 +178,6 @@ export def ProseSetup()
   GuardLongLines()
 enddef
 
-# :execute, because Vim9 resolves a command name at :def-compile time: naming
-# Limelight directly makes this module fail to compile (E476) wherever the
-# plugin is absent, before the guard can run.
 export def GoyoEnter()
   if &filetype =~# '^\%(markdown\|text\|gitcommit\)$' && exists(':Limelight') == 2
     silent execute 'Limelight'

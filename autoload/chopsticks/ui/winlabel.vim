@@ -1,22 +1,14 @@
 vim9script
 
-# One label per window, the way tmux names a pane: which file a split holds,
-# without hunting for its statusline. Popups rather than buffer text, so the
-# file being edited carries none of it.
-
 import autoload 'chopsticks/ui/icons.vim'
 import autoload 'chopsticks/ui/text.vim'
 
-# Under the finder, which owns the screen while it is open, and over the text
-# the label floats on.
 const ZINDEX = 30
 const MAX_WIDTH = 40
-# Below this a label covers the file instead of naming it.
 const MIN_WIDTH = 12
 
 var labels: dict<number> = {}
 var modified: dict<number> = {}
-# Creating a popup moves windows, which fires the events that call Refresh().
 var busy = false
 
 def Wanted(id: number): bool
@@ -24,13 +16,10 @@ def Wanted(id: number): bool
   if buf <= 0
     return false
   endif
-  # A drawer, the dashboard and quickfix say what they are already.
   var kind = getbufvar(buf, '&buftype')
   return kind ==# '' || kind ==# 'terminal' || kind ==# 'help'
 enddef
 
-# Bounded by the window, not only by MAX_WIDTH: a long name in a narrow split
-# was drawn from wherever it happened to start and covered the split beside it.
 def Text(id: number, width: number): string
   var buf = winbufnr(id)
   var name = bufname(buf)
@@ -80,10 +69,6 @@ export def Refresh()
   if busy
     return
   endif
-  # A lone file window already names its file in the statusline; windows that
-  # name themselves do not count towards the two that make a label worth it.
-  # The accessor lives in .vimrc; without this guard a partial configuration
-  # turns every window event into an E117.
   if !exists('*g:ChopsticksWindowLabelsEnabled')
     return
   endif
@@ -97,8 +82,6 @@ export def Refresh()
     var live: list<string> = []
     for nr in range(1, winnr('$'))
       var id = win_getid(nr)
-      # Only when it actually drew: a window that shrank below MIN_WIDTH must
-      # lose the label it had rather than keep a stale one.
       if Wanted(id) && Show(id)
         live->add(string(id))
       endif
@@ -114,8 +97,6 @@ export def Refresh()
   endtry
 enddef
 
-# TextChanged fires on every keystroke; only the [+] flag flipping changes the
-# label, so everything else must not reach popup_settext().
 export def OnTextChanged()
   var key = string(bufnr('%'))
   var state = &modified ? 1 : 0

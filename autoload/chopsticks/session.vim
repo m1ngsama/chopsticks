@@ -1,34 +1,17 @@
 vim9script
 
-# Security properties this module must preserve, all asserted by tests/ui.vim:
-# session files are keyed by resolved project root AND Vim release, so
-# same-named projects never collide and an incompatible format never overwrites
-# a compatible one; POSIX writes land with private modes and a group- or
-# world-writable directory or file is refused; every platform rejects
-# non-regular session input; and a plain :ChopLoad refuses to
-# clobber a modified listed buffer unless the bang form opts in.
-#
-# NormalizeDirectory and DirectoryFileType duplicate pieces of .vimrc's own
-# helpers, which stay there because the rest of the config shares them.
-
 const IsWindows: bool = has('win32') || has('win64')
 
 def NormalizeDirectory(value: string, fallback: string): string
   var chosen = empty(value) ? fallback : value
   var directory = simplify(fnamemodify(expand(chosen), ':p'))
   if directory !~# '[/\\]$'
-    # Match the separator the path already uses. ':p' supplies one itself for
-    # a directory that exists, so this runs only for one that does not, and
-    # a hardcoded '/' produced 'C:\dir\name/' on Windows. .vimrc's
-    # s:NormalizeDirectory() and tests/ui.vim's s:NormalizedDirectory()
-    # repeat this rule and all three must agree.
     directory ..= IsWindows && directory =~# '\\' ? '\' : '/'
   endif
   return directory
 enddef
 
 def DirectoryFileType(path: string): string
-  # getftype() follows a directory symlink when its name ends in a slash.
   var cleaned = substitute(path, '[/\\]$', '', '')
   if empty(cleaned)
     cleaned = path
@@ -45,8 +28,6 @@ export def ProjectRoot(): string
     var separator = directory =~# '[/\\]$' ? '' : '/'
     var marker = directory .. separator .. '.git'
     if isdirectory(marker) || filereadable(marker)
-      # Directories here are canonical: absolute, simplified, and ending
-      # with a separator, the shape g:chopsticks_data_dir already has.
       return NormalizeDirectory(fnamemodify(marker, ':h'), getcwd())
     endif
     var parent = fnamemodify(directory, ':h')
@@ -103,9 +84,6 @@ def SessionPathIsSafe(path: string): bool
   if getftype(path) !=# 'file' || !SessionDirectoryIsSafe()
     return false
   endif
-  # Windows access is governed by ACLs; its getfperm() owner/group/other
-  # string is not an authority boundary. The regular-file and trusted-root
-  # checks still apply there.
   return SessionPermissionsAreSafe(path)
 enddef
 

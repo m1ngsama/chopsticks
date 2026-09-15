@@ -1,8 +1,5 @@
 vim9script
 
-# Shared by the dashboard, statusline and buffer tabline so their ellipsis
-# behaviour stays identical. Width is strwidth(), not strlen(): a byte-based
-# trim overflows the column budget for CJK text and for Nerd Font glyphs.
 export def Truncate(text: string, width: number): string
   if width <= 0
     return ''

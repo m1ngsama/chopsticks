@@ -1,11 +1,7 @@
 vim9script
 
-# Key-bound actions each too small for a module of its own.
-
 import autoload 'chopsticks/ui/window.vim'
 
-# So `:e src/new/x.txt` saves into a directory that does not exist yet. The URL
-# guard is for the paths netrw and fugitive produce.
 export def MakeParent(path: string)
   if empty(path) || &buftype !=# '' || path =~# '^\w\+://'
     return

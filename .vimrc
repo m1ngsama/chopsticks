@@ -501,12 +501,10 @@ call chopsticks#keys#Catalog('Editing', 'n', 'x', 'Delete character without chan
 
 nnoremap n nzzzv
 nnoremap N Nzzzv
-nnoremap <C-d> <C-d>zz
-xnoremap <C-d> <C-d>zz
-nnoremap <C-u> <C-u>zz
-xnoremap <C-u> <C-u>zz
+nnoremap <silent> <C-d> <Cmd>call chopsticks#ui#motion#Scroll(v:true)<CR>
+nnoremap <silent> <C-u> <Cmd>call chopsticks#ui#motion#Scroll(v:false)<CR>
 call chopsticks#keys#Catalog('Navigation', 'n', 'n / N', 'Search result centered')
-call chopsticks#keys#Catalog('Navigation', 'n/x', 'Ctrl-d / Ctrl-u', 'Half-page centered')
+call chopsticks#keys#Catalog('Navigation', 'n/x', 'Ctrl-d / Ctrl-u', 'Half-page scroll')
 
 nnoremap <silent> [<Space> :<C-u>put! =repeat(nr2char(10), v:count1)<CR>']+
 nnoremap <silent> ]<Space> :<C-u>put =repeat(nr2char(10), v:count1)<CR>'[-

@@ -3,6 +3,8 @@ vim9script
 const FLASH_MS = 200
 const BEACON_MS = 300
 const SAVED_MS = 600
+const FRAMES = 6
+const FRAME_MS = 16
 
 var scroll_timer = 0
 var scroll_window = 0
@@ -66,4 +68,32 @@ export def Focus()
     setwinvar(window.winid, '&cursorline', focused && mode() !~# '^i')
     setwinvar(window.winid, '&wincolor', focused || !dim ? '' : 'NormalNC')
   endfor
+enddef
+
+export def Scroll(down: bool)
+  if scroll_timer != 0
+    timer_stop(scroll_timer)
+    scroll_timer = 0
+    win_execute(scroll_window, 'call winrestview(' .. string(scroll_final) .. ')')
+  endif
+  var start = winsaveview()
+  execute 'normal! ' .. (v:count > 0 ? v:count : '') .. (down ? "\<C-d>" : "\<C-u>")
+  var final = winsaveview()
+  if !empty($SSH_CONNECTION) || !empty($SSH_TTY) || start.topline == final.topline
+    return
+  endif
+  winrestview(start)
+  [scroll_window, scroll_final] = [win_getid(), final]
+  var frame = 0
+  scroll_timer = timer_start(FRAME_MS, (timer) => {
+    frame += 1
+    var view = copy(final)
+    view.topline = start.topline + (final.topline - start.topline) * frame / FRAMES
+    view.lnum = start.lnum + (final.lnum - start.lnum) * frame / FRAMES
+    if frame == FRAMES
+      [view, scroll_timer] = [final, 0]
+      timer_stop(timer)
+    endif
+    win_execute(scroll_window, 'call winrestview(' .. string(view) .. ')')
+  }, {repeat: FRAMES})
 enddef

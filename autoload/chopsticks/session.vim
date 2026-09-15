@@ -1,6 +1,6 @@
 vim9script
 
-const SESSION_DIR = expand('~/.vim/.sessions/')
+const SESSION_DIR = g:chopsticks_data .. '/.sessions/'
 
 export def ProjectRoot(): string
   var directory = &buftype ==# '' && !empty(expand('%:p')) ? expand('%:p:h') : getcwd()
@@ -18,7 +18,7 @@ def Root(): string
 enddef
 
 export def Path(): string
-  return SESSION_DIR .. substitute(Root(), '/', '%', 'g') .. '.vim'
+  return SESSION_DIR .. substitute(Root(), '[/\\:]', '%', 'g') .. '.vim'
 enddef
 
 def Modified(): number

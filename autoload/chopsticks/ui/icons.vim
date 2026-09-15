@@ -1,5 +1,21 @@
 vim9script
 
+const ENABLED = $CHOPSTICKS_ICONS =~# '^[01]$' ? $CHOPSTICKS_ICONS ==# '1'
+  : &encoding ==# 'utf-8' && $TERM !=# 'dumb'
+    && (index(['iTerm.app', 'WezTerm', 'vscode', 'ghostty'], $TERM_PROGRAM) >= 0
+      || $LC_TERMINAL ==# 'iTerm2' || !empty($KITTY_WINDOW_ID)
+      || !empty($WEZTERM_PANE) || !empty($WT_SESSION)
+      || !empty($GHOSTTY_RESOURCES_DIR)
+      || $TERM =~# '\<\%(xterm-kitty\|xterm-ghostty\|wezterm\)\>')
+
+const ASCII = {
+  search: '?', new_file: '+', grep: '/', recent: '~', config: '#',
+  session: '@', quit: 'q', file: '-', git_branch: 'git:', git_add: '+',
+  git_change: '~', git_delete: '-', error: 'E', warning: 'W', info: 'I',
+  modified: '+', readonly: 'RO', spell: 'SPELL', words: 'w', wrap: 'WRAP',
+  startup: '*', marker: '*',
+  }
+
 var glyphs = {
   'search': '',
   'new_file': '',
@@ -61,12 +77,16 @@ var group_glyphs = {
   'Links': 'group_link',
   }
 
+export def Enabled(): bool
+  return ENABLED
+enddef
+
 export def Get(name: string): string
-  return get(glyphs, name, '')
+  return get(ENABLED ? glyphs : ASCII, name, '')
 enddef
 
 export def Group(group: string): string
-  return Get(get(group_glyphs, group, ''))
+  return ENABLED ? Get(get(group_glyphs, group, '')) : ''
 enddef
 
 const ACTION_RULES = [
@@ -95,12 +115,15 @@ export def Action(description: string, group: string): string
     endif
   endfor
   var fallback = Group(group)
-  return empty(fallback) ? '·' : fallback
+  return empty(fallback) && ENABLED ? '·' : fallback
 enddef
 
 var file_icon_cache = {}
 
 export def FileIcon(path: string): string
+  if !ENABLED
+    return ''
+  endif
   var key = empty(path) ? '[No Name]' : path
   if !has_key(file_icon_cache, key)
     file_icon_cache[key] = nerdfont#find(key, isdirectory(key))

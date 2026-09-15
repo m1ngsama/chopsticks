@@ -12,9 +12,14 @@ execute 'set runtimepath^=' . fnameescape(fnamemodify(resolve(expand('<sfile>:p'
 let g:mapleader = "\<Space>"
 let g:maplocalleader = ','
 
-set clipboard+=unnamed
+let g:chopsticks_data = expand(has('win32') ? '~/vimfiles' : '~/.vim')
+let s:remote = !empty($SSH_CONNECTION) || !empty($SSH_CLIENT) || !empty($SSH_TTY)
+if has('clipboard') && !s:remote
+    \ && (has('mac') || has('win32') || !empty($DISPLAY) || !empty($WAYLAND_DISPLAY))
+    execute 'set clipboard^=' . (has('unnamedplus') ? 'unnamedplus' : 'unnamed')
+endif
 
-let g:fern#renderer = 'nerdfont'
+let g:fern#renderer = chopsticks#ui#icons#Enabled() ? 'nerdfont' : 'default'
 let g:fern#renderer#nerdfont#indent_markers = 1
 let g:fern#renderer#nerdfont#leading = '  '
 let g:fern#renderer#nerdfont#padding = ' '
@@ -48,11 +53,11 @@ let g:netrw_keepdir = 0
 let g:netrw_list_hide = '\(^\|\s\s\)\zs\.\S\+'
 let g:netrw_list_hide .= ',\.pyc$,node_modules,\.git,__pycache__,\.DS_Store,dist,build'
 
-let g:vsnip_snippet_dir = expand('~/.vim/vsnip')
+let g:vsnip_snippet_dir = g:chopsticks_data . '/vsnip'
 
 let g:fuzzbox_mappings = 0
-let g:fuzzbox_preview = 1
-let g:fuzzbox_devicons = 1
+let g:fuzzbox_preview = !s:remote
+let g:fuzzbox_devicons = chopsticks#ui#icons#Enabled()
 let g:fuzzbox_borderchars = ['─', '│', '─', '│', '╭', '╮', '╯', '╰']
 let g:fuzzbox_keymaps = {'exit': ["\<Esc>", "\<C-c>", "\<C-g>", "\<C-q>"]}
 let g:fuzzbox_window_defaults = {'width': 0.92, 'height': 0.84}
@@ -151,7 +156,7 @@ let g:limelight_default_coefficient = 0.7
 let g:limelight_paragraph_span = 1
 let g:limelight_priority = -1
 
-call plug#begin('~/.vim/plugged')
+call plug#begin(g:chopsticks_data . '/plugged')
 
 Plug 'vim-fuzzbox/fuzzbox.vim', {'commit': '4f9f653158b1d27e6217c97a9da6fbcc00c31cb3'}
 Plug 'lambdalisue/vim-fern', {'commit': '3bbca3c87a57cdc87495b91a695b8eda722a1de1'}
@@ -241,11 +246,11 @@ set grepprg=rg\ --vimgrep\ --smart-case
 set grepformat=%f:%l:%c:%m
 
 let s:state_dirs = {
-    \ 'backup': expand('~/.vim/.backup'),
-    \ 'swap': expand('~/.vim/.swap'),
-    \ 'undo': expand('~/.vim/.undo'),
-    \ 'view': expand('~/.vim/.view'),
-    \ 'session': expand('~/.vim/.sessions'),
+    \ 'backup': g:chopsticks_data . '/.backup',
+    \ 'swap': g:chopsticks_data . '/.swap',
+    \ 'undo': g:chopsticks_data . '/.undo',
+    \ 'view': g:chopsticks_data . '/.view',
+    \ 'session': g:chopsticks_data . '/.sessions',
     \ }
 for s:state_dir in values(s:state_dirs)
     silent! call mkdir(s:state_dir, 'p', 0700)
@@ -260,7 +265,13 @@ unlet s:state_dir
 
 set listchars=tab:→\ ,trail:·,extends:›,precedes:‹,nbsp:␣
 execute 'set fillchars+=eob:\ '
-set termguicolors background=dark
+if $COLORTERM =~# '^\%(truecolor\|24bit\)$' || !empty($WT_SESSION)
+    try
+        set termguicolors
+    catch /E954/
+    endtry
+endif
+set background=dark
 
 call chopsticks#ui#theme#Apply()
 

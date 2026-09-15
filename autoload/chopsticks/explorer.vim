@@ -1,14 +1,16 @@
 vim9script
 
 import autoload 'chopsticks/session.vim'
+import autoload 'chopsticks/ui/icons.vim'
 
 var directory_startup_opened = false
 
 def PathInside(path_value: string, directory_value: string): bool
-  var path = resolve(fnamemodify(path_value, ':p'))
-  var directory = resolve(fnamemodify(directory_value, ':p'))
-  path = substitute(path, '/\+$', '', '')
-  directory = substitute(directory, '/\+$', '', '')
+  var [path, directory] = [path_value, directory_value]->mapnew((_, value) =>
+    resolve(fnamemodify(value, ':p'))->substitute('\\', '/', 'g')->substitute('/\+$', '', ''))
+  if has('win32')
+    [path, directory] = [tolower(path), tolower(directory)]
+  endif
   return path ==# directory || stridx(path, directory .. '/') == 0
 enddef
 
@@ -49,7 +51,9 @@ export def FernSetup()
   nmap <silent><buffer> R <Plug>(fern-action-reload:all)
   nnoremap <silent><buffer> q :close<CR>
   nnoremap <silent><buffer> <Esc> :close<CR>
-  glyph_palette#apply()
+  if icons.Enabled()
+    glyph_palette#apply()
+  endif
 enddef
 
 export def Root()

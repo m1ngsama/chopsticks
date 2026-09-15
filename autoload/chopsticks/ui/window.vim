@@ -207,10 +207,6 @@ export def Terminal(command: list<string>, position: string)
   else
     botright :12new
   endif
-  if empty(command)
-    term_start(&shell, {curwin: 1})
-  else
-    term_start(command, {curwin: 1, term_finish: 'close'})
-  endif
+  term_start(empty(command) ? &shell : command, {curwin: 1, term_finish: 'close'})
   startinsert
 enddef

@@ -304,6 +304,7 @@ augroup ChopsticksInterface
     autocmd WinEnter,WinLeave,WinNew,WinClosed,BufEnter,BufWritePost * call chopsticks#ui#winlabel#Refresh()
     autocmd WinScrolled,WinResized,VimResized * call chopsticks#ui#winlabel#Refresh()
     autocmd TextChanged,TextChangedI * call chopsticks#ui#winlabel#OnTextChanged()
+    autocmd TextYankPost * call chopsticks#ui#motion#Yanked()
     autocmd BufEnter,BufAdd,BufWinEnter,WinEnter * call chopsticks#ui#bufferline#Refresh()
     autocmd BufDelete,BufWipeout,WinClosed * call chopsticks#ui#bufferline#ScheduleRefresh()
     autocmd CursorMoved * if &filetype ==# 'chopsticks-dashboard' | call chopsticks#ui#dashboard#LockCursor() | endif
@@ -470,9 +471,15 @@ call chopsticks#keys#Catalog('Editing', 'n/i/x', 'Alt-j / Alt-k', 'Move line or 
 call chopsticks#keys#Catalog('Editing', 'x', '< / >', 'Indent and keep selection')
 
 nnoremap <silent> x "_x
-call s:LeaderN(['p'], '"0p', 'Editing', 'Paste without clobbering yank')
-call s:LeaderN(['P'], '"0P', 'Editing', 'Paste last yank before cursor')
-call s:LeaderX(['p'], '"_dP', 'Editing', 'Paste without replacing yank')
+nnoremap <silent> p p<Cmd>call chopsticks#ui#motion#Changed()<CR>
+nnoremap <silent> P P<Cmd>call chopsticks#ui#motion#Changed()<CR>
+xnoremap <silent> p p<Cmd>call chopsticks#ui#motion#Changed()<CR>
+xnoremap <silent> P P<Cmd>call chopsticks#ui#motion#Changed()<CR>
+nnoremap <silent> u u<Cmd>call chopsticks#ui#motion#Changed()<CR>
+nnoremap <silent> <C-r> <C-r><Cmd>call chopsticks#ui#motion#Changed()<CR>
+call s:LeaderN(['p'], '"0p<Cmd>call chopsticks#ui#motion#Changed()<CR>', 'Editing', 'Paste without clobbering yank')
+call s:LeaderN(['P'], '"0P<Cmd>call chopsticks#ui#motion#Changed()<CR>', 'Editing', 'Paste last yank before cursor')
+call s:LeaderX(['p'], '"_dP<Cmd>call chopsticks#ui#motion#Changed()<CR>', 'Editing', 'Paste without replacing yank')
 call chopsticks#keys#WhichKeyAdd(['p'], 'Editing', 'Paste without clobbering yank')
 call s:LeaderN(['v'], '`[v`]', 'Editing', 'Reselect last change')
 call s:LeaderN(['y'], '<Cmd>set operatorfunc=chopsticks#actions#YankOperator<CR>g@', 'Editing', 'Yank to system clipboard')

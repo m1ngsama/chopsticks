@@ -77,7 +77,9 @@ export def Enter()
   bufferline.Refresh()
   setlocal nonumber norelativenumber nolist cursorline signcolumn=no
   setlocal nowrap nospell foldcolumn=0 colorcolumn= tabstop=2
-  setlocal winhighlight=CursorLine:ChopDashboardCurrent
+  if exists('+winhighlight')
+    execute 'setlocal winhighlight=CursorLine:ChopDashboardCurrent'
+  endif
   &l:statusline = '%#ChopDashboardStatus#%='
 enddef
 

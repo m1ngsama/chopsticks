@@ -1,6 +1,10 @@
 set encoding=utf-8
 scriptencoding utf-8
 
+if has('nvim') || !has('patch-9.1.1947')
+    echoerr 'chopsticks needs Vim 9.1.1947 or newer'
+    finish
+endif
 let g:chopsticks_startup_started_at = reltime()
 set t_RV= t_u7= t_RF= t_RB= ambiwidth=single
 execute 'set runtimepath^=' . fnameescape(fnamemodify(resolve(expand('<sfile>:p')), ':h'))

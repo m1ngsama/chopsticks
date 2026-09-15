@@ -206,7 +206,9 @@ export def Scratch(name: string, lines: list<string>, filetype = '')
   if !empty(filetype)
     setbufvar(winbufnr(state.id), '&filetype', filetype)
   endif
-  win_execute(state.id, 'setlocal winhighlight=PopupSelected:ChopPanelCursor')
+  if exists('+winhighlight')
+    win_execute(state.id, 'setlocal winhighlight=PopupSelected:ChopPanelCursor')
+  endif
   win_execute(state.id, 'call cursor(' .. FirstEntry() .. ', 1)')
 enddef
 

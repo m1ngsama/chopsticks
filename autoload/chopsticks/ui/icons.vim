@@ -111,7 +111,7 @@ const ACTION_RULES = [
   ['format\|align\|indent', 'group_edit'],
   ['copy\|paste\|clipboard\|yank', 'clipboard'],
   ['preview\|browser\|render', 'preview'],
-  ['help\|cheatsheet\|health', 'group_help'],
+  ['help\|cheatsheet', 'group_help'],
 ]
 
 export def Action(description: string, group: string): string

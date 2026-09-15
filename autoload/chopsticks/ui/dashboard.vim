@@ -73,9 +73,9 @@ def Footer(): string
   startup.CaptureMs()
   var density = g:ChopsticksUiDensity()
   if density ==# 'minimal'
-    return 'SPC ? keys  ·  SPC h health'
+    return 'SPC ? keys'
   elseif density ==# 'balanced'
-    return printf('%s ready in %.2fms  ·  SPC ? keys  ·  SPC h health',
+    return printf('%s ready in %.2fms  ·  SPC ? keys',
       icons.Get('startup'), g:chopsticks_startup_ms)
   endif
   var [loaded, total] = PluginStats()
@@ -351,6 +351,5 @@ export def Open()
   nnoremap <silent><buffer> <Tab> <ScriptCmd>Move(1)<CR>
   nnoremap <silent><buffer> <S-Tab> <ScriptCmd>Move(-1)<CR>
   nnoremap <silent><nowait><buffer> ? :ChopKeys<CR>
-  nnoremap <silent><nowait><buffer> h :ChopHealth<CR>
   Render()
 enddef

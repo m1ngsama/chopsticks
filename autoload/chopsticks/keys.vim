@@ -24,8 +24,6 @@ const STARTERS = [
    description: 'Save, from any mode'},
   {keys: 'SPC e', mode: 'n', covers: ['SPC e'],
    description: 'Show or hide the file tree'},
-  {keys: 'SPC h', mode: 'n', covers: ['SPC h'],
-   description: 'Health report: what is installed and what is missing'},
   ]
 
 var catalog: list<dict<string>> = []

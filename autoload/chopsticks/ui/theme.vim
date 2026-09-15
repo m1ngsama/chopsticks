@@ -87,9 +87,6 @@ export def DefineInterfaceColors(): void
   execute 'highlight ChopCheatMode ctermfg=108 cterm=none guifg=' .. muted .. ' gui=none'
   execute 'highlight ChopCheatAlias ctermfg=108 cterm=italic guifg=' .. muted .. ' gui=italic'
   execute 'highlight ChopCheatIcon ctermfg=108 cterm=none guifg=' .. aqua .. ' gui=none'
-  execute 'highlight ChopHealthOk ctermfg=108 cterm=none guifg=' .. green .. ' gui=none'
-  execute 'highlight ChopHealthBad ctermfg=174 cterm=bold guifg=' .. red .. ' gui=bold'
-  execute 'highlight ChopHealthOff ctermfg=108 cterm=none guifg=' .. muted .. ' gui=none'
   execute 'highlight ChopPanelCursor ctermbg=237 guibg=' .. surface
   execute 'highlight ChopWinLabel ctermbg=109 ctermfg=234 cterm=bold guibg=' .. blue .. ' guifg=' .. bg .. ' gui=bold'
   execute 'highlight ChopWinLabelNC ctermbg=237 ctermfg=108 cterm=none guibg=' .. surface .. ' guifg=' .. muted .. ' gui=none'

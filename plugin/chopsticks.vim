@@ -7,7 +7,6 @@ g:loaded_chopsticks = true
 
 import autoload 'chopsticks/clipboard.vim'
 import autoload 'chopsticks/session.vim'
-import autoload 'chopsticks/health.vim'
 import autoload 'chopsticks/ui/icons.vim'
 import autoload 'chopsticks/ui/theme.vim'
 import autoload 'chopsticks/ui/dashboard.vim'
@@ -36,13 +35,8 @@ def g:ChopsticksProjectRoot(): string
   return session.ProjectRoot()
 enddef
 
-def g:ChopsticksHealthLines(): list<string>
-  return health.Lines()
-enddef
-
 command! -bar ChopSave session.Save()
 command! -bar -bang ChopLoad session.Load(<bang>0)
-command! ChopHealth health.Show()
 command! ChopDash dashboard.Open()
 command! ChopIcons icons.Toggle()
 command! ChopTransparency theme.ToggleTransparency()

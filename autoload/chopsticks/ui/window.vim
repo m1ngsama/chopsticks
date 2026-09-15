@@ -175,6 +175,16 @@ def Titled(name: string, lines: list<string>): list<any>
   return [substitute(name, '^\[chopsticks-\|\]$', '', 'g'), lines]
 enddef
 
+def Bounds(): dict<number>
+  return {maxwidth: float2nr(&columns * 0.86), maxheight: float2nr(&lines * 0.82)}
+enddef
+
+export def Fit()
+  if !empty(state) && !empty(popup_getpos(state.id))
+    popup_setoptions(state.id, Bounds())
+  endif
+enddef
+
 export def Scratch(name: string, lines: list<string>, filetype = '')
   var [title, body] = Titled(name, lines)
   state = {lines: body, query: '', title: title, id: 0,
@@ -185,15 +195,13 @@ export def Scratch(name: string, lines: list<string>, filetype = '')
     borderchars: BORDER,
     padding: [0, 1, 0, 1],
     minwidth: 40,
-    maxwidth: float2nr(&columns * 0.86),
-    maxheight: float2nr(&lines * 0.82),
     cursorline: true,
     scrollbar: true,
     wrap: false,
     mapping: false,
     filter: Filter,
     filtermode: 'a',
-    })
+    }->extend(Bounds()))
   setbufvar(winbufnr(state.id), 'chopsticks_legend', Legend(body))
   if !empty(filetype)
     setbufvar(winbufnr(state.id), '&filetype', filetype)

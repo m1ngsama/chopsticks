@@ -266,6 +266,9 @@ call chopsticks#ui#bufferline#Refresh()
 
 function! s:HandleResize() abort
     wincmd =
+    if exists('*chopsticks#ui#window#Fit')
+        call chopsticks#ui#window#Fit()
+    endif
     if &filetype ==# 'chopsticks-dashboard'
         call chopsticks#ui#dashboard#Render()
     endif

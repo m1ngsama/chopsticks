@@ -455,12 +455,15 @@ call s:LeaderN(['w', 'v'], '<C-w>v', 'Windows', 'Split right')
 call s:LeaderN(['w', 'd'], '<C-w>c', 'Windows', 'Close window')
 call s:LeaderN(['w', '='], '<C-w>=', 'Windows', 'Balance windows')
 
-nnoremap <M-j> :<C-u>execute 'move .+' . v:count1<CR>==
-nnoremap <M-k> :<C-u>execute 'move .-' . (v:count1 + 1)<CR>==
-inoremap <M-j> <Esc>:move .+1<CR>==gi
-inoremap <M-k> <Esc>:move .-2<CR>==gi
-xnoremap <M-j> :<C-u>execute "'<,'>move '>+" . v:count1<CR>gv=gv
-xnoremap <M-k> :<C-u>execute "'<,'>move '<-" . (v:count1 + 1)<CR>gv=gv
+if !has('gui_running')
+    execute "set <M-j>=\ej <M-k>=\ek"
+endif
+nnoremap <silent> <M-j> :<C-u>silent! execute 'move .+' . v:count1<CR>==
+nnoremap <silent> <M-k> :<C-u>silent! execute 'move .-' . (v:count1 + 1)<CR>==
+inoremap <silent> <M-j> <Esc>:silent! move .+1<CR>==gi
+inoremap <silent> <M-k> <Esc>:silent! move .-2<CR>==gi
+xnoremap <silent> <M-j> :<C-u>silent! execute "'<,'>move '>+" . v:count1<CR>gv=gv
+xnoremap <silent> <M-k> :<C-u>silent! execute "'<,'>move '<-" . (v:count1 + 1)<CR>gv=gv
 xnoremap < <gv
 xnoremap > >gv
 call chopsticks#keys#Catalog('Editing', 'n/i/x', 'Alt-j / Alt-k', 'Move line or selection')

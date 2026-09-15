@@ -2,6 +2,7 @@ vim9script
 
 const FLASH_MS = 200
 const BEACON_MS = 300
+const SAVED_MS = 600
 
 var scroll_timer = 0
 var scroll_window = 0
@@ -42,6 +43,16 @@ export def Moved()
     var position = getpos('.')
     Flash('ChopBeacon', position, position, 'V', BEACON_MS)
   endif
+enddef
+
+export def Saved()
+  var buffer = bufnr()
+  setbufvar(buffer, 'chopsticks_saved', 1)
+  redrawstatus
+  timer_start(SAVED_MS, (_) => {
+    setbufvar(buffer, 'chopsticks_saved', 0)
+    redrawstatus!
+  })
 enddef
 
 export def Focus()

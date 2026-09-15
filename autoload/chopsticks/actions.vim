@@ -1,6 +1,7 @@
 vim9script
 
 import autoload 'chopsticks/session.vim'
+import autoload 'chopsticks/ui/motion.vim'
 import autoload 'chopsticks/ui/window.vim'
 
 export def MakeParent(path: string)
@@ -21,6 +22,9 @@ export def Save()
     endif
   else
     update
+    if !&modified
+      motion.Saved()
+    endif
   endif
 enddef
 

@@ -171,7 +171,7 @@ export def Render(): string
   if !empty(kind)
     return line .. '%#ChopStatusBody# ' .. kind .. ' %='
   endif
-  line ..= '%#ChopStatusBody# '
+  line ..= (getbufvar(context.bufnr, 'chopsticks_saved', 0) ? '%#ChopStatusSaved# ' : '%#ChopStatusBody# ')
     .. (density ==# 'rich' ? icons.FileIcon(bufname(context.bufnr)) : '')
     .. '%<%f '
   line ..= '%#ChopStatusAccent#' .. BufferFlags(context.bufnr)

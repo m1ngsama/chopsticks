@@ -62,6 +62,7 @@ export def DefineInterfaceColors(): void
   execute 'highlight ChopPanelCursor ctermbg=237 guibg=' .. surface
   execute 'highlight ChopWinLabel ctermbg=109 ctermfg=234 cterm=bold guibg=' .. blue .. ' guifg=' .. bg .. ' gui=bold'
   execute 'highlight ChopWinLabelNC ctermbg=237 ctermfg=108 cterm=none guibg=' .. surface .. ' guifg=' .. muted .. ' gui=none'
+  execute 'highlight ChopStatusSaved ctermbg=237 ctermfg=108 cterm=bold guibg=' .. surface .. ' guifg=' .. green .. ' gui=bold'
   highlight! link ChopFlash DiffAdd
   highlight! link ChopBeacon Visual
   execute 'highlight fuzzboxBorder ctermfg=108 guifg=' .. muted

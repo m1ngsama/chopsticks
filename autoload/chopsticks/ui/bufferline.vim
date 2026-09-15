@@ -5,7 +5,13 @@ import autoload 'chopsticks/ui/icons.vim'
 import autoload 'chopsticks/ui/statusline.vim'
 
 export def Refresh()
-  &showtabline = &filetype ==# 'chopsticks-dashboard' || exists('t:goyo_master') ? 0 : 2
+  var start_screen = winnr('$') == 1 && &filetype ==# 'chopsticks-dashboard'
+  var view = winsaveview()
+  if !exists('t:goyo_master')
+    &laststatus = start_screen ? 0 : 2
+  endif
+  &showtabline = start_screen || exists('t:goyo_master') ? 0 : 2
+  winrestview(view)
   execute 'redrawtabline'
 enddef
 

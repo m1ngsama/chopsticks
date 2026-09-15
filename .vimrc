@@ -275,14 +275,13 @@ augroup ChopsticksInterface
     autocmd!
     autocmd ColorScheme * call chopsticks#ui#theme#DefineInterfaceColors()
     autocmd BufEnter * if &filetype ==# 'chopsticks-dashboard' | call chopsticks#ui#dashboard#Enter() | call chopsticks#ui#dashboard#Render() | endif
-    autocmd BufLeave * if &filetype ==# 'chopsticks-dashboard' | call chopsticks#ui#dashboard#Leave() | endif
     autocmd WinEnter,BufWinEnter * if &filetype ==# 'chopsticks-dashboard' | call chopsticks#ui#dashboard#Focus(v:true) | endif
     autocmd WinLeave * if &filetype ==# 'chopsticks-dashboard' | call chopsticks#ui#dashboard#Focus(v:false) | endif
     autocmd WinEnter,WinLeave,WinNew,WinClosed,BufEnter,BufWritePost * call chopsticks#ui#winlabel#Refresh()
     autocmd WinScrolled,WinResized,VimResized * call chopsticks#ui#winlabel#Refresh()
     autocmd TextChanged,TextChangedI * call chopsticks#ui#winlabel#OnTextChanged()
-    autocmd BufEnter,BufAdd,BufWinEnter * call chopsticks#ui#bufferline#Refresh()
-    autocmd BufDelete,BufWipeout * call chopsticks#ui#bufferline#ScheduleRefresh()
+    autocmd BufEnter,BufAdd,BufWinEnter,WinEnter * call chopsticks#ui#bufferline#Refresh()
+    autocmd BufDelete,BufWipeout,WinClosed * call chopsticks#ui#bufferline#ScheduleRefresh()
     autocmd CursorMoved * if &filetype ==# 'chopsticks-dashboard' | call chopsticks#ui#dashboard#LockCursor() | endif
     autocmd FocusGained * if &filetype ==# 'chopsticks-dashboard' | call chopsticks#ui#dashboard#LockCursor() | redraw! | endif
     autocmd VimResized * call s:HandleResize()

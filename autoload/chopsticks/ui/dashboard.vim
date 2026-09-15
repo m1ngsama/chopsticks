@@ -3,6 +3,7 @@ vim9script
 import autoload 'chopsticks/ui/text.vim'
 import autoload 'chopsticks/ui/icons.vim'
 import autoload 'chopsticks/session.vim'
+import autoload 'chopsticks/ui/bufferline.vim'
 
 const LOGO = [
   '███╗   ███╗ ██╗███╗   ██╗ ██████╗ ███████╗ █████╗ ███╗   ███╗ █████╗',
@@ -73,13 +74,7 @@ def Footer(): string
 enddef
 
 export def Enter()
-  if !exists('b:chopsticks_dashboard_showtabline')
-    b:chopsticks_dashboard_showtabline = &showtabline
-  endif
-  if !exists('b:chopsticks_dashboard_laststatus')
-    b:chopsticks_dashboard_laststatus = &laststatus
-  endif
-  set showtabline=0 laststatus=0
+  bufferline.Refresh()
   setlocal nonumber norelativenumber nolist cursorline signcolumn=no
   setlocal nowrap nospell foldcolumn=0 colorcolumn= tabstop=2
   setlocal winhighlight=CursorLine:ChopDashboardCurrent
@@ -99,17 +94,6 @@ export def Focus(on: bool)
   &l:cursorline = on
   if on && empty(getmatches())
     Paint()
-  endif
-enddef
-
-export def Leave()
-  if exists('b:chopsticks_dashboard_showtabline')
-    &showtabline = b:chopsticks_dashboard_showtabline
-    unlet b:chopsticks_dashboard_showtabline
-  endif
-  if exists('b:chopsticks_dashboard_laststatus')
-    &laststatus = b:chopsticks_dashboard_laststatus
-    unlet b:chopsticks_dashboard_laststatus
   endif
 enddef
 
@@ -314,6 +298,9 @@ def RunCurrent()
 enddef
 
 export def Open()
+  if &winfixwidth || &winfixheight
+    wincmd p
+  endif
   if &filetype !=# 'chopsticks-dashboard'
     var project_root = session.ProjectRoot()
     silent keepalt enew

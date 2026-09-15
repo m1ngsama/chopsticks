@@ -65,6 +65,9 @@ export def DefineInterfaceColors(): void
   execute 'highlight ChopStatusSaved ctermbg=237 ctermfg=108 cterm=bold guibg=' .. surface .. ' guifg=' .. green .. ' gui=bold'
   highlight! link ChopFlash DiffAdd
   highlight! link ChopBeacon Visual
+  for group in ['LspTextRef', 'LspReadRef', 'LspWriteRef']
+    execute 'highlight! link ' .. group .. (hlexists('CurrentWord') ? ' CurrentWord' : ' Visual')
+  endfor
   execute 'highlight fuzzboxBorder ctermfg=108 guifg=' .. muted
   execute 'highlight fuzzboxMatching ctermfg=108 cterm=bold guifg=' .. green .. ' gui=bold'
   execute 'highlight fuzzboxSelectionSign ctermbg=237 guibg=' .. surface

@@ -17,6 +17,7 @@ var catalogued = false
 def Options()
   g:LspOptionsSet({
     autoComplete: false,
+    autoHighlight: true,
     omniComplete: true,
     ignoreMissingServer: true,
     showInlayHints: true,

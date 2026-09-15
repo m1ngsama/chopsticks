@@ -213,6 +213,12 @@ export def Scratch(name: string, lines: list<string>, filetype = '')
 enddef
 
 export def Terminal(command: list<string>, position: string)
+  if !empty(command) && !executable(command[0])
+    echohl WarningMsg
+    echomsg 'chopsticks: ' .. command[0] .. ' is not installed'
+    echohl None
+    return
+  endif
   if position ==# 'tab'
     tabnew
   else

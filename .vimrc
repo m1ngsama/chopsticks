@@ -79,7 +79,7 @@ let g:ale_linters = {
     \ 'sh': ['shellcheck'],
     \ 'markdown': ['markdownlint', 'vale'],
     \ }
-let g:ale_rust_cargo_use_clippy = 1
+let g:ale_rust_cargo_use_clippy = executable('cargo-clippy') == 1
 let g:ale_fixers = {
     \ '*': ['remove_trailing_lines', 'trim_whitespace'],
     \ 'javascript': ['prettier', 'eslint'],
@@ -147,7 +147,9 @@ let g:table_mode_disable_tableize_mappings = 1
 let g:table_mode_corner = '|'
 
 let g:previm_enable_realtime = 1
-let g:previm_open_cmd = '/usr/bin/open'
+let g:previm_wsl_mode = executable('wslview') == 1
+let g:previm_open_cmd = has('mac') ? 'open' : has('win32') ? 'rundll32 url.dll,FileProtocolHandler'
+    \ : g:previm_wsl_mode ? 'wslview' : 'xdg-open'
 
 let g:goyo_width = 96
 let g:goyo_height = '90%'
@@ -242,8 +244,9 @@ set path+=**
 set breakindent smoothscroll splitkeep=screen jumpoptions=stack belloff=all
 set wildoptions=pum,tagfile spelloptions+=camel
 
-set grepprg=rg\ --vimgrep\ --smart-case
-set grepformat=%f:%l:%c:%m
+if executable('rg')
+    set grepprg=rg\ --vimgrep\ --smart-case grepformat=%f:%l:%c:%m
+endif
 
 let s:state_dirs = {
     \ 'backup': g:chopsticks_data . '/.backup',

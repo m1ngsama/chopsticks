@@ -42,8 +42,19 @@ export def PasteImage(requested_name: string)
     echohl None
     return
   endif
+  var target = shellescape(absolute_path)
+  var paste = executable('pngpaste') ? 'pngpaste ' .. target
+    : executable('wl-paste') ? 'wl-paste --type image/png > ' .. target
+    : executable('xclip') ? 'xclip -selection clipboard -target image/png -out > ' .. target
+    : ''
+  if empty(paste)
+    echohl WarningMsg
+    echomsg 'chopsticks: image paste needs pngpaste, wl-paste or xclip'
+    echohl None
+    return
+  endif
   mkdir(absolute_dir, 'p')
-  system(shellescape(exepath('pngpaste')) .. ' ' .. shellescape(absolute_path))
+  system(paste)
   if v:shell_error != 0 || !filereadable(absolute_path)
     silent! delete(absolute_path)
     echohl ErrorMsg

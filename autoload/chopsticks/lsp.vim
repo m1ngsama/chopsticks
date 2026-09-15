@@ -13,7 +13,7 @@ const SERVERS = {
 const ALIASES = {cpp: 'c', javascript: 'typescript'}
 var registered: dict<bool> = {}
 
-export def Options()
+def Options()
   g:LspOptionsSet({
     autoComplete: false,
     omniComplete: true,

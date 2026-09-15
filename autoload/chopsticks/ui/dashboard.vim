@@ -86,7 +86,7 @@ export def Enter()
   &l:statusline = '%#ChopDashboardStatus#%='
 enddef
 
-export def Paint()
+def Paint()
   clearmatches()
   for spec in get(b:, 'chopsticks_dashboard_matches', [])
     if !empty(spec[1])

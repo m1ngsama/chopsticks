@@ -4,7 +4,7 @@ import autoload 'chopsticks/ui/window.vim'
 import autoload 'chopsticks/keys.vim'
 import autoload 'chopsticks/ui/bufferline.vim'
 
-export def ToggleConceal()
+def ToggleConceal()
   &l:conceallevel = &l:conceallevel == 0 ? 2 : 0
   echo 'Markdown conceal: ' .. (&l:conceallevel != 0 ? 'ON' : 'OFF')
 enddef

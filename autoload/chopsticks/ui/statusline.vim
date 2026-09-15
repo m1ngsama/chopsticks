@@ -4,7 +4,7 @@ import autoload 'chopsticks/ui/icons.vim'
 
 const MODE_NAMES = {c: 'COMMAND', '!': 'SHELL', t: 'TERMINAL'}
 
-def Mode(active: number = 1, wide: bool = false): list<string>
+def Mode(active: number, wide: bool): list<string>
   if !active
     return [' - ', 'ChopStatusMuted']
   endif
@@ -19,22 +19,20 @@ def Mode(active: number = 1, wide: bool = false): list<string>
   return [' ' .. (wide ? name : short) .. ' ', group]
 enddef
 
-export def GitBranch(buffer: number = -1): string
+export def GitBranch(): string
   if !exists('*g:FugitiveHead')
     return ''
   endif
-  var target = buffer < 0 ? bufnr('') : buffer
-  var branch = call('FugitiveHead', [0, target])
+  var branch = call('FugitiveHead', [0, bufnr('')])
   return empty(branch) ? '' : '  ' .. icons.Get('git_branch') .. ' '
     .. substitute(branch, '%', '%%', 'g') .. ' '
 enddef
 
-export def GitDiff(buffer: number = -1): string
+def GitDiff(buffer: number): string
   if !exists('*g:GitGutterGetHunkSummary')
     return ''
   endif
-  var target = buffer < 0 ? bufnr('') : buffer
-  var [added, changed, removed] = gitgutter#hunk#summary(target)
+  var [added, changed, removed] = gitgutter#hunk#summary(buffer)
   var parts = []
   if added > 0
     add(parts, printf('%%#ChopStatusGitAdd#%s %d', icons.Get('git_add'), added))
@@ -50,12 +48,11 @@ export def GitDiff(buffer: number = -1): string
   return empty(parts) ? '' : ' ' .. join(parts, ' ') .. ' '
 enddef
 
-export def Diagnostics(buffer: number = -1): string
+def Diagnostics(buffer: number): string
   if !exists('*ale#statusline#Count')
     return ''
   endif
-  var target = buffer < 0 ? bufnr('') : buffer
-  var counts = ale#statusline#Count(target)
+  var counts = ale#statusline#Count(buffer)
   var errors = counts.error + counts.style_error
   var warnings = counts.warning + counts.style_warning
   var info = get(counts, 'info', 0)
@@ -73,19 +70,18 @@ export def Diagnostics(buffer: number = -1): string
   return empty(parts) ? '' : join(parts, ' ') .. ' '
 enddef
 
-export def Signals(buffer: number = -1): string
-  var target = buffer < 0 ? bufnr('') : buffer
+def Signals(buffer: number): string
   var parts = []
-  var encoding = getbufvar(target, '&fileencoding')
+  var encoding = getbufvar(buffer, '&fileencoding')
   if !empty(encoding) && encoding !=? 'utf-8'
     add(parts, encoding)
   endif
-  var format = getbufvar(target, '&fileformat')
+  var format = getbufvar(buffer, '&fileformat')
   if format !=# 'unix'
     add(parts, format ==# 'dos' ? 'CRLF' : 'CR')
   endif
-  var width = getbufvar(target, '&shiftwidth')
-  if !getbufvar(target, '&expandtab')
+  var width = getbufvar(buffer, '&shiftwidth')
+  if !getbufvar(buffer, '&expandtab')
     add(parts, 'tab-' .. width)
   elseif width != 4
     add(parts, 'sp-' .. width)
@@ -93,7 +89,7 @@ export def Signals(buffer: number = -1): string
   return empty(parts) ? '' : ' ' .. join(parts, ' ') .. ' '
 enddef
 
-export def WordCount(active: number = 1): string
+def WordCount(active: number): string
   if !active || &filetype !=# 'markdown'
     return ''
   endif
@@ -104,20 +100,18 @@ export def WordCount(active: number = 1): string
     : printf(' %s %d ', icons.Get('words'), counted.words)
 enddef
 
-export def WritingMode(buffer: number = -1, window: number = -1): string
-  var target = buffer < 0 ? bufnr('') : buffer
-  var window_id = window < 0 ? win_getid() : window
-  var window_number = win_id2win(window_id)
+def WritingMode(buffer: number, window: number): string
+  var window_number = win_id2win(window)
   var parts = []
   if window_number > 0 && getwinvar(window_number, '&spell')
     add(parts, icons.Get('spell'))
   endif
-  var pencil = str2nr(string(getbufvar(target, 'pencil_wrap_mode', 0)))
+  var pencil = str2nr(string(getbufvar(buffer, 'pencil_wrap_mode', 0)))
   if pencil == 2
     add(parts, icons.Get('wrap') .. ':'
       .. get(get(g:, 'pencil#mode_indicators', {}), 'soft', 'S'))
   elseif pencil == 1
-    var kind = getbufvar(target, '&formatoptions') =~# 'a' ? 'auto' : 'hard'
+    var kind = getbufvar(buffer, '&formatoptions') =~# 'a' ? 'auto' : 'hard'
     add(parts, icons.Get('wrap') .. ':'
       .. get(get(g:, 'pencil#mode_indicators', {}), kind,
              kind ==# 'auto' ? 'A' : 'H'))
@@ -125,13 +119,12 @@ export def WritingMode(buffer: number = -1, window: number = -1): string
   return empty(parts) ? '' : ' ' .. join(parts, ' ') .. ' '
 enddef
 
-def BufferFlags(buffer: number = -1): string
-  var target = buffer < 0 ? bufnr('') : buffer
+def BufferFlags(buffer: number): string
   var parts = []
-  if getbufvar(target, '&modified')
+  if getbufvar(buffer, '&modified')
     add(parts, icons.Get('modified'))
   endif
-  if getbufvar(target, '&readonly')
+  if getbufvar(buffer, '&readonly')
     add(parts, icons.Get('readonly'))
   endif
   return empty(parts) ? '' : ' ' .. join(parts, ' ') .. ' '

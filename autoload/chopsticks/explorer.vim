@@ -12,7 +12,7 @@ def PathInside(path_value: string, directory_value: string): bool
   return path ==# directory || stridx(path, directory .. '/') == 0
 enddef
 
-export def Toggle(directory_arg: string)
+def Toggle(directory_arg: string)
   var directory = fnamemodify(directory_arg, ':p')
   var command = 'Fern ' .. fnameescape(directory)
     .. ' -drawer -toggle -width=' .. g:fern#drawer_width

@@ -188,7 +188,7 @@ export def Sheet(groups: list<string>): list<string>
   return Rendered(Sections(groups))
 enddef
 
-export def Lines(): list<string>
+def Lines(): list<string>
   var sections: list<dict<any>> = [{group: 'Start here', entries: STARTERS}]
   sections->extend(Sections(GROUP_ORDER))
   return [

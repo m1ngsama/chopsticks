@@ -9,7 +9,7 @@ export def Apply(): void
   colorscheme everforest
 enddef
 
-export def HighlightColor(group: string, attribute: string, fallback: string): string
+def HighlightColor(group: string, attribute: string, fallback: string): string
   var id = synIDtrans(hlID(group))
   var value = synIDattr(id, attribute, 'gui')
   return empty(value) || value ==# 'NONE' ? fallback : value

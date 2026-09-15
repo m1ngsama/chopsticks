@@ -58,7 +58,7 @@ def Show(id: number): bool
   return true
 enddef
 
-export def Clear()
+def Clear()
   for id in values(labels)
     popup_close(id)
   endfor

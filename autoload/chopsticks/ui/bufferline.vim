@@ -9,14 +9,8 @@ export def Refresh()
   execute 'redrawtabline'
 enddef
 
-def RefreshTimer(id: number)
-  if id >= 0
-    Refresh()
-  endif
-enddef
-
 export def ScheduleRefresh()
-  timer_start(0, RefreshTimer)
+  timer_start(0, (_) => Refresh())
 enddef
 
 def Context(): list<string>

@@ -155,6 +155,8 @@ def SpecialKind(buffer: number): string
   var buftype = getbufvar(buffer, '&buftype')
   if buftype ==# ''
     return ''
+  elseif buftype ==# 'terminal'
+    return toupper(fnamemodify(matchstr(bufname(buffer), '^!\zs\S\+'), ':t'))
   endif
   var filetype = getbufvar(buffer, '&filetype')
   return get(KINDS, filetype, toupper(empty(filetype) ? buftype : filetype))

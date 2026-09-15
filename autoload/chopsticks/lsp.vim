@@ -12,6 +12,7 @@ const SERVERS = {
 }
 const ALIASES = {cpp: 'c', javascript: 'typescript'}
 var registered: dict<bool> = {}
+var catalogued = false
 
 def Options()
   g:LspOptionsSet({
@@ -52,6 +53,14 @@ export def Maps()
   nnoremap <silent><buffer> <leader>cS <Cmd>LspSymbolSearch<CR>
   nnoremap <silent><buffer> <leader>cl <Cmd>LspOutline<CR>
   nnoremap <silent><buffer> <leader>ci <Cmd>LspShowAllServers<CR>
+  catalogued = true
+  Catalog()
+enddef
+
+export def Catalog()
+  if !catalogued
+    return
+  endif
   for item in [
       [['c', 'a'], 'Code action'],
       [['c', 'f'], 'Format document'],

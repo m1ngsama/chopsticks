@@ -618,6 +618,9 @@ augroup Chopsticks
     autocmd VimEnter * if argc() == 0 && bufname('%') ==# '' && &buftype ==# '' && line('$') == 1 && getline(1) ==# '' && !&modified | call chopsticks#ui#dashboard#Open() | endif
 augroup END
 
+if exists('*chopsticks#lsp#Catalog')
+    call chopsticks#lsp#Catalog()
+endif
 if &filetype ==# 'markdown'
     call chopsticks#markdown#Setup()
 endif

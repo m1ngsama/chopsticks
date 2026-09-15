@@ -58,33 +58,23 @@ def Show(id: number): bool
   return true
 enddef
 
-def Clear()
-  for id in values(labels)
-    popup_close(id)
-  endfor
-  labels = {}
-enddef
-
 export def Refresh()
   if busy
     return
   endif
   var labelable = range(1, winnr('$'))->filter((_, nr) => Wanted(win_getid(nr)))
-  if len(labelable) < 2
-    Clear()
-    return
-  endif
   busy = true
   try
     var live: list<string> = []
-    for nr in range(1, winnr('$'))
+    for nr in len(labelable) < 2 ? [] : labelable
       var id = win_getid(nr)
-      if Wanted(id) && Show(id)
+      if Show(id)
         live->add(string(id))
       endif
     endfor
     for key in keys(labels)
-      if index(live, key) < 0
+      var tab = win_id2tabwin(str2nr(key))[0]
+      if index(live, key) < 0 && (tab == 0 || tab == tabpagenr())
         popup_close(labels[key])
         remove(labels, key)
       endif
